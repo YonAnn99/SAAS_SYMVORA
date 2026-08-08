@@ -11,10 +11,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, Sun, Moon } from "lucide-react";
+import { LogOut, Settings, User, Sun, Moon, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function Header() {
+interface HeaderProps {
+  onSearchOpen?: () => void;
+}
+
+export function Header({ onSearchOpen }: HeaderProps) {
   const t = useTranslations();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -58,6 +62,19 @@ export function Header() {
         {/* Language switcher - placeholder */}
         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-foreground">
           ES
+        </Button>
+
+        {/* Search trigger */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSearchOpen}
+          className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <Search className="h-3.5 w-3.5" />
+          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className="text-xs">⌘</span>K
+          </kbd>
         </Button>
 
         {/* User menu */}

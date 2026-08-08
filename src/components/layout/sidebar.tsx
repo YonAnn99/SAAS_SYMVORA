@@ -16,6 +16,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon },
   { name: "layout.finances", href: "/finances", icon: Wallet },
   { name: "layout.users", href: "/users", icon: Users },
+  { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings },
 ];
 

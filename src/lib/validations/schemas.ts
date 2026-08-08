@@ -5,11 +5,35 @@ export const loginSchema = z.object({
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
 
-export const signupSchema = z.object({
-  email: z.string().email("Correo electrónico inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-});
+const passwordValidation = z
+  .string()
+  .min(8, "La contraseña debe tener al menos 8 caracteres")
+  .regex(/[A-Z]/, "Debe contener al menos 1 letra mayúscula")
+  .regex(/[a-z]/, "Debe contener al menos 1 letra minúscula")
+  .regex(/[0-9]/, "Debe contener al menos 1 número")
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Debe contener al menos 1 carácter especial");
+
+export const signupSchema = z
+  .object({
+    nombre: z.string().min(1, "El nombre es requerido"),
+    segundo_nombre: z.string().optional(),
+    apellido_paterno: z.string().min(1, "El apellido paterno es requerido"),
+    apellido_materno: z.string().min(1, "El apellido materno es requerido"),
+    nombre_establecimiento: z.string().min(2, "El nombre del establecimiento es requerido"),
+    email: z.string().email("Correo electrónico inválido"),
+    email_confirm: z.string().email("Correo electrónico inválido"),
+    password: passwordValidation,
+    password_confirm: z.string(),
+    color_primario: z.string().optional(),
+  })
+  .refine((data) => data.email === data.email_confirm, {
+    message: "Los correos electrónicos no coinciden",
+    path: ["email_confirm"],
+  })
+  .refine((data) => data.password === data.password_confirm, {
+    message: "Las contraseñas no coinciden",
+    path: ["password_confirm"],
+  });
 
 export const tenantSchema = z.object({
   nombre_comercial: z

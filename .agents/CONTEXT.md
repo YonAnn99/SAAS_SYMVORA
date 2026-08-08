@@ -21,7 +21,8 @@ symvora-saas/
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql      # Schema completo + RLS + seed
-│       └── 002_rls_rbac.sql           # RBAC fix: políticas granulares por operación
+│       ├── 002_rls_rbac.sql           # RBAC fix: políticas granulares por operación
+│       └── 003_activity_logs.sql       # Tabla activity_logs + función log_activity()
 └── src/
     ├── middleware.ts                    # i18n + Supabase session middleware
     ├── i18n/                           # Configuración de idiomas
@@ -29,8 +30,8 @@ symvora-saas/
     │   ├── request.ts                  # Resolución server-side de locale
     │   └── navigation.ts              # Link, redirect, usePathname, useRouter
     ├── messages/
-    │   ├── es.json                     # Traducciones español (227 keys)
-    │   └── en.json                     # Traducciones inglés (227 keys)
+    │   ├── es.json                     # Traducciones español (~260 keys)
+    │   └── en.json                     # Traducciones inglés (~260 keys)
     ├── stores/
     │   └── cart.ts                     # Zustand store del carrito POS
     ├── lib/
@@ -38,31 +39,48 @@ symvora-saas/
     │   ├── supabase/
     │   │   ├── client.ts              # Cliente browser
     │   │   ├── server.ts              # Cliente server (cookies)
-    │   │   └── middleware.ts          # Refresh sesión + auth guard
+    │   │   ├── middleware.ts          # Refresh sesión + auth guard
+    │   │   └── activity-logger.ts     # Helper para registrar acciones en activity_logs
     │   ├── validations/
-    │   │   └── schemas.ts            # 9 schemas Zod (login, signup, tenant, etc.)
+    │   │   └── schemas.ts            # Schemas Zod (login, signup mejorado, tenant, etc.)
+    │   ├── export/
+    │   │   ├── csv.ts                # Utilidad exportar arrays a CSV
+    │   │   └── pdf.ts                # Utilidad exportar tablas a PDF (jspdf)
     │   └── types/
     │       └── database.ts           # Tipos TypeScript de todas las tablas DB
     ├── components/
     │   ├── layout/
-    │   │   ├── sidebar.tsx            # Sidebar colapsable con 7 links
-    │   │   └── header.tsx             # Barra superior con menú de usuario
-    │   └── ui/                        # 16 componentes shadcn/ui (base-nova)
+    │   │   ├── sidebar.tsx            # Sidebar colapsable con 8 links (incluye Bitácora)
+    │   │   └── header.tsx             # Barra superior con menú de usuario + botón búsqueda
+    │   ├── charts/
+    │   │   ├── sales-chart.tsx        # Gráfica de área (ventas últimos 7 días)
+    │   │   ├── top-products-chart.tsx # Gráfica de barras horizontales (top productos)
+    │   │   └── payment-methods-chart.tsx # Gráfica de dona (métodos de pago)
+    │   ├── search/
+    │   │   └── command-menu.tsx       # Modal Cmd+K de búsqueda global
+    │   └── ui/                        # 20+ componentes shadcn/ui (base-nova)
+    │       ├── sonner.tsx             # Toaster con theme del proyecto
+    │       ├── data-table-toolbar.tsx # Toolbar con botones export CSV/PDF
+    │       ├── password-input.tsx     # Input contraseña con toggle + checklist
+    │       ├── file-upload.tsx        # Drag & drop logo
+    │       └── color-picker.tsx       # Grid 8 paletas de colores
     └── app/
-        ├── layout.tsx                  # Root layout: fuentes, ThemeProvider
+        ├── layout.tsx                  # Root layout: fuentes, ThemeProvider, Toaster
         ├── page.tsx                    # Redirect a /es
         ├── [locale]/layout.tsx         # Locale wrapper: NextIntlClientProvider
         ├── api/auth/callback/route.ts  # OAuth callback
         ├── (auth)/[locale]/
         │   ├── login/page.tsx          # Login email/password
-        │   ├── signup/page.tsx         # Registro nombre/email/password
+        │   ├── signup/page.tsx         # Registro mejorado: nombre split, establecimiento, logo, color, contraseña con checklist
         │   └── onboarding/page.tsx     # Wizard 4 pasos: empresa -> giro -> review -> completo
         └── (dashboard)/[locale]/
-            ├── layout.tsx              # Sidebar + Header + contenido
+            ├── layout.tsx              # Sidebar + Header + contenido + CommandMenu
             ├── loading.tsx             # Skeleton loader general
-            ├── dashboard/page.tsx      # KPI cards (datos placeholder)
+            ├── dashboard/page.tsx      # Dashboard con Recharts: KPIs + 3 gráficas
+            ├── activity/
+            │   └── page.tsx            # Bitácora de actividad con filtros
             ├── products/
-            │   ├── page.tsx            # Catálogo productos + búsqueda
+            │   ├── page.tsx            # Catálogo productos + búsqueda + export CSV/PDF
             │   └── loading.tsx         # Skeleton loader productos
             ├── pos/
             │   ├── page.tsx            # Terminal POS: entrada código barras + carrito + pago
@@ -97,6 +115,7 @@ symvora-saas/
 | `/[locale]/purchases` | `(dashboard)` | Órdenes de compra + proveedores |
 | `/[locale]/finances` | `(dashboard)` | Gestión de caja y movimientos |
 | `/[locale]/users` | `(dashboard)` | Gestión de usuarios y roles |
+| `/[locale]/activity` | `(dashboard)` | Bitácora de actividad |
 | `/[locale]/settings` | `(dashboard)` | Configuración del tenant |
 | `/api/auth/callback` | API | OAuth code exchange |
 
@@ -104,7 +123,7 @@ symvora-saas/
 
 ## Cómo funciona la Autenticación
 
-1. **Signup**: Nombre/email/password -> `supabase.auth.signUp()` -> redirige a `/es/onboarding`
+1. **Signup**: Nombre (4 campos) + Nombre establecimiento + Logo + Color + Email + Password con checklist -> `supabase.auth.signUp()` -> crea tenant -> redirige a `/es/onboarding`
 2. **Onboarding** (4 pasos):
    - Paso 1: Nombre empresa + subdominio
    - Paso 2: Seleccionar giro (ABARROTES, VERDULERIA, MASCOTAS, ROPA, FERRETERIA, FARMACIA, GENERAL)
@@ -155,7 +174,7 @@ symvora-saas/
 - **Idiomas**: Español (`es`, default) e Inglés (`en`)
 - **Patrón URL**: Todas las rutas con prefijo `/[locale]/`
 - **Provider**: `NextIntlClientProvider` envuelve todas las páginas
-- **Archivos**: `src/messages/es.json` (227 keys) y `src/messages/en.json` (227 keys)
+- **Archivos**: `src/messages/es.json` (~260 keys) y `src/messages/en.json` (~260 keys)
 
 ---
 
@@ -172,7 +191,7 @@ symvora-saas/
 | `estado_caja` | ABIERTA, CERRADA |
 | `tipo_movimiento` | ENTRADA, SALIDA |
 
-### Tablas (12)
+### Tablas (13)
 | Tabla | Propósito |
 |---|---|
 | `tenants` | Identidad del negocio |
@@ -188,17 +207,21 @@ symvora-saas/
 | `detalle_compras` | Líneas de compra |
 | `cajas` | Sesiones de caja |
 | `movimientos_caja` | Movimientos de caja (entrada/salida) |
+| `activity_logs` | Bitácora de acciones de usuarios |
 
 ### Funciones SQL
 - `user_tenant_ids()` - Retorna UUID[] de tenants del usuario actual
 - `authorize(permission)` - Verifica si el rol tiene un permiso (usado en RLS policies)
 - `custom_access_token_hook()` - Inyecta user_role y tenant_id en el JWT
+- `log_activity()` - Registra acciones en activity_logs (CREATE/UPDATE/DELETE)
 
 ### Migraciones
 - `001_initial_schema.sql` - Schema completo + RLS (políticas FOR ALL inseguras)
 - `002_rls_rbac.sql` - Fix RBAC: reemplaza FOR ALL por políticas granulares por operación (SELECT/INSERT/UPDATE/DELETE) con `authorize()` en escrituras
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
   - Sin datos existentes, seguro para producción
+- `003_activity_logs.sql` - Tabla activity_logs + RLS + función log_activity()
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 
 ### MCP Server (Supabase)
 - **Config**: `opencode.json` en raíz del proyecto
@@ -229,6 +252,11 @@ symvora-saas/
 | `tailwind-merge` | 3.6.0 | Merge de clases Tailwind |
 | `lucide-react` | 1.30.0 | Iconos |
 | `shadcn` | 4.16.2 | Generador de componentes UI |
+| `sonner` | latest | Toast notifications |
+| `recharts` | latest | Gráficas para dashboard |
+| `cmdk` | latest | Cmd+K search modal |
+| `jspdf` | latest | Generación de PDFs |
+| `jspdf-autotable` | latest | Tablas en PDFs |
 
 ---
 
@@ -246,8 +274,16 @@ symvora-saas/
 
 ## Estado Actual / TODOs
 
-- Dashboard: KPIs muestran datos placeholder ($0.00)
-- Productos: `// TODO: Fetch products from Supabase`
+### Completado
+- Dashboard: KPIs con datos reales de Supabase + 3 gráficas Recharts (ventas, top productos, métodos de pago)
+- Signup: Formulario mejorado con nombre split, establecimiento, logo, paleta de colores, contraseña con checklist
+- Toast notifications: Sonner integrado en root layout
+- Cmd+K search: Búsqueda global con cmdk en header
+- Export CSV/PDF: Utilidades reutilizables + toolbar en productos
+- Activity Logs: Tabla activity_logs + página con filtros + sidebar link
+
+### Pendiente
+- Productos: `// TODO: Fetch products from Supabase` (conexión a DB)
 - POS: Búsqueda de productos no conectada a DB
 - Usuarios: Invite es `// TODO: Implement invite with Supabase Auth`
 - Language switcher: Botón placeholder "ES" no funcional
@@ -298,6 +334,11 @@ symvora-saas/
 - **Archivos**: `loading.tsx` en cada ruta del dashboard
 - **Problema**: No había feedback visual al navegar entre módulos
 - **Solución**: Skeleton loaders con `animate-pulse` para cada página (dashboard, products, pos, purchases, finances, users, settings)
+
+### 7. Signup RLS - "new row violates row-level security policy for table tenants"
+- **Archivo**: `supabase/migrations/002_rls_rbac.sql`
+- **Problema**: La política de INSERT en `tenants` requería `authorize('org.delete')`, pero durante el signup el usuario no tiene rol aún
+- **Solución**: Cambiar la política a `WITH CHECK (true)` para permitir a usuarios autenticados crear tenants durante el registro
 
 ---
 

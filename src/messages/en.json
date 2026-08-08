@@ -32,7 +32,22 @@
     "phone": "Phone",
     "address": "Address",
     "currency": "MXN",
-    "currencySymbol": "$"
+    "currencySymbol": "$",
+    "export": "Export",
+    "exportCsv": "Export CSV",
+    "exportPdf": "Export PDF",
+    "activityLog": "Activity Log",
+    "filter": "Filter",
+    "all": "All"
+  },
+  "search": {
+    "placeholder": "Search products, customers, routes...",
+    "noResults": "No results found",
+    "navigation": "Navigation",
+    "products": "Products",
+    "customers": "Customers",
+    "suppliers": "Suppliers",
+    "actions": "Quick actions"
   },
   "auth": {
     "login": "Log in",
@@ -48,7 +63,50 @@
     "signupSubtitle": "Register your business on SYMVORA",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
-    "orContinueWith": "Or continue with"
+    "orContinueWith": "Or continue with",
+    "firstName": "First name",
+    "middleName": "Middle name",
+    "middleNameOptional": "Middle name (optional)",
+    "lastName": "Last name",
+    "maternalLastName": "Mother's last name",
+    "businessName": "Business name",
+    "businessNamePlaceholder": "My Business",
+    "confirmEmail": "Confirm email",
+    "confirmEmailPlaceholder": "Repeat your email",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Repeat your password",
+    "logo": "Business logo",
+    "logoDragDrop": "Drag your logo here or click to select",
+    "logoMaxSize": "Max 2MB · JPG, PNG, SVG",
+    "colorPalette": "Color palette",
+    "passwordStrength": {
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "passwordRequirements": "Password must be at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special character",
+    "passwordsNoMatch": "Passwords do not match",
+    "emailsNoMatch": "Emails do not match"
+  },
+  "toast": {
+    "success": {
+      "saved": "Saved successfully",
+      "created": "Created successfully",
+      "updated": "Updated successfully",
+      "deleted": "Deleted successfully",
+      "exported": "Exported successfully",
+      "copied": "Copied to clipboard"
+    },
+    "error": {
+      "generic": "An error occurred",
+      "save": "Error saving",
+      "create": "Error creating",
+      "update": "Error updating",
+      "delete": "Error deleting",
+      "export": "Error exporting",
+      "network": "Connection error"
+    }
   },
   "onboarding": {
     "title": "Set up your business",

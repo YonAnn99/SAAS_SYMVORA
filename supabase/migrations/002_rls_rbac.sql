@@ -33,7 +33,7 @@ USING (id IN (SELECT public.user_tenant_ids()));
 
 CREATE POLICY "tenants_insert" ON public.tenants
 FOR INSERT TO authenticated
-WITH CHECK (public.authorize('org.delete'));
+WITH CHECK (true);
 
 CREATE POLICY "tenants_update" ON public.tenants
 FOR UPDATE TO authenticated

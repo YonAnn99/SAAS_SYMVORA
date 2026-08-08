@@ -32,7 +32,22 @@
     "phone": "Teléfono",
     "address": "Dirección",
     "currency": "MXN",
-    "currencySymbol": "$"
+    "currencySymbol": "$",
+    "export": "Exportar",
+    "exportCsv": "Exportar CSV",
+    "exportPdf": "Exportar PDF",
+    "activityLog": "Bitácora",
+    "filter": "Filtrar",
+    "all": "Todos"
+  },
+  "search": {
+    "placeholder": "Buscar productos, clientes, rutas...",
+    "noResults": "No se encontraron resultados",
+    "navigation": "Navegación",
+    "products": "Productos",
+    "customers": "Clientes",
+    "suppliers": "Proveedores",
+    "actions": "Acciones rápidas"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -48,7 +63,50 @@
     "signupSubtitle": "Registra tu negocio en SYMVORA",
     "noAccount": "¿No tienes cuenta?",
     "hasAccount": "¿Ya tienes cuenta?",
-    "orContinueWith": "O continúa con"
+    "orContinueWith": "O continúa con",
+    "firstName": "Nombre",
+    "middleName": "Segundo nombre",
+    "middleNameOptional": "Segundo nombre (opcional)",
+    "lastName": "Apellido paterno",
+    "maternalLastName": "Apellido materno",
+    "businessName": "Nombre del establecimiento",
+    "businessNamePlaceholder": "Mi Negocio",
+    "confirmEmail": "Confirmar correo",
+    "confirmEmailPlaceholder": "Repite tu correo",
+    "confirmPassword": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Repite tu contraseña",
+    "logo": "Logo del negocio",
+    "logoDragDrop": "Arrastra tu logo aquí o haz clic para seleccionar",
+    "logoMaxSize": "Máximo 2MB · JPG, PNG, SVG",
+    "colorPalette": "Paleta de colores",
+    "passwordStrength": {
+      "weak": "Débil",
+      "fair": "Regular",
+      "good": "Buena",
+      "strong": "Fuerte"
+    },
+    "passwordRequirements": "La contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial",
+    "passwordsNoMatch": "Las contraseñas no coinciden",
+    "emailsNoMatch": "Los correos electrónicos no coinciden"
+  },
+  "toast": {
+    "success": {
+      "saved": "Guardado correctamente",
+      "created": "Creado correctamente",
+      "updated": "Actualizado correctamente",
+      "deleted": "Eliminado correctamente",
+      "exported": "Exportado correctamente",
+      "copied": "Copiado al portapapeles"
+    },
+    "error": {
+      "generic": "Ocurrió un error",
+      "save": "Error al guardar",
+      "create": "Error al crear",
+      "update": "Error al actualizar",
+      "delete": "Error al eliminar",
+      "export": "Error al exportar",
+      "network": "Error de conexión"
+    }
   },
   "onboarding": {
     "title": "Configura tu negocio",

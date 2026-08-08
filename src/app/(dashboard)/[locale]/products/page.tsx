@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Package } from "lucide-react";
+import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import type { Producto } from "@/lib/types/database";
 
 export default function ProductsPage() {
@@ -36,6 +37,15 @@ export default function ProductsPage() {
   const filteredProducts = products.filter((product) =>
     product.nombre.toLowerCase().includes(search.toLowerCase())
   );
+
+  const exportColumns = [
+    { header: "Nombre", accessor: (p: Producto) => p.nombre },
+    { header: "Código de barras", accessor: (p: Producto) => p.codigo_barras || "-" },
+    { header: "Unidad", accessor: (p: Producto) => p.unidad_medida },
+    { header: "Precio de venta", accessor: (p: Producto) => `$${p.precio_venta.toFixed(2)}` },
+    { header: "Stock actual", accessor: (p: Producto) => p.stock_actual },
+    { header: "Stock mínimo", accessor: (p: Producto) => p.stock_minimo },
+  ];
 
   return (
     <div className="space-y-8">
@@ -54,7 +64,7 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Search + Export */}
       <div className="flex items-center gap-2 animate-fade-in-up stagger-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -65,6 +75,12 @@ export default function ProductsPage() {
             className="pl-8 h-8 text-sm"
           />
         </div>
+        <DataTableToolbar
+          data={filteredProducts}
+          columns={exportColumns}
+          title="Productos"
+          filename="productos"
+        />
       </div>
 
       {/* Products table */}
