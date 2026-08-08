@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
   const supabaseResponse = await updateSession(request);
 
   // Second: handle i18n routing
-  const i18nResponse = handleI18nRouting(request);
+  const i18nResponse = await handleI18nRouting(request);
 
   // Merge cookies from both responses
   if (i18nResponse) {

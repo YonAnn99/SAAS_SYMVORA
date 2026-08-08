@@ -7,14 +7,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -173,183 +165,206 @@ export default function SignupPage() {
   };
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">{t("auth.signupTitle")}</CardTitle>
-        <CardDescription>{t("auth.signupSubtitle")}</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-5">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background text-sm font-bold">
+            S
+          </div>
+          <span className="text-lg font-semibold tracking-tight">SYMVORA</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {t("auth.signupTitle")}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {t("auth.signupSubtitle")}
+        </p>
+      </div>
 
-          {/* Nombre */}
-          <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t("common.name")}
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="nombre" className="text-xs">
-                  {t("auth.firstName")} *
-                </Label>
-                <Input
-                  id="nombre"
-                  placeholder="Juan"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="segundo_nombre" className="text-xs">
-                  {t("auth.middleNameOptional")}
-                </Label>
-                <Input
-                  id="segundo_nombre"
-                  placeholder="Carlos"
-                  value={segundoNombre}
-                  onChange={(e) => setSegundoNombre(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="apellido_paterno" className="text-xs">
-                  {t("auth.lastName")} *
-                </Label>
-                <Input
-                  id="apellido_paterno"
-                  placeholder="Pérez"
-                  value={apellidoPaterno}
-                  onChange={(e) => setApellidoPaterno(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="apellido_materno" className="text-xs">
-                  {t("auth.maternalLastName")} *
-                </Label>
-                <Input
-                  id="apellido_materno"
-                  placeholder="López"
-                  value={apellidoMaterno}
-                  onChange={(e) => setApellidoMaterno(e.target.value)}
-                  required
-                />
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* Nombre */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {t("common.name")}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="nombre" className="text-xs">
+                {t("auth.firstName")} *
+              </Label>
+              <Input
+                id="nombre"
+                placeholder="Juan"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="segundo_nombre" className="text-xs">
+                {t("auth.middleNameOptional")}
+              </Label>
+              <Input
+                id="segundo_nombre"
+                placeholder="Carlos"
+                value={segundoNombre}
+                onChange={(e) => setSegundoNombre(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apellido_paterno" className="text-xs">
+                {t("auth.lastName")} *
+              </Label>
+              <Input
+                id="apellido_paterno"
+                placeholder="Pérez"
+                value={apellidoPaterno}
+                onChange={(e) => setApellidoPaterno(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apellido_materno" className="text-xs">
+                {t("auth.maternalLastName")} *
+              </Label>
+              <Input
+                id="apellido_materno"
+                placeholder="López"
+                value={apellidoMaterno}
+                onChange={(e) => setApellidoMaterno(e.target.value)}
+                required
+              />
             </div>
           </div>
+        </div>
 
-          {/* Establecimiento */}
+        {/* Establecimiento */}
+        <div className="space-y-1.5">
+          <Label htmlFor="nombre_establecimiento" className="text-sm font-medium">
+            {t("auth.businessName")} *
+          </Label>
+          <Input
+            id="nombre_establecimiento"
+            placeholder={t("auth.businessNamePlaceholder")}
+            value={nombreEstablecimiento}
+            onChange={(e) => setNombreEstablecimiento(e.target.value)}
+            className="h-11"
+            required
+          />
+        </div>
+
+        {/* Email */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {t("common.email")}
+          </p>
           <div className="space-y-1.5">
-            <Label htmlFor="nombre_establecimiento">
-              {t("auth.businessName")} *
+            <Label htmlFor="email" className="text-xs">
+              {t("common.email")} *
             </Label>
             <Input
-              id="nombre_establecimiento"
-              placeholder={t("auth.businessNamePlaceholder")}
-              value={nombreEstablecimiento}
-              onChange={(e) => setNombreEstablecimiento(e.target.value)}
+              id="email"
+              type="email"
+              placeholder={t("auth.emailPlaceholder")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-11"
               required
             />
           </div>
-
-          {/* Email */}
-          <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t("common.email")}
-            </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs">
-                {t("common.email")} *
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t("auth.emailPlaceholder")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email_confirm" className="text-xs">
-                {t("auth.confirmEmail")} *
-              </Label>
-              <Input
-                id="email_confirm"
-                type="email"
-                placeholder={t("auth.confirmEmailPlaceholder")}
-                value={emailConfirm}
-                onChange={(e) => setEmailConfirm(e.target.value)}
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email_confirm" className="text-xs">
+              {t("auth.confirmEmail")} *
+            </Label>
+            <Input
+              id="email_confirm"
+              type="email"
+              placeholder={t("auth.confirmEmailPlaceholder")}
+              value={emailConfirm}
+              onChange={(e) => setEmailConfirm(e.target.value)}
+              className="h-11"
+              required
+            />
           </div>
+        </div>
 
-          {/* Contraseña */}
-          <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t("common.password")}
-            </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs">
-                {t("common.password")} *
-              </Label>
-              <PasswordInput
-                id="password"
-                placeholder={t("auth.passwordPlaceholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                showChecklist
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password_confirm" className="text-xs">
-                {t("auth.confirmPassword")} *
-              </Label>
-              <PasswordInput
-                id="password_confirm"
-                placeholder={t("auth.confirmPasswordPlaceholder")}
-                value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Logo */}
-          <FileUpload
-            onFileSelect={handleLogoSelect}
-            onFileRemove={handleLogoRemove}
-            preview={logoPreview}
-            label={t("auth.logo")}
-            dragDropText={t("auth.logoDragDrop")}
-            maxSizeText={t("auth.logoMaxSize")}
-          />
-
-          {/* Color */}
-          <ColorPicker
-            value={colorPrimario}
-            onChange={setColorPrimario}
-            label={t("auth.colorPalette")}
-          />
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? t("common.loading") : t("auth.signup")}
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            {t("auth.hasAccount")}{" "}
-            <Link href="/es/login" className="text-primary underline">
-              {t("auth.login")}
-            </Link>
+        {/* Contraseña */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {t("common.password")}
           </p>
-        </CardFooter>
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs">
+              {t("common.password")} *
+            </Label>
+            <PasswordInput
+              id="password"
+              placeholder={t("auth.passwordPlaceholder")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              showChecklist
+              className="h-11"
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password_confirm" className="text-xs">
+              {t("auth.confirmPassword")} *
+            </Label>
+            <PasswordInput
+              id="password_confirm"
+              placeholder={t("auth.confirmPasswordPlaceholder")}
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              className="h-11"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Logo */}
+        <FileUpload
+          onFileSelect={handleLogoSelect}
+          onFileRemove={handleLogoRemove}
+          preview={logoPreview}
+          label={t("auth.logo")}
+          dragDropText={t("auth.logoDragDrop")}
+          maxSizeText={t("auth.logoMaxSize")}
+        />
+
+        {/* Color */}
+        <ColorPicker
+          value={colorPrimario}
+          onChange={setColorPrimario}
+          label={t("auth.colorPalette")}
+        />
+
+        <Button
+          type="submit"
+          className="h-11 w-full text-sm font-medium"
+          disabled={loading}
+        >
+          {loading ? t("common.loading") : t("auth.signup")}
+        </Button>
       </form>
-    </Card>
+
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground">
+          {t("auth.hasAccount")}{" "}
+          <Link
+            href="/es/login"
+            className="font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground transition-colors"
+          >
+            {t("auth.login")}
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
