@@ -19,7 +19,8 @@ symvora-saas/
 ├── tsconfig.json                       # TypeScript, alias @/* -> ./src/*
 ├── supabase/
 │   └── migrations/
-│       └── 001_initial_schema.sql      # Schema completo + RLS + seed
+│       ├── 001_initial_schema.sql      # Schema completo + RLS + seed
+│       └── 002_rls_rbac.sql           # RBAC fix: políticas granulares por operación
 └── src/
     ├── middleware.ts                    # i18n + Supabase session middleware
     ├── i18n/                           # Configuración de idiomas
@@ -189,8 +190,14 @@ symvora-saas/
 
 ### Funciones SQL
 - `user_tenant_ids()` - Retorna UUID[] de tenants del usuario actual
-- `authorize(permission)` - Verifica si el rol tiene un permiso
+- `authorize(permission)` - Verifica si el rol tiene un permiso (usado en RLS policies)
 - `custom_access_token_hook()` - Inyecta user_role y tenant_id en el JWT
+
+### Migraciones
+- `001_initial_schema.sql` - Schema completo + RLS (políticas FOR ALL inseguras)
+- `002_rls_rbac.sql` - Fix RBAC: reemplaza FOR ALL por políticas granulares por operación (SELECT/INSERT/UPDATE/DELETE) con `authorize()` en escrituras
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
+  - Sin datos existentes, seguro para producción
 
 ---
 
@@ -267,7 +274,18 @@ symvora-saas/
 - **Problema**: `fetchTenantData` hacía early return sin `setLoading(false)` cuando no hay usuario o membership
 - **Solución**: Agregar `setLoading(false)` antes de cada early return
 
-### 5. Loading states entre módulos
+### 5. CRITICAL: RBAC no se aplica en RLS (vulnerabilidad de seguridad)
+- **Archivos**: `supabase/migrations/002_rls_rbac.sql` (fix)
+- **Problema**: Todas las políticas RLS usaban `FOR ALL` con solo `user_tenant_ids()`. La función `authorize()` y la tabla `role_permissions` existían pero NINGUNA política las llamaba. Un CAJERO tenía los mismos permisos de escritura que un SUPER_ADMIN a nivel de base de datos.
+- **Impacto**: Cualquier cuenta CAJERO comprometida podía borrar tenants, modificar inventario, gestionar finanzas, cambiar miembros, o escalar privilegios.
+- **Solución**: Migración `002_rls_rbac.sql` que reemplaza todas las políticas `FOR ALL` por políticas granulares por operación (SELECT/INSERT/UPDATE/DELETE) que llaman a `authorize('permission')` en las operaciones de escritura.
+- **Permisos por rol**:
+  - CAJERO: solo `sales.create`, `sales.view_reports`, `inventory.view` (lectura en todo, escritura solo en ventas)
+  - ORG_ADMIN: + `inventory.manage`, `purchases.manage`, `finances.manage`, `org.manage_members`, `org.manage_settings`
+  - SUPER_ADMIN: + `org.delete` (puede borrar tenants y gestionar roles)
+- **Ejecutar en Supabase SQL Editor**: Copiar el contenido de `002_rls_rbac.sql` y ejecutar con la opción "Without RLS"
+
+### 6. Loading states entre módulos
 - **Archivos**: `loading.tsx` en cada ruta del dashboard
 - **Problema**: No había feedback visual al navegar entre módulos
 - **Solución**: Skeleton loaders con `animate-pulse` para cada página (dashboard, products, pos, purchases, finances, users, settings)
