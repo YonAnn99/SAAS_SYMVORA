@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -65,7 +64,6 @@ export default function FinancesPage() {
 
     if (!user) return;
 
-    // Get active cash register
     const { data: register } = await supabase
       .from("cajas")
       .select("*")
@@ -78,7 +76,6 @@ export default function FinancesPage() {
     if (register) {
       setActiveRegister(register);
 
-      // Get movements
       const { data: movementData } = await supabase
         .from("movimientos_caja")
         .select("*")
@@ -162,30 +159,30 @@ export default function FinancesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
+      <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
         {t("common.loading")}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight">
             {t("finances.title")}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Control de caja y movimientos financieros
           </p>
         </div>
         {!activeRegister ? (
-          <Button onClick={() => setShowOpenDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowOpenDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t("pos.openRegister")}
           </Button>
         ) : (
-          <Button variant="destructive" onClick={handleCloseRegister}>
+          <Button variant="destructive" onClick={handleCloseRegister} size="sm" className="h-8 active:scale-[0.98] transition-transform">
             {t("pos.closeRegister")}
           </Button>
         )}
@@ -193,90 +190,50 @@ export default function FinancesPage() {
 
       {/* Cash register status */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("pos.initialFund")}
-            </CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${activeRegister?.fondo_inicial.toFixed(2) || "0.00"}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("finances.movementTypes.ENTRY")}
-            </CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">
-              +${totalEntradas.toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("finances.movementTypes.EXIT")}
-            </CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">
-              -${totalSalidas.toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("finances.balance")}
-            </CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(activeRegister?.fondo_inicial || 0) + totalEntradas - totalSalidas}
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { title: t("pos.initialFund"), value: `$${activeRegister?.fondo_inicial.toFixed(2) || "0.00"}`, icon: Wallet, color: "" },
+          { title: t("finances.movementTypes.ENTRY"), value: `+$${totalEntradas.toFixed(2)}`, icon: ArrowUpCircle, color: "text-[#346538] dark:text-[#7BC67E]" },
+          { title: t("finances.movementTypes.EXIT"), value: `-$${totalSalidas.toFixed(2)}`, icon: ArrowDownCircle, color: "text-[#9F2F2D] dark:text-[#F2A5A4]" },
+          { title: t("finances.balance"), value: `$${(activeRegister?.fondo_inicial || 0) + totalEntradas - totalSalidas}`, icon: Wallet, color: "" },
+        ].map((card, i) => (
+          <Card key={card.title} className={`animate-fade-in-up stagger-${i + 2}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {card.title}
+              </CardTitle>
+              <card.icon className={`h-3.5 w-3.5 ${card.color || "text-muted-foreground"}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-lg font-semibold tracking-tight font-mono ${card.color}`}>{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Movements */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>{t("finances.movements")}</CardTitle>
-            <CardDescription>Movimientos de la sesión actual</CardDescription>
-          </div>
+      <Card className="animate-fade-in-up stagger-6">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-sm font-medium">{t("finances.movements")}</CardTitle>
           {activeRegister && (
-            <Button onClick={() => setShowMovementDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => setShowMovementDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               {t("finances.addMovement")}
             </Button>
           )}
         </CardHeader>
         <CardContent>
           {movements.length === 0 ? (
-            <div className="flex h-[200px] items-center justify-center text-muted-foreground">
+            <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
               No hay movimientos registrados
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("common.date")}</TableHead>
-                  <TableHead>{t("common.description")}</TableHead>
-                  <TableHead>{t("common.status")}</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-xs uppercase tracking-wider">{t("common.date")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("common.description")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("common.status")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("common.total")}
                   </TableHead>
                 </TableRow>
@@ -284,25 +241,24 @@ export default function FinancesPage() {
               <TableBody>
                 {movements.map((movement) => (
                   <TableRow key={movement.id}>
-                    <TableCell>
+                    <TableCell className="text-sm">
                       {new Date(movement.fecha).toLocaleString()}
                     </TableCell>
-                    <TableCell>{movement.descripcion}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{movement.descripcion}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          movement.tipo === "ENTRADA" ? "default" : "destructive"
-                        }
+                        variant={movement.tipo === "ENTRADA" ? "default" : "destructive"}
+                        className="text-[10px] px-1.5 py-0"
                       >
                         {t(`finances.movementTypes.${movement.tipo}`)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right text-sm font-mono">
                       <span
                         className={
                           movement.tipo === "ENTRADA"
-                            ? "text-green-500"
-                            : "text-red-500"
+                            ? "text-[#346538] dark:text-[#7BC67E]"
+                            : "text-[#9F2F2D] dark:text-[#F2A5A4]"
                         }
                       >
                         {movement.tipo === "ENTRADA" ? "+" : "-"}$
@@ -321,30 +277,28 @@ export default function FinancesPage() {
       <Dialog open={showOpenDialog} onOpenChange={setShowOpenDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("pos.openRegister")}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base">{t("pos.openRegister")}</DialogTitle>
+            <DialogDescription className="text-xs">
               Ingresa el fondo inicial para abrir la caja
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("pos.initialFund")}</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("pos.initialFund")}</Label>
               <Input
                 type="number"
                 placeholder="0.00"
                 value={initialFund}
                 onChange={(e) => setInitialFund(e.target.value)}
+                className="h-8 text-sm font-mono"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowOpenDialog(false)}
-            >
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setShowOpenDialog(false)}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={handleOpenRegister}>{t("common.confirm")}</Button>
+            <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleOpenRegister}>{t("common.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -353,19 +307,19 @@ export default function FinancesPage() {
       <Dialog open={showMovementDialog} onOpenChange={setShowMovementDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("finances.addMovement")}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base">{t("finances.addMovement")}</DialogTitle>
+            <DialogDescription className="text-xs">
               Registra un movimiento de entrada o salida
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("common.status")}</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("common.status")}</Label>
               <Select
                 value={movementType}
                 onValueChange={(v) => setMovementType(v as "ENTRADA" | "SALIDA")}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -378,32 +332,31 @@ export default function FinancesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>{t("common.total")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("common.total")}</Label>
               <Input
                 type="number"
                 placeholder="0.00"
                 value={movementAmount}
                 onChange={(e) => setMovementAmount(e.target.value)}
+                className="h-8 text-sm font-mono"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t("common.description")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("common.description")}</Label>
               <Input
                 placeholder="Descripción del movimiento"
                 value={movementDescription}
                 onChange={(e) => setMovementDescription(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowMovementDialog(false)}
-            >
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setShowMovementDialog(false)}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={handleAddMovement}>{t("common.confirm")}</Button>
+            <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleAddMovement}>{t("common.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

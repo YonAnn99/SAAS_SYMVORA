@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -42,9 +41,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Compra, Proveedor } from "@/lib/types/database";
 
 const statusColors: Record<string, string> = {
-  PENDIENTE: "bg-yellow-100 text-yellow-800",
-  RECIBIDA: "bg-green-100 text-green-800",
-  CANCELADA: "bg-red-100 text-red-800",
+  PENDIENTE: "bg-[#FBF3DB] text-[#956400] dark:bg-[#956400]/20 dark:text-[#E5C46B]",
+  RECIBIDA: "bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]",
+  CANCELADA: "bg-[#FDEBEC] text-[#9F2F2D] dark:bg-[#9F2F2D]/20 dark:text-[#F2A5A4]",
 };
 
 export default function PurchasesPage() {
@@ -55,12 +54,10 @@ export default function PurchasesPage() {
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
 
-  // New purchase form
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [purchaseTotal, setPurchaseTotal] = useState("");
 
-  // New supplier form
   const [supplierName, setSupplierName] = useState("");
   const [supplierContact, setSupplierContact] = useState("");
   const [supplierEmail, setSupplierEmail] = useState("");
@@ -144,55 +141,49 @@ export default function PurchasesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
+      <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
         {t("common.loading")}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">
+    <div className="space-y-8">
+      <div className="animate-fade-in-up stagger-1">
+        <h2 className="text-2xl font-semibold tracking-tight">
           {t("purchases.title")}
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           Gestiona compras y proveedores
         </p>
       </div>
 
-      <Tabs defaultValue="purchases" className="w-full">
+      <Tabs defaultValue="purchases" className="w-full animate-fade-in-up stagger-2">
         <TabsList>
-          <TabsTrigger value="purchases" className="gap-2">
-            <ShoppingCart className="h-4 w-4" />
+          <TabsTrigger value="purchases" className="gap-1.5 text-xs">
+            <ShoppingCart className="h-3.5 w-3.5" />
             {t("purchases.title")}
           </TabsTrigger>
-          <TabsTrigger value="suppliers" className="gap-2">
-            <Truck className="h-4 w-4" />
+          <TabsTrigger value="suppliers" className="gap-1.5 text-xs">
+            <Truck className="h-3.5 w-3.5" />
             {t("purchases.supplier")}
           </TabsTrigger>
         </TabsList>
 
-        {/* Purchases tab */}
         <TabsContent value="purchases">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{t("purchases.title")}</CardTitle>
-                <CardDescription>
-                  {purchases.length} compras registradas
-                </CardDescription>
-              </div>
-              <Button onClick={() => setShowNewPurchaseDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-sm font-medium">{t("purchases.title")}</CardTitle>
+              <Button onClick={() => setShowNewPurchaseDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 {t("purchases.addPurchase")}
               </Button>
             </CardHeader>
             <CardContent>
               {purchases.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-4 py-12">
-                  <ShoppingCart className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-3 py-16">
+                  <ShoppingCart className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
                     {t("purchases.noPurchases")}
                   </p>
                 </div>
@@ -200,11 +191,11 @@ export default function PurchasesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("purchases.supplier")}</TableHead>
-                      <TableHead>{t("purchases.invoiceNumber")}</TableHead>
-                      <TableHead>{t("purchases.date")}</TableHead>
-                      <TableHead>{t("purchases.status")}</TableHead>
-                      <TableHead className="text-right">
+                      <TableHead className="text-xs uppercase tracking-wider">{t("purchases.supplier")}</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("purchases.invoiceNumber")}</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("purchases.date")}</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("purchases.status")}</TableHead>
+                      <TableHead className="text-right text-xs uppercase tracking-wider">
                         {t("purchases.total")}
                       </TableHead>
                     </TableRow>
@@ -212,21 +203,19 @@ export default function PurchasesPage() {
                   <TableBody>
                     {purchases.map((purchase) => (
                       <TableRow key={purchase.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-sm">
                           {purchase.proveedor?.nombre || "N/A"}
                         </TableCell>
-                        <TableCell>{purchase.numero_factura || "-"}</TableCell>
-                        <TableCell>
-                          {new Date(
-                            purchase.fecha_compra
-                          ).toLocaleDateString()}
+                        <TableCell className="text-sm font-mono text-muted-foreground">{purchase.numero_factura || "-"}</TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(purchase.fecha_compra).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <Badge className={statusColors[purchase.estado]}>
+                          <Badge className={`${statusColors[purchase.estado]} text-[10px] px-1.5 py-0`}>
                             {t(`purchases.statuses.${purchase.estado}`)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right text-sm font-mono">
                           ${purchase.total.toFixed(2)}
                         </TableCell>
                       </TableRow>
@@ -238,26 +227,20 @@ export default function PurchasesPage() {
           </Card>
         </TabsContent>
 
-        {/* Suppliers tab */}
         <TabsContent value="suppliers">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{t("purchases.supplier")}</CardTitle>
-                <CardDescription>
-                  {suppliers.length} proveedores registrados
-                </CardDescription>
-              </div>
-              <Button onClick={() => setShowNewSupplierDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-sm font-medium">{t("purchases.supplier")}</CardTitle>
+              <Button onClick={() => setShowNewSupplierDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Agregar proveedor
               </Button>
             </CardHeader>
             <CardContent>
               {suppliers.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-4 py-12">
-                  <Truck className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-3 py-16">
+                  <Truck className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
                     No hay proveedores registrados
                   </p>
                 </div>
@@ -265,11 +248,11 @@ export default function PurchasesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("common.name")}</TableHead>
-                      <TableHead>Contacto</TableHead>
-                      <TableHead>{t("common.email")}</TableHead>
-                      <TableHead>{t("common.phone")}</TableHead>
-                      <TableHead className="text-right">
+                      <TableHead className="text-xs uppercase tracking-wider">{t("common.name")}</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">Contacto</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("common.email")}</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("common.phone")}</TableHead>
+                      <TableHead className="text-right text-xs uppercase tracking-wider">
                         {t("common.actions")}
                       </TableHead>
                     </TableRow>
@@ -277,14 +260,14 @@ export default function PurchasesPage() {
                   <TableBody>
                     {suppliers.map((supplier) => (
                       <TableRow key={supplier.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-sm">
                           {supplier.nombre}
                         </TableCell>
-                        <TableCell>{supplier.contact_name || "-"}</TableCell>
-                        <TableCell>{supplier.email || "-"}</TableCell>
-                        <TableCell>{supplier.telefono || "-"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{supplier.contact_name || "-"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{supplier.email || "-"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{supplier.telefono || "-"}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">
                             {t("common.edit")}
                           </Button>
                         </TableCell>
@@ -299,22 +282,19 @@ export default function PurchasesPage() {
       </Tabs>
 
       {/* New purchase dialog */}
-      <Dialog
-        open={showNewPurchaseDialog}
-        onOpenChange={setShowNewPurchaseDialog}
-      >
+      <Dialog open={showNewPurchaseDialog} onOpenChange={setShowNewPurchaseDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("purchases.addPurchase")}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base">{t("purchases.addPurchase")}</DialogTitle>
+            <DialogDescription className="text-xs">
               Registra una nueva compra con proveedor
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("purchases.supplier")}</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("purchases.supplier")}</Label>
               <Select value={selectedSupplier} onValueChange={(v) => setSelectedSupplier(v || "")}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Seleccionar proveedor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -326,91 +306,88 @@ export default function PurchasesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>{t("purchases.invoiceNumber")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("purchases.invoiceNumber")}</Label>
               <Input
                 placeholder="Número de factura"
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t("purchases.total")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("purchases.total")}</Label>
               <Input
                 type="number"
                 placeholder="0.00"
                 value={purchaseTotal}
                 onChange={(e) => setPurchaseTotal(e.target.value)}
+                className="h-8 text-sm font-mono"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewPurchaseDialog(false)}
-            >
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setShowNewPurchaseDialog(false)}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={handleCreatePurchase}>{t("common.confirm")}</Button>
+            <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleCreatePurchase}>{t("common.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* New supplier dialog */}
-      <Dialog
-        open={showNewSupplierDialog}
-        onOpenChange={setShowNewSupplierDialog}
-      >
+      <Dialog open={showNewSupplierDialog} onOpenChange={setShowNewSupplierDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agregar proveedor</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base">Agregar proveedor</DialogTitle>
+            <DialogDescription className="text-xs">
               Registra un nuevo proveedor en tu directorio
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("common.name")}</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("common.name")}</Label>
               <Input
                 placeholder="Nombre del proveedor"
                 value={supplierName}
                 onChange={(e) => setSupplierName(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Contacto</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Contacto</Label>
               <Input
                 placeholder="Nombre del contacto"
                 value={supplierContact}
                 onChange={(e) => setSupplierContact(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t("common.email")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("common.email")}</Label>
               <Input
                 type="email"
                 placeholder={t("auth.emailPlaceholder")}
                 value={supplierEmail}
                 onChange={(e) => setSupplierEmail(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t("common.phone")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("common.phone")}</Label>
               <Input
                 placeholder="Teléfono"
                 value={supplierPhone}
                 onChange={(e) => setSupplierPhone(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewSupplierDialog(false)}
-            >
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setShowNewSupplierDialog(false)}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={handleCreateSupplier}>{t("common.confirm")}</Button>
+            <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleCreateSupplier}>{t("common.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

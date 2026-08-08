@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -41,9 +40,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { TenantMembership } from "@/lib/types/database";
 
 const roleColors: Record<string, string> = {
-  SUPER_ADMIN: "bg-red-100 text-red-800",
-  ORG_ADMIN: "bg-blue-100 text-blue-800",
-  CAJERO: "bg-green-100 text-green-800",
+  SUPER_ADMIN: "bg-[#FDEBEC] text-[#9F2F2D] dark:bg-[#9F2F2D]/20 dark:text-[#F2A5A4]",
+  ORG_ADMIN: "bg-[#E1F3FE] text-[#1F6C9F] dark:bg-[#1F6C9F]/20 dark:text-[#7BB8DA]",
+  CAJERO: "bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]",
 };
 
 export default function UsersPage() {
@@ -78,7 +77,6 @@ export default function UsersPage() {
   const handleInvite = async () => {
     setInviting(true);
     // TODO: Implement invite with Supabase Auth
-    // This would typically send an invite email
     setInviting(false);
     setShowInviteDialog(false);
     setInviteEmail("");
@@ -86,86 +84,64 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight">
             {t("users.title")}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Gestiona los usuarios y permisos de tu organización
           </p>
         </div>
-        <Button onClick={() => setShowInviteDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setShowInviteDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
           {t("users.addUser")}
         </Button>
       </div>
 
       {/* Role summary cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("users.roles.SUPER_ADMIN")}
-            </CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {memberships.filter((m) => m.role === "SUPER_ADMIN").length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("users.roles.ORG_ADMIN")}
-            </CardTitle>
-            <UserCog className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {memberships.filter((m) => m.role === "ORG_ADMIN").length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("users.roles.CAJERO")}
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {memberships.filter((m) => m.role === "CAJERO").length}
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { title: t("users.roles.SUPER_ADMIN"), count: memberships.filter((m) => m.role === "SUPER_ADMIN").length, icon: Shield, idx: 2 },
+          { title: t("users.roles.ORG_ADMIN"), count: memberships.filter((m) => m.role === "ORG_ADMIN").length, icon: UserCog, idx: 3 },
+          { title: t("users.roles.CAJERO"), count: memberships.filter((m) => m.role === "CAJERO").length, icon: Users, idx: 4 },
+        ].map((card) => (
+          <Card key={card.title} className={`animate-fade-in-up stagger-${card.idx}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {card.title}
+              </CardTitle>
+              <card.icon className="h-3.5 w-3.5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg font-semibold tracking-tight font-mono">{card.count}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Users table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("users.title")}</CardTitle>
-          <CardDescription>
-            {memberships.length} usuarios en la organización
-          </CardDescription>
+      <Card className="animate-fade-in-up stagger-5">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium">{t("users.title")}</CardTitle>
+            <span className="text-xs text-muted-foreground font-mono">
+              {memberships.length} usuarios
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex h-[400px] items-center justify-center">
+            <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
               {t("common.loading")}
             </div>
           ) : memberships.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-12">
-              <Users className="h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">{t("users.noUsers")}</p>
-              <Button onClick={() => setShowInviteDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
+            <div className="flex flex-col items-center justify-center gap-3 py-16">
+              <Users className="h-8 w-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">{t("users.noUsers")}</p>
+              <Button onClick={() => setShowInviteDialog(true)} size="sm" className="h-8 mt-1 active:scale-[0.98] transition-transform">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 {t("users.addUser")}
               </Button>
             </div>
@@ -173,10 +149,10 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("common.email")}</TableHead>
-                  <TableHead>{t("users.role")}</TableHead>
-                  <TableHead>{t("users.lastAccess")}</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-xs uppercase tracking-wider">{t("common.email")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("users.role")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("users.lastAccess")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("common.actions")}
                   </TableHead>
                 </TableRow>
@@ -184,19 +160,19 @@ export default function UsersPage() {
               <TableBody>
                 {memberships.map((membership) => (
                   <TableRow key={membership.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-sm">
                       {membership.user?.email || "N/A"}
                     </TableCell>
                     <TableCell>
-                      <Badge className={roleColors[membership.role]}>
+                      <Badge className={`${roleColors[membership.role]} text-[10px] px-1.5 py-0`}>
                         {t(`users.roles.${membership.role}`)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground">
                       {new Date(membership.creado_en).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs">
                         {t("common.edit")}
                       </Button>
                     </TableCell>
@@ -212,26 +188,27 @@ export default function UsersPage() {
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("users.addUser")}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base">{t("users.addUser")}</DialogTitle>
+            <DialogDescription className="text-xs">
               Invita un nuevo usuario a tu organización
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{t("common.email")}</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs">{t("common.email")}</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder={t("auth.emailPlaceholder")}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t("users.role")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("users.role")}</Label>
               <Select value={inviteRole} onValueChange={(v) => setInviteRole(v || "CAJERO")}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,13 +223,10 @@ export default function UsersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowInviteDialog(false)}
-            >
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setShowInviteDialog(false)}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={handleInvite} disabled={inviting}>
+            <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleInvite} disabled={inviting}>
               {inviting ? t("common.loading") : t("common.confirm")}
             </Button>
           </DialogFooter>

@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -39,56 +38,58 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight">
             {t("products.title")}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Gestiona tu catálogo de productos
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button size="sm" className="h-8 active:scale-[0.98] transition-transform">
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
           {t("products.addProduct")}
         </Button>
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 animate-fade-in-up stagger-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("common.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-8 h-8 text-sm"
           />
         </div>
       </div>
 
       {/* Products table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("products.title")}</CardTitle>
-          <CardDescription>
-            {products.length} productos registrados
-          </CardDescription>
+      <Card className="animate-fade-in-up stagger-3">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium">{t("products.title")}</CardTitle>
+            <span className="text-xs text-muted-foreground font-mono">
+              {products.length} productos
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex h-[400px] items-center justify-center">
+            <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
               {t("common.loading")}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-12">
-              <Package className="h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-3 py-16">
+              <Package className="h-8 w-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">
                 {t("products.noProducts")}
               </p>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button size="sm" className="h-8 mt-1 active:scale-[0.98] transition-transform">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 {t("products.addProduct")}
               </Button>
             </div>
@@ -96,17 +97,17 @@ export default function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("products.name")}</TableHead>
-                  <TableHead>{t("products.barcode")}</TableHead>
-                  <TableHead>{t("products.unit")}</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-xs uppercase tracking-wider">{t("products.name")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("products.barcode")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("products.unit")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("products.salePrice")}
                   </TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("products.currentStock")}
                   </TableHead>
-                  <TableHead>{t("common.status")}</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-xs uppercase tracking-wider">{t("common.status")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("common.actions")}
                   </TableHead>
                 </TableRow>
@@ -114,30 +115,30 @@ export default function ProductsPage() {
               <TableBody>
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-sm">
                       {product.nombre}
                     </TableCell>
-                    <TableCell>{product.codigo_barras || "-"}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm font-mono text-muted-foreground">{product.codigo_barras || "-"}</TableCell>
+                    <TableCell className="text-sm">
                       {t(`products.units.${product.unidad_medida}`)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right text-sm font-mono">
                       ${product.precio_venta.toFixed(2)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right text-sm font-mono">
                       {product.stock_actual}
                     </TableCell>
                     <TableCell>
                       {product.stock_actual <= product.stock_minimo ? (
-                        <Badge variant="destructive">
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                           {t("products.lowStock")}
                         </Badge>
                       ) : (
-                        <Badge variant="secondary">OK</Badge>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]">OK</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs">
                         {t("common.edit")}
                       </Button>
                     </TableCell>

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutDashboard,
@@ -41,48 +40,47 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-background transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        "flex flex-col border-r border-border bg-card transition-all duration-300 ease-out",
+        collapsed ? "w-14" : "w-56"
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b px-4">
+      <div className="flex h-14 items-center justify-between border-b border-border px-4">
         {!collapsed && (
-          <Link href="/es/dashboard" className="text-xl font-bold">
+          <Link href="/es/dashboard" className="text-sm font-semibold tracking-tight">
             SYMVORA
           </Link>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={() => setCollapsed(!collapsed)}
-          className="h-8 w-8"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
         >
           {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5" />
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-2 py-4">
-        <nav className="flex flex-col gap-1">
+      <ScrollArea className="flex-1 px-2 py-3">
+        <nav className="flex flex-col gap-0.5">
           {navigation.map((item) => {
             const Icon = item.icon;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={`/es${item.href}`}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive(item.href)
+                  "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-all duration-150",
+                  active
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
+                <Icon className={cn("h-4 w-4 flex-shrink-0", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
                 {!collapsed && <span>{t(item.name)}</span>}
               </Link>
             );
@@ -91,15 +89,15 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* User info */}
-      <div className="border-t p-4">
+      <div className="border-t border-border p-3">
         {!collapsed && (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
               A
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">Admin</span>
-              <span className="text-xs text-muted-foreground">
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-medium truncate">Admin</span>
+              <span className="text-[10px] text-muted-foreground truncate">
                 admin@symvora.com
               </span>
             </div>
