@@ -200,6 +200,14 @@ symvora-saas/
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
   - Sin datos existentes, seguro para producción
 
+### MCP Server (Supabase)
+- **Config**: `opencode.json` en raíz del proyecto
+- **URL**: `https://mcp.supabase.com/mcp?project_ref=ffswcgrahxsczvydngrd`
+- **Auth**: OAuth 2.1 vía `opencode mcp auth supabase`
+- **Estado**: Conectado y autenticado
+- **Features**: docs, account, database, debugging, development, functions, branching
+- **Herramientas disponibles**: execute_sql, search_docs, get_advisors, apply_migration, etc.
+
 ---
 
 ## Librerías Principales
