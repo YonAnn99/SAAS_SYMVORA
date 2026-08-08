@@ -17,6 +17,7 @@ symvora-saas/
 ├── next.config.ts                      # Next.js + next-intl plugin
 ├── postcss.config.mjs                  # @tailwindcss/postcss (Tailwind v4)
 ├── tsconfig.json                       # TypeScript, alias @/* -> ./src/*
+├── opencode.json                       # Config opencode: MCP Supabase server
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql      # Schema completo + RLS + seed
@@ -319,7 +320,9 @@ symvora-saas/
 ├── prototype/                        # Prototipar variantes de UI con picker visual
 ├── redesign-existing-projects/       # Rediseñar proyectos existentes
 ├── review-animations/                # Revisar/criticar animaciones existentes
-└── stitch-design-taste/              # Unir design taste en código
+├── stitch-design-taste/              # Unir design taste en código
+├── supabase/                         # Skill Supabase: auth, RLS, MCP, CLI, schema changes
+└── supabase-postgres-best-practices/ # Postgres best practices: queries, indexes, RLS, security
 ```
 
 ---
@@ -448,6 +451,34 @@ symvora-saas/
 - No flexbox math complejo (usar CSS Grid)
 - Máximo 1 marquee por página
 - Máximo 1 eyebrow por 3 secciones
+
+---
+
+### Package 4: supabase/agent-skills (2 skills)
+
+**Descripción:** Skills oficiales de Supabase para desarrollar con Supabase de forma segura y óptima.
+
+| Skill | Descripción |
+|---|---|
+| `supabase` | Guía completa de Supabase: auth, RLS, MCP server, CLI, schema changes, seguridad, changelog |
+| `supabase-postgres-best-practices` | Postgres best practices: query performance, connection management, RLS, schema design, locking |
+
+**Puntos clave del skill `supabase`:**
+- **Siempre verificar changelog** antes de implementar cambios de Supabase
+- **Nunca usar `user_metadata`** para autorización (es user-editable)
+- **RLS en todos los schemas expuestos** — tablas en `public` son accesibles vía Data API
+- **Views bypass RLS por defecto** — usar `security_invoker = true` en Postgres 15+
+- **UPDATE requiere SELECT policy** — sin ella, updates retornan 0 rows silenciosamente
+- **`TO authenticated` solo es autenticación** — combinar con ownership predicate
+- **MCP Server**: configurado en `opencode.json` con OAuth flow
+  - URL: `https://mcp.supabase.com/mcp?project_ref=ffswcgrahxsczvydngrd`
+  - Auth: `opencode mcp auth supabase`
+
+**Reglas de schema changes:**
+1. Para cambios en DB, usar `execute_sql` (MCP) o `supabase db query` (CLI)
+2. NO usar `apply_migration` para cambios locales (crea history entries en cada call)
+3. Cuando estés listo para commit: advisors -> security checklist -> `supabase db pull`
+4. Siempre verificar `supabase --version` antes de usar comandos CLI
 
 ---
 
