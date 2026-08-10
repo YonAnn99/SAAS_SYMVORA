@@ -98,7 +98,14 @@
     },
     "passwordRequirements": "Password must be at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special character",
     "passwordsNoMatch": "Passwords do not match",
-    "emailsNoMatch": "Emails do not match"
+    "emailsNoMatch": "Emails do not match",
+    "personalData": "Personal data",
+    "business": "Business",
+    "security": "Security",
+    "customization": "Customization",
+    "email": "Email",
+    "password": "Enter password",
+    "confirmPasswordLabel": "Confirm password"
   },
   "toast": {
     "success": {

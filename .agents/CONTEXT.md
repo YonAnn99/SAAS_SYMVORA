@@ -58,12 +58,15 @@ symvora-saas/
     │   │   └── payment-methods-chart.tsx # Gráfica de dona (métodos de pago)
     │   ├── search/
     │   │   └── command-menu.tsx       # Modal Cmd+K de búsqueda global
+    │   ├── auth/
+    │   │   └── auth-forms.tsx         # Formulario login/signup con acordeones, logo en panel oscuro
     │   └── ui/                        # 20+ componentes shadcn/ui (base-nova)
     │       ├── sonner.tsx             # Toaster con theme del proyecto
     │       ├── data-table-toolbar.tsx # Toolbar con botones export CSV/PDF
     │       ├── password-input.tsx     # Input contraseña con toggle + checklist
     │       ├── file-upload.tsx        # Drag & drop logo
-    │       └── color-picker.tsx       # Grid 8 paletas de colores
+    │       ├── color-picker.tsx       # Grid 8 paletas de colores
+    │       └── accordion.tsx          # Componente acordeón (secciones colapsables)
     └── app/
         ├── layout.tsx                  # Root layout: fuentes, ThemeProvider, Toaster
         ├── page.tsx                    # Redirect a /es
@@ -123,7 +126,7 @@ symvora-saas/
 
 ## Cómo funciona la Autenticación
 
-1. **Signup**: Nombre (4 campos) + Nombre establecimiento + Logo + Color + Email + Password con checklist -> `supabase.auth.signUp()` -> crea tenant -> redirige a `/es/onboarding`
+1. **Signup**: Formulario con acordeones (4 secciones: Datos personales, Empresa, Seguridad, Personalización). Logo en panel oscuro. Sección Empresa incluye nombre, tipo negocio y logo. Sección Seguridad incluye email, contraseña con checklist, confirmar contraseña. Sección Personalización incluye paleta de colores. -> `supabase.auth.signUp()` -> crea tenant -> redirige a `/es/onboarding`
 2. **Onboarding** (4 pasos):
    - Paso 1: Nombre empresa + subdominio
    - Paso 2: Seleccionar giro (ABARROTES, VERDULERIA, MASCOTAS, ROPA, FERRETERIA, FARMACIA, GENERAL)
@@ -276,7 +279,9 @@ symvora-saas/
 
 ### Completado
 - Dashboard: KPIs con datos reales de Supabase + 3 gráficas Recharts (ventas, top productos, métodos de pago)
-- Signup: Formulario mejorado con nombre split, establecimiento, logo, paleta de colores, contraseña con checklist
+- Signup: Formulario con acordeones (Datos personales, Empresa, Seguridad, Personalización), logo en panel oscuro, email sin confirmación, paleta de colores
+- Auth UI: Logo SYMVORA en paneles oscuros de login/signup, paneles toggle con textos intercambiados (Crear cuenta a la izquierda, Bienvenido de nuevo a la derecha)
+- Componente Accordion: Secciones colapsables con animación CSS para el formulario de registro
 - Toast notifications: Sonner integrado en root layout
 - Cmd+K search: Búsqueda global con cmdk en header
 - Export CSV/PDF: Utilidades reutilizables + toolbar en productos
@@ -339,6 +344,16 @@ symvora-saas/
 - **Archivo**: `supabase/migrations/002_rls_rbac.sql`
 - **Problema**: La política de INSERT en `tenants` requería `authorize('org.delete')`, pero durante el signup el usuario no tiene rol aún
 - **Solución**: Cambiar la política a `WITH CHECK (true)` para permitir a usuarios autenticados crear tenants durante el registro
+
+### 8. Auth UI - Logo y textos de paneles toggle
+- **Archivos**: `src/components/auth/auth-forms.tsx`, `src/styles/auth-toggle.css`
+- **Problema**: Logo estaba en el formulario blanco, paneles oscuros no mostraban logo, textos de login/signup estaban invertidos
+- **Solución**: Logo SYMVORA movido a paneles oscuros (arriba de "Crear cuenta" y "Bienvenido de nuevo"), textos intercambiados entre paneles izquierdo/derecho
+
+### 9. Signup form - Scroll y orden de campos
+- **Archivos**: `src/components/auth/auth-forms.tsx`, `src/components/ui/accordion.tsx`, `src/styles/auth-toggle.css`
+- **Problema**: Formulario de registro muy largo, no se podía scrollear, campos en orden incorrecto, email de confirmación innecesario
+- **Solución**: Formulario reorganizado con acordeones (4 secciones), logo movido a sección Empresa, email de confirmación eliminado, traducciones agregadas para títulos de secciones
 
 ---
 

@@ -30,14 +30,9 @@ export const signupSchema = z
       "GENERAL",
     ]),
     email: z.string().email("Correo electrónico inválido"),
-    email_confirm: z.string().email("Correo electrónico inválido"),
     password: passwordValidation,
     password_confirm: z.string(),
     color_primario: z.string().optional(),
-  })
-  .refine((data) => data.email === data.email_confirm, {
-    message: "Los correos electrónicos no coinciden",
-    path: ["email_confirm"],
   })
   .refine((data) => data.password === data.password_confirm, {
     message: "Las contraseñas no coinciden",

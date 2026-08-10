@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SYMVORA - ERP Multi-Tenant",
   description: "Plataforma SaaS Multi-Tenant basada en Mini-ERP modular",
+  icons: {
+    icon: "/symvora-logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +29,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >
