@@ -9,28 +9,28 @@ export async function middleware(request: NextRequest) {
   // First: update Supabase session
   const supabaseResponse = await updateSession(request);
 
+  // Check if Supabase middleware already redirected (e.g., to login)
+  if (supabaseResponse.status === 307 || supabaseResponse.status === 308) {
+    return supabaseResponse;
+  }
+
   // Second: handle i18n routing
   const i18nResponse = await handleI18nRouting(request);
 
-  // Merge cookies from both responses
-  if (i18nResponse) {
-    supabaseResponse.headers.set(
-      "x-middleware-rewrite",
-      i18nResponse.headers.get("x-middleware-rewrite") || ""
-    );
+  // If i18n middleware redirects, use that response
+  if (i18nResponse && (i18nResponse.status === 307 || i18nResponse.status === 308)) {
+    return i18nResponse;
+  }
 
-    // Copy Set-Cookie headers from i18n response
-    const i18nCookies = i18nResponse.headers.getSetCookie();
-    if (i18nCookies.length > 0) {
-      i18nCookies.forEach((cookie) => {
-        supabaseResponse.headers.append("Set-Cookie", cookie);
+  // Copy Supabase cookies to the i18n response
+  if (i18nResponse) {
+    const supabaseCookies = supabaseResponse.headers.getSetCookie();
+    if (supabaseCookies.length > 0) {
+      supabaseCookies.forEach((cookie) => {
+        i18nResponse.headers.append("Set-Cookie", cookie);
       });
     }
-
-    // If i18n redirects, use that redirect
-    if (i18nResponse.status === 307 || i18nResponse.status === 308) {
-      return i18nResponse;
-    }
+    return i18nResponse;
   }
 
   return supabaseResponse;
@@ -38,7 +38,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Enable a pathless prefix for i18n
     "/((?!api|_next|_vercel|.*\\..*).*)",
   ],
 };
