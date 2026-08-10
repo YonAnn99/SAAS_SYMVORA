@@ -79,6 +79,17 @@
     "logoDragDrop": "Drag your logo here or click to select",
     "logoMaxSize": "Max 2MB · JPG, PNG, SVG",
     "colorPalette": "Color palette",
+    "businessType": "Business type",
+    "businessTypePlaceholder": "Select your business type",
+    "businessTypes": {
+      "ABARROTES": "Grocery Store",
+      "VERDULERIA": "Greengrocer",
+      "MASCOTAS": "Pet Store",
+      "ROPA": "Clothing",
+      "FERRETERIA": "Hardware Store",
+      "FARMACIA": "Pharmacy",
+      "GENERAL": "General"
+    },
     "passwordStrength": {
       "weak": "Weak",
       "fair": "Fair",

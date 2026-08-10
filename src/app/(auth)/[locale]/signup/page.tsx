@@ -12,6 +12,13 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { signupSchema } from "@/lib/validations/schemas";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function convertToWebP(file: File): Promise<File> {
   return new Promise((resolve) => {
@@ -51,6 +58,7 @@ export default function SignupPage() {
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [nombreEstablecimiento, setNombreEstablecimiento] = useState("");
+  const [giroComercial, setGiroComercial] = useState<string>("GENERAL");
   const [email, setEmail] = useState("");
   const [emailConfirm, setEmailConfirm] = useState("");
   const [password, setPassword] = useState("");
@@ -84,6 +92,7 @@ export default function SignupPage() {
       apellido_paterno: apellidoPaterno,
       apellido_materno: apellidoMaterno,
       nombre_establecimiento: nombreEstablecimiento,
+      giro_comercial: giroComercial,
       email,
       email_confirm: emailConfirm,
       password,
@@ -149,7 +158,7 @@ export default function SignupPage() {
         .replace(/[^a-z0-9]/g, "-")
         .replace(/-+/g, "-")
         .slice(0, 30),
-      giro_comercial: "GENERAL",
+      giro_comercial: giroComercial,
       logo_url: logoUrl,
       color_primario: colorPrimario,
     });
@@ -257,6 +266,27 @@ export default function SignupPage() {
             className="h-11"
             required
           />
+        </div>
+
+        {/* Tipo de negocio */}
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">
+            {t("auth.businessType")} *
+          </Label>
+          <Select value={giroComercial} onValueChange={(v) => setGiroComercial(v || "GENERAL")}>
+            <SelectTrigger className="w-full h-11">
+              <SelectValue placeholder={t("auth.businessTypePlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ABARROTES">{t("auth.businessTypes.ABARROTES")}</SelectItem>
+              <SelectItem value="VERDULERIA">{t("auth.businessTypes.VERDULERIA")}</SelectItem>
+              <SelectItem value="MASCOTAS">{t("auth.businessTypes.MASCOTAS")}</SelectItem>
+              <SelectItem value="ROPA">{t("auth.businessTypes.ROPA")}</SelectItem>
+              <SelectItem value="FERRETERIA">{t("auth.businessTypes.FERRETERIA")}</SelectItem>
+              <SelectItem value="FARMACIA">{t("auth.businessTypes.FARMACIA")}</SelectItem>
+              <SelectItem value="GENERAL">{t("auth.businessTypes.GENERAL")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Email */}
