@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function LocalePage() {
-  redirect("/es/dashboard");
+  redirect("/es/login");
 }
