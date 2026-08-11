@@ -168,6 +168,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       email: signupEmail,
       password: signupPassword,
       options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         data: {
           nombre: fullName,
           nombre_establecimiento: nombreEstablecimiento,

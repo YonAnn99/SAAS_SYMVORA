@@ -306,8 +306,28 @@ export default function OnboardingPage() {
           p_tenant_id: tenant.id,
         });
       }
+
+      if (tenant?.id) {
+        try {
+          const response = await fetch("/api/conekta/create-checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tenant_id: tenant.id, type: "card" }),
+          });
+          const data = await response.json();
+          if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+            return;
+          }
+        } catch (checkoutError) {
+          console.error("Error creating checkout:", checkoutError);
+        }
+      }
     }
 
+    // Fallback: if Conekta checkout couldn't be created (e.g. missing
+    // tenant email or a Conekta outage), don't strand the user — send
+    // them to the billing page where they can retry the payment.
     router.push("/es/billing");
     router.refresh();
   };
