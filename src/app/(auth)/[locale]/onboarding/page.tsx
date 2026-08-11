@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -191,6 +191,31 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [trialCode, setTrialCode] = useState("");
 
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { createSupabaseBrowserClient } = await import("@/lib/supabase/client");
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata) {
+        const meta = user.user_metadata;
+        if (meta.nombre_establecimiento) {
+          setNombreComercial(meta.nombre_establecimiento);
+          setSubdominio(
+            meta.nombre_establecimiento
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "-")
+              .replace(/-+/g, "-")
+              .slice(0, 30)
+          );
+        }
+        if (meta.giro_comercial) {
+          setSelectedGiro(meta.giro_comercial);
+        }
+      }
+    };
+    loadUserData();
+  }, []);
+
   const handleNext = () => {
     if (step === 1) {
       const validation = tenantSchema.pick({ nombre_comercial: true, subdominio: true }).safeParse({
@@ -232,6 +257,8 @@ export default function OnboardingPage() {
       pos_config: defaultSettings[selectedGiro!].pos_config,
     };
 
+    const colorPrimario = user.user_metadata?.color_primario || null;
+
     const { data: tenant, error: rpcError } = await supabase.rpc(
       "complete_onboarding",
       {
@@ -239,6 +266,7 @@ export default function OnboardingPage() {
         p_nombre_comercial: nombreComercial,
         p_subdominio: subdominio,
         p_giro_comercial: selectedGiro!,
+        p_color_primario: colorPrimario,
         p_configuracion_json: configuracionJson,
       }
     );

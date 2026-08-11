@@ -171,6 +171,8 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
         data: {
           nombre: fullName,
           nombre_establecimiento: nombreEstablecimiento,
+          giro_comercial: giroComercial,
+          color_primario: colorPrimario,
         },
       },
     });
@@ -200,25 +202,11 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
           .from("logos")
           .getPublicUrl(filePath);
         logoUrl = urlData.publicUrl;
+
+        await supabase.auth.updateUser({
+          data: { logo_url: logoUrl },
+        });
       }
-    }
-
-    const { error: tenantError } = await supabase.from("tenants").insert({
-      nombre_comercial: nombreEstablecimiento,
-      subdominio: nombreEstablecimiento
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "-")
-        .replace(/-+/g, "-")
-        .slice(0, 30),
-      giro_comercial: giroComercial,
-      logo_url: logoUrl,
-      color_primario: colorPrimario,
-    });
-
-    if (tenantError) {
-      setSignupError(tenantError.message);
-      setSignupLoading(false);
-      return;
     }
 
     router.push("/es/onboarding");
