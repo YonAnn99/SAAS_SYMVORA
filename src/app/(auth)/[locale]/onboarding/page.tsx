@@ -225,64 +225,25 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Create tenant
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .insert({
-        nombre_comercial: nombreComercial,
-        subdominio: subdominio,
-        giro_comercial: selectedGiro!,
-      })
-      .select()
-      .single();
+    const configuracionJson = {
+      giro_comercial: selectedGiro,
+      modulos_activos: defaultSettings[selectedGiro!].modulos_activos,
+      pos_config: defaultSettings[selectedGiro!].pos_config,
+    };
 
-    if (tenantError) {
-      setError(tenantError.message);
-      setLoading(false);
-      return;
-    }
+    const { data: tenant, error: rpcError } = await supabase.rpc(
+      "complete_onboarding",
+      {
+        p_user_id: user.id,
+        p_nombre_comercial: nombreComercial,
+        p_subdominio: subdominio,
+        p_giro_comercial: selectedGiro!,
+        p_configuracion_json: configuracionJson,
+      }
+    );
 
-    // Create tenant settings
-    const { error: settingsError } = await supabase
-      .from("tenant_settings")
-      .insert({
-        tenant_id: tenant.id,
-        configuracion_json: {
-          giro_comercial: selectedGiro,
-          modulos_activos: defaultSettings[selectedGiro!].modulos_activos,
-          pos_config: defaultSettings[selectedGiro!].pos_config,
-        },
-      });
-
-    if (settingsError) {
-      setError(settingsError.message);
-      setLoading(false);
-      return;
-    }
-
-    // Create membership
-    const { error: membershipError } = await supabase
-      .from("tenant_memberships")
-      .insert({
-        tenant_id: tenant.id,
-        user_id: user.id,
-        role: "ORG_ADMIN",
-      });
-
-    if (membershipError) {
-      setError(membershipError.message);
-      setLoading(false);
-      return;
-    }
-
-    // Create user role
-    const { error: roleError } = await supabase.from("user_roles").insert({
-      user_id: user.id,
-      role: "ORG_ADMIN",
-    });
-
-    if (roleError) {
-      setError(roleError.message);
+    if (rpcError) {
+      setError(rpcError.message);
       setLoading(false);
       return;
     }

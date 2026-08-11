@@ -32,10 +32,12 @@ import { Trash2, Plus, Minus, ShoppingCart, Search, User, CreditCard, Banknote, 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { completeSale, calculateSaleTotals } from "@/lib/supabase/sales";
 import { toast } from "sonner";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { Producto, Cliente } from "@/lib/types/database";
 
 export default function POSPage() {
   const t = useTranslations();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const {
     items,
     addItem,
@@ -56,10 +58,10 @@ export default function POSPage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [processingSale, setProcessingSale] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [tenantId, setTenantId] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
 
   const fetchProductsAndUser = useCallback(async () => {
+    if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
     const {
       data: { user },
@@ -67,41 +69,30 @@ export default function POSPage() {
     if (!user) return;
     setUserId(user.id);
 
-    const { data: membership } = await supabase
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      setLoadingProducts(false);
-      return;
-    }
-
-    setTenantId(membership.tenant_id);
-
     const [productsResult, customersResult] = await Promise.all([
       supabase
         .from("productos")
         .select("*")
-        .eq("tenant_id", membership.tenant_id)
+        .eq("tenant_id", tenantId)
         .gt("stock_actual", 0)
         .order("nombre"),
       supabase
         .from("clientes")
         .select("*")
-        .eq("tenant_id", membership.tenant_id)
+        .eq("tenant_id", tenantId)
         .order("nombre"),
     ]);
 
     if (productsResult.data) setProducts(productsResult.data);
     if (customersResult.data) setCustomers(customersResult.data);
     setLoadingProducts(false);
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
-    fetchProductsAndUser();
-  }, [fetchProductsAndUser]);
+    if (!tenantLoading) {
+      fetchProductsAndUser();
+    }
+  }, [tenantLoading, fetchProductsAndUser]);
 
   const filteredProducts = products.filter(
     (p) =>

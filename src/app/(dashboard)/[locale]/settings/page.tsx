@@ -17,11 +17,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Save, Building2, Palette, Puzzle, Sun, Moon } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { toast } from "sonner";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 
 export default function SettingsPage() {
   const t = useTranslations();
   const { theme, setTheme } = useTheme();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [settings, setSettings] = useState<TenantSettingsJSON | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,35 +36,19 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    fetchTenantData();
-  }, []);
+    if (!tenantLoading && tenantId) {
+      fetchTenantData();
+    }
+  }, [tenantLoading, tenantId]);
 
   const fetchTenantData = async () => {
+    if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const { data: membership } = await supabase
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      setLoading(false);
-      return;
-    }
 
     const { data: tenantData } = await supabase
       .from("tenants")
       .select("*")
-      .eq("id", membership.tenant_id)
+      .eq("id", tenantId)
       .single();
 
     if (tenantData) {
@@ -75,7 +62,7 @@ export default function SettingsPage() {
     const { data: settingsData } = await supabase
       .from("tenant_settings")
       .select("configuracion_json")
-      .eq("tenant_id", membership.tenant_id)
+      .eq("tenant_id", tenantId)
       .single();
 
     if (settingsData) {
@@ -90,7 +77,7 @@ export default function SettingsPage() {
     setSaving(true);
 
     const supabase = createSupabaseBrowserClient();
-    await supabase
+    const { error } = await supabase
       .from("tenants")
       .update({
         nombre_comercial: companyName,
@@ -100,6 +87,11 @@ export default function SettingsPage() {
       })
       .eq("id", tenant.id);
 
+    if (error) {
+      toast.error("Error al guardar: " + error.message);
+    } else {
+      toast.success("Cambios guardados");
+    }
     setSaving(false);
   };
 
@@ -117,10 +109,14 @@ export default function SettingsPage() {
     setSettings(newSettings);
 
     const supabase = createSupabaseBrowserClient();
-    await supabase
+    const { error } = await supabase
       .from("tenant_settings")
       .update({ configuracion_json: newSettings })
       .eq("tenant_id", tenant.id);
+
+    if (error) {
+      toast.error("Error al actualizar módulo: " + error.message);
+    }
   };
 
   if (loading) {

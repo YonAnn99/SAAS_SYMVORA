@@ -38,6 +38,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, ShoppingCart, Truck } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import type { Compra, Proveedor } from "@/lib/types/database";
 
 const statusColors: Record<string, string> = {
@@ -62,6 +63,7 @@ export default function PurchasesPage() {
   const [supplierContact, setSupplierContact] = useState("");
   const [supplierEmail, setSupplierEmail] = useState("");
   const [supplierPhone, setSupplierPhone] = useState("");
+  const [tenantId, setTenantId] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -70,6 +72,28 @@ export default function PurchasesPage() {
   const fetchData = async () => {
     const supabase = createSupabaseBrowserClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { data: membership } = await supabase
+      .from("tenant_memberships")
+      .select("tenant_id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
+
+    if (!membership) {
+      setLoading(false);
+      return;
+    }
+
+    setTenantId(membership.tenant_id);
+
     const { data: purchasesData } = await supabase
       .from("compras")
       .select(`
@@ -77,6 +101,7 @@ export default function PurchasesPage() {
         proveedor:proveedor_id(nombre),
         usuario:usuario_id(email)
       `)
+      .eq("tenant_id", membership.tenant_id)
       .order("fecha_compra", { ascending: false });
 
     if (purchasesData) {
@@ -86,6 +111,7 @@ export default function PurchasesPage() {
     const { data: suppliersData } = await supabase
       .from("proveedores")
       .select("*")
+      .eq("tenant_id", membership.tenant_id)
       .order("nombre");
 
     if (suppliersData) {
@@ -101,16 +127,23 @@ export default function PurchasesPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user || !selectedSupplier) return;
+    if (!user || !selectedSupplier || !tenantId) {
+      toast.error("Faltan datos requeridos");
+      return;
+    }
 
     const { error } = await supabase.from("compras").insert({
+      tenant_id: tenantId,
       proveedor_id: selectedSupplier,
       usuario_id: user.id,
       numero_factura: invoiceNumber,
       total: parseFloat(purchaseTotal) || 0,
     });
 
-    if (!error) {
+    if (error) {
+      toast.error("Error al crear la compra: " + error.message);
+    } else {
+      toast.success("Compra creada correctamente");
       setShowNewPurchaseDialog(false);
       setSelectedSupplier("");
       setInvoiceNumber("");
@@ -122,14 +155,23 @@ export default function PurchasesPage() {
   const handleCreateSupplier = async () => {
     const supabase = createSupabaseBrowserClient();
 
+    if (!tenantId) {
+      toast.error("No se pudo identificar el tenant");
+      return;
+    }
+
     const { error } = await supabase.from("proveedores").insert({
+      tenant_id: tenantId,
       nombre: supplierName,
       contact_name: supplierContact,
       email: supplierEmail,
       telefono: supplierPhone,
     });
 
-    if (!error) {
+    if (error) {
+      toast.error("Error al crear el proveedor: " + error.message);
+    } else {
+      toast.success("Proveedor creado correctamente");
       setShowNewSupplierDialog(false);
       setSupplierName("");
       setSupplierContact("");

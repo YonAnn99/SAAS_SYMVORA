@@ -42,6 +42,7 @@ import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { productSchema } from "@/lib/validations/schemas";
 import { toast } from "sonner";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { Producto } from "@/lib/types/database";
 
 interface ProductFormData {
@@ -74,6 +75,7 @@ const defaultFormData: ProductFormData = {
 
 export default function ProductsPage() {
   const t = useTranslations();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [products, setProducts] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -84,36 +86,24 @@ export default function ProductsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<Producto | null>(null);
 
   const fetchProducts = useCallback(async () => {
+    if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: membership } = await supabase
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      setLoading(false);
-      return;
-    }
 
     const { data } = await supabase
       .from("productos")
       .select("*")
-      .eq("tenant_id", membership.tenant_id)
+      .eq("tenant_id", tenantId)
       .order("nombre");
 
     if (data) setProducts(data);
     setLoading(false);
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (!tenantLoading) {
+      fetchProducts();
+    }
+  }, [tenantLoading, fetchProducts]);
 
   const filteredProducts = products.filter(
     (product) =>
@@ -160,29 +150,16 @@ export default function ProductsPage() {
       return;
     }
 
+    if (!tenantId) {
+      toast.error("No se pudo identificar el tenant");
+      return;
+    }
+
     setSaving(true);
     const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setSaving(false);
-      return;
-    }
-
-    const { data: membership } = await supabase
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      setSaving(false);
-      return;
-    }
 
     const productData = {
-      tenant_id: membership.tenant_id,
+      tenant_id: tenantId,
       nombre: formData.nombre,
       descripcion: formData.descripcion || null,
       codigo_barras: formData.codigo_barras || null,

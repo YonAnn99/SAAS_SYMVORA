@@ -39,6 +39,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 
 interface ActivityLog {
   id: string;
@@ -92,37 +93,25 @@ const ENTITY_LABELS: Record<string, string> = {
 
 export default function ActivityPage() {
   const t = useTranslations();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [entityFilter, setEntityFilter] = useState<string>("all");
+  const [entityFilter, setEntityFilter] = useState("all");
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    if (!tenantLoading && tenantId) {
+      fetchLogs();
+    }
+  }, [tenantLoading, tenantId]);
 
   const fetchLogs = async () => {
+    if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: membership } = await supabase
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      setLoading(false);
-      return;
-    }
 
     const { data } = await supabase
       .from("activity_logs")
       .select("*")
-      .eq("tenant_id", membership.tenant_id)
+      .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
       .limit(100);
 

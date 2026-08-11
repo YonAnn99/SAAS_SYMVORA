@@ -13,6 +13,7 @@ import { SalesChart } from "@/components/charts/sales-chart";
 import { TopProductsChart } from "@/components/charts/top-products-chart";
 import { PaymentMethodsChart } from "@/components/charts/payment-methods-chart";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 
 interface DashboardStats {
   ventasHoy: number;
@@ -26,6 +27,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const t = useTranslations();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [stats, setStats] = useState<DashboardStats>({
     ventasHoy: 0,
     ventasMes: 0,
@@ -38,29 +40,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (!tenantLoading && tenantId) {
+      fetchDashboardData();
+    }
+  }, [tenantLoading, tenantId]);
 
   const fetchDashboardData = async () => {
     const supabase = createSupabaseBrowserClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: membership } = await supabase
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      setLoading(false);
-      return;
-    }
-
-    const tenantId = membership.tenant_id;
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
