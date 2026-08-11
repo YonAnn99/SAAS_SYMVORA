@@ -189,6 +189,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       return;
     }
 
+    // Upload logo if provided
     let logoUrl: string | null = null;
     if (logoFile) {
       const webpFile = await convertToWebP(logoFile);
@@ -209,7 +210,96 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       }
     }
 
-    router.push("/es/onboarding");
+    // Create tenant via complete_onboarding RPC
+    const configuracionJson = {
+      giro_comercial: giroComercial,
+      modulos_activos: {
+        permite_granel: false,
+        permite_variantes: false,
+        permite_lotes_caducidad: true,
+        permite_mermas: true,
+        permite_servicios: false,
+        permite_credito_fiado: true,
+      },
+      pos_config: {
+        teclado_rapido: true,
+        lector_barras: true,
+        impresion_automatica: true,
+      },
+    };
+
+    const subdominio = nombreEstablecimiento
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 30);
+
+    const { data: tenant, error: rpcError } = await supabase.rpc(
+      "complete_onboarding",
+      {
+        p_user_id: authData.user.id,
+        p_nombre_comercial: nombreEstablecimiento,
+        p_subdominio: subdominio,
+        p_giro_comercial: giroComercial,
+        p_color_primario: colorPrimario,
+        p_configuracion_json: configuracionJson,
+      }
+    );
+
+    if (rpcError) {
+      setSignupError(rpcError.message);
+      setSignupLoading(false);
+      return;
+    }
+
+    if (!tenant?.id) {
+      setSignupError("Error al crear el negocio");
+      setSignupLoading(false);
+      return;
+    }
+
+    // Create subscription with trial status
+    const { error: subError } = await supabase
+      .from("subscriptions")
+      .insert({
+        tenant_id: tenant.id,
+        status: "trial",
+        payment_method: "card",
+        trial_start: new Date().toISOString(),
+        trial_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      })
+      .select()
+      .single();
+
+    if (subError) {
+      console.error("Error creating subscription:", subError);
+    }
+
+    // Update tenant subscription status
+    await supabase
+      .from("tenants")
+      .update({ subscription_status: "trial" })
+      .eq("id", tenant.id);
+
+    // Create Conekta checkout
+    try {
+      const response = await fetch("/api/conekta/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: tenant.id, type: "card" }),
+      });
+
+      const data = await response.json();
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+    } catch (err) {
+      console.error("Error creating checkout:", err);
+    }
+
+    // Fallback: go to billing page
+    router.push("/es/billing");
     router.refresh();
   };
 
