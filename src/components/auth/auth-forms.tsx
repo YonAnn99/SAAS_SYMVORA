@@ -275,12 +275,6 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       console.error("Error creating subscription:", subError);
     }
 
-    // Update tenant subscription status
-    await supabase
-      .from("tenants")
-      .update({ subscription_status: "trial" })
-      .eq("id", tenant.id);
-
     // Create Conekta checkout
     try {
       const response = await fetch("/api/conekta/create-checkout", {
