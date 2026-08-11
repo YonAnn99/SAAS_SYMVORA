@@ -447,6 +447,243 @@ export type Database = {
           fecha?: string;
         };
       };
+      lotes: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          producto_id: string;
+          numero_lote: string;
+          cantidad: number;
+          fecha_caducidad: string | null;
+          fecha_fabricacion: string | null;
+          costo_unitario: number;
+          estado: "ACTIVO" | "VENCIDO" | "AGOTADO";
+          creado_en: string;
+          actualizado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          producto_id: string;
+          numero_lote: string;
+          cantidad: number;
+          fecha_caducidad?: string | null;
+          fecha_fabricacion?: string | null;
+          costo_unitario?: number;
+          estado?: "ACTIVO" | "VENCIDO" | "AGOTADO";
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          producto_id?: string;
+          numero_lote?: string;
+          cantidad?: number;
+          fecha_caducidad?: string | null;
+          fecha_fabricacion?: string | null;
+          costo_unitario?: number;
+          estado?: "ACTIVO" | "VENCIDO" | "AGOTADO";
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+      };
+      variantes_producto: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          producto_id: string;
+          sku: string | null;
+          codigo_barras: string | null;
+          talla: string | null;
+          color: string | null;
+          precio_venta: number;
+          costo_compra: number;
+          stock_actual: number;
+          imagen_url: string | null;
+          creado_en: string;
+          actualizado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          producto_id: string;
+          sku?: string | null;
+          codigo_barras?: string | null;
+          talla?: string | null;
+          color?: string | null;
+          precio_venta: number;
+          costo_compra?: number;
+          stock_actual?: number;
+          imagen_url?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          producto_id?: string;
+          sku?: string | null;
+          codigo_barras?: string | null;
+          talla?: string | null;
+          color?: string | null;
+          precio_venta?: number;
+          costo_compra?: number;
+          stock_actual?: number;
+          imagen_url?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+      };
+      stock_variantes: {
+        Row: {
+          id: string;
+          variante_id: string;
+          lote_id: string | null;
+          cantidad: number;
+        };
+        Insert: {
+          id?: string;
+          variante_id: string;
+          lote_id?: string | null;
+          cantidad?: number;
+        };
+        Update: {
+          id?: string;
+          variante_id?: string;
+          lote_id?: string | null;
+          cantidad?: number;
+        };
+      };
+      ajustes_inventario: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          producto_id: string;
+          variante_id: string | null;
+          lote_id: string | null;
+          motivo: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
+          cantidad_anterior: number;
+          cantidad_ajuste: number;
+          cantidad_nueva: number;
+          notas: string | null;
+          usuario_id: string;
+          creado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          producto_id: string;
+          variante_id?: string | null;
+          lote_id?: string | null;
+          motivo: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
+          cantidad_anterior: number;
+          cantidad_ajuste: number;
+          cantidad_nueva: number;
+          notas?: string | null;
+          usuario_id: string;
+          creado_en?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          producto_id?: string;
+          variante_id?: string | null;
+          lote_id?: string | null;
+          motivo?: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
+          cantidad_anterior?: number;
+          cantidad_ajuste?: number;
+          cantidad_nueva?: number;
+          notas?: string | null;
+          usuario_id?: string;
+          creado_en?: string;
+        };
+      };
+      ordenes_compra: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          proveedor_id: string;
+          usuario_id: string;
+          numero_orden: string;
+          estado: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
+          subtotal: number;
+          impuesto: number;
+          total: number;
+          fecha_estimada_recepcion: string | null;
+          fecha_recepcion: string | null;
+          notas: string | null;
+          creado_en: string;
+          actualizado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          proveedor_id: string;
+          usuario_id: string;
+          numero_orden: string;
+          estado?: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
+          subtotal?: number;
+          impuesto?: number;
+          total?: number;
+          fecha_estimada_recepcion?: string | null;
+          fecha_recepcion?: string | null;
+          notas?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          proveedor_id?: string;
+          usuario_id?: string;
+          numero_orden?: string;
+          estado?: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
+          subtotal?: number;
+          impuesto?: number;
+          total?: number;
+          fecha_estimada_recepcion?: string | null;
+          fecha_recepcion?: string | null;
+          notas?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+      };
+      detalle_orden_compra: {
+        Row: {
+          id: string;
+          orden_compra_id: string;
+          producto_id: string;
+          variante_id: string | null;
+          cantidad_solicitada: number;
+          cantidad_recibida: number;
+          costo_unitario: number;
+          subtotal: number;
+          notas: string | null;
+        };
+        Insert: {
+          id?: string;
+          orden_compra_id: string;
+          producto_id: string;
+          variante_id?: string | null;
+          cantidad_solicitada: number;
+          cantidad_recibida?: number;
+          costo_unitario: number;
+          subtotal: number;
+          notas?: string | null;
+        };
+        Update: {
+          id?: string;
+          orden_compra_id?: string;
+          producto_id?: string;
+          variante_id?: string | null;
+          cantidad_solicitada?: number;
+          cantidad_recibida?: number;
+          costo_unitario?: number;
+          subtotal?: number;
+          notas?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -462,6 +699,24 @@ export type Database = {
         Args: Record<string, never>;
         Returns: string[];
       };
+      ajustar_inventario: {
+        Args: {
+          p_producto_id: string;
+          p_cantidad_ajuste: number;
+          p_motivo: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
+          p_notas?: string;
+          p_variante_id?: string;
+          p_lote_id?: string;
+        };
+        Returns: Json;
+      };
+      recibir_orden_compra: {
+        Args: {
+          p_orden_id: string;
+          p_items: Json;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       app_role: "SUPER_ADMIN" | "ORG_ADMIN" | "CAJERO";
@@ -471,6 +726,8 @@ export type Database = {
       estado_compra: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
       estado_caja: "ABIERTA" | "CERRADA";
       tipo_movimiento: "ENTRADA" | "SALIDA";
+      estado_orden_compra: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
+      motivo_ajuste: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
     };
   };
 };
@@ -492,6 +749,17 @@ export type DetalleCompra =
 export type Caja = Database["public"]["Tables"]["cajas"]["Row"];
 export type MovimientoCaja =
   Database["public"]["Tables"]["movimientos_caja"]["Row"];
+export type Lote = Database["public"]["Tables"]["lotes"]["Row"];
+export type VarianteProducto =
+  Database["public"]["Tables"]["variantes_producto"]["Row"];
+export type StockVariante =
+  Database["public"]["Tables"]["stock_variantes"]["Row"];
+export type AjusteInventario =
+  Database["public"]["Tables"]["ajustes_inventario"]["Row"];
+export type OrdenCompra =
+  Database["public"]["Tables"]["ordenes_compra"]["Row"];
+export type DetalleOrdenCompra =
+  Database["public"]["Tables"]["detalle_orden_compra"]["Row"];
 
 export type UserRole = Database["public"]["Enums"]["app_role"];
 export type UnidadMedida = Database["public"]["Enums"]["unidad_medida"];
@@ -500,6 +768,9 @@ export type EstadoVenta = Database["public"]["Enums"]["estado_venta"];
 export type EstadoCompra = Database["public"]["Enums"]["estado_compra"];
 export type EstadoCaja = Database["public"]["Enums"]["estado_caja"];
 export type TipoMovimiento = Database["public"]["Enums"]["tipo_movimiento"];
+export type EstadoOrdenCompra =
+  Database["public"]["Enums"]["estado_orden_compra"];
+export type MotivoAjuste = Database["public"]["Enums"]["motivo_ajuste"];
 
 export interface TenantConfiguracion {
   permite_granel: boolean;

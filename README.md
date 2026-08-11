@@ -95,6 +95,37 @@ src/
 - **Configuración** — Datos de empresa, apariencia, módulos activos
 - **Actividad** — Log de auditoría de acciones
 
+## Backups y Recuperación
+
+### Supabase Backups
+
+Supabase proporciona backups automáticos para proyectos en el plan Pro:
+
+- **Point-in-Time Recovery (PITR):** Restaurar la base de datos a cualquier momento en las últimas 7 días
+- **Backups diarios:** Snapshots automáticos de la base de datos
+- **Backups manuales:** Descargar dumps completos desde el Dashboard de Supabase
+
+### Configurar PITR
+
+1. Ve al Dashboard de Supabase → tu proyecto → Settings → Database
+2. Activa "Point-in-Time Recovery"
+3. Selecciona el período de retención (recomendado: 7 días)
+
+### Restaurar un backup
+
+```bash
+# Desde Supabase CLI (local)
+supabase db reset
+
+# Desde dump
+pg_restore -d tu_base_de_datos dump.sql
+```
+
+### Monitoreo
+
+- Usa el Dashboard de Supabase para ver el estado de los backups
+- Configura alertas de Sentry para errores de conexión a la base de datos
+
 ## Licencia
 
 Privado — © SYMVORA

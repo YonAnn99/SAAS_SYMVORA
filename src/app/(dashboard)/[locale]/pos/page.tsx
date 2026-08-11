@@ -51,6 +51,7 @@ export default function POSPage() {
   } = useCartStore();
 
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [products, setProducts] = useState<Producto[]>([]);
   const [customers, setCustomers] = useState<Cliente[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
@@ -96,10 +97,13 @@ export default function POSPage() {
 
   const filteredProducts = products.filter(
     (p) =>
-      p.nombre.toLowerCase().includes(search.toLowerCase()) ||
+      (selectedCategory === "all" || p.categoria === selectedCategory) &&
+      (p.nombre.toLowerCase().includes(search.toLowerCase()) ||
       p.codigo_barras?.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(search.toLowerCase())
+      p.sku?.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const categories = Array.from(new Set(products.map((p) => p.categoria).filter(Boolean))) as string[];
 
   const handleAddProduct = (product: Producto) => {
     if (product.stock_actual <= 0) {
@@ -178,10 +182,10 @@ export default function POSPage() {
   ];
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] gap-5">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5">
       {/* Left: Products grid / search */}
-      <div className="flex-1 flex flex-col gap-4">
-        <div className="flex items-center gap-3 animate-fade-in-up stagger-1">
+      <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 animate-fade-in-up stagger-1">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -192,6 +196,21 @@ export default function POSPage() {
               className="pl-8 h-9"
             />
           </div>
+          {categories.length > 0 && (
+            <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v ?? "all")}>
+              <SelectTrigger className="w-full sm:w-40 h-9">
+                <SelectValue placeholder="Categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button className="h-9" size="sm" onClick={handleBarcodeSearch}>
             {t("pos.addItem")}
           </Button>
@@ -211,12 +230,13 @@ export default function POSPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {filteredProducts.map((product) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {filteredProducts.map((product, index) => (
                 <button
                   key={product.id}
                   onClick={() => handleAddProduct(product)}
-                  className="flex flex-col items-start p-3 rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-colors text-left"
+                  className="flex flex-col items-start p-3 rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
                   <span className="text-sm font-medium truncate w-full">{product.nombre}</span>
                   <span className="text-xs text-muted-foreground font-mono mt-1">
@@ -233,7 +253,7 @@ export default function POSPage() {
       </div>
 
       {/* Right: Cart */}
-      <div className="w-80 flex flex-col animate-fade-in-up stagger-2">
+      <div className="w-full lg:w-80 flex flex-col animate-fade-in-up stagger-2">
         {/* Customer selector */}
         <div className="mb-3">
           <Label className="text-xs text-muted-foreground mb-1 block">
@@ -275,7 +295,7 @@ export default function POSPage() {
                 {items.map((item) => (
                   <div
                     key={item.productId}
-                    className="flex items-center justify-between gap-2 py-1"
+                    className="flex items-center justify-between gap-2 py-1 animate-fade-in-up"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.nombre}</p>

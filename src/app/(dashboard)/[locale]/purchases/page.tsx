@@ -190,9 +190,9 @@ export default function PurchasesPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
+        <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
           {t("purchases.title")}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -222,7 +222,7 @@ export default function PurchasesPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              {purchases.length === 0 ? (
+                  {purchases.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-16">
                   <ShoppingCart className="h-8 w-8 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground">
@@ -230,6 +230,7 @@ export default function PurchasesPage() {
                   </p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -264,6 +265,7 @@ export default function PurchasesPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -287,6 +289,7 @@ export default function PurchasesPage() {
                   </p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -317,6 +320,7 @@ export default function PurchasesPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

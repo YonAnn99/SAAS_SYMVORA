@@ -318,6 +318,7 @@
   .auth-container {
     min-height: 100vh;
     border-radius: 0;
+    box-shadow: none;
   }
 
   .auth-toggle-container {
@@ -325,11 +326,19 @@
   }
 
   .auth-form-container {
-    width: 100% !important;
+    width: 100%;
     position: relative;
-    transform: none !important;
-    opacity: 1 !important;
-    z-index: auto !important;
+    transform: none;
+    opacity: 1;
+    z-index: auto;
+  }
+
+  .auth-sign-in {
+    width: 100%;
+  }
+
+  .auth-sign-up {
+    width: 100%;
   }
 
   .auth-container.active .auth-sign-in {
@@ -337,6 +346,43 @@
   }
 
   .auth-container.active .auth-sign-up {
-    transform: none !important;
+    transform: none;
+  }
+
+  .auth-container form {
+    padding: 20px;
+  }
+
+  .auth-sign-in form {
+    padding: 20px;
+  }
+
+  .auth-form-scroll {
+    padding: 20px;
+  }
+
+  .auth-form-center {
+    margin-bottom: 4px;
+  }
+
+  .auth-form-center h1 {
+    font-size: 18px;
+  }
+
+  .auth-toggle-panel h1 {
+    font-size: 20px;
+  }
+
+  .auth-toggle-panel {
+    padding: 0 20px;
+  }
+
+  .auth-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .auth-grid-2 {
+    grid-template-columns: 1fr;
   }
 }

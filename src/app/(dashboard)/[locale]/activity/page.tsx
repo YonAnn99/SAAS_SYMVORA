@@ -135,10 +135,10 @@ export default function ActivityPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
             {t("common.activityLog")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -146,7 +146,7 @@ export default function ActivityPage() {
           </p>
         </div>
         <Select value={entityFilter} onValueChange={(v) => setEntityFilter(v || "all")}>
-          <SelectTrigger className="w-[160px] h-8">
+          <SelectTrigger className="w-full sm:w-[160px] h-8">
             <SelectValue placeholder={t("common.filter")} />
           </SelectTrigger>
           <SelectContent>

@@ -164,9 +164,14 @@
     "pos": "Point of Sale",
     "products": "Products",
     "purchases": "Purchases",
+    "purchaseOrders": "Purchase Orders",
     "finances": "Finances",
     "settings": "Settings",
     "users": "Users",
+    "variants": "Variants",
+    "lots": "Lots",
+    "adjustments": "Adjustments",
+    "reports": "Reports",
     "sidebar": {
       "collapse": "Collapse sidebar",
       "expand": "Expand sidebar"

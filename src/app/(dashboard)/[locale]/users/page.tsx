@@ -38,6 +38,7 @@ import {
 import { Plus, Users, Shield, UserCog } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { TenantMembership } from "@/lib/types/database";
+import { toast } from "sonner";
 
 const roleColors: Record<string, string> = {
   SUPER_ADMIN: "bg-[#FDEBEC] text-[#9F2F2D] dark:bg-[#9F2F2D]/20 dark:text-[#F2A5A4]",
@@ -53,10 +54,29 @@ export default function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("CAJERO");
   const [inviting, setInviting] = useState(false);
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMemberships();
+    fetchTenantId();
   }, []);
+
+  const fetchTenantId = async () => {
+    const supabase = createSupabaseBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("tenant_memberships")
+      .select("tenant_id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
+
+    if (data) {
+      setTenantId(data.tenant_id);
+    }
+  };
 
   const fetchMemberships = async () => {
     const supabase = createSupabaseBrowserClient();
@@ -75,19 +95,46 @@ export default function UsersPage() {
   };
 
   const handleInvite = async () => {
+    if (!inviteEmail || !tenantId) {
+      toast.error("Por favor ingresa un email válido");
+      return;
+    }
+
     setInviting(true);
-    // TODO: Implement invite with Supabase Auth
-    setInviting(false);
-    setShowInviteDialog(false);
-    setInviteEmail("");
-    setInviteRole("CAJERO");
+    try {
+      const response = await fetch("/api/users/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: inviteRole,
+          tenantId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al enviar invitación");
+      }
+
+      toast.success(`Invitación enviada a ${inviteEmail}`);
+      setShowInviteDialog(false);
+      setInviteEmail("");
+      setInviteRole("CAJERO");
+      fetchMemberships(); // Refresh list
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al enviar invitación");
+    } finally {
+      setInviting(false);
+    }
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
             {t("users.title")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -124,7 +171,7 @@ export default function UsersPage() {
       {/* Users table */}
       <Card className="animate-fade-in-up stagger-5">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <CardTitle className="text-sm font-medium">{t("users.title")}</CardTitle>
             <span className="text-xs text-muted-foreground font-mono">
               {memberships.length} usuarios
@@ -146,6 +193,7 @@ export default function UsersPage() {
               </Button>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -180,6 +228,7 @@ export default function UsersPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

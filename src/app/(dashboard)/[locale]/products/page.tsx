@@ -230,10 +230,10 @@ export default function ProductsPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
             {t("products.title")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -242,7 +242,7 @@ export default function ProductsPage() {
         </div>
         <Button
           size="sm"
-          className="h-8 active:scale-[0.98] transition-transform"
+          className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
           onClick={openCreateDialog}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -300,7 +300,8 @@ export default function ProductsPage() {
               </Button>
             </div>
           ) : (
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs uppercase tracking-wider">{t("products.name")}</TableHead>
@@ -368,13 +369,14 @@ export default function ProductsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
           <DialogHeader>
             <DialogTitle className="text-base">
               {editingProduct ? "Editar producto" : "Crear producto"}

@@ -234,16 +234,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
         <div className="auth-form-scroll">
           <form onSubmit={handleSignup} style={{ alignItems: "stretch" }}>
             {signupError && (
-              <div style={{
-                width: "100%",
-                padding: "10px",
-                marginBottom: "10px",
-                backgroundColor: "#fee2e2",
-                color: "#dc2626",
-                borderRadius: "8px",
-                fontSize: "12px",
-                textAlign: "center"
-              }}>
+              <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive text-center">
                 {signupError}
               </div>
             )}
@@ -424,16 +415,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
           </span>
 
           {loginError && (
-            <div style={{
-              width: "100%",
-              padding: "10px",
-              marginBottom: "10px",
-              backgroundColor: "#fee2e2",
-              color: "#dc2626",
-              borderRadius: "8px",
-              fontSize: "12px",
-              textAlign: "center"
-            }}>
+            <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive text-center">
               {loginError}
             </div>
           )}

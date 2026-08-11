@@ -270,7 +270,7 @@ export default function OnboardingPage() {
 
           {/* Step 1: Company data */}
           {step === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in-up">
               <h3 className="text-lg font-semibold">{t("onboarding.step1")}</h3>
               <div className="space-y-2">
                 <Label htmlFor="nombre">{t("onboarding.companyName")}</Label>
@@ -304,7 +304,7 @@ export default function OnboardingPage() {
 
           {/* Step 2: Select giro */}
           {step === 2 && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in-up">
               <h3 className="text-lg font-semibold">{t("onboarding.selectGiro")}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 {giros.map((giro) => {
@@ -338,7 +338,7 @@ export default function OnboardingPage() {
 
           {/* Step 3: Review */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in-up">
               <h3 className="text-lg font-semibold">{t("onboarding.step3")}</h3>
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex justify-between">
@@ -369,7 +369,7 @@ export default function OnboardingPage() {
 
           {/* Step 4: Complete */}
           {step === 4 && (
-            <div className="space-y-4 text-center">
+            <div className="space-y-4 text-center animate-fade-in-up">
               <div className="flex justify-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <Check className="h-8 w-8" />

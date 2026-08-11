@@ -198,10 +198,10 @@ export default function FinancesPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between animate-fade-in-up stagger-1">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
             {t("finances.title")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -245,7 +245,7 @@ export default function FinancesPage() {
 
       {/* Movements */}
       <Card className="animate-fade-in-up stagger-6">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3">
           <CardTitle className="text-sm font-medium">{t("finances.movements")}</CardTitle>
           {activeRegister && (
             <Button onClick={() => setShowMovementDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
@@ -260,6 +260,7 @@ export default function FinancesPage() {
               No hay movimientos registrados
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -302,6 +303,7 @@ export default function FinancesPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

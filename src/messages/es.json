@@ -164,9 +164,14 @@
     "pos": "Punto de Venta",
     "products": "Productos",
     "purchases": "Compras",
+    "purchaseOrders": "Órdenes de Compra",
     "finances": "Finanzas",
     "settings": "Configuración",
     "users": "Usuarios",
+    "variants": "Variantes",
+    "lots": "Lotes",
+    "adjustments": "Ajustes",
+    "reports": "Reportes",
     "sidebar": {
       "collapse": "Colapsar sidebar",
       "expand": "Expandir sidebar"

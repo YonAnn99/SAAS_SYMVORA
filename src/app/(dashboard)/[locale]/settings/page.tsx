@@ -128,9 +128,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
+        <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
           {t("settings.title")}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">

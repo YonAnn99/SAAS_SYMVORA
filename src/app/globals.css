@@ -163,8 +163,21 @@
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-in-up 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
+}
+
+/* Reduced motion: keep opacity, drop movement */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+  }
+  
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 /* Stagger delays for lists */
