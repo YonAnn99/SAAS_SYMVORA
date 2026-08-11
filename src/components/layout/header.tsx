@@ -42,30 +42,58 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex h-16 items-center justify-between border-b border-border/50 bg-gradient-to-r from-card to-card/50 px-4 md:px-6 backdrop-blur-sm">
+      <div className="flex items-center gap-4">
         {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="h-8 w-8 lg:hidden"
+          className="h-9 w-9 lg:hidden hover:bg-muted/60"
           aria-label="Open menu"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+        <h1 className="hidden sm:block text-sm font-semibold tracking-wide text-foreground">
           {t("layout.dashboard")}
         </h1>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Search trigger */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSearchOpen}
+          className="h-9 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
+        >
+          <Search className="h-4 w-4" />
+          <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 font-mono text-[11px] font-medium text-muted-foreground">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </Button>
+
+        {/* Language switcher */}
+        <DropdownMenu>
+          <DropdownMenuTrigger nativeButton={false} render={<Button variant="ghost" size="sm" className="h-9 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer transition-all duration-200" />}>
+            {pathname.startsWith("/en") ? "🇺🇸 EN" : "🇪🇸 ES"}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuItem onClick={() => handleLocaleSwitch("es")} className="cursor-pointer">
+              <span className="text-sm">🇪🇸 Español</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleLocaleSwitch("en")} className="cursor-pointer">
+              <span className="text-sm">🇺🇸 English</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Theme toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
           aria-label="Toggle theme"
         >
           {mounted && theme === "dark" ? (
@@ -75,53 +103,25 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
           )}
         </Button>
 
-        {/* Language switcher */}
-        <DropdownMenu>
-          <DropdownMenuTrigger nativeButton={false} render={<Button variant="ghost" size="sm" className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer" />}>
-            {pathname.startsWith("/en") ? "EN" : "ES"}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleLocaleSwitch("es")}>
-              <span className="text-sm">🇪🇸 Español</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleLocaleSwitch("en")}>
-              <span className="text-sm">🇺🇸 English</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Search trigger */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSearchOpen}
-          className="h-8 gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <Search className="h-3.5 w-3.5" />
-          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            <span className="text-xs">⌘</span>K
-          </kbd>
-        </Button>
-
         {/* User menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger nativeButton={false} render={<div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium cursor-pointer transition-transform hover:scale-105 active:scale-95" />}>
+          <DropdownMenuTrigger nativeButton={false} render={<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs font-semibold cursor-pointer transition-all duration-200 hover:shadow-[0_4px_12px_rgba(91,159,237,0.3)] active:scale-95" />}>
             A
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="end">
-            <DropdownMenuItem>
-              <User className="mr-2 h-3.5 w-3.5" />
+            <DropdownMenuItem className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
               <span className="text-sm">Perfil</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-3.5 w-3.5" />
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
               <span className="text-sm">{t("layout.settings")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="text-destructive"
+              className="text-destructive cursor-pointer"
               onClick={handleLogout}
             >
-              <LogOut className="mr-2 h-3.5 w-3.5" />
+              <LogOut className="mr-2 h-4 w-4" />
               <span className="text-sm">{t("auth.logout")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

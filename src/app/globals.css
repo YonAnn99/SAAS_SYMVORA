@@ -88,35 +88,35 @@
 .dark {
   --background: #0C0C0C;
   --foreground: #F0EFED;
-  --card: #161616;
+  --card: #151515;
   --card-foreground: #F0EFED;
-  --popover: #161616;
+  --popover: #151515;
   --popover-foreground: #F0EFED;
-  --primary: #F0EFED;
-  --primary-foreground: #0C0C0C;
+  --primary: #5B9FED;
+  --primary-foreground: #FFFFFF;
   --secondary: #1C1C1C;
   --secondary-foreground: #F0EFED;
   --muted: #1C1C1C;
   --muted-foreground: #9A9894;
-  --accent: #1C1C1C;
-  --accent-foreground: #F0EFED;
+  --accent: #4A9FFF;
+  --accent-foreground: #FFFFFF;
   --destructive: #F2A5A4;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(91, 159, 237, 0.12);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: #9A9894;
-  --chart-1: #1F6C9F;
-  --chart-2: #346538;
-  --chart-3: #956400;
-  --chart-4: #9F2F2D;
-  --chart-5: #1C1C1C;
+  --ring: #4A9FFF;
+  --chart-1: #3B82F6;
+  --chart-2: #10B981;
+  --chart-3: #F59E0B;
+  --chart-4: #EF4444;
+  --chart-5: #8B5CF6;
   --sidebar: #0C0C0C;
   --sidebar-foreground: #F0EFED;
-  --sidebar-primary: #F0EFED;
-  --sidebar-primary-foreground: #0C0C0C;
+  --sidebar-primary: #5B9FED;
+  --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #1C1C1C;
-  --sidebar-accent-foreground: #F0EFED;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #9A9894;
+  --sidebar-accent-foreground: #5B9FED;
+  --sidebar-border: rgba(91, 159, 237, 0.12);
+  --sidebar-ring: #4A9FFF;
 }
 
 @layer base {
@@ -150,11 +150,11 @@
   }
 }
 
-/* Subtle entrance animation */
+/* Subtle entrance animation with spring physics */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -162,8 +162,24 @@
   }
 }
 
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .animate-fade-in-up {
-  animation: fade-in-up 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-in-up 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+.animate-scale-in {
+  animation: scale-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   opacity: 0;
 }
 
@@ -182,10 +198,100 @@
 
 /* Stagger delays for lists */
 .stagger-1 { animation-delay: 0ms; }
-.stagger-2 { animation-delay: 50ms; }
-.stagger-3 { animation-delay: 100ms; }
-.stagger-4 { animation-delay: 150ms; }
-.stagger-5 { animation-delay: 200ms; }
-.stagger-6 { animation-delay: 250ms; }
-.stagger-7 { animation-delay: 300ms; }
-.stagger-8 { animation-delay: 350ms; }
+.stagger-2 { animation-delay: 60ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 180ms; }
+.stagger-5 { animation-delay: 240ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 360ms; }
+.stagger-8 { animation-delay: 420ms; }
+
+/* ============================================
+   VISUAL DEPTH & PREMIUM STYLING
+   ============================================ */
+
+/* Improve card depth */
+@layer components {
+  [data-slot="card"] {
+    @apply bg-gradient-to-br from-card via-card to-card/95;
+    @apply shadow-[0_1px_3px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.05)];
+    @apply transition-all duration-300;
+  }
+
+  [data-slot="card"]:hover {
+    @apply shadow-[0_4px_12px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.06)] -translate-y-0.5;
+  }
+
+  /* KPI Cards - add colored left border */
+  .kpi-card {
+    @apply relative pl-0 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-gradient-to-b before:rounded-l-xl;
+  }
+
+  /* Button improvements */
+  [data-slot="button"] {
+    @apply transition-all duration-200;
+  }
+
+  [data-slot="button"]:not(:disabled):hover {
+    @apply -translate-y-0.5;
+  }
+
+  [data-slot="button"]:not(:disabled):active {
+    @apply translate-y-0;
+  }
+
+  /* Link styling */
+  a {
+    @apply transition-colors duration-150;
+  }
+}
+
+/* Accent border utility for charts */
+.accent-border {
+  @apply border-accent;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+}
+
+/* Table improvements */
+@layer components {
+  /* Table header styling */
+  [role="table"] thead th {
+    @apply bg-muted/40 font-semibold text-foreground uppercase text-xs tracking-wider py-3;
+  }
+
+  /* Table row hover */
+  [role="table"] tbody tr {
+    @apply transition-colors duration-150 hover:bg-muted/50;
+  }
+
+  /* Data cell improvements */
+  [role="table"] td {
+    @apply py-3 px-4;
+  }
+
+  /* Badge styling */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .badge-success {
+    @apply bg-emerald-500/10 text-emerald-600 dark:text-emerald-400;
+  }
+
+  .badge-warning {
+    @apply bg-amber-500/10 text-amber-600 dark:text-amber-400;
+  }
+
+  .badge-destructive {
+    @apply bg-destructive/10 text-destructive;
+  }
+}
+

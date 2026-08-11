@@ -2,7 +2,7 @@
 
 ## Visión General
 
-SYMVORA es un **SaaS multi-tenant ERP/POS** para negocios en México (punto de venta, inventario, finanzas, compras). Diseñado para tiendas de abarrotes, verdulerías, mascotas, ropa, ferreterías y farmacias. Stack: **Next.js 16.3 + Supabase + Tailwind v4 + TypeScript**.
+SYMVORA es un **SaaS multi-tenant ERP/POS** para negocios en México (punto de venta, inventario, finanzas, compras). Diseñado para tiendas de abarrotes, verdulerías, mascotas, ropa, ferreterías y farmacias. Stack: **Next.js 16.3 + Supabase + Tailwind v4 + TypeScript**. Pagos con **Conekta** (gateway mexicano, hosted checkout).
 
 ---
 
@@ -53,9 +53,15 @@ symvora-saas/
     │   ├── utils.ts                    # cn() - clsx + tailwind-merge
     │   ├── supabase/
     │   │   ├── client.ts              # Cliente browser
-    │   │   ├── server.ts              # Cliente server (cookies)
-    │   │   ├── middleware.ts          # Refresh sesión + auth guard
+    │   │   ├── server.ts              # Cliente server (cookies) + createSupabaseServiceRoleClient()
+    │   │   ├── middleware.ts          # Refresh sesión + auth guard + subscription access control
     │   │   └── activity-logger.ts     # Helper para registrar acciones en activity_logs
+    │   ├── conekta/
+    │   │   ├── config.ts             # Conekta SDK init (conekta v9.0.1)
+    │   │   ├── plans.ts              # Plan helpers (symvora-basic, $400 MXN/mes, 7d trial)
+    │   │   ├── customers.ts          # Customer CRUD (createCustomer, getCustomer)
+    │   │   ├── subscriptions.ts      # Subscription CRUD (createSubscription, cancelSubscription)
+    │   │   └── orders.ts             # HostedPayment order creation via OrdersApi
     │   ├── validations/
     │   │   └── schemas.ts            # Schemas Zod (login, signup mejorado, tenant, etc.)
     │   ├── export/
@@ -87,14 +93,25 @@ symvora-saas/
         ├── page.tsx                    # Redirect a /es
         ├── [locale]/layout.tsx         # Locale wrapper: NextIntlClientProvider
         ├── api/auth/callback/route.ts  # OAuth callback
+        ├── api/conekta/
+        │   ├── create-checkout/route.ts  # Creates Conekta customer + hosted checkout, returns checkout_url
+        │   └── webhook/route.ts          # Conekta webhook: subscription.*, order.paid
+        ├── api/trial-codes/
+        │   ├── generate/route.ts         # Generate trial codes
+        │   ├── validate/route.ts         # Validate trial codes
+        │   └── redeem/route.ts           # Redeem trial codes
         ├── (auth)/[locale]/
         │   ├── login/page.tsx          # Login email/password
         │   ├── signup/page.tsx         # Registro mejorado: nombre split, establecimiento, logo, color, contraseña con checklist
-        │   └── onboarding/page.tsx     # Wizard 4 pasos: empresa -> giro -> review -> completo
+        │   └── onboarding/page.tsx     # Wizard 4 pasos: empresa -> giro -> review -> completo (creates tenant + subscription + Conekta checkout)
         └── (dashboard)/[locale]/
             ├── layout.tsx              # Sidebar + Header + contenido + CommandMenu
             ├── loading.tsx             # Skeleton loader general
             ├── dashboard/page.tsx      # Dashboard con Recharts: KPIs + 3 gráficas
+            ├── billing/
+            │   ├── page.tsx            # Subscription status, payment methods, Conekta checkout redirect
+            │   └── success/
+            │       └── page.tsx        # Post-payment success with auto-redirect countdown
             ├── activity/
             │   └── page.tsx            # Bitácora de actividad con filtros
             ├── products/
@@ -128,6 +145,8 @@ symvora-saas/
 | `/[locale]/signup` | `(auth)` | Formulario registro |
 | `/[locale]/onboarding` | `(auth)` | Wizard de configuración inicial |
 | `/[locale]/dashboard` | `(dashboard)` | KPIs: ventas del día, mes, ticket promedio |
+| `/[locale]/billing` | `(dashboard)` | Estado de suscripción, métodos de pago, checkout Conekta |
+| `/[locale]/billing/success` | `(dashboard)` | Pago exitoso, redirect countdown |
 | `/[locale]/products` | `(dashboard)` | Catálogo de productos con búsqueda |
 | `/[locale]/pos` | `(dashboard)` | Terminal punto de venta |
 | `/[locale]/purchases` | `(dashboard)` | Órdenes de compra + proveedores |
@@ -136,21 +155,27 @@ symvora-saas/
 | `/[locale]/activity` | `(dashboard)` | Bitácora de actividad |
 | `/[locale]/settings` | `(dashboard)` | Configuración del tenant |
 | `/api/auth/callback` | API | OAuth code exchange |
+| `/api/conekta/create-checkout` | API | Crear checkout Conekta (hosted payment) |
+| `/api/conekta/webhook` | API | Webhook Conekta (pagos, suscripciones) |
+| `/api/trial-codes/generate` | API | Generar códigos de prueba |
+| `/api/trial-codes/validate` | API | Validar códigos de prueba |
+| `/api/trial-codes/redeem` | API | Canjear códigos de prueba |
 
 ---
 
 ## Cómo funciona la Autenticación
 
-1. **Signup**: Formulario con acordeones (4 secciones: Datos personales, Empresa, Seguridad, Personalización). Logo en panel oscuro. Sección Empresa incluye nombre, tipo negocio y logo. Sección Seguridad incluye email, contraseña con checklist, confirmar contraseña. Sección Personalización incluye paleta de colores. -> `supabase.auth.signUp()` -> crea tenant -> redirige a `/es/onboarding`
+1. **Signup**: Formulario con acordeones (4 secciones: Datos personales, Empresa, Seguridad, Personalización). Logo en panel oscuro. Sección Empresa incluye nombre, tipo negocio y logo. Sección Seguridad incluye email, contraseña con checklist, confirmar contraseña. Sección Personalización incluye paleta de colores. -> `supabase.auth.signUp()` -> upload logo -> `complete_onboarding` RPC (creates tenant) -> insert subscription (trial) -> call `/api/conekta/create-checkout` -> redirect to Conekta. Fallback a `/es/billing`
 2. **Onboarding** (4 pasos):
    - Paso 1: Nombre empresa + subdominio
    - Paso 2: Seleccionar giro (ABARROTES, VERDULERIA, MASCOTAS, ROPA, FERRETERIA, FARMACIA, GENERAL)
    - Paso 3: Revisión
-   - Paso 4: Crea 4 registros: `tenants`, `tenant_settings` (con config por defecto del giro), `tenant_memberships` (ORG_ADMIN), `user_roles` (ORG_ADMIN)
+   - Paso 4: Crea registros vía `complete_onboarding()` RPC (SECURITY DEFINER, bypasses RLS): `tenants`, `tenant_settings`, `tenant_memberships`, `user_roles`. Then creates subscription with trial, calls Conekta checkout API, redirects to hosted checkout
 3. **Login**: Email/password -> `supabase.auth.signInWithPassword()` -> redirige a `/es/dashboard`
 4. **Sesión**: Middleware refresca JWT en cada request via `getUser()`. El `custom_access_token_hook` inyecta `user_role` y `tenant_id` en el JWT
 5. **Logout**: `supabase.auth.signOut()` -> redirige a `/es/login`
-6. **Protección de rutas**: Middleware verifica autenticación; usuarios no autenticados son redirigidos a `/es/login`
+6. **Protección de rutas**: Middleware verifica autenticación + subscription status. Usuarios con trial expirado o pago vencido son redirigidos a `/billing`. `/billing` está en `isPublicRoute` para evitar loops
+7. **Email confirmation**: DESHABILITADA en Supabase Dashboard (requerida para el flujo signup → Conekta)
 
 ---
 
@@ -205,7 +230,7 @@ symvora-saas/
 
 ## Base de Datos (Supabase)
 
-### Enums (7)
+### Enums (9)
 | Enum | Valores |
 |---|---|
 | `app_role` | SUPER_ADMIN, ORG_ADMIN, CAJERO |
@@ -215,8 +240,10 @@ symvora-saas/
 | `estado_compra` | PENDIENTE, RECIBIDA, CANCELADA |
 | `estado_caja` | ABIERTA, CERRADA |
 | `tipo_movimiento` | ENTRADA, SALIDA |
+| `subscription_status` | TRIAL, ACTIVE, PAST_DUE, CANCELED, EXPIRED |
+| `billing_period` | MONTHLY, YEARLY |
 
-### Tablas (14)
+### Tablas (17)
 | Tabla | Propósito |
 |---|---|
 | `tenants` | Identidad del negocio |
@@ -233,13 +260,16 @@ symvora-saas/
 | `cajas` | Sesiones de caja |
 | `movimientos_caja` | Movimientos de caja (entrada/salida) |
 | `activity_logs` | Bitácora de acciones de usuarios |
+| `subscriptions` | Suscripciones por tenant (status, trial, billing, payment methods) |
+| `payment_history` | Historial de pagos (conekta事件) |
+| `trial_codes` | Códigos de prueba canjeables |
 
 ### Funciones SQL
 - `user_tenant_ids()` - Retorna UUID[] de tenants del usuario actual
 - `authorize(permission)` - Verifica si el rol tiene un permiso (usado en RLS policies)
 - `custom_access_token_hook()` - Inyecta user_role y tenant_id en el JWT
 - `log_activity()` - Registra acciones en activity_logs (CREATE/UPDATE/DELETE)
-- `complete_onboarding()` - SECURITY DEFINER: crea tenant + settings + membership + role atómicamente
+- `complete_onboarding()` - SECURITY DEFINER: crea tenant + settings + membership + role atómicamente (ON CONFLICT on (user_id, role))
 
 ### Migraciones
 - `001_initial_schema.sql` - Schema completo + RLS (políticas FOR ALL inseguras)
@@ -249,6 +279,11 @@ symvora-saas/
 - `003_activity_logs.sql` - Tabla activity_logs + RLS + función log_activity()
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 - `004_complete_onboarding.sql` - Función SECURITY DEFINER `complete_onboarding()` para bypass RLS en onboarding
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
+  - **FIX**: ON CONFLICT corregido de `(user_id)` a `(user_id, role)` para evitar conflictos con múltiples roles
+- `005_conekta_integration.sql` - Conekta SDK, lib files, create-checkout API, webhook, sidebar billing link, translations
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
+- `006_subscriptions.sql` - Tablas subscriptions, payment_history, trial_codes + enum subscription_status + RLS policies + subscription INSERT policy
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 
 ### MCP Server (Supabase)
@@ -285,6 +320,7 @@ symvora-saas/
 | `cmdk` | latest | Cmd+K search modal |
 | `jspdf` | latest | Generación de PDFs |
 | `jspdf-autotable` | latest | Tablas en PDFs |
+| `conekta` | 9.0.1 | Gateway de pagos mexicano (Conekta) |
 
 ---
 
@@ -297,6 +333,8 @@ symvora-saas/
 5. **shadcn/ui v4 base-nova**: Usa `@base-ui/react` (no Radix) para la mayoría de componentes
 6. **Sin Server Actions**: Todas las mutaciones usan cliente browser de Supabase
 7. **Diseño Spanish-First**: Locale default `es`, variables en español, moneda MXN
+8. **Conekta Hosted Checkout**: Checkout en página de Conekta (no iframe), redirect via `window.location.href`. Plan `symvora-basic` ($400 MXN/mes, 7d trial). Webhook maneja `order.paid` para pagos de hosted checkout
+9. **Signup → Conekta directo**: No pasar por onboarding; signup crea tenant (RPC) → inserta trial subscription → crea checkout en Conekta → redirect. Si falla, fallback a `/es/billing`
 
 ---
 
@@ -320,11 +358,18 @@ symvora-saas/
 - **Onboarding fix**: Función SECURITY DEFINER `complete_onboarding()` para bypass RLS
 - **Hook useCurrentTenant**: Centraliza lógica de tenant, usa `.limit(1)` en vez de `.single()`
 - **Errores al usuario**: toast.error() en todos los flujos de escritura (purchases, settings)
+- **Billing system**: Conekta SDK (v9.0.1), plan `symvora-basic` ($400 MXN/mes), hosted checkout. API create-checkout con errores detallados. Webhook maneja `subscription.*` y `order.paid`. Billing page con redirect a Conekta. Success page con auto-redirect
+- **Subscription schema**: Tables `subscriptions`, `payment_history`, `trial_codes` + `subscription_status` enum + RLS policies. INSERT policy for authenticated users
+- **Signup → Conekta**: Auth-forms creates user → uploads logo → creates tenant (RPC) → inserts trial subscription → calls Conekta API → redirects to hosted checkout. Fallback to `/es/billing`
+- **Middleware subscription access**: Redirects expired/past_due to `/billing`. `/billing` in `isPublicRoute` to prevent redirect loops
+- **Trial codes API**: Generate, validate, redeem endpoints for partner trial codes
+- **Reports page** (`/reports`): Period selector, 4 summary cards, 3 charts
 
 ### Pendiente
-- Usuarios: Invite es `// TODO: Implement invite with Supabase Auth`
-- Language switcher: Botón placeholder "ES" no funcional
-- Sidebar: Links hardcodeados a `/en lugar de usar locale de la URL
+- Conekta API credentials verification — actual Conekta error visible with improved error handling
+- Conekta plan `symvora-basic` not yet confirmed as created in Conekta panel
+- `NEXT_PUBLIC_APP_URL` env var needs to be set in Vercel for checkout success/cancel URLs
+- User testing billing checkout flow
 
 ---
 
@@ -407,6 +452,31 @@ symvora-saas/
 - **Archivos**: `purchases/page.tsx`, `settings/page.tsx`
 - **Problema**: Patrón `if (!error) { ... }` sin `else` — cualquier fallo (RLS, red, validación) era indistinguible de "no hice nada".
 - **Solución**: Agregar `toast.error()` y `toast.success()` en todos los flujos de escritura.
+
+### 14. Billing page stuck on "Cargando..."
+- **Archivo**: `src/app/(dashboard)/[locale]/billing/page.tsx`
+- **Problema**: `fetchSubscription` fallaba silenciosamente cuando `tenantId` estaba vacío, nunca llamaba a `setLoading(false)`. También faltaba try/catch en el fetch.
+- **Solución**: Agregar `try/catch`, early return con `setLoading(false)` cuando `!tenantId`, y `handleAddCard`/`handlePayOxxo` redirigen a Conekta via `window.location.href` (ya no muestran referencia OXXO)
+
+### 15. Billing page infinite redirect loop
+- **Archivo**: `src/lib/supabase/middleware.ts`
+- **Problema**: `/billing` no estaba en `isPublicRoute`, así que el middleware lo bloqueaba y causaba redirect loop
+- **Solución**: Agregar `/billing` a `isPublicRoute` para que usuarios con suscripción expirada puedan acceder a la página de billing
+
+### 16. Signup RLS - "new row violates row-level security policy for table tenants"
+- **Archivo**: `src/components/auth/auth-forms.tsx`
+- **Problema**: Durante signup, el formulario intentaba hacer `INSERT INTO tenants` directamente, pero RLS bloqueaba porque el usuario no tiene rol aún
+- **Solución**: Remover el INSERT directo a tenants del auth-forms.tsx. El `complete_onboarding` RPC (SECURITY DEFINER) maneja la creación del tenant
+
+### 17. ON CONFLICT bug in complete_onboarding
+- **Archivo**: `supabase/migrations/004_complete_onboarding.sql`
+- **Problema**: `ON CONFLICT (user_id)` estaba mal — la tabla `tenant_memberships` tiene constraint en `(user_id, tenant_id)` o `(user_id, role)`, no solo `(user_id)`
+- **Solución**: Cambiar a `ON CONFLICT (user_id, role)` para evitar conflictos
+
+### 18. Conekta checkout "Failed to create checkout" sin error details
+- **Archivo**: `src/app/api/conekta/create-checkout/route.ts`
+- **Problema**: El catch block simplemente retornaba "Failed to create checkout" sin mostrar el error real de Conekta
+- **Solución**: Agregar `console.error` con el error real y retornar un mensaje detallado (`error.message || error`) para que el usuario pueda diagnosticar el problema
 
 ---
 

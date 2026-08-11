@@ -160,33 +160,31 @@ export default function DashboardPage() {
   };
 
   const kpis = [
-    { title: t("dashboard.salesToday"), value: `$${stats.ventasHoy.toFixed(2)}`, icon: DollarSign, idx: 1, trend: null },
-    { title: t("dashboard.salesMonth"), value: `$${stats.ventasMes.toFixed(2)}`, icon: TrendingUp, idx: 2, trend: stats.crecimientoVentas },
-    { title: t("dashboard.averageTicket"), value: `$${stats.ticketPromedio.toFixed(2)}`, icon: ShoppingCart, idx: 3, trend: null },
-    { title: "Clientes Atendidos", value: stats.clientesAtendidos.toString(), icon: Users, idx: 4, trend: null },
-    { title: "Productos Vendidos", value: stats.productosVendidos.toString(), icon: Package, idx: 5, trend: null },
-    { title: "Ventas Mes Anterior", value: `$${stats.ventasAnteriores.toFixed(2)}`, icon: CreditCard, idx: 6, trend: null },
+    { title: t("dashboard.salesToday"), value: `$${stats.ventasHoy.toFixed(2)}`, icon: DollarSign, idx: 1, trend: null, color: "from-blue-500" },
+    { title: t("dashboard.salesMonth"), value: `$${stats.ventasMes.toFixed(2)}`, icon: TrendingUp, idx: 2, trend: stats.crecimientoVentas, color: "from-emerald-500" },
+    { title: t("dashboard.averageTicket"), value: `$${stats.ticketPromedio.toFixed(2)}`, icon: ShoppingCart, idx: 3, trend: null, color: "from-amber-500" },
+    { title: "Clientes Atendidos", value: stats.clientesAtendidos.toString(), icon: Users, idx: 4, trend: null, color: "from-violet-500" },
+    { title: "Productos Vendidos", value: stats.productosVendidos.toString(), icon: Package, idx: 5, trend: null, color: "from-pink-500" },
+    { title: "Ventas Mes Anterior", value: `$${stats.ventasAnteriores.toFixed(2)}`, icon: CreditCard, idx: 6, trend: null, color: "from-cyan-500" },
   ];
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
+          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             {t("dashboard.title")}
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-base text-muted-foreground mt-2">
             {t("dashboard.welcome")}
           </p>
         </div>
         <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-2"
           onClick={fetchDashboardData}
           disabled={loading}
+          className="h-9 gap-2 self-start"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
         </Button>
       </div>
@@ -209,18 +207,20 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         {kpis.map((kpi) => (
-          <Card key={kpi.title} className={`animate-fade-in-up stagger-${kpi.idx} transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 dark:hover:shadow-[0_2px_8px_rgba(255,255,255,0.03)]`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <Card key={kpi.title} className={`animate-fade-in-up stagger-${kpi.idx} relative pl-0 border-l-2 overflow-hidden`} style={{borderLeftColor: `hsl(var(--color-chart-${(kpi.idx % 5) + 1}))`}}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-3">
+              <CardTitle className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                 {kpi.title}
               </CardTitle>
-              <kpi.icon className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className={`h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-br ${kpi.color} bg-opacity-10`}>
+                <kpi.icon className="h-3.5 w-3.5" style={{color: `hsl(var(--color-chart-${(kpi.idx % 5) + 1}))`}} />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-xl font-semibold tracking-tight">{kpi.value}</div>
+            <CardContent className="pl-3">
+              <div className="text-2xl font-bold tracking-tight">{kpi.value}</div>
               {kpi.trend !== null && kpi.trend !== 0 && (
-                <p className={`text-xs mt-1 ${kpi.trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {kpi.trend > 0 ? '+' : ''}{kpi.trend.toFixed(1)}% vs mes anterior
+                <p className={`text-xs mt-2 font-medium ${kpi.trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {kpi.trend > 0 ? '↑' : '↓'} {Math.abs(kpi.trend).toFixed(1)}%
                 </p>
               )}
             </CardContent>
@@ -230,15 +230,18 @@ export default function DashboardPage() {
 
       {/* Empty state for new users */}
       {!loading && stats.ventasMes === 0 && !error && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <ShoppingCart className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-medium mb-2">Bienvenido a SYMVORA</h3>
-            <p className="text-sm text-muted-foreground max-w-md mb-4">
+        <Card className="border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 p-3 rounded-full bg-primary/10 animate-scale-in">
+              <ShoppingCart className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">¡Bienvenido a SYMVORA!</h3>
+            <p className="text-muted-foreground max-w-md mb-6">
               Realiza tu primera venta desde el POS para ver tus estadísticas aquí.
               El dashboard mostrará ventas diarias, mensuales y métodos de pago.
             </p>
-            <Button>
+            <Button size="lg" className="gap-2">
+              <ShoppingCart className="h-4 w-4" />
               <Link href="/pos">Ir al POS</Link>
             </Button>
           </CardContent>
@@ -250,24 +253,45 @@ export default function DashboardPage() {
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <div className="col-span-4 animate-fade-in-up stagger-5">
-              <SalesChart
-                data={stats.ventasDiarias}
-                title={t("dashboard.recentSales")}
-              />
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>{t("dashboard.recentSales")}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <SalesChart
+                    data={stats.ventasDiarias}
+                    title=""
+                  />
+                </CardContent>
+              </Card>
             </div>
             <div className="col-span-3 animate-fade-in-up stagger-6">
-              <TopProductsChart
-                data={stats.topProductos}
-                title={t("dashboard.topProducts")}
-              />
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>{t("dashboard.topProducts")}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <TopProductsChart
+                    data={stats.topProductos}
+                    title=""
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
 
           <div className="animate-fade-in-up stagger-7">
-            <PaymentMethodsChart
-              data={stats.metodosPago}
-              title="Métodos de pago"
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Métodos de pago</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <PaymentMethodsChart
+                  data={stats.metodosPago}
+                  title=""
+                />
+              </CardContent>
+            </Card>
           </div>
         </>
       )}
