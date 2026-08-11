@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { createHostedCheckoutOrder } from "@/lib/conekta/orders";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://saas-symvora.vercel.app";
 
@@ -16,9 +15,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!process.env.CONEKTA_PRIVATE_KEY) {
+      return NextResponse.json(
+        { error: "CONEKTA_PRIVATE_KEY not configured" },
+        { status: 500 }
+      );
+    }
+
     const supabase = createSupabaseServiceRoleClient();
 
-    // Get subscription and tenant info
+    // Get subscription
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
       .select("conekta_customer_id, status")
@@ -27,70 +33,96 @@ export async function POST(request: Request) {
 
     if (subError || !subscription) {
       return NextResponse.json(
-        { error: "No subscription found" },
+        { error: `No subscription found for tenant: ${subError?.message || "not found"}` },
         { status: 404 }
       );
     }
 
-    // If no Conekta customer yet, we need to create one
-    if (!subscription.conekta_customer_id) {
-      // Get tenant info for customer creation
-      const { data: tenant } = await supabase
-        .from("tenants")
-        .select("nombre_comercial, email")
-        .eq("id", tenant_id)
-        .single();
+    // Get tenant info
+    const { data: tenant, error: tenantError } = await supabase
+      .from("tenants")
+      .select("nombre_comercial, email")
+      .eq("id", tenant_id)
+      .single();
 
-      const { createCustomer } = await import("@/lib/conekta/customers");
-      const customerId = await createCustomer({
-        name: tenant?.nombre_comercial || "SYMVORA User",
-        email: tenant?.email || "user@symvora.com",
-      });
-
-      // Update subscription with customer ID
-      await supabase
-        .from("subscriptions")
-        .update({ conekta_customer_id: customerId })
-        .eq("tenant_id", tenant_id);
-
-      subscription.conekta_customer_id = customerId;
+    if (tenantError || !tenant) {
+      return NextResponse.json(
+        { error: `No tenant found: ${tenantError?.message || "not found"}` },
+        { status: 404 }
+      );
     }
 
-    // Determine allowed payment methods based on type
+    // Create Conekta customer if needed
+    let customerId = subscription.conekta_customer_id;
+    if (!customerId) {
+      try {
+        const { createCustomer } = await import("@/lib/conekta/customers");
+        customerId = await createCustomer({
+          name: tenant.nombre_comercial || "SYMVORA User",
+          email: tenant.email || "user@symvora.com",
+        });
+
+        await supabase
+          .from("subscriptions")
+          .update({ conekta_customer_id: customerId })
+          .eq("tenant_id", tenant_id);
+      } catch (customerError: unknown) {
+        const msg = customerError instanceof Error ? customerError.message : String(customerError);
+        console.error("Error creating Conekta customer:", msg);
+        return NextResponse.json(
+          { error: `Error creating customer: ${msg}` },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Determine allowed payment methods
     const allowedMethods =
       type === "oxxo"
         ? ["cash", "card", "bank_transfer"]
         : ["card", "cash", "bank_transfer"];
 
     // Create hosted checkout order
-    const order = await createHostedCheckoutOrder({
-      customerId: subscription.conekta_customer_id,
-      amount: 40000, // $400 MXN in centavos
-      description: "SYMVORA Basico - Mensual",
-      successUrl: `${APP_URL}/es/billing/success`,
-      cancelUrl: `${APP_URL}/es/billing`,
-      failureUrl: `${APP_URL}/es/billing`,
-      allowedPaymentMethods: allowedMethods,
-    });
+    let order;
+    try {
+      const { createHostedCheckoutOrder } = await import("@/lib/conekta/orders");
+      order = await createHostedCheckoutOrder({
+        customerId: customerId!,
+        amount: 40000,
+        description: "SYMVORA Basico - Mensual",
+        successUrl: `${APP_URL}/es/billing/success`,
+        cancelUrl: `${APP_URL}/es/billing`,
+        failureUrl: `${APP_URL}/es/billing`,
+        allowedPaymentMethods: allowedMethods,
+      });
+    } catch (orderError: unknown) {
+      const msg = orderError instanceof Error ? orderError.message : String(orderError);
+      console.error("Error creating Conekta order:", msg);
+      return NextResponse.json(
+        { error: `Error creating order: ${msg}` },
+        { status: 500 }
+      );
+    }
 
-    // Get checkout URL from response
+    // Get checkout URL
     const orderData = order as Record<string, unknown>;
     const checkout = orderData.checkout as Record<string, unknown> | undefined;
     const checkoutUrl = checkout?.url as string | undefined;
 
     if (!checkoutUrl) {
-      console.error("No checkout URL in response:", order);
+      console.error("No checkout URL in response:", JSON.stringify(order));
       return NextResponse.json(
-        { error: "Failed to create checkout" },
+        { error: "Checkout created but no URL returned. Response: " + JSON.stringify(checkout || orderData).slice(0, 500) },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ checkout_url: checkoutUrl });
-  } catch (error) {
-    console.error("Error creating checkout:", error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Unexpected error creating checkout:", msg);
     return NextResponse.json(
-      { error: "Failed to create checkout" },
+      { error: `Unexpected error: ${msg}` },
       { status: 500 }
     );
   }
