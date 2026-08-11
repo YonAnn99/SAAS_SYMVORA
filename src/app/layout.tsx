@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SYMVORA - ERP Multi-Tenant",
+  title: "SYMVORA",
   description: "Plataforma SaaS Multi-Tenant basada en Mini-ERP modular",
 };
 
