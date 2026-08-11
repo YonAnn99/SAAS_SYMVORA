@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SYMVORA — ERP Multi-Tenant SaaS
+
+Plataforma SaaS Multi-Tenant basada en Mini-ERP modular para negocios en México.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 + React 19
+- **Database:** Supabase (PostgreSQL + RLS + RBAC)
+- **Auth:** Supabase Auth (email/password + JWT custom claims)
+- **State:** Zustand
+- **UI:** shadcn/ui + Tailwind CSS 4
+- **i18n:** next-intl (ES/EN)
+- **Charts:** Recharts
+- **Export:** jsPDF + CSV
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clonar e instalar
+
+```bash
+git clone https://github.com/YonAnn99/SAAS_SYMVORA.git
+cd saas-symvora
+npm install
+```
+
+### 2. Configurar variables de entorno
+
+```bash
+cp .env.example .env.local
+```
+
+Edita `.env.local` con tus credenciales de Supabase:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+```
+
+### 3. Base de datos
+
+Las migraciones están en `supabase/migrations/`. Ejecútalas en orden:
+
+1. `001_initial_schema.sql` — Tablas, enums, funciones
+2. `002_rls_rbac.sql` — Políticas RLS y permisos
+3. `003_activity_logs.sql` — Logging de auditoría
+
+### 4. Desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Tests
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run test          # Unit tests (Vitest)
+npm run test:e2e      # E2E tests (Playwright)
+```
 
-## Learn More
+### 6. Build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estructura del proyecto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── (auth)/          # Login, signup, onboarding
+│   └── (dashboard)/     # POS, productos, finanzas, etc.
+├── components/          # UI components (shadcn/ui)
+├── lib/
+│   ├── supabase/        # Client, server, sales logic
+│   ├── types/           # TypeScript types (database schema)
+│   ├── validations/     # Zod schemas
+│   └── export/          # CSV/PDF export
+├── stores/              # Zustand stores (cart)
+└── i18n/                # Internationalization
+```
 
-## Deploy on Vercel
+## Módulos
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Dashboard** — KPIs, gráficas de ventas, productos top, métodos de pago
+- **POS** — Punto de venta con búsqueda de productos, carrito, IVA 16%, múltiples métodos de pago
+- **Productos** — CRUD completo con código de barras, SKU, control de stock
+- **Compras** — Órdenes de compra y gestión de proveedores
+- **Finanzas** — Control de caja (apertura/cierre), movimientos de entrada/salida
+- **Usuarios** — Gestión de roles y permisos (SUPER_ADMIN, ORG_ADMIN, CAJERO)
+- **Configuración** — Datos de empresa, apariencia, módulos activos
+- **Actividad** — Log de auditoría de acciones
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Licencia
+
+Privado — © SYMVORA

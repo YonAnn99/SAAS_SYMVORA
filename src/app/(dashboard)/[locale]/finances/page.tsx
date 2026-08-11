@@ -51,6 +51,10 @@ export default function FinancesPage() {
   const [movementType, setMovementType] = useState<"ENTRADA" | "SALIDA">("ENTRADA");
   const [movementAmount, setMovementAmount] = useState("");
   const [movementDescription, setMovementDescription] = useState("");
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [saldoReal, setSaldoReal] = useState("");
+  const [closingNotes, setClosingNotes] = useState("");
+  const [totalVentas, setTotalVentas] = useState(0);
 
   useEffect(() => {
     fetchCashRegister();
@@ -84,6 +88,19 @@ export default function FinancesPage() {
 
       if (movementData) {
         setMovements(movementData);
+      }
+
+      const { data: ventasData } = await supabase
+        .from("ventas")
+        .select("total")
+        .eq("tenant_id", register.tenant_id)
+        .eq("usuario_id", user.id)
+        .eq("estado", "COMPLETADA")
+        .gte("fecha_venta", register.fecha_apertura);
+
+      if (ventasData) {
+        const ventasTotal = ventasData.reduce((sum, v) => sum + v.total, 0);
+        setTotalVentas(ventasTotal);
       }
     }
 
@@ -136,17 +153,32 @@ export default function FinancesPage() {
   const handleCloseRegister = async () => {
     if (!activeRegister) return;
 
+    const saldoEsperado = activeRegister.fondo_inicial + totalEntradas - totalSalidas + totalVentas;
+    const saldoRealNum = parseFloat(saldoReal) || 0;
+    const diferencia = saldoRealNum - saldoEsperado;
+
     const supabase = createSupabaseBrowserClient();
     await supabase
       .from("cajas")
       .update({
         estado: "CERRADA",
         fecha_cierre: new Date().toISOString(),
+        total_ventas: totalVentas,
+        total_entradas: totalEntradas,
+        total_salidas: totalSalidas,
+        saldo_esperado: saldoEsperado,
+        saldo_real: saldoRealNum,
+        diferencia,
+        notas_cierre: closingNotes || null,
       })
       .eq("id", activeRegister.id);
 
     setActiveRegister(null);
     setMovements([]);
+    setTotalVentas(0);
+    setShowCloseDialog(false);
+    setSaldoReal("");
+    setClosingNotes("");
   };
 
   const totalEntradas = movements
@@ -182,19 +214,20 @@ export default function FinancesPage() {
             {t("pos.openRegister")}
           </Button>
         ) : (
-          <Button variant="destructive" onClick={handleCloseRegister} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+          <Button variant="destructive" onClick={() => setShowCloseDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
             {t("pos.closeRegister")}
           </Button>
         )}
       </div>
 
       {/* Cash register status */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         {[
           { title: t("pos.initialFund"), value: `$${activeRegister?.fondo_inicial.toFixed(2) || "0.00"}`, icon: Wallet, color: "" },
+          { title: "Ventas", value: `+$${totalVentas.toFixed(2)}`, icon: ArrowUpCircle, color: "text-blue-600 dark:text-blue-400" },
           { title: t("finances.movementTypes.ENTRY"), value: `+$${totalEntradas.toFixed(2)}`, icon: ArrowUpCircle, color: "text-[#346538] dark:text-[#7BC67E]" },
           { title: t("finances.movementTypes.EXIT"), value: `-$${totalSalidas.toFixed(2)}`, icon: ArrowDownCircle, color: "text-[#9F2F2D] dark:text-[#F2A5A4]" },
-          { title: t("finances.balance"), value: `$${(activeRegister?.fondo_inicial || 0) + totalEntradas - totalSalidas}`, icon: Wallet, color: "" },
+          { title: t("finances.balance"), value: `$${(activeRegister?.fondo_inicial || 0) + totalEntradas - totalSalidas + totalVentas}`, icon: Wallet, color: "" },
         ].map((card, i) => (
           <Card key={card.title} className={`animate-fade-in-up stagger-${i + 2}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -357,6 +390,82 @@ export default function FinancesPage() {
               {t("common.cancel")}
             </Button>
             <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleAddMovement}>{t("common.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Close register dialog */}
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-base">Cerrar caja</DialogTitle>
+            <DialogDescription className="text-xs">
+              Ingresa el saldo real para cerrar la caja
+            </DialogDescription>
+          </DialogHeader>
+          {activeRegister && (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-muted p-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fondo inicial</span>
+                  <span className="font-mono">${activeRegister.fondo_inicial.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ventas</span>
+                  <span className="font-mono text-blue-600 dark:text-blue-400">+${totalVentas.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Entradas</span>
+                  <span className="font-mono text-[#346538] dark:text-[#7BC67E]">+${totalEntradas.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Salidas</span>
+                  <span className="font-mono text-[#9F2F2D] dark:text-[#F2A5A4]">-${totalSalidas.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t pt-2">
+                  <span>Saldo esperado</span>
+                  <span className="font-mono">${(activeRegister.fondo_inicial + totalEntradas - totalSalidas + totalVentas).toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Saldo real (contado) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={saldoReal}
+                  onChange={(e) => setSaldoReal(e.target.value)}
+                  className="h-8 text-sm font-mono"
+                />
+              </div>
+              {saldoReal && (
+                <div className={`rounded-lg p-3 text-sm font-medium ${
+                  (parseFloat(saldoReal) || 0) - (activeRegister.fondo_inicial + totalEntradas - totalSalidas + totalVentas) >= 0
+                    ? "bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]"
+                    : "bg-[#FDEBEC] text-[#9F2F2D] dark:bg-[#9F2F2D]/20 dark:text-[#F2A5A4]"
+                }`}>
+                  Diferencia: ${((parseFloat(saldoReal) || 0) - (activeRegister.fondo_inicial + totalEntradas - totalSalidas + totalVentas)).toFixed(2)}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Notas de cierre</Label>
+                <Input
+                  placeholder="Observaciones (opcional)"
+                  value={closingNotes}
+                  onChange={(e) => setClosingNotes(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setShowCloseDialog(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="destructive" size="sm" className="h-8" onClick={handleCloseRegister}>
+              Cerrar caja
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
