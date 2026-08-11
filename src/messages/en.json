@@ -172,6 +172,7 @@
     "lots": "Lots",
     "adjustments": "Adjustments",
     "reports": "Reports",
+    "billing": "Subscription",
     "sidebar": {
       "collapse": "Collapse sidebar",
       "expand": "Expand sidebar"
@@ -304,5 +305,37 @@
     "status": "Status",
     "lastAccess": "Last access",
     "noUsers": "No users registered"
+  },
+  "billing": {
+    "title": "Subscription",
+    "description": "Manage your subscription and payment methods",
+    "subscriptionStatus": "Subscription Status",
+    "status": "Status",
+    "active": "Active",
+    "trial": "Trial",
+    "pastDue": "Past due",
+    "expired": "Expired",
+    "canceled": "Canceled",
+    "trialEndsIn": "Your trial ends in {days} days",
+    "nextBilling": "Next billing",
+    "lastPayment": "Last payment",
+    "paymentMethod": "Payment Method",
+    "plan": "Plan",
+    "addCard": "Add card",
+    "addCardRedirect": "Redirecting to Conekta...",
+    "payOxxo": "Pay with OXXO",
+    "oxxoReference": "Payment reference",
+    "oxxoInstructions": "Pay this reference at any OXXO store within 3 days",
+    "referenceGenerated": "Reference generated",
+    "referenceCopied": "Reference copied",
+    "cancelSubscription": "Cancel subscription",
+    "confirmCancel": "Are you sure you want to cancel your subscription? You will lose access to the system.",
+    "subscriptionCanceled": "Subscription canceled",
+    "paymentHistory": "Payment History",
+    "noPayments": "No payments recorded"
+  },
+  "onboarding": {
+    "trialCode": "Trial code (optional)",
+    "trialCodeHint": "If you have a promo code, enter it here"
   }
 }

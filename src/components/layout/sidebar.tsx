@@ -26,6 +26,7 @@ import {
   Calendar,
   Wrench,
   TrendingUp,
+  CreditCard,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -41,6 +42,7 @@ const navigation = [
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings },
   { name: "layout.reports", href: "/reports", icon: TrendingUp },
+  { name: "layout.billing", href: "/billing", icon: CreditCard },
 ];
 
 const inventoryNavigation = [

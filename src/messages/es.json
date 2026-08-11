@@ -172,6 +172,7 @@
     "lots": "Lotes",
     "adjustments": "Ajustes",
     "reports": "Reportes",
+    "billing": "Suscripción",
     "sidebar": {
       "collapse": "Colapsar sidebar",
       "expand": "Expandir sidebar"
@@ -304,5 +305,37 @@
     "status": "Estado",
     "lastAccess": "Último acceso",
     "noUsers": "No hay usuarios registrados"
+  },
+  "billing": {
+    "title": "Suscripción",
+    "description": "Gestiona tu suscripción y métodos de pago",
+    "subscriptionStatus": "Estado de Suscripción",
+    "status": "Estado",
+    "active": "Activa",
+    "trial": "Prueba",
+    "pastDue": "Pago vencido",
+    "expired": "Vencida",
+    "canceled": "Cancelada",
+    "trialEndsIn": "Tu prueba termina en {days} días",
+    "nextBilling": "Próximo cobro",
+    "lastPayment": "Último pago",
+    "paymentMethod": "Método de Pago",
+    "plan": "Plan",
+    "addCard": "Agregar tarjeta",
+    "addCardRedirect": "Redirigiendo a Conekta...",
+    "payOxxo": "Pagar en OXXO",
+    "oxxoReference": "Referencia de pago",
+    "oxxoInstructions": "Paga esta referencia en cualquier tienda OXXO antes de 3 días",
+    "referenceGenerated": "Referencia generada",
+    "referenceCopied": "Referencia copiada",
+    "cancelSubscription": "Cancelar suscripción",
+    "confirmCancel": "¿Estás seguro de cancelar tu suscripción? Perderás acceso al sistema.",
+    "subscriptionCanceled": "Suscripción cancelada",
+    "paymentHistory": "Historial de Pagos",
+    "noPayments": "No hay pagos registrados"
+  },
+  "onboarding": {
+    "trialCode": "Código de prueba (opcional)",
+    "trialCodeHint": "Si tienes un código de promoción, ingrésalo aquí"
   }
 }

@@ -189,6 +189,7 @@ export default function OnboardingPage() {
   const [selectedGiro, setSelectedGiro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [trialCode, setTrialCode] = useState("");
 
   const handleNext = () => {
     if (step === 1) {
@@ -246,6 +247,37 @@ export default function OnboardingPage() {
       setError(rpcError.message);
       setLoading(false);
       return;
+    }
+
+    if (tenant?.id) {
+      const { error: subError } = await supabase
+        .from("subscriptions")
+        .insert({
+          tenant_id: tenant.id,
+          status: "trial",
+          payment_method: "card",
+          trial_start: new Date().toISOString(),
+          trial_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .select()
+        .single();
+
+      if (subError) {
+        console.error("Error creating subscription:", subError);
+      }
+
+      await supabase
+        .from("tenants")
+        .update({ subscription_status: "trial" })
+        .eq("id", tenant.id);
+
+      if (trialCode.trim()) {
+        await supabase.rpc("redeem_trial_code", {
+          p_code: trialCode.trim(),
+          p_user_id: user.id,
+          p_tenant_id: tenant.id,
+        });
+      }
     }
 
     router.push("/es/dashboard");
@@ -363,6 +395,18 @@ export default function OnboardingPage() {
                     {t(`onboarding.giros.${selectedGiro}`)}
                   </span>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="trialCode">{t("onboarding.trialCode") || "Código de prueba (opcional)"}</Label>
+                <Input
+                  id="trialCode"
+                  placeholder="SYM-XXXX-XXXX"
+                  value={trialCode}
+                  onChange={(e) => setTrialCode(e.target.value.toUpperCase())}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("onboarding.trialCodeHint") || "Si tienes un código de promoción, ingrésalo aquí"}
+                </p>
               </div>
             </div>
           )}
