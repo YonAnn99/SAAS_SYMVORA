@@ -43,6 +43,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/marketing") ||
     request.nextUrl.pathname.startsWith("/api/conekta") ||
+    request.nextUrl.pathname.includes("/billing") ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);
 
   if (!user && !isAuthRoute && !isPublicRoute) {

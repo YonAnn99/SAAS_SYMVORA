@@ -280,7 +280,7 @@ export default function OnboardingPage() {
       }
     }
 
-    router.push("/es/dashboard");
+    router.push("/es/billing");
     router.refresh();
   };
 

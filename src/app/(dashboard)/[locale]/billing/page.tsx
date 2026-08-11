@@ -42,25 +42,37 @@ export default function BillingPage() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (!tenantLoading && tenantId) {
-      fetchSubscription();
+    if (!tenantLoading) {
+      if (tenantId) {
+        fetchSubscription();
+      } else {
+        setLoading(false);
+      }
     }
   }, [tenantLoading, tenantId]);
 
   const fetchSubscription = async () => {
-    if (!tenantId) return;
-    const supabase = createSupabaseBrowserClient();
-
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .single();
-
-    if (data) {
-      setSubscription(data);
+    if (!tenantId) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    try {
+      const supabase = createSupabaseBrowserClient();
+
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .single();
+
+      if (data) {
+        setSubscription(data);
+      }
+    } catch {
+      // Subscription might not exist yet for new users
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getDaysLeft = () => {
