@@ -11,19 +11,34 @@ SYMVORA es un **SaaS multi-tenant ERP/POS** para negocios en México (punto de v
 ```
 symvora-saas/
 ├── .env.local                          # Credenciales Supabase (gitignored)
-├── .env.local.example                  # Plantilla de variables de entorno
+├── .env.example                        # Plantilla de variables de entorno
+├── vitest.config.ts                    # Configuración Vitest (tests unitarios)
+├── playwright.config.ts                # Configuración Playwright (E2E tests)
 ├── components.json                     # Configuración shadcn/ui v4
 ├── eslint.config.mjs                   # ESLint 9 flat config
 ├── next.config.ts                      # Next.js + next-intl plugin
 ├── postcss.config.mjs                  # @tailwindcss/postcss (Tailwind v4)
 ├── tsconfig.json                       # TypeScript, alias @/* -> ./src/*
 ├── opencode.json                       # Config opencode: MCP Supabase server
+├── .github/
+│   └── workflows/
+│       └── ci.yml                      # GitHub Actions: lint, typecheck, tests, build
+├── e2e/
+│   └── app.spec.ts                     # Tests E2E con Playwright
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql      # Schema completo + RLS + seed
 │       ├── 002_rls_rbac.sql           # RBAC fix: políticas granulares por operación
 │       └── 003_activity_logs.sql       # Tabla activity_logs + función log_activity()
+│       └── 004_complete_onboarding.sql # SECURITY DEFINER para onboarding
 └── src/
+    ├── hooks/
+    │   └── use-current-tenant.ts      # Hook centralizado para obtener tenant del usuario
+    ├── __tests__/                     # Tests unitarios (Vitest)
+    │   ├── setup.ts                   # Setup de testing
+    │   ├── cart.test.ts               # Tests del store de carrito
+    │   ├── schemas.test.ts            # Tests de validación Zod
+    │   └── sales.test.ts              # Tests de cálculos de venta
     ├── middleware.ts                    # i18n + Supabase session middleware
     ├── i18n/                           # Configuración de idiomas
     │   ├── routing.ts                  # Locales: ["es", "en"], default: "es"
@@ -156,10 +171,11 @@ symvora-saas/
 
 ## Cómo funciona el POS
 
-- **Panel izquierdo**: Campo entrada código de barras + botón agregar
+- **Panel izquierdo**: Búsqueda de productos por nombre/código de barras + grid de productos disponibles
 - **Panel derecho**: Carrito gestionado por Zustand (`useCartStore`)
   - Items con nombre, precio unitario, cantidad (+/-), eliminación
-  - Cálculos: subtotal, descuento, total
+  - Selector de cliente (opcional)
+  - Cálculos: subtotal, IVA 16%, descuento, total
 - **Sección de pago**: 4 métodos (Efectivo, Tarjeta, Transferencia, Crédito)
 - **Acciones**: Completar venta, vaciar carrito
 
@@ -167,7 +183,13 @@ symvora-saas/
 - `addItem` (merge si existe), `removeItem`, `updateQuantity`, `updateDiscount`, `clearCart`
 - `getSubtotal()`, `getDiscount()`, `getTotal()`, `getItemCount()`
 
-**Estado actual**: El POS tiene la UI completa pero no está conectado a la base de datos. Las páginas de productos, usuarios, etc. tienen datos placeholder.
+**Flujo de venta** (`src/lib/supabase/sales.ts`):
+1. Inserta en `ventas` con subtotal, IVA 16%, descuento, total
+2. Inserta cada item en `detalle_ventas`
+3. Decrementa `stock_actual` en `productos` por cada item
+4. Si hay caja abierta, registra movimiento de ENTRADA en `movimientos_caja`
+
+**Estado actual**: POS conectado a Supabase, funcional con búsqueda, venta, IVA, stock, caja.
 
 ---
 
@@ -194,7 +216,7 @@ symvora-saas/
 | `estado_caja` | ABIERTA, CERRADA |
 | `tipo_movimiento` | ENTRADA, SALIDA |
 
-### Tablas (13)
+### Tablas (14)
 | Tabla | Propósito |
 |---|---|
 | `tenants` | Identidad del negocio |
@@ -217,6 +239,7 @@ symvora-saas/
 - `authorize(permission)` - Verifica si el rol tiene un permiso (usado en RLS policies)
 - `custom_access_token_hook()` - Inyecta user_role y tenant_id en el JWT
 - `log_activity()` - Registra acciones en activity_logs (CREATE/UPDATE/DELETE)
+- `complete_onboarding()` - SECURITY DEFINER: crea tenant + settings + membership + role atómicamente
 
 ### Migraciones
 - `001_initial_schema.sql` - Schema completo + RLS (políticas FOR ALL inseguras)
@@ -224,6 +247,8 @@ symvora-saas/
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
   - Sin datos existentes, seguro para producción
 - `003_activity_logs.sql` - Tabla activity_logs + RLS + función log_activity()
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
+- `004_complete_onboarding.sql` - Función SECURITY DEFINER `complete_onboarding()` para bypass RLS en onboarding
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 
 ### MCP Server (Supabase)
@@ -286,10 +311,17 @@ symvora-saas/
 - Cmd+K search: Búsqueda global con cmdk en header
 - Export CSV/PDF: Utilidades reutilizables + toolbar en productos
 - Activity Logs: Tabla activity_logs + página con filtros + sidebar link
+- **Productos CRUD**: Conectado a Supabase con crear, editar, eliminar. Búsqueda por nombre/código de barras/SKU
+- **POS funcional**: Búsqueda de productos, selección, carrito, IVA 16%, completar venta con decremento de stock
+- **Ventas guardadas**: `lib/supabase/sales.ts` inserta en ventas, detalle_ventas, decrementa stock, registra en caja
+- **Selector de cliente**: Dropdown opcional en POS para ventas con crédito
+- **Caja integrada**: Movimientos de venta se registran automáticamente si hay caja abierta. Cierre con saldo esperado vs real
+- **Fase 0 calidad**: Vitest (47 tests), Playwright (E2E), GitHub Actions CI, .env.example, README documentado
+- **Onboarding fix**: Función SECURITY DEFINER `complete_onboarding()` para bypass RLS
+- **Hook useCurrentTenant**: Centraliza lógica de tenant, usa `.limit(1)` en vez de `.single()`
+- **Errores al usuario**: toast.error() en todos los flujos de escritura (purchases, settings)
 
 ### Pendiente
-- Productos: `// TODO: Fetch products from Supabase` (conexión a DB)
-- POS: Búsqueda de productos no conectada a DB
 - Usuarios: Invite es `// TODO: Implement invite with Supabase Auth`
 - Language switcher: Botón placeholder "ES" no funcional
 - Sidebar: Links hardcodeados a `/en lugar de usar locale de la URL
@@ -354,6 +386,27 @@ symvora-saas/
 - **Archivos**: `src/components/auth/auth-forms.tsx`, `src/components/ui/accordion.tsx`, `src/styles/auth-toggle.css`
 - **Problema**: Formulario de registro muy largo, no se podía scrollear, campos en orden incorrecto, email de confirmación innecesario
 - **Solución**: Formulario reorganizado con acordeones (4 secciones), logo movido a sección Empresa, email de confirmación eliminado, traducciones agregadas para títulos de secciones
+
+### 10. CRITICAL: Onboarding no puede completarse (RLS bloquea)
+- **Archivos**: `src/app/(auth)/[locale]/onboarding/page.tsx`, `supabase/migrations/004_complete_onboarding.sql`
+- **Problema**: El onboarding intentaba 4 inserts separados (tenants, tenant_settings, tenant_memberships, user_roles), pero RLS bloqueaba los últimos 3 porque el usuario nuevo no tiene permisos todavía. `user_tenant_ids()` devolvía conjunto vacío, `authorize()` retornaba false.
+- **Solución**: Crear función `complete_onboarding()` como `SECURITY DEFINER` que ejecuta los 4 inserts atómicamente bypassando RLS. Actualizar onboarding page para llamar `supabase.rpc('complete_onboarding', {...})`.
+- **Migración**: `004_complete_onboarding.sql` — ejecutar en Supabase SQL Editor
+
+### 11. Purchases/proveedores fallan por falta de tenant_id
+- **Archivo**: `src/app/(dashboard)/[locale]/purchases/page.tsx`
+- **Problema**: `handleCreatePurchase` y `handleCreateSupplier` insertaban en `compras` y `proveedores` sin incluir `tenant_id` (columna NOT NULL). Los inserts fallaban silenciosamente sin mostrar error al usuario.
+- **Solución**: Obtener `tenant_id` del usuario al cargar la página, incluirlo en todos los inserts, agregar toast.error() y toast.success() para feedback.
+
+### 12. `.single()` truena con multi-tenancy
+- **Archivos**: `dashboard/page.tsx`, `settings/page.tsx`, `activity/page.tsx`, `products/page.tsx`, `pos/page.tsx`
+- **Problema**: `.single()` en Supabase exige exactamente una fila. Si el usuario tiene 0 o 2+ tenants, la llamada regresa error y la página queda en blanco sin mensaje.
+- **Solución**: Crear hook `src/hooks/use-current-tenant.ts` con `.limit(1)` en vez de `.single()`. Reemplazar en todas las páginas del dashboard.
+
+### 13. Errores de escritura nunca se muestran al usuario
+- **Archivos**: `purchases/page.tsx`, `settings/page.tsx`
+- **Problema**: Patrón `if (!error) { ... }` sin `else` — cualquier fallo (RLS, red, validación) era indistinguible de "no hice nada".
+- **Solución**: Agregar `toast.error()` y `toast.success()` en todos los flujos de escritura.
 
 ---
 
