@@ -474,7 +474,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       <div className="auth-toggle-container">
         <div className="auth-toggle">
           <div className="auth-toggle-panel auth-toggle-left">
-            <img src="/symvora-logo.png" alt="SYMVORA" className="auth-logo" />
+            <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-logo" />
             <h1>{t("auth.signupTitle")}</h1>
             <p>{t("auth.signupSubtitle")}</p>
             <button
@@ -487,7 +487,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
           </div>
 
           <div className="auth-toggle-panel auth-toggle-right">
-            <img src="/symvora-logo.png" alt="SYMVORA" className="auth-logo" />
+            <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-logo" />
             <h1>{t("auth.loginTitle")}</h1>
             <p>{t("auth.loginSubtitle")}</p>
             <button
