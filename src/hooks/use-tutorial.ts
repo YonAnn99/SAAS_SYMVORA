@@ -33,10 +33,12 @@ export function useTutorial(totalSteps: number) {
   const [currentStep, setCurrentStep] = useState(getInitialStep);
   const [isActive, setIsActive] = useState(getInitialActive);
   const [completed, setCompleted] = useState(isCompleted);
+  const [waitingForRoute, setWaitingForRoute] = useState(false);
 
   const start = useCallback(() => {
     setCurrentStep(0);
     setIsActive(true);
+    setWaitingForRoute(false);
     localStorage.setItem(STORAGE_KEY_STEP, "0");
   }, []);
 
@@ -44,33 +46,44 @@ export function useTutorial(totalSteps: number) {
     (step: number) => {
       setCurrentStep(Math.max(0, Math.min(step, totalSteps - 1)));
       setIsActive(true);
+      setWaitingForRoute(false);
     },
     [totalSteps]
   );
 
-  const next = useCallback(() => {
-    setCurrentStep((prev) => {
-      const nextStep = Math.min(prev + 1, totalSteps - 1);
-      localStorage.setItem(STORAGE_KEY_STEP, String(nextStep));
-      if (nextStep >= totalSteps - 1) {
-        localStorage.setItem(STORAGE_KEY_COMPLETED, "true");
-        setCompleted(true);
-        setTimeout(() => setIsActive(false), 300);
-      }
-      return nextStep;
-    });
-  }, [totalSteps]);
+  const next = useCallback(
+    (waitForRoute?: boolean) => {
+      setCurrentStep((prev) => {
+        const nextStep = Math.min(prev + 1, totalSteps - 1);
+        localStorage.setItem(STORAGE_KEY_STEP, String(nextStep));
+        setWaitingForRoute(!!waitForRoute);
+        if (nextStep >= totalSteps - 1) {
+          localStorage.setItem(STORAGE_KEY_COMPLETED, "true");
+          setCompleted(true);
+          setTimeout(() => setIsActive(false), 300);
+        }
+        return nextStep;
+      });
+    },
+    [totalSteps]
+  );
+
+  const onRouteReady = useCallback(() => {
+    setWaitingForRoute(false);
+  }, []);
 
   const prev = useCallback(() => {
     setCurrentStep((prev) => {
       const prevStep = Math.max(prev - 1, 0);
       localStorage.setItem(STORAGE_KEY_STEP, String(prevStep));
+      setWaitingForRoute(false);
       return prevStep;
     });
   }, []);
 
   const skip = useCallback(() => {
     setIsActive(false);
+    setWaitingForRoute(false);
     localStorage.setItem(STORAGE_KEY_COMPLETED, "true");
     setCompleted(true);
   }, []);
@@ -79,6 +92,7 @@ export function useTutorial(totalSteps: number) {
     setCurrentStep(0);
     setIsActive(false);
     setCompleted(false);
+    setWaitingForRoute(false);
     localStorage.removeItem(STORAGE_KEY_COMPLETED);
     localStorage.removeItem(STORAGE_KEY_STEP);
   }, []);
@@ -87,6 +101,7 @@ export function useTutorial(totalSteps: number) {
     (step: number) => {
       const clamped = Math.max(0, Math.min(step, totalSteps - 1));
       setCurrentStep(clamped);
+      setWaitingForRoute(false);
       localStorage.setItem(STORAGE_KEY_STEP, String(clamped));
     },
     [totalSteps]
@@ -96,12 +111,14 @@ export function useTutorial(totalSteps: number) {
     currentStep,
     isActive,
     completed,
+    waitingForRoute,
     isFirstStep: currentStep === 0,
     isLastStep: currentStep >= totalSteps - 1,
     progress: ((currentStep + 1) / totalSteps) * 100,
     start,
     startFromStep,
     next,
+    onRouteReady,
     prev,
     skip,
     reset,

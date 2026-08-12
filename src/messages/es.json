@@ -345,6 +345,8 @@
     "finish": "¡Listo!",
     "progress": "{current} de {total}",
     "stepOf": "Paso {current} de {total}",
+    "waitingDescription": "Navega a {module} para continuar con este paso.",
+    "goToModule": "Ir a {module}",
     "steps": {
       "welcome": {
         "title": "¡Bienvenido a SYMVORA!",

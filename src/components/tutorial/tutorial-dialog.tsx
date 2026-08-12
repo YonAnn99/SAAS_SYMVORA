@@ -1,10 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useTutorialContext } from "./tutorial-provider";
 import { TutorialProgress } from "./tutorial-progress";
-import { TutorialSpotlight } from "./tutorial-spotlight";
+import { TutorialArrow } from "./tutorial-arrow";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,11 +14,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, ArrowRight, X, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, X, Sparkles, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TutorialDialog() {
   const t = useTranslations();
+  const router = useRouter();
   const {
     currentStep,
     isActive,
@@ -25,18 +27,20 @@ export function TutorialDialog() {
     isLastStep,
     progress,
     totalSteps,
-    steps,
+    currentStepData,
+    waitingForRoute,
     next,
     prev,
     skip,
   } = useTutorialContext();
 
-  const step = steps[currentStep];
+  const step = currentStepData;
   const Icon = step?.icon ?? Sparkles;
-  const dialogRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   const isCentered = !step?.targetSelector || step.position === "center";
+  const needsNavigation = !!(step?.navigates && step?.route);
+  const showWaiting = waitingForRoute && needsNavigation;
 
   // Measure target element and position dialog after DOM update
   useLayoutEffect(() => {
@@ -51,8 +55,8 @@ export function TutorialDialog() {
 
       const r = el.getBoundingClientRect();
       const dialogWidth = 380;
-      const dialogHeight = 320;
-      const gap = 16;
+      const dialogHeight = showWaiting ? 240 : 320;
+      const gap = 24;
 
       let top: number;
       let left: number;
@@ -81,25 +85,39 @@ export function TutorialDialog() {
     };
 
     measure();
-  }, [step, currentStep, isCentered]);
+  }, [step, currentStep, isCentered, showWaiting]);
+
+  const handleGoToModule = () => {
+    if (needsNavigation) {
+      router.push(step.route);
+    }
+  };
+
+  const handleNext = () => {
+    if (showWaiting) return; // Don't advance while waiting
+    next(needsNavigation && !showWaiting);
+  };
 
   if (!step) return null;
 
   return (
     <>
-      <TutorialSpotlight
-        selector={step.targetSelector}
-        visible={isActive && !isCentered}
-      />
+      {/* Arrow pointing to the target element */}
+      {!isCentered && (
+        <TutorialArrow
+          selector={step.targetSelector}
+          visible={isActive}
+          position={step.position}
+        />
+      )}
 
       <Dialog open={isActive} onOpenChange={(v) => !v && skip()}>
         <DialogContent
-          ref={dialogRef}
           showCloseButton={false}
           className={cn(
             "sm:max-w-[380px] p-0 gap-0 overflow-hidden",
-            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-            "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-2",
+            "data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-1",
             "duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
             !isCentered && "fixed z-[999]"
           )}
@@ -145,11 +163,24 @@ export function TutorialDialog() {
             />
           </div>
 
-          {/* Content */}
+          {/* Content: waiting state or description */}
           <div className="px-5 py-3">
-            <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-              {t(step.descriptionKey)}
-            </DialogDescription>
+            {showWaiting ? (
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Navigation className="h-5 w-5 animate-bounce" />
+                </div>
+                <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                  {t("tutorial.waitingDescription", {
+                    module: t(step.moduleKey),
+                  })}
+                </DialogDescription>
+              </div>
+            ) : (
+              <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                {t(step.descriptionKey)}
+              </DialogDescription>
+            )}
           </div>
 
           {/* Footer with navigation */}
@@ -177,14 +208,25 @@ export function TutorialDialog() {
                     {t("tutorial.skip")}
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  onClick={next}
-                  className="gap-1.5 shadow-[0_2px_8px_rgba(91,159,237,0.25)] active:scale-[0.97] transition-transform duration-150"
-                >
-                  {isLastStep ? t("tutorial.finish") : t("common.next")}
-                  {!isLastStep && <ArrowRight className="h-3.5 w-3.5" />}
-                </Button>
+                {showWaiting ? (
+                  <Button
+                    size="sm"
+                    onClick={handleGoToModule}
+                    className="gap-1.5 shadow-[0_2px_8px_rgba(91,159,237,0.25)] active:scale-[0.97] transition-transform duration-150"
+                  >
+                    {t("tutorial.goToModule", { module: t(step.moduleKey) })}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={handleNext}
+                    className="gap-1.5 shadow-[0_2px_8px_rgba(91,159,237,0.25)] active:scale-[0.97] transition-transform duration-150"
+                  >
+                    {isLastStep ? t("tutorial.finish") : t("common.next")}
+                    {!isLastStep && <ArrowRight className="h-3.5 w-3.5" />}
+                  </Button>
+                )}
               </div>
             </div>
           </DialogFooter>

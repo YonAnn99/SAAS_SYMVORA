@@ -22,12 +22,14 @@ export interface TutorialStep {
   descriptionKey: string;
   icon: React.ComponentType<{ className?: string }>;
   route: string;
-  /** CSS selector for the element to spotlight (null = centered dialog) */
+  /** CSS selector for the element to highlight (null = centered dialog) */
   targetSelector: string | null;
   /** Position of the floating dialog relative to target */
   position: "right" | "bottom" | "center";
   /** Whether this step requires navigating to a different route */
   navigates: boolean;
+  /** Module name for the "go to X" waiting state */
+  moduleKey: string;
 }
 
 export const tutorialSteps: TutorialStep[] = [
@@ -40,6 +42,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: null,
     position: "center",
     navigates: false,
+    moduleKey: "",
   },
   {
     id: 2,
@@ -50,6 +53,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/settings"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.settings",
   },
   {
     id: 3,
@@ -60,6 +64,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/users"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.users",
   },
   {
     id: 4,
@@ -70,6 +75,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/purchases"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.purchases",
   },
   {
     id: 5,
@@ -80,6 +86,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/products"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.products",
   },
   {
     id: 6,
@@ -90,6 +97,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: "button",
     position: "bottom",
     navigates: false,
+    moduleKey: "",
   },
   {
     id: 7,
@@ -100,6 +108,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/pos"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.pos",
   },
   {
     id: 8,
@@ -110,6 +119,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: null,
     position: "center",
     navigates: false,
+    moduleKey: "",
   },
   {
     id: 9,
@@ -120,6 +130,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/finances"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.finances",
   },
   {
     id: 10,
@@ -130,6 +141,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/dashboard"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.dashboard",
   },
   {
     id: 11,
@@ -140,6 +152,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/activity"]',
     position: "right",
     navigates: true,
+    moduleKey: "common.activityLog",
   },
   {
     id: 12,
@@ -150,6 +163,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/billing"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.billing",
   },
   {
     id: 13,
@@ -160,6 +174,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: 'a[href*="/settings"]',
     position: "right",
     navigates: true,
+    moduleKey: "layout.settings",
   },
   {
     id: 14,
@@ -170,6 +185,7 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: null,
     position: "center",
     navigates: false,
+    moduleKey: "",
   },
   {
     id: 15,
@@ -180,5 +196,6 @@ export const tutorialSteps: TutorialStep[] = [
     targetSelector: null,
     position: "center",
     navigates: false,
+    moduleKey: "",
   },
 ];
