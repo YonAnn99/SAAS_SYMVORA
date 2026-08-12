@@ -41,16 +41,6 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    if (!tenantLoading) {
-      if (tenantId) {
-        fetchSubscription();
-      } else {
-        setLoading(false);
-      }
-    }
-  }, [tenantLoading, tenantId]);
-
   const fetchSubscription = async () => {
     if (!tenantId) {
       setLoading(false);
@@ -74,6 +64,13 @@ export default function BillingPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!tenantLoading && tenantId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchSubscription();
+    }
+  }, [tenantLoading, tenantId]);
 
   const getDaysLeft = () => {
     if (!subscription?.trial_end) return 0;
@@ -117,6 +114,7 @@ export default function BillingPage() {
   };
 
   const handleAddCard = async () => {
+    if (!tenantId) return;
     setProcessing(true);
     try {
       const response = await fetch("/api/conekta/create-checkout", {
@@ -139,6 +137,7 @@ export default function BillingPage() {
   };
 
   const handlePayOxxo = async () => {
+    if (!tenantId) return;
     setProcessing(true);
     try {
       const response = await fetch("/api/conekta/create-checkout", {
@@ -186,7 +185,7 @@ export default function BillingPage() {
     }
   };
 
-  if (loading) {
+  if (tenantLoading || loading) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
         {t("common.loading")}
@@ -279,7 +278,7 @@ export default function BillingPage() {
             <div className="space-y-3">
               <Button
                 onClick={handleAddCard}
-                disabled={processing}
+                disabled={processing || !tenantId}
                 className="w-full"
                 variant="outline"
               >
@@ -289,7 +288,7 @@ export default function BillingPage() {
 
               <Button
                 onClick={handlePayOxxo}
-                disabled={processing}
+                disabled={processing || !tenantId}
                 className="w-full"
                 variant="outline"
               >
