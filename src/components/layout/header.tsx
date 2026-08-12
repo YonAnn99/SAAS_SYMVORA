@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Settings, User, Sun, Moon, Search, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
+import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -85,6 +86,9 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Tutorial trigger */}
+        <TutorialTrigger />
+
         {/* Search trigger */}
         <Button
           variant="ghost"

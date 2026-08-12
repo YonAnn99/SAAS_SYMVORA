@@ -337,5 +337,75 @@
   "onboarding": {
     "trialCode": "Código de prueba (opcional)",
     "trialCodeHint": "Si tienes un código de promoción, ingrésalo aquí"
+  },
+  "tutorial": {
+    "startHelp": "Iniciar tutorial",
+    "replayHelp": "Ver tutorial",
+    "skip": "Saltar",
+    "finish": "¡Listo!",
+    "progress": "{current} de {total}",
+    "stepOf": "Paso {current} de {total}",
+    "steps": {
+      "welcome": {
+        "title": "¡Bienvenido a SYMVORA!",
+        "description": "Este tutorial te guiará a través de los pasos para configurar y usar tu sistema de punto de venta. Sigue cada paso en orden para que todo funcione correctamente."
+      },
+      "business": {
+        "title": "Configura tu negocio",
+        "description": "Empieza por configurar los datos de tu negocio: nombre, logo, color de marca y datos fiscales. Esto se usa en recibos y configuración visual del sistema."
+      },
+      "users": {
+        "title": "Invita a tu equipo",
+        "description": "Si más personas van a usar el sistema (cajeros, otro administrador), dales de alta aquí antes de empezar a vender. Así cada venta queda registrada quién la hizo."
+      },
+      "suppliers": {
+        "title": "Registra tus proveedores",
+        "description": "Este paso es obligatorio: no puedes registrar compras sin un proveedor. Dale de alta aquí a tus proveedores principales antes de continuar."
+      },
+      "products": {
+        "title": "Crea tu catálogo de productos",
+        "description": "Este es el módulo más importante. Aquí defines cada producto con su nombre, precio, costo, unidad de medida y código de barras. De esto dependen las ventas, compras e inventario."
+      },
+      "createProduct": {
+        "title": "Crea tu primer producto",
+        "description": "Haz clic en 'Agregar producto' para crear uno. Define nombre, precio de venta, costo de compra, unidad de medida y código de barras. Puedes activar variantes (talla/color) o lotes (caducidad) si tu negocio lo necesita."
+      },
+      "openCash": {
+        "title": "Abre la caja",
+        "description": "Antes de vender, abre una caja con un fondo inicial. Sin caja abierta, las ventas no se registran en movimientos de caja y el cierre del día no cuadrará."
+      },
+      "firstSale": {
+        "title": "Realiza tu primera venta",
+        "description": "Busca un producto por nombre o código de barras, agrégalo al carrito, selecciona método de pago (efectivo, tarjeta, transferencia o crédito) y completa la venta. El stock se descuenta automáticamente."
+      },
+      "closeCash": {
+        "title": "Cierra la caja al final del día",
+        "description": "Al terminar tu turno, captura el saldo real contado. El sistema lo compara contra el saldo esperado y te muestra la diferencia si la hay."
+      },
+      "reports": {
+        "title": "Consulta tus reportes",
+        "description": "En el dashboard ves las ventas del día, del mes, ticket promedio, productos más vendidos y métodos de pago. Puedes exportar a CSV o PDF."
+      },
+      "activity": {
+        "title": "Bitácora de actividad",
+        "description": "Aquí se registra quién hizo qué y cuándo: creaciones, ediciones, eliminaciones. Es tu herramienta de auditoría para revisar si algo salió distinto a lo esperado."
+      },
+      "billing": {
+        "title": "Gestiona tu suscripción",
+        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Tu plan es SYMVORA Basic a $400 MXN/mes con 7 días de prueba."
+      },
+      "advancedSettings": {
+        "title": "Configuración avanzada",
+        "description": "Aquí encuentras ajustes avanzados: módulos activos, parámetros del POS, personalización visual y más. Puedes ajustar esto en cualquier momento."
+      },
+      "shortcuts": {
+        "title": "Atajos de teclado",
+        "description": "Usa Cmd+K (o Ctrl+K) para abrir la búsqueda rápida. Puedes navegar a cualquier módulo, buscar productos y ejecutar acciones sin usar el mouse."
+      },
+      "complete": {
+        "title": "¡Tutorial completado!",
+        "description": "Ya conoces los módulos principales de SYMVORA. Recuerda el orden correcto: Configuración → Proveedores → Productos → Abrir caja → Vender. Si necesitas ayuda, haz clic en '¿Necesitas ayuda?' en la barra superior."
+      }
+    }
   }
 }
