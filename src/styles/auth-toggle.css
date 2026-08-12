@@ -327,6 +327,7 @@
 
   .auth-form-container {
     width: 100%;
+    height: auto;
     position: relative;
     transform: none;
     opacity: 1;
@@ -339,6 +340,7 @@
 
   .auth-sign-up {
     width: 100%;
+    display: none;
   }
 
   .auth-container.active .auth-sign-in {
@@ -346,6 +348,7 @@
   }
 
   .auth-container.active .auth-sign-up {
+    display: block;
     transform: none;
   }
 
