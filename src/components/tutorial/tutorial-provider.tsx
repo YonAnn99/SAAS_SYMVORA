@@ -9,6 +9,7 @@ interface TutorialContextValue {
   currentStep: number;
   isActive: boolean;
   completed: boolean;
+  minimized: boolean;
   waitingForRoute: boolean;
   isFirstStep: boolean;
   isLastStep: boolean;
@@ -18,9 +19,11 @@ interface TutorialContextValue {
   currentStepData: TutorialStep | undefined;
   start: () => void;
   startFromStep: (step: number) => void;
+  resume: () => void;
   next: (waitForRoute?: boolean) => void;
   onRouteReady: () => void;
   prev: () => void;
+  minimize: () => void;
   skip: () => void;
   reset: () => void;
   goToStep: (step: number) => void;
@@ -45,7 +48,6 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!tutorial.isActive || !tutorial.waitingForRoute || !stepData) return;
 
-    // Check if current pathname matches the step's route
     if (pathname.includes(stepData.route)) {
       tutorial.onRouteReady();
     }

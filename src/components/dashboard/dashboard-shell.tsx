@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { CommandMenu } from "@/components/search/command-menu";
 import { TutorialProvider } from "@/components/tutorial/tutorial-provider";
 import { TutorialDialog } from "@/components/tutorial/tutorial-dialog";
+import { TutorialMinimized } from "@/components/tutorial/tutorial-minimized";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -21,6 +22,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
         <CommandMenu open={searchOpen} setOpen={setSearchOpen} />
         <TutorialDialog />
+        <TutorialMinimized />
       </div>
     </TutorialProvider>
   );

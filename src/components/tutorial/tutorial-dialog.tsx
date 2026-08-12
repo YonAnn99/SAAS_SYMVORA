@@ -31,6 +31,7 @@ export function TutorialDialog() {
     waitingForRoute,
     next,
     prev,
+    minimize,
     skip,
   } = useTutorialContext();
 
@@ -93,15 +94,19 @@ export function TutorialDialog() {
     }
   };
 
+  const handleClose = () => {
+    minimize();
+  };
+
   const handleNext = () => {
-    if (showWaiting) return; // Don't advance while waiting
+    if (showWaiting) return;
     next(needsNavigation && !showWaiting);
   };
 
   if (!step) return null;
 
   return (
-    <>
+    <div data-tutorial>
       {/* Arrow pointing to the target element */}
       {!isCentered && (
         <TutorialArrow
@@ -111,7 +116,7 @@ export function TutorialDialog() {
         />
       )}
 
-      <Dialog open={isActive} onOpenChange={(v) => !v && skip()}>
+      <Dialog open={isActive} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent
           showCloseButton={false}
           className={cn(
@@ -146,7 +151,7 @@ export function TutorialDialog() {
               </p>
             </div>
             <button
-              onClick={skip}
+              onClick={handleClose}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95"
               aria-label={t("tutorial.skip")}
             >
@@ -232,6 +237,6 @@ export function TutorialDialog() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

@@ -29,15 +29,24 @@ function getInitialActive(): boolean {
   return step > 0;
 }
 
+function getInitialMinimized(): boolean {
+  if (typeof window === "undefined") return false;
+  if (isCompleted()) return false;
+  const step = getStoredStep();
+  return step > 0;
+}
+
 export function useTutorial(totalSteps: number) {
   const [currentStep, setCurrentStep] = useState(getInitialStep);
   const [isActive, setIsActive] = useState(getInitialActive);
   const [completed, setCompleted] = useState(isCompleted);
   const [waitingForRoute, setWaitingForRoute] = useState(false);
+  const [minimized, setMinimized] = useState(getInitialMinimized);
 
   const start = useCallback(() => {
     setCurrentStep(0);
     setIsActive(true);
+    setMinimized(false);
     setWaitingForRoute(false);
     localStorage.setItem(STORAGE_KEY_STEP, "0");
   }, []);
@@ -46,10 +55,17 @@ export function useTutorial(totalSteps: number) {
     (step: number) => {
       setCurrentStep(Math.max(0, Math.min(step, totalSteps - 1)));
       setIsActive(true);
+      setMinimized(false);
       setWaitingForRoute(false);
     },
     [totalSteps]
   );
+
+  const resume = useCallback(() => {
+    setIsActive(true);
+    setMinimized(false);
+    setWaitingForRoute(false);
+  }, []);
 
   const next = useCallback(
     (waitForRoute?: boolean) => {
@@ -60,6 +76,7 @@ export function useTutorial(totalSteps: number) {
         if (nextStep >= totalSteps - 1) {
           localStorage.setItem(STORAGE_KEY_COMPLETED, "true");
           setCompleted(true);
+          setMinimized(false);
           setTimeout(() => setIsActive(false), 300);
         }
         return nextStep;
@@ -81,8 +98,15 @@ export function useTutorial(totalSteps: number) {
     });
   }, []);
 
+  const minimize = useCallback(() => {
+    setIsActive(false);
+    setMinimized(true);
+    setWaitingForRoute(false);
+  }, []);
+
   const skip = useCallback(() => {
     setIsActive(false);
+    setMinimized(false);
     setWaitingForRoute(false);
     localStorage.setItem(STORAGE_KEY_COMPLETED, "true");
     setCompleted(true);
@@ -92,6 +116,7 @@ export function useTutorial(totalSteps: number) {
     setCurrentStep(0);
     setIsActive(false);
     setCompleted(false);
+    setMinimized(false);
     setWaitingForRoute(false);
     localStorage.removeItem(STORAGE_KEY_COMPLETED);
     localStorage.removeItem(STORAGE_KEY_STEP);
@@ -111,15 +136,18 @@ export function useTutorial(totalSteps: number) {
     currentStep,
     isActive,
     completed,
+    minimized,
     waitingForRoute,
     isFirstStep: currentStep === 0,
     isLastStep: currentStep >= totalSteps - 1,
     progress: ((currentStep + 1) / totalSteps) * 100,
     start,
     startFromStep,
+    resume,
     next,
     onRouteReady,
     prev,
+    minimize,
     skip,
     reset,
     goToStep,
