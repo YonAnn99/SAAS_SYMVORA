@@ -1,7 +1,7 @@
 /* Tutorial-specific overrides */
 
 /* Remove backdrop blur for tutorial dialog overlay */
-[data-tutorial] [data-slot="dialog-overlay"] {
+[data-tutorial-overlay] {
   backdrop-filter: none !important;
   background: rgba(0, 0, 0, 0.15) !important;
 }

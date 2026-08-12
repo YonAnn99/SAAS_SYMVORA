@@ -3,17 +3,11 @@
 import { useLayoutEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useTutorialContext } from "./tutorial-provider";
 import { TutorialProgress } from "./tutorial-progress";
 import { TutorialArrow } from "./tutorial-arrow";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { ArrowLeft, ArrowRight, X, Sparkles, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -106,25 +100,34 @@ export function TutorialDialog() {
   if (!step) return null;
 
   return (
-    <div data-tutorial>
-      {/* Arrow pointing to the target element */}
-      {!isCentered && (
-        <TutorialArrow
-          selector={step.targetSelector}
-          visible={isActive}
-          position={step.position}
-        />
-      )}
-
-      <Dialog open={isActive} onOpenChange={(v) => !v && handleClose()}>
-        <DialogContent
-          showCloseButton={false}
+    <DialogPrimitive.Root open={isActive} onOpenChange={(v) => !v && handleClose()}>
+      <div data-tutorial>
+        {/* Custom overlay without blur — inside data-tutorial so CSS can reach it */}
+        <DialogPrimitive.Backdrop
+          data-tutorial-overlay=""
           className={cn(
-            "sm:max-w-[380px] p-0 gap-0 overflow-hidden",
+            "fixed inset-0 z-50 bg-black/15 duration-100",
+            "data-open:animate-in data-open:fade-in-0",
+            "data-closed:animate-out data-closed:fade-out-0"
+          )}
+        />
+
+        {/* Arrow pointing to the target element */}
+        {!isCentered && (
+          <TutorialArrow
+            selector={step.targetSelector}
+            visible={isActive}
+            position={step.position}
+          />
+        )}
+
+        {/* Dialog content — rendered without portal, inside data-tutorial */}
+        <DialogPrimitive.Popup
+          className={cn(
+            "fixed z-[999] grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-xl bg-popover p-0 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-[380px]",
             "data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-2",
             "data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-1",
-            "duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
-            !isCentered && "fixed z-[999]"
+            "duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
           )}
           style={
             !isCentered && pos
@@ -134,7 +137,11 @@ export function TutorialDialog() {
                   transform: "none",
                   translate: "none",
                 }
-              : undefined
+              : {
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }
           }
         >
           {/* Header with icon and step counter */}
@@ -143,9 +150,9 @@ export function TutorialDialog() {
               <Icon className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-base font-semibold leading-tight">
+              <DialogPrimitive.Title className="text-base font-semibold leading-tight">
                 {t(step.titleKey)}
-              </DialogTitle>
+              </DialogPrimitive.Title>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {t("tutorial.stepOf", { current: currentStep + 1, total: totalSteps })}
               </p>
@@ -175,21 +182,21 @@ export function TutorialDialog() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Navigation className="h-5 w-5 animate-bounce" />
                 </div>
-                <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                <DialogPrimitive.Description className="text-sm leading-relaxed text-muted-foreground">
                   {t("tutorial.waitingDescription", {
                     module: t(step.moduleKey),
                   })}
-                </DialogDescription>
+                </DialogPrimitive.Description>
               </div>
             ) : (
-              <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+              <DialogPrimitive.Description className="text-sm leading-relaxed text-muted-foreground">
                 {t(step.descriptionKey)}
-              </DialogDescription>
+              </DialogPrimitive.Description>
             )}
           </div>
 
           {/* Footer with navigation */}
-          <DialogFooter className="px-5 py-3 bg-muted/30 border-t border-border/50">
+          <div className="-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/30 p-4 sm:flex-row sm:justify-end">
             <div className="flex w-full items-center justify-between gap-2">
               <Button
                 variant="ghost"
@@ -234,9 +241,9 @@ export function TutorialDialog() {
                 )}
               </div>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </div>
+        </DialogPrimitive.Popup>
+      </div>
+    </DialogPrimitive.Root>
   );
 }
