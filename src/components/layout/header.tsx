@@ -12,8 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Settings, User, Sun, Moon, Search, Menu } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -25,6 +27,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { tenantName, tenantLogo } = useCurrentTenant();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -104,12 +107,12 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
 
         {/* Language switcher */}
         <DropdownMenu>
-          <DropdownMenuTrigger nativeButton={false} render={<Button variant="ghost" size="sm" className="h-9 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer transition-all duration-200" />}>
-            {pathname.startsWith("/en") ? "🇺🇸 EN" : "🇪🇸 ES"}
+          <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-9 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer transition-all duration-200" />}>
+            {pathname.startsWith("/en") ? "🇺🇸 EN" : "🇲🇽 ES"}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
             <DropdownMenuItem onClick={() => handleLocaleSwitch("es")} className="cursor-pointer">
-              <span className="text-sm">🇪🇸 Español</span>
+              <span className="text-sm">🇲🇽 Español</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleLocaleSwitch("en")} className="cursor-pointer">
               <span className="text-sm">🇺🇸 English</span>
@@ -134,8 +137,14 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
 
         {/* User menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger nativeButton={false} render={<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs font-semibold cursor-pointer transition-all duration-200 hover:shadow-[0_4px_12px_rgba(91,159,237,0.3)] active:scale-95" />}>
-            A
+          <DropdownMenuTrigger nativeButton={false}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs font-semibold overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-[0_4px_12px_rgba(91,159,237,0.3)] active:scale-95">
+              {tenantLogo ? (
+                <Image src={tenantLogo} alt={tenantName || ""} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
+              ) : (
+                tenantName?.charAt(0).toUpperCase() || "N"
+              )}
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="end">
             <DropdownMenuItem className="cursor-pointer">

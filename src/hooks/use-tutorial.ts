@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const STORAGE_KEY_COMPLETED = "symvora_tutorial_completed";
 const STORAGE_KEY_STEP = "symvora_tutorial_step";
@@ -16,39 +16,36 @@ function isCompleted(): boolean {
   return localStorage.getItem(STORAGE_KEY_COMPLETED) === "true";
 }
 
-function getInitialStep(): number {
-  if (typeof window === "undefined") return 0;
-  if (isCompleted()) return 0;
-  return getStoredStep();
-}
-
-function getInitialActive(): boolean {
-  if (typeof window === "undefined") return false;
-  if (isCompleted()) return false;
-  const step = getStoredStep();
-  return step > 0;
-}
-
-function getInitialMinimized(): boolean {
-  if (typeof window === "undefined") return false;
-  if (isCompleted()) return false;
-  const step = getStoredStep();
-  return step > 0;
-}
-
 export function useTutorial(totalSteps: number) {
-  const [currentStep, setCurrentStep] = useState(getInitialStep);
-  const [isActive, setIsActive] = useState(getInitialActive);
-  const [completed, setCompleted] = useState(isCompleted);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const [waitingForRoute, setWaitingForRoute] = useState(false);
-  const [minimized, setMinimized] = useState(getInitialMinimized);
+  const [minimized, setMinimized] = useState(false);
+
+  // Hydration-safe: read localStorage only after mount to avoid SSR/client mismatch
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (isCompleted()) {
+      setCompleted(true);
+      const step = getStoredStep();
+      if (step > 0) {
+        setCurrentStep(step);
+        setIsActive(true);
+        setMinimized(true);
+      }
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   const start = useCallback(() => {
     setCurrentStep(0);
     setIsActive(true);
+    setCompleted(false);
     setMinimized(false);
     setWaitingForRoute(false);
     localStorage.setItem(STORAGE_KEY_STEP, "0");
+    localStorage.removeItem(STORAGE_KEY_COMPLETED);
   }, []);
 
   const startFromStep = useCallback(

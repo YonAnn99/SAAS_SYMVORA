@@ -56,12 +56,18 @@ const inventoryNavigation = [
 interface SidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
 }
 
-function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
+function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }: {
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+  onLinkClick?: () => void;
+  isMobile?: boolean;
+}) {
   const t = useTranslations();
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const { tenantName, tenantLogo } = useCurrentTenant();
 
@@ -80,28 +86,33 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-14 items-center justify-between border-b border-border px-4 bg-gradient-to-r from-primary/5 to-transparent">
-        {!collapsed && (
-          <Link href="/dashboard" className="flex items-center" onClick={onLinkClick}>
-            <Image
-              src={tenantLogo || "/symvora-logo.webp"}
-              alt="SYMVORA"
-              width={120}
-              height={28}
-              className="h-6 w-auto object-contain"
-              priority
-            />
-          </Link>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/50"
-        >
-          {collapsed ? (
-            <ChevronRight className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronLeft className="h-3.5 w-3.5" />
+        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0" onClick={onLinkClick}>
+          <Image
+            src={tenantLogo || "/symvora-logo.webp"}
+            alt="SYMVORA"
+            width={120}
+            height={28}
+            className={cn("h-6 w-auto object-contain flex-shrink-0 transition-all duration-200", collapsed && "mx-auto")}
+            priority
+          />
+          {!collapsed && (
+            <span className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
+              SYMVORA
+            </span>
           )}
-        </button>
+        </Link>
+        {!isMobile && (
+          <button
+            onClick={() => onCollapsedChange(!collapsed)}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/50"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronLeft className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -165,9 +176,19 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       <div className="border-t border-border p-3">
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-              {tenantName?.charAt(0).toUpperCase() || "N"}
-            </div>
+            {tenantLogo ? (
+              <Image
+                src={tenantLogo}
+                alt={tenantName || ""}
+                width={28}
+                height={28}
+                className="h-7 w-7 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium flex-shrink-0">
+                {tenantName?.charAt(0).toUpperCase() || "N"}
+              </div>
+            )}
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-medium truncate">
                 {tenantName || "Negocio"}
@@ -183,19 +204,22 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
-export function Sidebar({ open, onOpenChange }: SidebarProps) {
+export function Sidebar({ open, onOpenChange, collapsed, onCollapsedChange }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar - always visible on lg+ */}
-      <aside className="hidden lg:flex lg:flex-col lg:border-r lg:border-border lg:bg-card lg:w-56">
-        <SidebarContent />
+      <aside className={cn(
+        "hidden lg:flex lg:flex-col lg:border-r lg:border-border lg:bg-card transition-all duration-200",
+        collapsed ? "lg:w-16" : "lg:w-56"
+      )}>
+        <SidebarContent collapsed={collapsed} onCollapsedChange={onCollapsedChange} />
       </aside>
 
       {/* Mobile sidebar - Sheet drawer */}
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="left" className="w-56 p-0" showCloseButton={false}>
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <SidebarContent onLinkClick={() => onOpenChange(false)} />
+          <SidebarContent collapsed={false} onCollapsedChange={() => {}} onLinkClick={() => onOpenChange(false)} isMobile />
         </SheetContent>
       </Sheet>
     </>

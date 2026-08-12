@@ -36,41 +36,40 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    if (!tenantLoading && tenantId) {
-      fetchTenantData();
-    }
+    if (tenantLoading || !tenantId) return;
+
+    const fetchData = async () => {
+      const supabase = createSupabaseBrowserClient();
+
+      const { data: tenantData } = await supabase
+        .from("tenants")
+        .select("*")
+        .eq("id", tenantId)
+        .single();
+
+      if (tenantData) {
+        setTenant(tenantData);
+        setCompanyName(tenantData.nombre_comercial || "");
+        setPhone(tenantData.telefono || "");
+        setAddress(tenantData.direccion || "");
+        setEmail(tenantData.email || "");
+      }
+
+      const { data: settingsData } = await supabase
+        .from("tenant_settings")
+        .select("configuracion_json")
+        .eq("tenant_id", tenantId)
+        .single();
+
+      if (settingsData) {
+        setSettings(settingsData.configuracion_json as TenantSettingsJSON);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
   }, [tenantLoading, tenantId]);
-
-  const fetchTenantData = async () => {
-    if (!tenantId) return;
-    const supabase = createSupabaseBrowserClient();
-
-    const { data: tenantData } = await supabase
-      .from("tenants")
-      .select("*")
-      .eq("id", tenantId)
-      .single();
-
-    if (tenantData) {
-      setTenant(tenantData);
-      setCompanyName(tenantData.nombre_comercial || "");
-      setPhone(tenantData.telefono || "");
-      setAddress(tenantData.direccion || "");
-      setEmail(tenantData.email || "");
-    }
-
-    const { data: settingsData } = await supabase
-      .from("tenant_settings")
-      .select("configuracion_json")
-      .eq("tenant_id", tenantId)
-      .single();
-
-    if (settingsData) {
-      setSettings(settingsData.configuracion_json as TenantSettingsJSON);
-    }
-
-    setLoading(false);
-  };
 
   const handleSaveCompany = async () => {
     if (!tenant) return;
@@ -119,10 +118,18 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) {
+  if (tenantLoading || loading) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
         {t("common.loading")}
+      </div>
+    );
+  }
+
+  if (!tenantId) {
+    return (
+      <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
+        No se encontró la configuración del tenant.
       </div>
     );
   }

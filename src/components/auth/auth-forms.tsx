@@ -244,6 +244,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
         p_giro_comercial: giroComercial,
         p_color_primario: colorPrimario,
         p_configuracion_json: configuracionJson,
+        p_logo_url: logoUrl,
       }
     );
 
