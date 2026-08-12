@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { motion } from "motion/react";
 import { Share, Globe, Mail } from "lucide-react";
 import {
@@ -12,8 +12,41 @@ import {
   fadeInUp,
 } from "./animations";
 
+interface FooterColumnItem {
+  key: string;
+  href?: string;
+}
+
 export function Footer() {
   const t = useTranslations();
+  const locale = useLocale();
+
+  const columns: Array<{ titleKey: string; items: FooterColumnItem[] }> = [
+    {
+      titleKey: "landing.footer.product",
+      items: [
+        { key: "landing.footer.features" },
+        { key: "landing.footer.pricing" },
+        { key: "landing.footer.integrations" },
+      ],
+    },
+    {
+      titleKey: "landing.footer.company",
+      items: [
+        { key: "landing.footer.about" },
+        { key: "landing.footer.blog" },
+        { key: "landing.footer.support" },
+      ],
+    },
+    {
+      titleKey: "landing.footer.legal",
+      items: [
+        { key: "landing.footer.privacy", href: `/${locale}/aviso-privacidad` },
+        { key: "landing.footer.terms", href: `/${locale}/terminos` },
+        { key: "landing.footer.cookiesPolicy", href: `/${locale}/politica-cookies` },
+      ],
+    },
+  ];
 
   return (
     <motion.footer
@@ -94,11 +127,7 @@ export function Footer() {
             </motion.div>
           </motion.div>
 
-          {[
-            { titleKey: "landing.footer.product", items: ["landing.footer.features", "landing.footer.pricing", "landing.footer.integrations"] },
-            { titleKey: "landing.footer.company", items: ["landing.footer.about", "landing.footer.blog", "landing.footer.support"] },
-            { titleKey: "landing.footer.legal", items: ["landing.footer.privacy", "landing.footer.terms"] },
-          ].map((column) => (
+          {columns.map((column) => (
             <motion.div
               key={column.titleKey}
               variants={fadeInUp}
@@ -113,16 +142,22 @@ export function Footer() {
                 {t(column.titleKey)}
               </motion.h4>
               <ul className="flex flex-col gap-2">
-                {column.items.map((itemKey, idx) => (
+                {column.items.map((item, idx) => (
                   <motion.li
-                    key={itemKey}
+                    key={item.key}
                     className="text-sm text-neutral-500 hover:text-black cursor-pointer transition-colors"
                     whileHover={{ x: 4 }}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 + 0.1, ...easeOutShort }}
                   >
-                    {t(itemKey)}
+                    {item.href ? (
+                      <Link href={item.href} className="hover:text-black transition-colors">
+                        {t(item.key)}
+                      </Link>
+                    ) : (
+                      t(item.key)
+                    )}
                   </motion.li>
                 ))}
               </ul>

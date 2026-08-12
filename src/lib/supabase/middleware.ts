@@ -39,11 +39,16 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.includes("/signup") ||
     request.nextUrl.pathname.includes("/auth");
 
+  const isLegalRoute = ["/aviso-privacidad", "/terminos", "/politica-cookies"].some(
+    (segment) => request.nextUrl.pathname.endsWith(segment)
+  );
+
   const isPublicRoute =
     request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/marketing") ||
     request.nextUrl.pathname.startsWith("/api/conekta") ||
     request.nextUrl.pathname.includes("/billing") ||
+    isLegalRoute ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);
 
   if (!user && !isAuthRoute && !isPublicRoute) {

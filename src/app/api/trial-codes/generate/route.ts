@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireTenantAccess } from "@/lib/supabase/auth";
 import crypto from "crypto";
 
 function generateCode(): string {
@@ -27,7 +28,26 @@ export async function POST(request: Request) {
       );
     }
 
+    const auth = await requireTenantAccess(request);
+    if (!auth.ok) return auth.response;
+
     const supabase = createSupabaseServiceRoleClient();
+
+    const { data: superAdminMembership } = await supabase
+      .from("tenant_memberships")
+      .select("id")
+      .eq("user_id", auth.userId)
+      .eq("role", "SUPER_ADMIN")
+      .limit(1)
+      .single();
+
+    if (!superAdminMembership) {
+      return NextResponse.json(
+        { error: "Solo SUPER_ADMIN puede generar códigos" },
+        { status: 403 }
+      );
+    }
+
     const codes: string[] = [];
 
     for (let i = 0; i < count; i++) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireTenantAccess } from "@/lib/supabase/auth";
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +13,12 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const auth = await requireTenantAccess(request, {
+      tenantId: tenant_id,
+      selfUserId: user_id,
+    });
+    if (!auth.ok) return auth.response;
 
     const supabase = createSupabaseServiceRoleClient();
 

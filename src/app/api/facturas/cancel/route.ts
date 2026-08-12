@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireTenantAccess } from "@/lib/supabase/auth";
 import { createPACClient } from "@/lib/cfdi/pac-client";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 
@@ -27,6 +28,12 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const auth = await requireTenantAccess(request, {
+      tenantId: factura.tenant_id,
+      permission: "billing.cancel",
+    });
+    if (!auth.ok) return auth.response;
 
     if (factura.estado !== "TIMBRADA") {
       return NextResponse.json(

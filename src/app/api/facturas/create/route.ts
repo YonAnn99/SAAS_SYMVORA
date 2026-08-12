@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireTenantAccess } from "@/lib/supabase/auth";
 import {
-  getDefaultClaveUnidad,
   getMetodoPagoByVenta,
   getMetodoPagoCFDI,
 } from "@/lib/cfdi/catalogs";
@@ -29,6 +29,19 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateFacturaRequest = await request.json();
     const supabase = createSupabaseServiceRoleClient();
+
+    if (!body.tenant_id) {
+      return NextResponse.json(
+        { error: "tenant_id requerido" },
+        { status: 400 }
+      );
+    }
+
+    const auth = await requireTenantAccess(request, {
+      tenantId: body.tenant_id,
+      permission: "billing.create",
+    });
+    if (!auth.ok) return auth.response;
 
     // Get tenant fiscal config
     const { data: settings } = await supabase

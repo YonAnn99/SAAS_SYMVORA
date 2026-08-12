@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireTenantAccess } from "@/lib/supabase/auth";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://saas-symvora.vercel.app";
 
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const auth = await requireTenantAccess(request, { tenantId: tenant_id });
+    if (!auth.ok) return auth.response;
 
     if (!process.env.CONEKTA_PRIVATE_KEY) {
       return NextResponse.json(

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -51,6 +52,7 @@ type AuthMode = "login" | "signup";
 export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode }) {
   const t = useTranslations();
   const router = useRouter();
+  const locale = useLocale();
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
 
@@ -464,6 +466,16 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
             <button type="submit" className="auth-btn" disabled={signupLoading} style={{ width: "100%", marginTop: "16px" }}>
               {signupLoading ? t("common.loading") : t("auth.signup")}
             </button>
+
+            <p style={{ fontSize: "11px", color: "#888", lineHeight: "1.5", marginTop: "10px", textAlign: "center" }}>
+              {t("auth.privacyAcknowledgment")}{" "}
+              <Link
+                href={`/${locale}/aviso-privacidad`}
+                style={{ textDecoration: "underline", color: "#1a1a1a" }}
+              >
+                {t("auth.privacyLink")}
+              </Link>
+            </p>
 
             <div className="auth-form-link">
               {t("auth.hasAccount")}{" "}

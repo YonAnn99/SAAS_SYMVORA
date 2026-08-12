@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireTenantAccess } from "@/lib/supabase/auth";
+import type { UserRole } from "@/lib/types/database";
+
+const INVITABLE_ROLES: UserRole[] = ["ORG_ADMIN", "CAJERO"];
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +15,29 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const requestedRole: UserRole = role as UserRole;
+    if (!INVITABLE_ROLES.includes(requestedRole) && requestedRole !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Role inválido" },
+        { status: 400 }
+      );
+    }
+
+    const auth = await requireTenantAccess(request, {
+      tenantId,
+      permission: "org.manage_members",
+    });
+    if (!auth.ok) return auth.response;
+
+    if (requestedRole === "SUPER_ADMIN" && auth.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Solo un SUPER_ADMIN puede invitar a otro SUPER_ADMIN" },
+        { status: 403 }
+      );
+    }
+
+    const roleToAssign: UserRole = requestedRole;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -31,7 +58,7 @@ export async function POST(request: Request) {
       {
         data: {
           tenant_id: tenantId,
-          role: role,
+          role: roleToAssign,
         },
         redirectTo: `${supabaseUrl}/auth/v1/verify?redirect_to=${encodeURIComponent(`${supabaseUrl}/es/onboarding`)}`,
       }
@@ -51,7 +78,7 @@ export async function POST(request: Request) {
         .insert({
           user_id: data.user.id,
           tenant_id: tenantId,
-          role: role,
+          role: roleToAssign,
         });
 
       if (membershipError) {

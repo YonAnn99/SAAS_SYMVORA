@@ -1,33 +1,80 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
-const webhookSecret = process.env.CONEKTA_WEBHOOK_SECRET;
+const conektaWebhookPublicKey = process.env.CONEKTA_WEBHOOK_PUBLIC_KEY;
+const legacyWebhookSecret = process.env.CONEKTA_WEBHOOK_SECRET;
 
-async function verifyWebhookSignature(request: Request): Promise<boolean> {
-  if (!webhookSecret) return true;
-  const signature = request.headers.get("x-conekta-signature");
-  if (!signature) return false;
+function extractDigestBase64(digestHeader: string | null): Buffer | null {
+  if (!digestHeader) return null;
 
-  const body = await request.text();
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(webhookSecret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signed = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-  const expectedSignature = Array.from(new Uint8Array(signed))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  let value = digestHeader.trim();
+  for (const marker of ["sha-256=:", "sha-256=", "sha256=:", "sha256="]) {
+    if (value.startsWith(marker)) {
+      value = value.slice(marker.length);
+      break;
+    }
+  }
 
-  return signature.includes(expectedSignature);
+  value = value.trim();
+  if (value.startsWith(":")) value = value.slice(1);
+  if (value.endsWith(":")) value = value.slice(0, -1);
+
+  try {
+    return Buffer.from(value, "base64");
+  } catch {
+    return null;
+  }
+}
+
+async function verifyConektaSignature(rawBody: string, digestHeader: string | null): Promise<boolean> {
+  if (!conektaWebhookPublicKey) {
+    console.error(
+      "[conekta-webhook] CONEKTA_WEBHOOK_PUBLIC_KEY not configured; rejecting webhook. " +
+        "Generate keys via POST https://api.conekta.io/webhook_keys"
+    );
+    return false;
+  }
+
+  if (legacyWebhookSecret) {
+    console.warn(
+      "[conekta-webhook] CONEKTA_WEBHOOK_SECRET (HMAC) is obsolete; Conekta signs webhooks " +
+        "with RSA using the DIGEST header. Set CONEKTA_WEBHOOK_PUBLIC_KEY instead."
+    );
+  }
+
+  const signature = extractDigestBase64(digestHeader);
+  if (!signature || signature.length === 0) {
+    console.error("[conekta-webhook] Missing or malformed DIGEST header");
+    return false;
+  }
+
+  try {
+    return crypto.verify(
+      "sha256",
+      Buffer.from(rawBody, "utf8"),
+      conektaWebhookPublicKey,
+      signature
+    );
+  } catch (verifyError) {
+    console.error("[conekta-webhook] RSA verification failed:", verifyError);
+    return false;
+  }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    const digestHeader = request.headers.get("digest");
+
+    if (!(await verifyConektaSignature(rawBody, digestHeader))) {
+      return NextResponse.json(
+        { error: "Invalid webhook signature" },
+        { status: 401 }
+      );
+    }
+
+    const body = JSON.parse(rawBody);
     const eventType = body.type;
     const data = body.data?.object;
 

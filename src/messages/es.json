@@ -105,7 +105,9 @@
     "customization": "Personalización",
     "email": "Correo electrónico",
     "password": "Ingresa contraseña",
-    "confirmPasswordLabel": "Confirmar contraseña"
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "privacyAcknowledgment": "Al crear tu cuenta aceptas el",
+    "privacyLink": "Aviso de Privacidad"
   },
   "toast": {
     "success": {
@@ -685,7 +687,14 @@
       "legal": "Legal",
       "privacy": "Privacidad",
       "terms": "Términos",
+      "cookiesPolicy": "Política de cookies",
       "copyright": "© 2026 SYMVORA. Todos los derechos reservados."
     }
+  },
+  "cookies": {
+    "title": "Aviso de cookies",
+    "message": "Utilizamos únicamente cookies esenciales para el funcionamiento de la Plataforma (sesión e idioma). Al continuar, aceptas su uso.",
+    "accept": "Aceptar",
+    "learnMore": "Más información"
   }
 }
