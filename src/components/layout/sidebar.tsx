@@ -28,6 +28,7 @@ import {
   Wrench,
   TrendingUp,
   CreditCard,
+  Receipt,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -40,6 +41,7 @@ const navigation = [
   { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon },
   { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText },
   { name: "layout.finances", href: "/finances", icon: Wallet },
+  { name: "layout.facturas", href: "/facturas", icon: Receipt },
   { name: "layout.users", href: "/users", icon: Users },
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings },

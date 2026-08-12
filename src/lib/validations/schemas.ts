@@ -126,3 +126,81 @@ export const saleSchema = z.object({
   notas: z.string().optional(),
   items: z.array(cartItemSchema).min(1, "Agrega al menos un producto"),
 });
+
+export const facturaLineaSchema = z.object({
+  producto_id: z.string().uuid().optional(),
+  descripcion: z.string().min(1, "La descripción es requerida"),
+  clave_prod_serv: z.string().min(1, "La clave de producto SAT es requerida"),
+  clave_unidad: z.string().min(1, "La clave de unidad SAT es requerida"),
+  unidad: z.string().min(1, "La unidad es requerida"),
+  cantidad: z.number().min(0.0001, "La cantidad debe ser mayor a 0"),
+  precio_unitario: z.number().min(0, "El precio debe ser mayor o igual a 0"),
+  descuento: z.number().min(0).default(0),
+});
+
+export const facturaCreateSchema = z.object({
+  tenant_id: z.string().uuid("ID de tenant inválido"),
+  cliente_id: z.string().uuid("Selecciona un cliente válido"),
+  venta_id: z.string().uuid().optional(),
+  forma_pago: z.string().min(1, "La forma de pago es requerida"),
+  metodo_pago: z.enum(["PUE", "PPD"]),
+  notas: z.string().optional(),
+  lineas: z
+    .array(facturaLineaSchema)
+    .min(1, "Agrega al menos un concepto"),
+});
+
+export const facturaStampSchema = z.object({
+  factura_id: z.string().uuid("ID de factura inválido"),
+});
+
+export const facturaCancelSchema = z.object({
+  factura_id: z.string().uuid("ID de factura inválido"),
+  motivo: z
+    .string()
+    .min(10, "El motivo debe tener al menos 10 caracteres")
+    .max(500, "El motivo no puede exceder 500 caracteres"),
+  folio_sustitucion: z.string().optional(),
+});
+
+export const tenantFiscalConfigSchema = z.object({
+  rfc: z
+    .string()
+    .min(12, "El RFC debe tener al menos 12 caracteres")
+    .max(13, "El RFC no puede exceder 13 caracteres")
+    .regex(
+      /^[A-Z&]{3,4}\d{6}[A-Z\d]{3}$/,
+      "Formato de RFC inválido"
+    ),
+  razon_social: z
+    .string()
+    .min(3, "La razón social debe tener al menos 3 caracteres")
+    .max(150, "La razón social no puede exceder 150 caracteres"),
+  regimen_fiscal: z.string().min(1, "El régimen fiscal es requerido"),
+  codigo_postal: z
+    .string()
+    .length(5, "El código postal debe tener 5 dígitos")
+    .regex(/^\d{5}$/, "El código postal solo debe contener números"),
+});
+
+export const clienteFiscalSchema = z.object({
+  rfc: z
+    .string()
+    .min(12, "El RFC debe tener al menos 12 caracteres")
+    .max(13, "El RFC no puede exceder 13 caracteres")
+    .regex(
+      /^[A-Z&]{3,4}\d{6}[A-Z\d]{3}$/,
+      "Formato de RFC inválido"
+    )
+    .optional()
+    .or(z.literal("")),
+  razon_social: z.string().optional(),
+  regimen_fiscal_receptor: z.string().optional(),
+  uso_cfdi: z.string().optional(),
+  codigo_postal: z
+    .string()
+    .length(5, "El código postal debe tener 5 dígitos")
+    .regex(/^\d{5}$/, "El código postal solo debe contener números")
+    .optional()
+    .or(z.literal("")),
+});

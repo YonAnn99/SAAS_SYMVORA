@@ -20,6 +20,11 @@ export type Database = {
           direccion: string | null;
           telefono: string | null;
           email: string | null;
+          rfc: string | null;
+          razon_social: string | null;
+          regimen_fiscal: string | null;
+          codigo_postal: string | null;
+          subscription_status: "trial" | "active" | "past_due" | "canceled" | "expired" | null;
           creado_en: string;
         };
         Insert: {
@@ -32,6 +37,11 @@ export type Database = {
           direccion?: string | null;
           telefono?: string | null;
           email?: string | null;
+          rfc?: string | null;
+          razon_social?: string | null;
+          regimen_fiscal?: string | null;
+          codigo_postal?: string | null;
+          subscription_status?: "trial" | "active" | "past_due" | "canceled" | "expired" | null;
           creado_en?: string;
         };
         Update: {
@@ -44,6 +54,11 @@ export type Database = {
           direccion?: string | null;
           telefono?: string | null;
           email?: string | null;
+          rfc?: string | null;
+          razon_social?: string | null;
+          regimen_fiscal?: string | null;
+          codigo_postal?: string | null;
+          subscription_status?: "trial" | "active" | "past_due" | "canceled" | "expired" | null;
           creado_en?: string;
         };
       };
@@ -52,6 +67,7 @@ export type Database = {
           id: string;
           tenant_id: string;
           configuracion_json: Json;
+          configuracion_fiscal: Json;
           creado_en: string;
           actualizado_en: string;
         };
@@ -59,6 +75,7 @@ export type Database = {
           id?: string;
           tenant_id: string;
           configuracion_json: Json;
+          configuracion_fiscal?: Json;
           creado_en?: string;
           actualizado_en?: string;
         };
@@ -66,6 +83,7 @@ export type Database = {
           id?: string;
           tenant_id?: string;
           configuracion_json?: Json;
+          configuracion_fiscal?: Json;
           creado_en?: string;
           actualizado_en?: string;
         };
@@ -112,6 +130,9 @@ export type Database = {
           categoria: string | null;
           proveedor_id: string | null;
           imagen_url: string | null;
+          clave_prod_serv: string | null;
+          clave_unidad: string | null;
+          no_identificacion: string | null;
           creado_en: string;
           actualizado_en: string;
         };
@@ -133,6 +154,9 @@ export type Database = {
           categoria?: string | null;
           proveedor_id?: string | null;
           imagen_url?: string | null;
+          clave_prod_serv?: string | null;
+          clave_unidad?: string | null;
+          no_identificacion?: string | null;
           creado_en?: string;
           actualizado_en?: string;
         };
@@ -154,6 +178,9 @@ export type Database = {
           categoria?: string | null;
           proveedor_id?: string | null;
           imagen_url?: string | null;
+          clave_prod_serv?: string | null;
+          clave_unidad?: string | null;
+          no_identificacion?: string | null;
           creado_en?: string;
           actualizado_en?: string;
         };
@@ -168,6 +195,11 @@ export type Database = {
           direccion: string | null;
           limite_credito: number;
           saldo_pendiente: number;
+          rfc: string | null;
+          razon_social: string | null;
+          regimen_fiscal_receptor: string | null;
+          uso_cfdi: string | null;
+          codigo_postal: string | null;
           creado_en: string;
         };
         Insert: {
@@ -179,6 +211,11 @@ export type Database = {
           direccion?: string | null;
           limite_credito?: number;
           saldo_pendiente?: number;
+          rfc?: string | null;
+          razon_social?: string | null;
+          regimen_fiscal_receptor?: string | null;
+          uso_cfdi?: string | null;
+          codigo_postal?: string | null;
           creado_en?: string;
         };
         Update: {
@@ -190,6 +227,11 @@ export type Database = {
           direccion?: string | null;
           limite_credito?: number;
           saldo_pendiente?: number;
+          rfc?: string | null;
+          razon_social?: string | null;
+          regimen_fiscal_receptor?: string | null;
+          uso_cfdi?: string | null;
+          codigo_postal?: string | null;
           creado_en?: string;
         };
       };
@@ -245,6 +287,7 @@ export type Database = {
           estado: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
           notas: string | null;
           fecha_venta: string;
+          factura_id: string | null;
         };
         Insert: {
           id?: string;
@@ -259,6 +302,7 @@ export type Database = {
           estado?: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
           notas?: string | null;
           fecha_venta?: string;
+          factura_id?: string | null;
         };
         Update: {
           id?: string;
@@ -273,6 +317,7 @@ export type Database = {
           estado?: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
           notas?: string | null;
           fecha_venta?: string;
+          factura_id?: string | null;
         };
       };
       detalle_ventas: {
@@ -684,6 +729,227 @@ export type Database = {
           notas?: string | null;
         };
       };
+      facturas: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          serie: string;
+          folio: number;
+          emisor_rfc: string;
+          emisor_razon_social: string;
+          emisor_regimen_fiscal: string;
+          emisor_codigo_postal: string;
+          receptor_rfc: string;
+          receptor_razon_social: string;
+          receptor_regimen_fiscal: string;
+          receptor_uso_cfdi: string;
+          receptor_codigo_postal: string;
+          subtotal: number;
+          impuesto: number;
+          descuento: number;
+          total: number;
+          metodo_pago: "PUE" | "PPD";
+          forma_pago: string;
+          estado: "BORRADOR" | "TIMBRADA" | "CANCELADA";
+          uuid_cfdi: string | null;
+          fecha_timbrado: string | null;
+          fecha_emision: string;
+          xml_url: string | null;
+          pdf_url: string | null;
+          pac_nombre: string | null;
+          pac_response: Json | null;
+          fecha_cancelacion: string | null;
+          motivo_cancelacion: string | null;
+          folio_sustitucion: string | null;
+          venta_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          serie?: string;
+          folio: number;
+          emisor_rfc: string;
+          emisor_razon_social: string;
+          emisor_regimen_fiscal: string;
+          emisor_codigo_postal: string;
+          receptor_rfc: string;
+          receptor_razon_social: string;
+          receptor_regimen_fiscal: string;
+          receptor_uso_cfdi: string;
+          receptor_codigo_postal: string;
+          subtotal: number;
+          impuesto: number;
+          descuento?: number;
+          total: number;
+          metodo_pago?: "PUE" | "PPD";
+          forma_pago?: string;
+          estado?: "BORRADOR" | "TIMBRADA" | "CANCELADA";
+          uuid_cfdi?: string | null;
+          fecha_timbrado?: string | null;
+          fecha_emision?: string;
+          xml_url?: string | null;
+          pdf_url?: string | null;
+          pac_nombre?: string | null;
+          pac_response?: Json | null;
+          fecha_cancelacion?: string | null;
+          motivo_cancelacion?: string | null;
+          folio_sustitucion?: string | null;
+          venta_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          serie?: string;
+          folio?: number;
+          emisor_rfc?: string;
+          emisor_razon_social?: string;
+          emisor_regimen_fiscal?: string;
+          emisor_codigo_postal?: string;
+          receptor_rfc?: string;
+          receptor_razon_social?: string;
+          receptor_regimen_fiscal?: string;
+          receptor_uso_cfdi?: string;
+          receptor_codigo_postal?: string;
+          subtotal?: number;
+          impuesto?: number;
+          descuento?: number;
+          total?: number;
+          metodo_pago?: "PUE" | "PPD";
+          forma_pago?: string;
+          estado?: "BORRADOR" | "TIMBRADA" | "CANCELADA";
+          uuid_cfdi?: string | null;
+          fecha_timbrado?: string | null;
+          fecha_emision?: string;
+          xml_url?: string | null;
+          pdf_url?: string | null;
+          pac_nombre?: string | null;
+          pac_response?: Json | null;
+          fecha_cancelacion?: string | null;
+          motivo_cancelacion?: string | null;
+          folio_sustitucion?: string | null;
+          venta_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      factura_detalle: {
+        Row: {
+          id: string;
+          factura_id: string;
+          producto_id: string | null;
+          descripcion: string;
+          clave_prod_serv: string;
+          clave_unidad: string;
+          no_identificacion: string | null;
+          cantidad: number;
+          unidad: string;
+          precio_unitario: number;
+          descuento: number;
+          subtotal: number;
+          base_impuesto: number;
+          tasa_impuesto: number;
+          importe_impuesto: number;
+          orden: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          factura_id: string;
+          producto_id?: string | null;
+          descripcion: string;
+          clave_prod_serv: string;
+          clave_unidad: string;
+          no_identificacion?: string | null;
+          cantidad: number;
+          unidad: string;
+          precio_unitario: number;
+          descuento?: number;
+          subtotal: number;
+          base_impuesto: number;
+          tasa_impuesto?: number;
+          importe_impuesto: number;
+          orden?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          factura_id?: string;
+          producto_id?: string | null;
+          descripcion?: string;
+          clave_prod_serv?: string;
+          clave_unidad?: string;
+          no_identificacion?: string | null;
+          cantidad?: number;
+          unidad?: string;
+          precio_unitario?: number;
+          descuento?: number;
+          subtotal?: number;
+          base_impuesto?: number;
+          tasa_impuesto?: number;
+          importe_impuesto?: number;
+          orden?: number;
+          created_at?: string;
+        };
+      };
+      facturas_cancelaciones: {
+        Row: {
+          id: string;
+          factura_id: string;
+          motivo: string;
+          folio_sustitucion: string | null;
+          fecha_solicitud: string;
+          fecha_respuesta: string | null;
+          estado: "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
+          pac_response: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          factura_id: string;
+          motivo: string;
+          folio_sustitucion?: string | null;
+          fecha_solicitud?: string;
+          fecha_respuesta?: string | null;
+          estado?: "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
+          pac_response?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          factura_id?: string;
+          motivo?: string;
+          folio_sustitucion?: string | null;
+          fecha_solicitud?: string;
+          fecha_respuesta?: string | null;
+          estado?: "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
+          pac_response?: Json | null;
+          created_at?: string;
+        };
+      };
+      facturas_folios: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          serie: string;
+          ultimo_folio: number;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          serie?: string;
+          ultimo_folio?: number;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          serie?: string;
+          ultimo_folio?: number;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -717,6 +983,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_next_folio: {
+        Args: {
+          p_tenant_id: string;
+          p_serie?: string;
+        };
+        Returns: number;
+      };
     };
     Enums: {
       app_role: "SUPER_ADMIN" | "ORG_ADMIN" | "CAJERO";
@@ -728,6 +1001,9 @@ export type Database = {
       tipo_movimiento: "ENTRADA" | "SALIDA";
       estado_orden_compra: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
       motivo_ajuste: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
+      estado_factura: "BORRADOR" | "TIMBRADA" | "CANCELADA";
+      metodo_pago_cfdi: "PUE" | "PPD";
+      estado_cancelacion: "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
     };
   };
 };
@@ -760,6 +1036,13 @@ export type OrdenCompra =
   Database["public"]["Tables"]["ordenes_compra"]["Row"];
 export type DetalleOrdenCompra =
   Database["public"]["Tables"]["detalle_orden_compra"]["Row"];
+export type Factura = Database["public"]["Tables"]["facturas"]["Row"];
+export type FacturaDetalle =
+  Database["public"]["Tables"]["factura_detalle"]["Row"];
+export type FacturaCancelacion =
+  Database["public"]["Tables"]["facturas_cancelaciones"]["Row"];
+export type FacturaFolio =
+  Database["public"]["Tables"]["facturas_folios"]["Row"];
 
 export type UserRole = Database["public"]["Enums"]["app_role"];
 export type UnidadMedida = Database["public"]["Enums"]["unidad_medida"];
@@ -771,6 +1054,10 @@ export type TipoMovimiento = Database["public"]["Enums"]["tipo_movimiento"];
 export type EstadoOrdenCompra =
   Database["public"]["Enums"]["estado_orden_compra"];
 export type MotivoAjuste = Database["public"]["Enums"]["motivo_ajuste"];
+export type EstadoFactura = Database["public"]["Enums"]["estado_factura"];
+export type MetodoPagoCFDI = Database["public"]["Enums"]["metodo_pago_cfdi"];
+export type EstadoCancelacion =
+  Database["public"]["Enums"]["estado_cancelacion"];
 
 export interface TenantConfiguracion {
   permite_granel: boolean;
@@ -792,4 +1079,17 @@ export interface TenantSettingsJSON {
   giro_comercial: string;
   modulos_activos: TenantConfiguracion;
   pos_config: POSConfig;
+}
+
+export interface TenantConfiguracionFiscal {
+  cfdi_serie: string;
+  cfdi_metodo_pago: MetodoPagoCFDI;
+  cfdi_forma_pago_default: string;
+  pac_proveedor: "finkok" | "swsapien" | "mascarilla";
+  pac_usuario: string;
+  pac_password: string;
+  certificado_cer: string;
+  certificado_key: string;
+  certificado_password: string;
+  email_envio_facturas: string;
 }

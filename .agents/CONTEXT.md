@@ -689,3 +689,154 @@ symvora-saas/
 
 **Para elegir librerías:**
 - `pick-ui-library` para Sonner (toasts), base-ui (primitivas), recharts (gráficas), etc.
+
+---
+
+## Plan Pendiente: Completar Módulo de Facturación (CFDI 4.0 + Suscripciones)
+
+**Fecha del plan:** 2026-08-12
+**Estado:** Pendiente — se detuvo por reinicio del equipo
+
+### Lo que ya existe
+
+1. **Suscripciones SaaS (Conekta)**: Checkout, webhooks, códigos de prueba, UI funcional (`/billing`)
+2. **Facturación CFDI 4.0**: Schema de BD (migración 007), APIs (crear, timbrar, cancelar), UI de facturación (`/facturas`) con tabla, formulario de creación, filtros, timbrado y cancelación
+3. **Librerías CFDI**: `catalogs.ts` (catálogos SAT), `pac-client.ts` (Finkok + SWSapien), `xml-generator.ts` (generación CFDI 4.0)
+
+### Pendientes por implementar
+
+#### Fase 1: Configuración Fiscal (PREREQUISITO para producción)
+
+**1.1 UI de Configuración Fiscal**
+- Archivo: `src/app/(dashboard)/[locale]/facturas/config/page.tsx`
+- Formulario para configurar datos del emisor fiscal
+- Campos: RFC, Razón Social, Régimen Fiscal, Código Postal
+- Configuración del PAC: proveedor (finkok/swsapien), usuario, contraseña
+- Certificados: CER, KEY, contraseña del certificado
+- Email de envío de facturas
+- Guardar en `tenant_settings.configuracion_fiscal` como `TenantConfiguracionFiscal`
+- Seguir patrón de `settings/page.tsx` (Tabs, Card, toast)
+- Agregar link en sidebar o en la página de facturas
+
+**1.2 API para guardar configuración fiscal**
+- Archivo: `src/app/api/facturas/config/route.ts`
+- GET: obtener configuración fiscal del tenant
+- POST/PUT: guardar configuración fiscal
+- Validar datos requeridos antes de guardar
+
+#### Fase 2: Descarga de XML/PDF
+
+**2.1 API de descarga XML**
+- Archivo: `src/app/api/facturas/[id]/xml/route.ts`
+- GET: devuelve el XML timbrado de una factura
+- Opción A: Guardar XML en Supabase Storage y servir desde ahí
+- Opción B: Regenerar el XML al vuelo usando `generateCFDIXML()` + datos de la factura timbrada
+
+**2.2 API de descarga PDF**
+- Archivo: `src/app/api/facturas/[id]/pdf/route.ts`
+- Usar `jsPDF` + `jspdf-autotable` (ya en package.json)
+- Generar PDF con layout CFDI: emisor, receptor, conceptos, impuestos, totales, QR del CFDI
+- Incluir UUID, fecha de timbrado, sello digital
+- Guardar PDF en Supabase Storage
+
+**2.3 Botones de descarga en tabla de facturas**
+- Archivo: `facturas/page.tsx`
+- Agregar botones "Descargar XML" y "Descargar PDF" en columna de acciones
+- Solo visibles para facturas con estado TIMBRADA
+- Iconos: `Download` de lucide-react
+
+#### Fase 3: Historial de Pagos (Suscripciones)
+
+**3.1 Consultar `payment_history` en billing page**
+- Archivo: `billing/page.tsx`
+- Reemplazar placeholder "No hay pagos registrados" con tabla real
+- Query: `supabase.from("payment_history").select("*").eq("subscription_id", subscription.id).order("paid_at", { ascending: false })`
+- Mostrar: fecha, monto, método de pago, estado, ID de orden Conekta
+
+#### Fase 4: Cancelar Suscripción con Conekta
+
+**4.1 API para cancelar**
+- Archivo: `src/app/api/conekta/cancel-subscription/route.ts`
+- POST: recibe `tenant_id`
+- Busca `conekta_customer_id` en `subscriptions`
+- Llama a `cancelSubscription(customerId)` de `src/lib/conekta/subscriptions.ts`
+- Actualiza BD: `subscriptions.status = "canceled"`, `tenants.subscription_status = "canceled"`
+- Retorna éxito/error
+
+**4.2 Actualizar UI de cancelación**
+- Archivo: `billing/page.tsx`
+- Cambiar `handleCancelSubscription` para llamar a la API en vez de actualizar BD directamente
+- Usar Dialog de confirmación en vez de `confirm()`
+
+#### Fase 5: Vista de Detalle de Factura
+
+**5.1 Página de detalle**
+- Archivo: `src/app/(dashboard)/[locale]/facturas/[id]/page.tsx`
+- Mostrar todos los datos: emisor, receptor, conceptos, impuestos, totales
+- Datos CFDI: UUID, fecha timbrado, PAC, sello
+- Botones de descarga XML/PDF
+- Botón de cancelar (si TIMBRADA)
+- Botón de regresar a la lista
+
+#### Fase 6: Endpoints de Producción del PAC
+
+**6.1 Fix `pac-client.ts`**
+- Archivo: `src/lib/cfdi/pac-client.ts`
+- `getEndpoint()` línea 41 retorna demo URL para producción — CORREGIR
+- Finkok producción: `https://app.finkok.com/sessions/sign` (stamp) y `https://app.finkok.com/cancel/cancel` (cancel) — ya están correctos en `stamp()` pero `getEndpoint()` está mal
+- Eliminar `getEndpoint()` que no se usa, o corregirlo
+- Hacer que `isTest` se lea de configuración o variable de entorno
+
+#### Fase 7: Tests
+
+**7.1 Tests de CFDI**
+- Archivo: `__tests__/cfdi.test.ts`
+- Test `generateCFDIXML()` con datos mock
+- Test `parseCFDIXML()` con XML de respuesta mock
+- Test `createPACClient()` devuelve cliente correcto según proveedor
+
+**7.2 Tests de APIs de facturación**
+- Archivo: `__tests__/facturas.test.ts`
+- Test crear factura (validación de campos requeridos)
+- Test timbrar (mock PAC client)
+- Test cancelar
+
+#### Fase 8: Hardening
+
+**8.1 Hardcode locale en redirects**
+- `onboarding/page.tsx:331` → usar `router.push(\`/\${locale}/billing\`)`
+- `billing/success/page.tsx:26,59` → usar locale dinámico
+- `auth-forms.tsx:298` → mismo fix
+
+**8.2 Guardar XML y PDF en la BD**
+- En `stamp/route.ts`: después de timbrar, guardar `xml_url` y `pdf_url` en la factura
+- Usar Supabase Storage o regenerar on-demand
+
+### Orden de ejecución recomendado
+
+1. **1.1 + 1.2** → Config fiscal (sin esto no se puede timbrar en producción)
+2. **6.1** → Fix endpoints PAC (rápido, 5 min)
+3. **8.1** → Fix locales hardcodeados (rápido)
+4. **2.1 + 2.2 + 2.3** → Descarga XML/PDF
+5. **3.1** → Historial de pagos
+6. **4.1 + 4.2** → Cancelar con Conekta
+7. **5.1** → Vista detalle factura
+8. **7.1 + 7.2** → Tests
+9. **8.2** → Persistencia de archivos
+
+### Archivos clave para referencia
+
+| Archivo | Descripción |
+|---|---|
+| `src/lib/cfdi/catalogs.ts` | Catálogos SAT (formas de pago, usos CFDI, etc.) |
+| `src/lib/cfdi/pac-client.ts` | Clientes PAC: Finkok + SWSapien |
+| `src/lib/cfdi/xml-generator.ts` | Generador XML CFDI 4.0 |
+| `src/app/api/facturas/create/route.ts` | API crear factura (BORRADOR) |
+| `src/app/api/facturas/stamp/route.ts` | API timbrar factura via PAC |
+| `src/app/api/facturas/cancel/route.ts` | API cancelar factura via PAC |
+| `src/app/api/facturas/list/route.ts` | API listar facturas |
+| `src/app/(dashboard)/[locale]/facturas/page.tsx` | UI principal de facturación |
+| `src/app/(dashboard)/[locale]/billing/page.tsx` | UI de suscripciones |
+| `src/lib/types/database.ts` | Tipos TypeScript (línea 1084: `TenantConfiguracionFiscal`) |
+| `src/lib/conekta/subscriptions.ts` | Funciones Conekta (create, cancel, pause, resume) |
+| `supabase/migrations/007_facturacion.sql` | Schema de BD para facturación |

@@ -43,6 +43,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
       "/purchases": "Compras",
       "/purchase-orders": "Órdenes de Compra",
       "/finances": "Finanzas",
+      "/facturas": "Facturación",
       "/users": "Usuarios",
       "/activity": "Bitácora",
       "/settings": "Configuración",

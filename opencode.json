@@ -5,6 +5,14 @@
       "type": "remote",
       "url": "https://mcp.supabase.com/mcp?project_ref=ffswcgrahxsczvydngrd&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching",
       "enabled": true
+    },
+    "stitch": {
+      "type": "remote",
+      "url": "https://stitch.googleapis.com/mcp",
+      "enabled": true,
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      }
     }
   }
 }

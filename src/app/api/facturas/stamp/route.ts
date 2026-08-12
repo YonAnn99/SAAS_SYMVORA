@@ -1,0 +1,116 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createPACClient } from "@/lib/cfdi/pac-client";
+import { generateCFDIXML } from "@/lib/cfdi/xml-generator";
+import type { TenantConfiguracionFiscal } from "@/lib/types/database";
+
+interface StampRequest {
+  factura_id: string;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body: StampRequest = await request.json();
+    const supabase = createSupabaseServiceRoleClient();
+
+    // Get factura
+    const { data: factura, error: facturaError } = await supabase
+      .from("facturas")
+      .select("*")
+      .eq("id", body.factura_id)
+      .single();
+
+    if (facturaError || !factura) {
+      return NextResponse.json(
+        { error: "Factura no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    if (factura.estado !== "BORRADOR") {
+      return NextResponse.json(
+        { error: "Solo se pueden timbrar facturas en estado BORRADOR" },
+        { status: 400 }
+      );
+    }
+
+    // Get detail lines
+    const { data: detalle, error: detalleError } = await supabase
+      .from("factura_detalle")
+      .select("*")
+      .eq("factura_id", body.factura_id)
+      .order("orden");
+
+    if (detalleError || !detalle || detalle.length === 0) {
+      return NextResponse.json(
+        { error: "La factura no tiene conceptos" },
+        { status: 400 }
+      );
+    }
+
+    // Get PAC config
+    const { data: settings } = await supabase
+      .from("tenant_settings")
+      .select("configuracion_fiscal")
+      .eq("tenant_id", factura.tenant_id)
+      .single();
+
+    const fiscalConfig = settings?.configuracion_fiscal as TenantConfiguracionFiscal | null;
+    if (!fiscalConfig?.pac_usuario) {
+      return NextResponse.json(
+        { error: "Configuración PAC no encontrada" },
+        { status: 400 }
+      );
+    }
+
+    // Generate XML
+    const xml = generateCFDIXML(factura, detalle);
+
+    // Create PAC client and stamp
+    const pacClient = createPACClient(fiscalConfig, true); // true = test mode
+
+    try {
+      const result = await pacClient.stamp(xml);
+
+      // Update factura with CFDI data
+      const { error: updateError } = await supabase
+        .from("facturas")
+        .update({
+          estado: "TIMBRADA",
+          uuid_cfdi: result.uuid,
+          fecha_timbrado: new Date().toISOString(),
+          pac_nombre: fiscalConfig.pac_proveedor,
+          pac_response: result.rawResponse as Record<string, unknown>,
+        })
+        .eq("id", body.factura_id);
+
+      if (updateError) {
+        console.error("Error updating factura:", updateError);
+        return NextResponse.json(
+          { error: "Error al actualizar la factura" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        uuid: result.uuid,
+        message: "Factura timbrada correctamente",
+      });
+    } catch (pacError) {
+      console.error("PAC stamp error:", pacError);
+      return NextResponse.json(
+        {
+          error: `Error al timbrar: ${pacError instanceof Error ? pacError.message : "Error desconocido del PAC"}`,
+        },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error("Stamp factura error:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}

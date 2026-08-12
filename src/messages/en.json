@@ -157,7 +157,9 @@
       "GENERAL": "General configuration for any business"
     },
     "complete": "Your business is set up",
-    "completeDescription": "You can start using SYMVORA now"
+    "completeDescription": "You can start using SYMVORA now",
+    "trialCode": "Trial code (optional)",
+    "trialCodeHint": "If you have a promo code, enter it here"
   },
   "layout": {
     "dashboard": "Dashboard",
@@ -166,6 +168,7 @@
     "purchases": "Purchases",
     "purchaseOrders": "Purchase Orders",
     "finances": "Finances",
+    "facturas": "Invoicing",
     "settings": "Settings",
     "users": "Users",
     "variants": "Variants",
@@ -334,8 +337,280 @@
     "paymentHistory": "Payment History",
     "noPayments": "No payments recorded"
   },
-  "onboarding": {
-    "trialCode": "Trial code (optional)",
-    "trialCodeHint": "If you have a promo code, enter it here"
+  "facturas": {
+    "title": "Invoicing",
+    "description": "Electronic invoicing CFDI 4.0",
+    "newInvoice": "New Invoice",
+    "invoice": "Invoice",
+    "invoices": "Invoices",
+    "series": "Series",
+    "folio": "Folio",
+    "client": "Client",
+    "rfc": "RFC",
+    "taxId": "RFC",
+    "subtotal": "Subtotal",
+    "tax": "VAT",
+    "discount": "Discount",
+    "total": "Total",
+    "status": "Status",
+    "date": "Date",
+    "paymentMethod": "Payment Method",
+    "statuses": {
+      "DRAFT": "Draft",
+      "STAMPED": "Stamped",
+      "CANCELLED": "Cancelled"
+    },
+    "stamp": "Stamp",
+    "cancel": "Cancel invoice",
+    "viewXml": "View XML",
+    "downloadPdf": "Download PDF",
+    "sendEmail": "Send by email",
+    "noInvoices": "No invoices recorded",
+    "createInvoice": "Create invoice",
+    "cancelInvoice": "Cancel invoice",
+    "cancelReason": "Cancellation reason",
+    "confirmCancel": "Are you sure you want to cancel this invoice? This action cannot be undone.",
+    "emisor": "Issuer",
+    "receptor": "Receiver",
+    "concepts": "Concepts",
+    "addConcept": "Add concept",
+    "concept": "Concept",
+    "description": "Description",
+    "quantity": "Quantity",
+    "unitPrice": "Unit price",
+    "unit": "Unit",
+    "satCode": "SAT code",
+    "productCode": "Product code",
+    "unitCode": "Unit code",
+    "taxBase": "Tax base",
+    "taxRate": "Rate",
+    "taxAmount": "Tax amount",
+    "uuid": "UUID",
+    "timbrado": "Stamped",
+    "fechaTimbrado": "Stamp date",
+    "configFiscal": "Fiscal configuration",
+    "emisorRfc": "Issuer RFC",
+    "emisorName": "Business name",
+    "emisorRegimen": "Tax regime",
+    "emisorCp": "Postal code",
+    "pacConfig": "PAC configuration",
+    "pacProvider": "PAC provider",
+    "pacUser": "PAC user",
+    "pacPassword": "PAC password",
+    "certificate": "Digital certificate",
+    "certificateKey": "Private key",
+    "certificatePassword": "Certificate password"
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "solutionsLabel": "Solutions",
+      "pricing": "Pricing",
+      "login": "Log in",
+      "cta": "Start free",
+      "productsLabel": "Products",
+      "companyLabel": "Company",
+      "products": {
+        "pos": "Point of Sale",
+        "inventory": "Inventory",
+        "purchases": "Purchases",
+        "finances": "Finance",
+        "invoicing": "CFDI Invoicing"
+      },
+      "solutions": {
+        "byIndustry": "By Industry",
+        "enterprises": "Enterprises",
+        "developers": "Developers"
+      },
+      "company": {
+        "about": "About",
+        "blog": "Blog",
+        "support": "Support",
+        "careers": "Careers"
+      }
+    },
+    "hero": {
+      "title": "Your business deserves",
+      "highlight": "a change",
+      "subtitle": "Point of sale, inventory, CFDI 4.0 electronic invoicing and finance — all in one, no per-sale commissions, with Spanish support.",
+      "ctaPrimary": "7-day free trial",
+      "ctaSecondary": "See demo",
+      "socialProof": "Multiple Mexican businesses already trust SYMVORA",
+      "growthLabel": "Monthly sales"
+    },
+    "trustedBy": {
+      "label": "Built for Mexican businesses of all sizes"
+    },
+    "features": {
+      "title": "Everything your business needs",
+      "subtitle": "Modules that work together to give you total control of your operations.",
+      "viewAll": "See all features",
+      "pos": {
+        "title": "Fast Point of Sale",
+        "description": "Search by name or scan barcode. 4 payment methods: Cash, Card, Transfer and Credit. 16% VAT calculated automatically. Stock deducted on sale confirmation.",
+        "stats": "4 payment methods · Auto VAT · Real-time stock"
+      },
+      "inventory": {
+        "title": "Inventory with full control",
+        "description": "Lots with expiry dates and alerts at 7 and 30 days. Size and color variants with independent pricing and stock. Adjustments for shrinkage, physical count or returns with full audit trail.",
+        "stockAlert": "Low stock",
+        "stats": "Lots · Variants · 5 adjustment types"
+      },
+      "purchases": {
+        "title": "Purchase orders",
+        "description": "From draft to partial or total receipt. Receiving atomically updates inventory. Register suppliers with lead time and payment terms.",
+        "stats": "5 statuses · Atomic receiving · Suppliers"
+      },
+      "finances": {
+        "title": "Finance & reports",
+        "description": "Open and close cash register with automatic reconciliation — system compares expected balance against actual cash. Sales charts, top products and payment methods. Export to PDF and CSV.",
+        "viewDashboards": "See reports",
+        "efficiency": "Precision",
+        "stats": "Reconciliation · 6 reports · Export"
+      }
+    },
+    "businessTypes": {
+      "badge": "Adapted to Your Business",
+      "title": "Configured for your business type",
+      "subtitle": "SYMVORA adapts to multiple business types with pre-defined modules and configurations. Activate only what you need.",
+      "types": {
+        "ABARROTES": { "name": "Grocery Store", "desc": "Daily consumption products, minimarket and corner store" },
+        "VERDULERIA": { "name": "Produce Shop", "desc": "Fruits, vegetables and fresh products with expiry control" },
+        "MASCOTAS": { "name": "Pet Shop", "desc": "Food, accessories and services for pets" },
+        "ROPA": { "name": "Clothing & Footwear", "desc": "Sizes, colors and variants with independent stock" },
+        "FERRETERIA": { "name": "Hardware Store", "desc": "Tools, construction materials and spare parts" },
+        "FARMACIA": { "name": "Pharmacy", "desc": "Medications, lots with expiry and traceability" },
+        "GENERAL": { "name": "General", "desc": "Flexible configuration for any business type" }
+      }
+    },
+    "cfdi": {
+      "badge": "Electronic Invoicing",
+      "title": "CFDI 4.0 built-in, no add-ons",
+      "subtitle": "Generate electronic invoices directly from the system. Comply with SAT without external software.",
+      "features": {
+        "stamp": { "title": "Direct stamping", "description": "Send XML to the PAC and receive the validation UUID in seconds. Supports Finkok, SWSapien and other providers." },
+        "catalogs": { "title": "SAT catalogs included", "description": "100+ payment forms, 80+ unit codes, 20+ fiscal regimes and 17+ product codes — all pre-loaded." },
+        "cancel": { "title": "Cancellation with traceability", "description": "Cancel invoices with registered reason. Optional substitution folio. Everything logged in audit trail.", "description": "Cancel invoices with registered reason. Optional substitution folio. Everything logged in audit trail." },
+        "payment": { "title": "PUE and PPD", "description": "Supports Single Payment and Installment Payment. Payment methods: Cash, Transfer, Credit/Debit card and more." }
+      },
+      "cta": "Configure your PAC and start invoicing"
+    },
+    "security": {
+      "badge": "Security",
+      "title": "Your data is protected",
+      "subtitle": "Multi-tenant architecture with database-level isolation. Each business operates in its own secure space.",
+      "features": {
+        "rls": { "title": "Row Level Security", "description": "PostgreSQL RLS ensures each user only sees their tenant's data. No data leakage between businesses." },
+        "roles": { "title": "Role-based access control", "description": "3 roles: Super Admin, Admin and Cashier. Each role has specific database-level permissions." },
+        "audit": { "title": "Audit trail", "description": "Every creation, edit and deletion is logged with user, date and details. 8 entity types tracked." },
+        "passwords": { "title": "Secure passwords", "description": "Security requirements: 8+ characters, uppercase, lowercase, number and special character." }
+      }
+    },
+    "integrations": {
+      "badge": "Integrations",
+      "title": "Connected with the best providers",
+      "subtitle": "Payments with Conekta, invoicing with PAC, backend on Supabase — all tested and reliable.",
+      "items": {
+        "conekta": { "name": "Conekta", "description": "Mexican payment gateway. Accepts cards and OXXO." },
+        "pac": { "name": "PAC", "description": "Authorized Certification Provider for CFDI stamping." },
+        "supabase": { "name": "Supabase", "description": "Backend with PostgreSQL, authentication and storage." },
+        "vercel": { "name": "Vercel", "description": "Hosting and deployment with edge functions." }
+      }
+    },
+    "benefits": {
+      "badge": "Our Philosophy",
+      "title": "Built for those in a hurry",
+      "subtitle": "We understand you don't have time to learn complicated software. SYMVORA is designed for your team to use from day one.",
+      "innovation": "Quick to learn",
+      "innovationDesc": "Clean interface with global search (Cmd+K). No cluttered screens. Your team learns in hours, not weeks.",
+      "reliability": "Always available",
+      "reliabilityDesc": "Built with proven technology: Next.js, PostgreSQL and Supabase. Your business runs 24/7 without interruptions.",
+      "commitment": "Close Support",
+      "commitmentDesc": "Spanish-language support, personalized assistance, and a platform that understands the real needs of your business."
+    },
+    "whyChooseUs": {
+      "title": "Why choose SYMVORA",
+      "subtitle": "We're not a generic ERP adapted to Mexico. We're built from scratch for Mexican commerce.",
+      "searchPlaceholder": "Search products, customers, invoices...",
+      "modular": {
+        "title": "Modules you activate",
+        "description": "6 configurable modules: variants, lots, shrinkage, services, credit and bulk. Activate only what you need. Nothing you won't use."
+      },
+      "cfdi": {
+        "title": "Invoicing without headaches",
+        "description": "Built-in CFDI 4.0. No external software or add-ons needed. Stamp and cancel invoices from the same POS."
+      },
+      "atomic": {
+        "title": "Atomic operations",
+        "description": "Sales deduct stock, purchase receipts increase it, and adjustments are logged — all in a single database transaction."
+      }
+    },
+    "setup": {
+      "badge": "Setup",
+      "title": "Selling in 4 steps",
+      "subtitle": "No installations, no technical configuration. Just create your account and start.",
+      "stepLabel": "Step",
+      "steps": {
+        "1": { "title": "Create your account", "description": "Sign up with your email and password. Choose your business type." },
+        "2": { "title": "Set up your catalog", "description": "Add products with price, cost and barcode. Enable variants or lots if needed." },
+        "3": { "title": "Register suppliers", "description": "Add your main suppliers to be able to record purchases." },
+        "4": { "title": "Open register and sell", "description": "Open a register with initial fund, search products and complete your first sale." }
+      }
+    },
+    "cta": {
+      "title": "Start selling today",
+      "subtitle": "Free 7-day trial. No credit card. Cancel anytime.",
+      "price": "$400",
+      "period": "MXN / month",
+      "features": {
+        "pos": "Full point of sale",
+        "inventory": "Inventory with lots and variants",
+        "cfdi": "CFDI 4.0 invoicing",
+        "reports": "Reports and charts",
+        "users": "Up to 3 users",
+        "support": "Spanish support"
+      },
+      "primary": "Start free trial",
+      "secondary": "Talk to us",
+      "trialNote": "7-day free trial · No credit card · Cancel anytime"
+    },
+    "about": {
+      "badge": "Our Story",
+      "title": "Two graduates from Tecnológico de Estudios Superiores de Ecatepec",
+      "subtitle": "We created SYMVORA because we saw thousands of Mexican businesses wanted to grow but lacked the right tools. No per-sale commissions, no technical complications.",
+      "foundedBy": "Founded by",
+      "founders": "TecNM Ecatepec Graduates",
+      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they decided to build a solution that truly understands the Mexican market: automatic VAT, CFDI 4.0 invoicing, OXXO payments, and a POS that works offline.",
+      "values": {
+        "mission": "Mission",
+        "missionDesc": "Democratize technology for Mexican commerce",
+        "empathy": "Empathy",
+        "empathyDesc": "We understand your challenges because we've lived them",
+        "community": "Community",
+        "communityDesc": "We build tools that empower your business",
+        "trust": "Trust",
+        "trustDesc": "Your data secure, your business protected"
+      },
+      "stats": {
+        "industries": "Industries served",
+        "mexican": "Made in Mexico",
+        "commission": "Per-sale commission"
+      }
+    },
+  "footer": {
+      "description": "Point of sale and inventory for Mexican businesses. Electronic invoicing, stock control and reports — all in one platform.",
+      "product": "Product",
+      "features": "Features",
+      "pricing": "Pricing",
+      "integrations": "Integrations",
+      "company": "Company",
+      "about": "About",
+      "blog": "Blog",
+      "support": "Support",
+      "legal": "Legal",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "copyright": "© 2026 SYMVORA. All rights reserved."
+    }
   }
 }

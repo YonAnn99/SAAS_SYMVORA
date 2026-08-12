@@ -166,6 +166,7 @@
     "purchases": "Compras",
     "purchaseOrders": "Órdenes de Compra",
     "finances": "Finanzas",
+    "facturas": "Facturación",
     "settings": "Configuración",
     "users": "Usuarios",
     "variants": "Variantes",
@@ -334,6 +335,70 @@
     "paymentHistory": "Historial de Pagos",
     "noPayments": "No hay pagos registrados"
   },
+  "facturas": {
+    "title": "Facturación",
+    "description": "Facturación electrónica CFDI 4.0",
+    "newInvoice": "Nueva Factura",
+    "invoice": "Factura",
+    "invoices": "Facturas",
+    "series": "Serie",
+    "folio": "Folio",
+    "client": "Cliente",
+    "rfc": "RFC",
+    "taxId": "RFC",
+    "subtotal": "Subtotal",
+    "tax": "IVA",
+    "discount": "Descuento",
+    "total": "Total",
+    "status": "Estado",
+    "date": "Fecha",
+    "paymentMethod": "Método de Pago",
+    "statuses": {
+      "DRAFT": "Borrador",
+      "STAMPED": "Timbrada",
+      "CANCELLED": "Cancelada"
+    },
+    "stamp": "Timbrar",
+    "cancel": "Cancel factura",
+    "viewXml": "Ver XML",
+    "downloadPdf": "Descargar PDF",
+    "sendEmail": "Enviar por email",
+    "noInvoices": "No hay facturas registradas",
+    "createInvoice": "Crear factura",
+    "cancelInvoice": "Cancelar factura",
+    "cancelReason": "Motivo de cancelación",
+    "confirmCancel": "¿Estás seguro de cancelar esta factura? Esta acción no se puede deshacer.",
+    "emisor": "Emisor",
+    "receptor": "Receptor",
+    "concepts": "Conceptos",
+    "addConcept": "Agregar concepto",
+    "concept": "Concepto",
+    "description": "Descripción",
+    "quantity": "Cantidad",
+    "unitPrice": "Precio unitario",
+    "unit": "Unidad",
+    "satCode": "Clave SAT",
+    "productCode": "Clave producto",
+    "unitCode": "Clave unidad",
+    "taxBase": "Base impuesto",
+    "taxRate": "Tasa",
+    "taxAmount": "Importe impuesto",
+    "uuid": "UUID",
+    "timbrado": "Timbrado",
+    "fechaTimbrado": "Fecha timbrado",
+    "configFiscal": "Configuración fiscal",
+    "emisorRfc": "RFC del emisor",
+    "emisorName": "Razón social",
+    "emisorRegimen": "Régimen fiscal",
+    "emisorCp": "Código postal",
+    "pacConfig": "Configuración PAC",
+    "pacProvider": "Proveedor PAC",
+    "pacUser": "Usuario PAC",
+    "pacPassword": "Contraseña PAC",
+    "certificate": "Certificado digital",
+    "certificateKey": "Llave privada",
+    "certificatePassword": "Contraseña certificado"
+  },
   "onboarding": {
     "trialCode": "Código de prueba (opcional)",
     "trialCodeHint": "Si tienes un código de promoción, ingrésalo aquí"
@@ -409,6 +474,218 @@
         "title": "¡Tutorial completado!",
         "description": "Ya conoces los módulos principales de SYMVORA. Recuerda el orden correcto: Configuración → Proveedores → Productos → Abrir caja → Vender. Si necesitas ayuda, haz clic en '¿Necesitas ayuda?' en la barra superior."
       }
+    }
+  },
+  "landing": {
+    "nav": {
+      "features": "Funciones",
+      "solutionsLabel": "Soluciones",
+      "pricing": "Precios",
+      "login": "Iniciar sesión",
+      "cta": "Comenzar gratis",
+      "productsLabel": "Productos",
+      "companyLabel": "Empresa",
+      "products": {
+        "pos": "Punto de Venta",
+        "inventory": "Inventario",
+        "purchases": "Compras",
+        "finances": "Finanzas",
+        "invoicing": "Facturación CFDI"
+      },
+      "solutions": {
+        "byIndustry": "Por Giro",
+        "enterprises": "Empresas",
+        "developers": "Desarrolladores"
+      },
+      "company": {
+        "about": "Nosotros",
+        "blog": "Blog",
+        "support": "Soporte",
+        "careers": "Carreras"
+      }
+    },
+    "hero": {
+      "title": "Tu negocio merece",
+      "highlight": "un cambio",
+      "subtitle": "Punto de venta, inventario, facturación electrónica CFDI 4.0 y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
+      "ctaPrimary": "Prueba 7 días gratis",
+      "ctaSecondary": "Ver demo",
+      "socialProof": "Múltiples giros mexicanos ya confían en SYMVORA",
+      "growthLabel": "Ventas del mes"
+    },
+    "trustedBy": {
+      "label": "Diseñado para negocios mexicanos de todos los tamaños"
+    },
+    "features": {
+      "title": "Todo lo que tu negocio necesita",
+      "subtitle": "Módulos que trabajan juntos para darte control total de tus operaciones.",
+      "viewAll": "Ver todas las funciones",
+      "pos": {
+        "title": "Punto de Venta rápido",
+        "description": "Busca por nombre o escanea código de barras. 4 métodos de pago: Efectivo, Tarjeta, Transferencia y Crédito/Fiado. IVA del 16% se calcula automáticamente. El stock se descuenta al confirmar la venta.",
+        "stats": "4 métodos de pago · IVA automático · Stock en tiempo real"
+      },
+      "inventory": {
+        "title": "Inventario con control total",
+        "description": "Lotes con fecha de caducidad y alertas a 7 y 30 días. Variantes de talla y color con precio y stock independiente. Ajustes por merma, conteo físico o devolución con bitácora completa.",
+        "stockAlert": "Stock bajo",
+        "stats": "Lotes · Variantes · 5 tipos de ajuste"
+      },
+      "purchases": {
+        "title": "Órdenes de compra",
+        "description": "Desde borrador hasta recepción total o parcial. La recepción actualiza el inventario de forma atómica. Registra proveedores con tiempo de surtido y condiciones de pago.",
+        "stats": "5 estados · Recepción atómica · Proveedores"
+      },
+      "finances": {
+        "title": "Finanzas y reportes",
+        "description": "Abre y cierra caja con conciliación automática — el sistema compara el saldo esperado contra el efectivo real. Gráficas de ventas, productos más vendidos y métodos de pago. Exporta a PDF y CSV.",
+        "viewDashboards": "Ver reportes",
+        "efficiency": "Precisión",
+        "stats": "Conciliación · 6 reportes · Exportación"
+      }
+    },
+    "businessTypes": {
+      "badge": "Adaptado a tu Negocio",
+      "title": "Configurado para tu giro",
+      "subtitle": "SYMVORA se adapta a múltiples tipos de negocio con módulos y configuraciones predefinidas. Activa solo lo que necesitas.",
+      "types": {
+        "ABARROTES": { "name": "Abarrotes", "desc": "Productos de consumo diario, minimarket y tienda de la esquina" },
+        "VERDULERIA": { "name": "Verdulería", "desc": "Frutas, verduras y productos frescos con control de caducidad" },
+        "MASCOTAS": { "name": "Mascotas", "desc": "Alimentos, accesorios y servicios para mascotas" },
+        "ROPA": { "name": "Ropa y Calzado", "desc": "Tallas, colores y variantes con stock independiente" },
+        "FERRETERIA": { "name": "Ferretería", "desc": "Herramientas, materiales de construcción y refacciones" },
+        "FARMACIA": { "name": "Farmacia", "desc": "Medicamentos, lotes con caducidad y trazabilidad" },
+        "GENERAL": { "name": "General", "desc": "Configuración flexible para cualquier tipo de negocio" }
+      }
+    },
+    "cfdi": {
+      "badge": "Facturación Electrónica",
+      "title": "CFDI 4.0 integrado, sin complementos",
+      "subtitle": "Genera facturas electrónicas directamente desde el sistema. Cumple con el SAT sin necesidad de software externo.",
+      "features": {
+        "stamp": { "title": "Timbrado directo", "description": "Envía el XML al PAC y recibe el UUID de validación en segundos. Soporta Finkok, SWSapien y otros proveedores." },
+        "catalogs": { "title": "Catálogos SAT incluidos", "description": "100+ formas de pago, 80+ claves de unidad, 20+ regímenes fiscales y 17+ claves de producto — todo precargado." },
+        "cancel": { "description": "Cancela facturas con motivo registrado. Folio de sustitución opcional. Todo queda en bitácora de auditoría.", "title": "Cancelación con trazabilidad" },
+        "payment": { "title": "PUE y PPD", "description": "Soporta Pago en Una Exhibición y Pago en Parcialidades. Métodos de pago: Efectivo, Transferencia, Tarjeta de crédito/débito y más." }
+      },
+      "cta": "Configura tu PAC y empieza a facturar"
+    },
+    "security": {
+      "badge": "Seguridad",
+      "title": "Tus datos están protegidos",
+      "subtitle": "Arquitectura multi-tenant con aislamiento a nivel de base de datos. Cada negocio opera en su propio espacio seguro.",
+      "features": {
+        "rls": { "title": "Row Level Security", "description": "PostgreSQL RLS garantiza que cada usuario solo vea los datos de su tenant. Sin filtraciones entre negocios." },
+        "roles": { "title": "Control de acceso por roles", "description": "3 roles: Super Admin, Administrador y Cajero. Cada rol tiene permisos específicos en la base de datos." },
+        "audit": { "title": "Bitácora de auditoría", "description": "Cada creación, edición y eliminación queda registrada con usuario, fecha y detalles. 8 tipos de entidad rastreadas." },
+        "passwords": { "title": "Contraseñas seguras", "description": "Requisitos de seguridad: 8+ caracteres, mayúscula, minúscula, número y carácter especial." }
+      }
+    },
+    "integrations": {
+      "badge": "Integraciones",
+      "title": "Conectado con los mejores proveedores",
+      "subtitle": "Pagos con Conekta, facturación con PAC, backend en Supabase — todo probado y confiable.",
+      "items": {
+        "conekta": { "name": "Conekta", "description": "Gateway de pagos mexicano. Acepta tarjetas y OXXO." },
+        "pac": { "name": "PAC", "description": "Proveedor Autorizado de Certificación para timbrado CFDI." },
+        "supabase": { "name": "Supabase", "description": "Backend con PostgreSQL, autenticación y storage." },
+        "vercel": { "name": "Vercel", "description": "Hosting y despliegue con edge functions." }
+      }
+    },
+    "benefits": {
+      "badge": "Nuestra Filosofía",
+      "title": "Diseñado para quien tiene prisa",
+      "subtitle": "Entendemos que no tienes tiempo para aprender software complicado. SYMVORA está diseñado para que tu equipo lo use desde el primer día.",
+      "innovation": "Rápido de aprender",
+      "innovationDesc": "Interfaz limpia con búsqueda global (Cmd+K). Sin pantallas saturadas. Tu equipo aprende en horas, no en semanas.",
+      "reliability": "Siempre disponible",
+      "reliabilityDesc": "Construido con tecnología probada: Next.js, PostgreSQL y Supabase. Tu negocio opera 24/7 sin interrupciones.",
+      "commitment": "Soporte Cercano",
+      "commitmentDesc": "Atención en español, soporte personalizado y una plataforma que entiende las necesidades reales de tu negocio."
+    },
+    "whyChooseUs": {
+      "title": "Por qué elegir SYMVORA",
+      "subtitle": "No somos un ERP genérico adaptado a México. Estamos construidos desde cero para el comercio mexicano.",
+      "searchPlaceholder": "Buscar productos, clientes, facturas...",
+      "modular": {
+        "title": "Módulos que tú activas",
+        "description": "6 módulos configurables: variantes, lotes, mermas, servicios, crédito y granel. Activa solo lo que necesitas. Nada de lo que no uses."
+      },
+      "cfdi": {
+        "title": "Facturación sin complicaciones",
+        "description": "CFDI 4.0 integrado. No necesitas software externo ni complementos. Timbra y cancela facturas desde el mismo POS."
+      },
+      "atomic": {
+        "title": "Operaciones atómicas",
+        "description": "Las ventas descuentan stock, las recepciones de compra lo aumentan, y los ajustes quedan registrados — todo en una transacción de base de datos."
+      }
+    },
+    "setup": {
+      "badge": "Configuración",
+      "title": "En 4 pasos estás vendiendo",
+      "subtitle": "Sin instalaciones, sin configuración técnica. Solo crea tu cuenta y empieza.",
+      "stepLabel": "Paso",
+      "steps": {
+        "1": { "title": "Crea tu cuenta", "description": "Regístrate con tu correo y contraseña. Elige el tipo de negocio." },
+        "2": { "title": "Configura tu catálogo", "description": "Agrega productos con precio, costo y código de barras. Activa variantes o lotes si los necesitas." },
+        "3": { "title": "Registra proveedores", "description": "Da de alta tus proveedores principales para poder registrar compras." },
+        "4": { "title": "Abre caja y vende", "description": "Abre una caja con fondo inicial, busca productos y completa tu primera venta." }
+      }
+    },
+    "cta": {
+      "title": "Empieza a vender hoy",
+      "subtitle": "Prueba gratis por 7 días. Sin tarjeta de crédito. Cancela cuando quieras.",
+      "price": "$400",
+      "period": "MXN / mes",
+      "features": {
+        "pos": "Punto de venta completo",
+        "inventory": "Inventario con lotes y variantes",
+        "cfdi": "Facturación CFDI 4.0",
+        "reports": "Reportes y gráficas",
+        "users": "Hasta 3 usuarios",
+        "support": "Soporte en español"
+      },
+      "primary": "Comenzar prueba gratis",
+      "secondary": "Hablar con nosotros",
+      "trialNote": "7 días gratis · Sin tarjeta de crédito · Cancela cuando quieras"
+    },
+    "about": {
+      "badge": "Nuestra Historia",
+      "title": "Dos egresados del Tecnológico de Estudios Superiores de Ecatepec",
+      "subtitle": "Creamos SYMVORA porque vimos que miles de negocios mexicanos querían crecer pero no tenían las herramientas adecuadas. Sin comisiones por venta, sin complicaciones técnicas.",
+      "foundedBy": "Fundado por",
+      "founders": "Egresados del TecNM Ecatepec",
+      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, decidieron crear una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos con OXXO y un POS que funciona sin internet.",
+      "values": {
+        "mission": "Misión",
+        "missionDesc": "Democratizar la tecnología para el comercio mexicano",
+        "empathy": "Empatía",
+        "empathyDesc": "Entendemos tus retos porque los vivimos de cerca",
+        "community": "Comunidad",
+        "communityDesc": "Creamos herramientas que impulsan a tu negocio",
+        "trust": "Confianza",
+        "trustDesc": "Tus datos seguros, tu negocio protegido"
+      },
+      "stats": {
+        "industries": "Giros atendidos",
+        "mexican": "Hecho en México",
+        "commission": "Comisión por venta"
+      }
+    },
+  "footer": {
+      "description": "Punto de venta e inventario para negocios mexicanos. Facturación electrónica, control de stock y reportes — todo en una sola plataforma.",
+      "product": "Producto",
+      "features": "Funciones",
+      "pricing": "Precios",
+      "integrations": "Integraciones",
+      "company": "Empresa",
+      "about": "Acerca de",
+      "blog": "Blog",
+      "support": "Soporte",
+      "legal": "Legal",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "copyright": "© 2026 SYMVORA. Todos los derechos reservados."
     }
   }
 }
