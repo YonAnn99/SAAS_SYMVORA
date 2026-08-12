@@ -118,18 +118,18 @@ export default function SettingsPage() {
     }
   };
 
-  if (tenantLoading || loading) {
+  if (!tenantLoading && !tenantId) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
-        {t("common.loading")}
+        No se encontró la configuración del tenant.
       </div>
     );
   }
 
-  if (!tenantId) {
+  if (tenantLoading || loading) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
-        No se encontró la configuración del tenant.
+        {t("common.loading")}
       </div>
     );
   }

@@ -185,6 +185,14 @@ export default function BillingPage() {
     }
   };
 
+  if (!tenantLoading && !tenantId) {
+    return (
+      <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
+        No se encontró la suscripción del tenant.
+      </div>
+    );
+  }
+
   if (tenantLoading || loading) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
