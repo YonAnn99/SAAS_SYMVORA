@@ -1,7 +1,18 @@
 import { OrdersApi, Configuration } from "conekta";
+import https from "https";
 
 const apiKey = process.env.CONEKTA_PRIVATE_KEY;
-const config = new Configuration({ accessToken: apiKey || "" });
+
+// See src/lib/conekta/config.ts for why this is needed — the conekta
+// SDK's ESM build looks for a CA bundle at a path that isn't shipped in
+// the package, so we supply our own httpsAgent to skip that broken
+// code path.
+const conektaHttpsAgent = new https.Agent();
+
+const config = new Configuration({
+  accessToken: apiKey || "",
+  baseOptions: { httpsAgent: conektaHttpsAgent },
+});
 const ordersApi = new OrdersApi(config);
 
 export async function createHostedCheckoutOrder(params: {
