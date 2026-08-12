@@ -16,7 +16,7 @@ export function TutorialTrigger() {
     <Button
       variant="ghost"
       size="sm"
-      onClick={completed ? undefined : start}
+      onClick={start}
       className="gap-1.5 text-muted-foreground hover:text-foreground"
       title={completed ? t("tutorial.replayHelp") : t("tutorial.startHelp")}
     >
