@@ -30,6 +30,31 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
     setMounted(true);
   }, []);
 
+  // Mapeo de rutas a etiquetas de módulos
+  const getModuleLabel = (path: string): string => {
+    const moduleLabels: Record<string, string> = {
+      "/dashboard": "Dashboard",
+      "/pos": "Punto de Venta",
+      "/products": "Productos",
+      "/purchases": "Compras",
+      "/purchase-orders": "Órdenes de Compra",
+      "/finances": "Finanzas",
+      "/users": "Usuarios",
+      "/activity": "Bitácora",
+      "/settings": "Configuración",
+      "/reports": "Reportes",
+      "/billing": "Suscripción",
+      "/variants": "Variantes",
+      "/lots": "Lotes",
+      "/inventory-adjustments": "Ajustes de Inventario",
+    };
+
+    for (const [route, label] of Object.entries(moduleLabels)) {
+      if (path.includes(route)) return label;
+    }
+    return "Dashboard";
+  };
+
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
@@ -55,7 +80,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <h1 className="hidden sm:block text-sm font-semibold tracking-wide text-foreground">
-          {t("layout.dashboard")}
+          {getModuleLabel(pathname)}
         </h1>
       </div>
 

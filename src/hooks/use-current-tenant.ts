@@ -5,6 +5,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface TenantInfo {
   tenantId: string;
+  tenantName: string;
+  tenantLogo: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -12,6 +14,8 @@ interface TenantInfo {
 export function useCurrentTenant(): TenantInfo {
   const [state, setState] = useState<TenantInfo>({
     tenantId: "",
+    tenantName: "",
+    tenantLogo: null,
     loading: true,
     error: null,
   });
@@ -24,25 +28,57 @@ export function useCurrentTenant(): TenantInfo {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setState({ tenantId: "", loading: false, error: "No autenticado" });
+        setState({
+          tenantId: "",
+          tenantName: "",
+          tenantLogo: null,
+          loading: false,
+          error: "No autenticado",
+        });
         return;
       }
 
       const { data: membership, error } = await supabase
         .from("tenant_memberships")
-        .select("tenant_id")
+        .select(
+          `tenant_id, 
+           tenants!inner(nombre_comercial, logo_url)`
+        )
         .eq("user_id", user.id)
         .limit(1)
         .single();
 
       if (error || !membership) {
-        setState({ tenantId: "", loading: false, error: "No se encontró tenant" });
+        setState({
+          tenantId: "",
+          tenantName: "",
+          tenantLogo: null,
+          loading: false,
+          error: "No se encontró tenant",
+        });
         return;
       }
 
-      setState({ tenantId: membership.tenant_id, loading: false, error: null });
+      const tenantData = membership.tenants as unknown as {
+        nombre_comercial: string;
+        logo_url: string | null;
+      };
+
+      setState({
+        tenantId: membership.tenant_id,
+        tenantName: tenantData?.nombre_comercial || "Negocio",
+        tenantLogo: tenantData?.logo_url || null,
+        loading: false,
+        error: null,
+      });
     } catch {
-      setState({ tenantId: "", loading: false, error: "Error al obtener tenant" });
+      setState({
+        tenantId: "",
+        tenantName: "",
+        tenantLogo: null,
+        loading: false,
+        error: "Error al obtener tenant",
+      });
     }
   }, []);
 

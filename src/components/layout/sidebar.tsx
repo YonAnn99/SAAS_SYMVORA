@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { User } from "@supabase/supabase-js";
 
 const navigation = [
@@ -61,6 +63,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const { tenantName, tenantLogo } = useCurrentTenant();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -78,8 +81,15 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       {/* Logo */}
       <div className="flex h-14 items-center justify-between border-b border-border px-4 bg-gradient-to-r from-primary/5 to-transparent">
         {!collapsed && (
-          <Link href="/dashboard" className="text-sm font-bold tracking-tight gradient-text" onClick={onLinkClick}>
-            ✦ SYMVORA
+          <Link href="/dashboard" className="flex items-center" onClick={onLinkClick}>
+            <Image
+              src={tenantLogo || "/symvora-logo.webp"}
+              alt="SYMVORA"
+              width={120}
+              height={28}
+              className="h-6 w-auto object-contain"
+              priority
+            />
           </Link>
         )}
         <button
@@ -156,11 +166,11 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         {!collapsed && (
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-              {user?.email?.charAt(0).toUpperCase() || "U"}
+              {tenantName?.charAt(0).toUpperCase() || "N"}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-medium truncate">
-                {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuario"}
+                {tenantName || "Negocio"}
               </span>
               <span className="text-[10px] text-muted-foreground truncate">
                 {user?.email || "cargando..."}
