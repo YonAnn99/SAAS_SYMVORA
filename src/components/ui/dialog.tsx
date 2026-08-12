@@ -25,13 +25,15 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogOverlay({
   className,
+  noBlur,
   ...props
-}: DialogPrimitive.Backdrop.Props) {
+}: DialogPrimitive.Backdrop.Props & { noBlur?: boolean }) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/10 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        !noBlur && "supports-backdrop-filter:backdrop-blur-xs",
         className
       )}
       {...props}
@@ -43,13 +45,15 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  noBlur,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  noBlur?: boolean
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay noBlur={noBlur} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
