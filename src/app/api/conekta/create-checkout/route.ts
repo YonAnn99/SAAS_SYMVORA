@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     // Get tenant info
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
-      .select("nombre_comercial, email")
+      .select("nombre_comercial, email, telefono")
       .eq("id", tenant_id)
       .single();
 
@@ -60,6 +60,11 @@ export async function POST(request: Request) {
         customerId = await createCustomer({
           name: tenant.nombre_comercial || "SYMVORA User",
           email: tenant.email || "user@symvora.com",
+          // Conekta requires `phone` (it's not marked optional in their
+          // schema) — sending "" is what caused the 422. `telefono` isn't
+          // captured anywhere in signup yet, so fall back to a
+          // placeholder valid-format number until that's added.
+          phone: tenant.telefono || "5555555555",
         });
 
         await supabase
@@ -67,10 +72,19 @@ export async function POST(request: Request) {
           .update({ conekta_customer_id: customerId })
           .eq("tenant_id", tenant_id);
       } catch (customerError: unknown) {
-        const msg = customerError instanceof Error ? customerError.message : String(customerError);
-        console.error("Error creating Conekta customer:", msg);
+        // Axios errors carry the real validation detail in
+        // error.response.data — the generic .message is just "Request
+        // failed with status code 422" and hides which field failed.
+        const errObj = customerError as {
+          response?: { data?: unknown; status?: number };
+          message?: string;
+        };
+        const detail = errObj.response?.data
+          ? JSON.stringify(errObj.response.data)
+          : errObj.message || String(customerError);
+        console.error("Error creating Conekta customer:", detail);
         return NextResponse.json(
-          { error: `Error creating customer: ${msg}` },
+          { error: `Error creating customer: ${detail}` },
           { status: 500 }
         );
       }
