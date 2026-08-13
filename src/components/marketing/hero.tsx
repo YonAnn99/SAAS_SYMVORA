@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Play, Star } from "lucide-react";
@@ -12,6 +11,7 @@ import {
   fadeInUp,
   springIcon,
 } from "./animations";
+import { PosMockup } from "./pos-mockup";
 
 export function Hero() {
   const t = useTranslations();
@@ -155,27 +155,19 @@ export function Hero() {
           aria-hidden="true"
         />
         <motion.div
-          className="relative w-full max-w-[600px] aspect-[4/3] rounded-xl shadow-2xl overflow-hidden border border-neutral-200 bg-white z-10"
+          className="relative w-full max-w-[560px] aspect-[5/4] z-10"
           initial={{ rotateY: 15, rotateX: -5, scale: 0.95 }}
           animate={{ rotateY: 0, rotateX: 0, scale: 1 }}
           whileHover={{ rotateY: 0, rotateX: 0, scale: 1.01 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
           style={{ transformOrigin: "center center" }}
         >
-          <Image
-            alt="SYMVORA Dashboard Preview"
-            className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida/AP1WRLud4fnbgBZSWhHpgRwUGQk2q8t2pLSqOXDYwMZT7nriyKeN7-74-FNxx87DAS9b8EzpyuRHZ6p_JJTfzzYPcpvBjCJrWYDs3MPR8NH6whwLxQJXOCsUdi82Sr3cJ0pmx5YyC52WsMedniTGbwsPBaJ2EOXqvySshc-rf6Ec7z4M_UBXeHEjmEkTuKhNtLyBw2NOvQ76_FU1otoqYNAj81uKMwHnq17DZV2DISbqQj2HKHEDUIotK3-5Hl8"
-            width={600}
-            height={450}
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-          />
+          <PosMockup />
           <motion.div
-            className="absolute left-2 sm:-left-6 bottom-8 sm:bottom-12 bg-white p-3 rounded-lg shadow-xl border border-neutral-200 flex items-center gap-3"
+            className="absolute left-2 sm:-left-6 bottom-6 sm:bottom-10 bg-white p-3 rounded-lg shadow-xl border border-neutral-200 flex items-center gap-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8, duration: 0.5, ease: "easeOut" }}
+            transition={{ delay: 1.9, duration: 0.5, ease: "easeOut" }}
           >
             <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
               <span className="text-emerald-500 text-lg" aria-hidden="true">📈</span>

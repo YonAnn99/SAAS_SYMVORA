@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
-import { Puzzle, FileText, Database, Search, Command } from "lucide-react";
+import { Puzzle, FileText, Database, Search, Zap, Server } from "lucide-react";
 import {
   easeOutLong,
   easeOutShort,
@@ -37,6 +37,14 @@ export function WhyChooseUs() {
       titleKey: "landing.whyChooseUs.atomic.title",
       descKey: "landing.whyChooseUs.atomic.description",
       visual: "search" as const,
+    },
+    {
+      key: "uptime",
+      number: "04",
+      icon: Server,
+      titleKey: "landing.whyChooseUs.uptime.title",
+      descKey: "landing.whyChooseUs.uptime.description",
+      visual: "uptime" as const,
     },
   ];
 
@@ -168,18 +176,45 @@ export function WhyChooseUs() {
 
                 {benefit.visual === "search" && (
                   <motion.div
-                    className="mt-4 bg-neutral-800 rounded-lg p-2 border border-neutral-700 flex items-center gap-2 max-w-md w-full shadow-inner"
+                    className="mt-4 flex flex-col gap-2 max-w-md w-full"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, ...easeOutShort }}
                   >
-                    <Search className="w-4 h-4 text-neutral-500 ml-2" aria-hidden="true" />
-                    <span className="text-sm text-neutral-500">
-                      {t("landing.whyChooseUs.searchPlaceholder")}
-                    </span>
-                    <span className="ml-auto text-[10px] bg-neutral-700 px-2 py-1 rounded text-neutral-400 border border-neutral-600 flex items-center gap-1">
-                      <Command className="w-3 h-3" aria-hidden="true" />K
-                    </span>
+                    <div className="bg-neutral-800 rounded-lg p-2 border border-neutral-700 flex items-center gap-2 w-full shadow-inner">
+                      <Search className="w-4 h-4 text-neutral-500 ml-2" aria-hidden="true" />
+                      <span className="text-sm text-neutral-500">
+                        {t("landing.whyChooseUs.searchPlaceholder")}
+                      </span>
+                      <Zap className="w-3.5 h-3.5 ml-auto text-amber-400" aria-hidden="true" />
+                    </div>
+                    <p className="text-xs text-neutral-500 italic">
+                      {t("landing.whyChooseUs.searchHint")}
+                    </p>
+                  </motion.div>
+                )}
+
+                {benefit.visual === "uptime" && (
+                  <motion.div
+                    className="mt-4 flex flex-wrap gap-3"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, ...easeOutShort }}
+                  >
+                    <motion.div
+                      className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+                      <span className="text-xs font-medium text-emerald-300">99.9% uptime</span>
+                    </motion.div>
+                    <motion.div
+                      className="flex items-center gap-2 bg-neutral-800 border border-neutral-700 rounded px-3 py-2"
+                      whileHover={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                    >
+                      <Server className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
+                      <span className="text-xs text-white font-medium">Edge global</span>
+                    </motion.div>
                   </motion.div>
                 )}
               </motion.div>

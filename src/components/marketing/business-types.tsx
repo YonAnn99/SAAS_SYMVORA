@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Store,
   Leaf,
@@ -10,6 +11,11 @@ import {
   Wrench,
   Pill,
   Building2,
+  Search,
+  Plus,
+  Scale,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import {
   easeOutLong,
@@ -19,7 +25,6 @@ import {
   springIcon,
 } from "./animations";
 
-const icons = [Store, Leaf, PawPrint, Shirt, Wrench, Pill, Building2];
 const keys = [
   "ABARROTES",
   "VERDULERIA",
@@ -30,8 +35,236 @@ const keys = [
   "GENERAL",
 ] as const;
 
+type GiroKey = (typeof keys)[number];
+
+const icons: Record<GiroKey, typeof Store> = {
+  ABARROTES: Store,
+  VERDULERIA: Leaf,
+  MASCOTAS: PawPrint,
+  ROPA: Shirt,
+  FERRETERIA: Wrench,
+  FARMACIA: Pill,
+  GENERAL: Building2,
+};
+
+function MockupAbarrotes() {
+  return (
+    <div className="grid grid-cols-2 gap-2 text-xs">
+      {[
+        { name: "Leche Lala 1L", price: "$28" },
+        { name: "Tortillas 1kg", price: "$22" },
+        { name: "Arroz 1kg", price: "$35" },
+        { name: "Frijol 1kg", price: "$48" },
+      ].map((p) => (
+        <div
+          key={p.name}
+          className="border border-neutral-200 rounded-lg p-3 bg-white hover:border-blue-400 transition-colors"
+        >
+          <div className="font-medium text-neutral-900 truncate">{p.name}</div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="font-bold text-neutral-900">{p.price}</span>
+            <button
+              type="button"
+              className="bg-blue-600 text-white rounded p-1 hover:bg-blue-700"
+              aria-label="Agregar"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MockupVerduleria() {
+  return (
+    <div className="space-y-3 text-xs">
+      <div className="border border-neutral-200 rounded-lg p-3 bg-white">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-neutral-900">Manzana por kilo</span>
+          <span className="font-bold text-neutral-900">$48/kg</span>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <Scale className="w-4 h-4 text-neutral-500" />
+          <input
+            type="text"
+            value="2.350 kg"
+            readOnly
+            className="flex-1 border border-neutral-200 rounded px-2 py-1 text-neutral-900 font-bold"
+          />
+        </div>
+        <div className="mt-2 text-right text-blue-600 font-bold">Subtotal: $112.80</div>
+      </div>
+      <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-3 text-emerald-800">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="font-medium">Cálculo automático por peso</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockupRopa() {
+  const sizes = ["CH", "M", "G", "XG"];
+  const colors = ["Negro", "Blanco", "Azul"];
+  return (
+    <div className="space-y-3 text-xs">
+      <div className="font-medium text-neutral-900">Camiseta básica — Stock por variante</div>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-neutral-100">
+              <th className="border border-neutral-200 p-2 text-left"></th>
+              {sizes.map((s) => (
+                <th key={s} className="border border-neutral-200 p-2 text-center font-medium text-neutral-700">
+                  {s}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {colors.map((c, i) => (
+              <tr key={c} className={i % 2 === 0 ? "bg-white" : "bg-neutral-50"}>
+                <td className="border border-neutral-200 p-2 font-medium text-neutral-700">{c}</td>
+                {sizes.map((s, j) => {
+                  const stock = [3, 8, 12, 5][j];
+                  return (
+                    <td
+                      key={s}
+                      className={`border border-neutral-200 p-2 text-center font-bold ${
+                        stock < 5 ? "text-amber-600" : "text-neutral-900"
+                      }`}
+                    >
+                      {stock}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MockupFarmacia() {
+  return (
+    <div className="space-y-2 text-xs">
+      <div className="font-medium text-neutral-900 mb-2">Lotes próximos a caducar</div>
+      {[
+        { name: "Paracetamol 500mg", lot: "L-2341", days: 12, critical: true },
+        { name: "Ibuprofeno 400mg", lot: "L-1890", days: 45, critical: false },
+        { name: "Amoxicilina 250mg", lot: "L-3102", days: 7, critical: true },
+      ].map((m) => (
+        <div
+          key={m.lot}
+          className={`border rounded-lg p-3 flex items-center justify-between ${
+            m.critical ? "border-amber-300 bg-amber-50" : "border-neutral-200 bg-white"
+          }`}
+        >
+          <div>
+            <div className="font-medium text-neutral-900">{m.name}</div>
+            <div className="text-neutral-500">Lote {m.lot}</div>
+          </div>
+          <div
+            className={`flex items-center gap-1 font-bold ${
+              m.critical ? "text-amber-700" : "text-neutral-700"
+            }`}
+          >
+            {m.critical && <AlertTriangle className="w-3.5 h-3.5" />}
+            {m.days}d
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MockupFerreteria() {
+  return (
+    <div className="space-y-3 text-xs">
+      <div className="flex items-center gap-2 border border-neutral-200 rounded-lg p-2 bg-white">
+        <Search className="w-4 h-4 text-neutral-500" />
+        <span className="text-neutral-500">SKU: TAL-12X40-AZ</span>
+      </div>
+      <div className="border border-neutral-200 rounded-lg p-3 bg-white">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-neutral-900">TALADROMAKITA 12V</span>
+          <span className="font-bold text-neutral-900">$2,450</span>
+        </div>
+        <div className="text-neutral-500 mt-1">Stock: 7 unidades · Refacción disponible</div>
+      </div>
+    </div>
+  );
+}
+
+function MockupMascotas() {
+  return (
+    <div className="grid grid-cols-2 gap-2 text-xs">
+      {[
+        { name: "Croquetas Adulto 15kg", price: "$680" },
+        { name: "Snack dental", price: "$95" },
+        { name: "Arena para gato", price: "$220" },
+        { name: "Juguete mordedera", price: "$120" },
+      ].map((p) => (
+        <div
+          key={p.name}
+          className="border border-neutral-200 rounded-lg p-3 bg-white hover:border-blue-400 transition-colors"
+        >
+          <div className="font-medium text-neutral-900 truncate">{p.name}</div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="font-bold text-neutral-900">{p.price}</span>
+            <button
+              type="button"
+              className="bg-blue-600 text-white rounded p-1 hover:bg-blue-700"
+              aria-label="Agregar"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MockupGeneral() {
+  return (
+    <div className="text-xs space-y-2">
+      <div className="font-medium text-neutral-900">Configuración flexible</div>
+      <div className="grid grid-cols-3 gap-2">
+        {["POS", "Inventario", "CFDI", "Caja", "Reportes", "Usuarios"].map((m) => (
+          <div
+            key={m}
+            className="border border-neutral-200 rounded-lg p-2 bg-white text-center font-medium text-neutral-700"
+          >
+            {m}
+          </div>
+        ))}
+      </div>
+      <div className="text-neutral-500 mt-2">Activa solo los módulos que tu negocio necesita.</div>
+    </div>
+  );
+}
+
+const mockups: Record<GiroKey, () => React.JSX.Element> = {
+  ABARROTES: MockupAbarrotes,
+  VERDULERIA: MockupVerduleria,
+  ROPA: MockupRopa,
+  FARMACIA: MockupFarmacia,
+  FERRETERIA: MockupFerreteria,
+  MASCOTAS: MockupMascotas,
+  GENERAL: MockupGeneral,
+};
+
 export function BusinessTypes() {
   const t = useTranslations();
+  const [active, setActive] = useState<GiroKey>("ABARROTES");
+  const ActiveMockup = mockups[active];
+  const ActiveIcon = icons[active];
 
   return (
     <motion.section
@@ -81,50 +314,114 @@ export function BusinessTypes() {
           </motion.p>
         </motion.div>
 
+        <div
+          role="tablist"
+          aria-label="Giros comerciales"
+          className="flex flex-wrap justify-center gap-2"
+        >
+          {keys.map((key) => {
+            const Icon = icons[key];
+            const isActive = active === key;
+            return (
+              <motion.button
+                key={key}
+                role="tab"
+                type="button"
+                aria-selected={isActive}
+                onClick={() => setActive(key)}
+                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${
+                  isActive
+                    ? "bg-black text-white border-black shadow-sm"
+                    : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400"
+                }`}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.96 }}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={easeOutShort}
+              >
+                <Icon className="w-4 h-4" aria-hidden="true" />
+                {t(`landing.businessTypes.types.${key}.name`)}
+              </motion.button>
+            );
+          })}
+        </div>
+
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+          key={active}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={easeOutShort}
+          className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto w-full"
+        >
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+              >
+                <ActiveMockup />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="flex flex-col justify-center gap-4">
+            <motion.div
+              key={`icon-${active}`}
+              className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={springIcon}
+            >
+              <ActiveIcon className="w-6 h-6" aria-hidden="true" />
+            </motion.div>
+            <motion.h3
+              key={`title-${active}`}
+              className="text-2xl font-bold text-black"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...easeOutShort, delay: 0.1 }}
+            >
+              {t(`landing.businessTypes.types.${active}.name`)}
+            </motion.h3>
+            <motion.p
+              key={`desc-${active}`}
+              className="text-base text-neutral-500 leading-relaxed"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...easeOutShort, delay: 0.15 }}
+            >
+              {t(`landing.businessTypes.types.${active}.desc`)}
+            </motion.p>
+          </div>
+        </motion.div>
+
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto w-full"
         >
-          {keys.map((key, i) => {
-            const Icon = icons[i];
-            return (
-              <motion.div
-                key={key}
-                className="bg-white border border-neutral-200 rounded-xl p-5 flex flex-col gap-3 hover:shadow-lg hover:border-blue-200 transition-all group cursor-default"
-                variants={fadeInUp}
-                transition={easeOutLong}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-              >
-                <motion.div
-                  className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors"
-                  initial={{ scale: 0, rotate: -90 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.1, ...springIcon }}
-                >
-                  <Icon className="w-5 h-5" aria-hidden="true" />
-                </motion.div>
-                <motion.h3
-                  className="text-sm font-bold text-black"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, ...easeOutShort }}
-                >
-                  {t(`landing.businessTypes.types.${key}.name`)}
-                </motion.h3>
-                <motion.p
-                  className="text-xs text-neutral-500 leading-relaxed"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25, ...easeOutShort }}
-                >
-                  {t(`landing.businessTypes.types.${key}.desc`)}
-                </motion.p>
-              </motion.div>
-            );
-          })}
+          {[
+            { icon: CheckCircle2, label: "Activación por giro" },
+            { icon: CheckCircle2, label: "Módulos opcionales" },
+            { icon: CheckCircle2, label: "Sin configuración técnica" },
+          ].map((item) => (
+            <motion.div
+              key={item.label}
+              variants={fadeInUp}
+              transition={easeOutLong}
+              className="flex items-center gap-2 justify-center text-sm text-neutral-600 bg-white border border-neutral-200 rounded-lg px-4 py-3"
+            >
+              <item.icon className="w-4 h-4 text-emerald-500" aria-hidden="true" />
+              {item.label}
+            </motion.div>
+          ))}
         </motion.div>
       </div>
     </motion.section>

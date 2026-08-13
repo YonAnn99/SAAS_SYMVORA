@@ -441,16 +441,28 @@
       }
     },
     "hero": {
-      "title": "Your business deserves",
-      "highlight": "a change",
+      "title": "The point-of-sale and inventory system",
+      "highlight": "built for your store",
       "subtitle": "Point of sale, inventory, CFDI 4.0 electronic invoicing and finance — all in one, no per-sale commissions, with Spanish support.",
       "ctaPrimary": "7-day free trial",
       "ctaSecondary": "See demo",
       "socialProof": "Multiple Mexican businesses already trust SYMVORA",
-      "growthLabel": "Monthly sales"
-    },
-    "trustedBy": {
-      "label": "Built for Mexican businesses of all sizes"
+      "growthLabel": "Monthly sales",
+      "mockup": {
+        "searchPlaceholder": "Search product or scan barcode…",
+        "products": "Products",
+        "cart": "Cart",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "charge": "Charge",
+        "items": {
+          "milk": "Whole milk 1L",
+          "apple": "Apples by kilo",
+          "tortillas": "Corn tortillas 1kg",
+          "rice": "Rice 1kg"
+        },
+        "added": "Item added"
+      }
     },
     "features": {
       "title": "Everything your business needs",
@@ -511,7 +523,7 @@
       "title": "Your data is protected",
       "subtitle": "Multi-tenant architecture with database-level isolation. Each business operates in its own secure space.",
       "features": {
-        "rls": { "title": "Row Level Security", "description": "PostgreSQL RLS ensures each user only sees their tenant's data. No data leakage between businesses." },
+        "rls": { "title": "Total Data Isolation", "description": "Your sales, costs and customers are 100% private and secure. Only you and your team have access." },
         "roles": { "title": "Role-based access control", "description": "3 roles: Super Admin, Admin and Cashier. Each role has specific database-level permissions." },
         "audit": { "title": "Audit trail", "description": "Every creation, edit and deletion is logged with user, date and details. 8 entity types tracked." },
         "passwords": { "title": "Secure passwords", "description": "Security requirements: 8+ characters, uppercase, lowercase, number and special character." }
@@ -521,6 +533,7 @@
       "badge": "Integrations",
       "title": "Connected with the best providers",
       "subtitle": "Payments with Conekta, invoicing with PAC, backend on Supabase — all tested and reliable.",
+      "conektaBadge": "Accepts credit cards, debit cards and OXXO payments",
       "items": {
         "conekta": { "name": "Conekta", "description": "Mexican payment gateway. Accepts cards and OXXO." },
         "pac": { "name": "PAC", "description": "Authorized Certification Provider for CFDI stamping." },
@@ -542,9 +555,10 @@
     "whyChooseUs": {
       "title": "Why choose SYMVORA",
       "subtitle": "We're not a generic ERP adapted to Mexico. We're built from scratch for Mexican commerce.",
-      "searchPlaceholder": "Search products, customers, invoices...",
+      "searchPlaceholder": "Search any product or customer…",
+      "searchHint": "Find any product or customer in less than 1 second by typing their name.",
       "modular": {
-        "title": "Modules you activate",
+        "title": "Only pay for what you need",
         "description": "6 configurable modules: variants, lots, shrinkage, services, credit and bulk. Activate only what you need. Nothing you won't use."
       },
       "cfdi": {
@@ -552,8 +566,12 @@
         "description": "Built-in CFDI 4.0. No external software or add-ons needed. Stamp and cancel invoices from the same POS."
       },
       "atomic": {
-        "title": "Atomic operations",
-        "description": "Sales deduct stock, purchase receipts increase it, and adjustments are logged — all in a single database transaction."
+        "title": "Sync without errors",
+        "description": "When you sell a product, your inventory drops instantly without duplicates. Purchase receipts and adjustments are logged — all in a single operation."
+      },
+      "uptime": {
+        "title": "24/7 availability without downtime",
+        "description": "Your business never stops. The system responds instantly on any device, regardless of schedule or location."
       }
     },
     "setup": {
@@ -571,8 +589,13 @@
     "cta": {
       "title": "Start selling today",
       "subtitle": "Free 7-day trial. No credit card. Cancel anytime.",
-      "price": "$400",
-      "period": "MXN / month",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "saveBadge": "Save 20%",
+      "priceMonthly": "$400",
+      "priceYearly": "$320",
+      "periodMonthly": "MXN / month",
+      "periodYearly": "MXN / month billed annually",
       "features": {
         "pos": "Full point of sale",
         "inventory": "Inventory with lots and variants",
@@ -581,17 +604,17 @@
         "users": "Up to 3 users",
         "support": "Spanish support"
       },
-      "primary": "Start free trial",
-      "secondary": "Talk to us",
+      "primary": "Try 7 days free (No credit card)",
+      "secondary": "Chat on WhatsApp",
       "trialNote": "7-day free trial · No credit card · Cancel anytime"
     },
     "about": {
-      "badge": "Our Story",
-      "title": "Two graduates from Tecnológico de Estudios Superiores de Ecatepec",
-      "subtitle": "We created SYMVORA because we saw thousands of Mexican businesses wanted to grow but lacked the right tools. No per-sale commissions, no technical complications.",
+      "badge": "Made in Mexico",
+      "title": "Proudly Mexican, for local commerce",
+      "subtitle": "SYMVORA was born to support Mexican businesses with modern tools, no per-sale commissions and Spanish-language support.",
       "foundedBy": "Founded by",
       "founders": "TecNM Ecatepec Graduates",
-      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they decided to build a solution that truly understands the Mexican market: automatic VAT, CFDI 4.0 invoicing, OXXO payments, and a POS that works offline.",
+      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they built a solution that truly understands the Mexican market: automatic VAT, CFDI 4.0 invoicing, OXXO payments, and a POS that works offline.",
       "values": {
         "mission": "Mission",
         "missionDesc": "Democratize technology for Mexican commerce",

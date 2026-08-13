@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
@@ -22,8 +23,23 @@ const featureKeys = [
   "support",
 ] as const;
 
+const WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";
+const WHATSAPP_MESSAGE =
+  "Hola, me interesa SYMVORA para mi negocio. ¿Pueden darme más información?";
+
+function buildWhatsAppUrl() {
+  const text = encodeURIComponent(WHATSAPP_MESSAGE);
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+}
+
 export function CTA() {
   const t = useTranslations();
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+
+  const isYearly = billing === "yearly";
+  const price = isYearly ? t("landing.cta.priceYearly") : t("landing.cta.priceMonthly");
+  const period = isYearly ? t("landing.cta.periodYearly") : t("landing.cta.periodMonthly");
 
   return (
     <motion.section
@@ -80,18 +96,68 @@ export function CTA() {
         </motion.p>
 
         <motion.div
-          className="flex items-baseline gap-1 mt-2"
-          initial={{ opacity: 0, y: 16 }}
+          role="radiogroup"
+          aria-label="Periodo de facturación"
+          className="inline-flex items-center bg-neutral-100 rounded-full p-1 border border-neutral-200"
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ ...easeOutShort, delay: 0.4 }}
+          transition={{ ...easeOutShort, delay: 0.35 }}
         >
-          <span className="text-5xl font-bold text-black">
-            {t("landing.cta.price")}
-          </span>
-          <span className="text-lg text-neutral-500">
-            {t("landing.cta.period")}
-          </span>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!isYearly}
+            onClick={() => setBilling("monthly")}
+            className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              !isYearly ? "text-white" : "text-neutral-600 hover:text-black"
+            }`}
+          >
+            {!isYearly && (
+              <motion.span
+                layoutId="billing-pill"
+                className="absolute inset-0 bg-black rounded-full"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <span className="relative">{t("landing.cta.monthly")}</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={isYearly}
+            onClick={() => setBilling("yearly")}
+            className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+              isYearly ? "text-white" : "text-neutral-600 hover:text-black"
+            }`}
+          >
+            {isYearly && (
+              <motion.span
+                layoutId="billing-pill"
+                className="absolute inset-0 bg-black rounded-full"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <span className="relative">{t("landing.cta.yearly")}</span>
+            <span
+              className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                isYearly ? "bg-emerald-400 text-black" : "bg-emerald-100 text-emerald-700"
+              }`}
+            >
+              {t("landing.cta.saveBadge")}
+            </span>
+          </button>
+        </motion.div>
+
+        <motion.div
+          key={billing}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={easeOutShort}
+          className="flex items-baseline gap-2 mt-2"
+        >
+          <span className="text-5xl font-bold text-black">{price}</span>
+          <span className="text-sm text-neutral-500 max-w-[200px] text-left">{period}</span>
         </motion.div>
 
         <motion.div
@@ -143,13 +209,16 @@ export function CTA() {
               {t("landing.cta.primary")}
             </Link>
           </motion.div>
-          <motion.button
-            className="bg-white text-black font-medium px-8 py-4 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-all active:translate-y-px w-full sm:w-auto whitespace-nowrap"
+          <motion.a
+            href={buildWhatsAppUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-white text-black font-medium px-8 py-4 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-all active:translate-y-px w-full sm:w-auto whitespace-nowrap text-center"
             whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.1)" }}
             whileTap={{ scale: 0.98 }}
           >
             {t("landing.cta.secondary")}
-          </motion.button>
+          </motion.a>
         </motion.div>
         <motion.span
           className="text-xs text-neutral-500 mt-2"

@@ -1,7 +1,5 @@
 import { Navbar } from "@/components/marketing/navbar";
 import { Hero } from "@/components/marketing/hero";
-import { AboutUs } from "@/components/marketing/about-us";
-import { TrustedBy } from "@/components/marketing/trusted-by";
 import { Features } from "@/components/marketing/features";
 import { BusinessTypes } from "@/components/marketing/business-types";
 import { CFDISection } from "@/components/marketing/cfdi-section";
@@ -11,7 +9,9 @@ import { Benefits } from "@/components/marketing/benefits";
 import { Integrations } from "@/components/marketing/integrations";
 import { Setup } from "@/components/marketing/setup";
 import { CTA } from "@/components/marketing/cta";
+import { AboutUs } from "@/components/marketing/about-us";
 import { Footer } from "@/components/marketing/footer";
+import { WhatsAppFab } from "@/components/marketing/whatsapp-fab";
 
 export default function LocalePage() {
   return (
@@ -19,8 +19,6 @@ export default function LocalePage() {
       <Navbar />
       <main>
         <Hero />
-        <AboutUs />
-        <TrustedBy />
         <Features />
         <BusinessTypes />
         <CFDISection />
@@ -30,8 +28,10 @@ export default function LocalePage() {
         <Integrations />
         <Setup />
         <CTA />
+        <AboutUs />
       </main>
       <Footer />
+      <WhatsAppFab />
     </div>
   );
 }

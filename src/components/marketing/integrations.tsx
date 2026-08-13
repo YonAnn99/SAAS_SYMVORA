@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
-import { CreditCard, FileText, Database, Server } from "lucide-react";
+import { CreditCard, FileText, Database, Server, BadgeCheck } from "lucide-react";
 import {
   easeOutLong,
   easeOutShort,
@@ -109,6 +109,19 @@ export function Integrations() {
               </motion.p>
             </motion.div>
           ))}
+        </motion.div>
+
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-3 mt-2"
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ ...easeOutShort, delay: 0.4 }}
+        >
+          <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-4 py-2 text-sm font-medium">
+            <BadgeCheck className="w-4 h-4" aria-hidden="true" />
+            {t("landing.integrations.conektaBadge")}
+          </span>
         </motion.div>
       </div>
     </motion.section>

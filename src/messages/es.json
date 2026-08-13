@@ -516,16 +516,28 @@
       }
     },
     "hero": {
-      "title": "Tu negocio merece",
-      "highlight": "un cambio",
-      "subtitle": "Punto de venta, inventario, facturación electrónica CFDI 4.0 y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
+      "title": "El sistema de punto de venta e inventarios",
+      "highlight": "hecho para tu comercio",
+      "subtitle": "Punto de venta, inventario, facturación CFDI 4.0 y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
       "ctaPrimary": "Prueba 7 días gratis",
       "ctaSecondary": "Ver demo",
       "socialProof": "Múltiples giros mexicanos ya confían en SYMVORA",
-      "growthLabel": "Ventas del mes"
-    },
-    "trustedBy": {
-      "label": "Diseñado para negocios mexicanos de todos los tamaños"
+      "growthLabel": "Ventas del mes",
+      "mockup": {
+        "searchPlaceholder": "Buscar producto o escanear código…",
+        "products": "Productos",
+        "cart": "Carrito",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "charge": "Cobrar",
+        "items": {
+          "milk": "Leche Lala 1L",
+          "apple": "Manzana por kilo",
+          "tortillas": "Tortillas de maíz 1kg",
+          "rice": "Arroz 1kg"
+        },
+        "added": "Producto agregado"
+      }
     },
     "features": {
       "title": "Todo lo que tu negocio necesita",
@@ -586,7 +598,7 @@
       "title": "Tus datos están protegidos",
       "subtitle": "Arquitectura multi-tenant con aislamiento a nivel de base de datos. Cada negocio opera en su propio espacio seguro.",
       "features": {
-        "rls": { "title": "Row Level Security", "description": "PostgreSQL RLS garantiza que cada usuario solo vea los datos de su tenant. Sin filtraciones entre negocios." },
+        "rls": { "title": "Aislamiento Total de Datos", "description": "Tus ventas, costos y clientes son 100% privados y seguros. Solo tú y tu equipo tienen acceso." },
         "roles": { "title": "Control de acceso por roles", "description": "3 roles: Super Admin, Administrador y Cajero. Cada rol tiene permisos específicos en la base de datos." },
         "audit": { "title": "Bitácora de auditoría", "description": "Cada creación, edición y eliminación queda registrada con usuario, fecha y detalles. 8 tipos de entidad rastreadas." },
         "passwords": { "title": "Contraseñas seguras", "description": "Requisitos de seguridad: 8+ caracteres, mayúscula, minúscula, número y carácter especial." }
@@ -596,6 +608,7 @@
       "badge": "Integraciones",
       "title": "Conectado con los mejores proveedores",
       "subtitle": "Pagos con Conekta, facturación con PAC, backend en Supabase — todo probado y confiable.",
+      "conektaBadge": "Acepta tarjetas de crédito, débito y pagos en OXXO",
       "items": {
         "conekta": { "name": "Conekta", "description": "Gateway de pagos mexicano. Acepta tarjetas y OXXO." },
         "pac": { "name": "PAC", "description": "Proveedor Autorizado de Certificación para timbrado CFDI." },
@@ -617,9 +630,10 @@
     "whyChooseUs": {
       "title": "Por qué elegir SYMVORA",
       "subtitle": "No somos un ERP genérico adaptado a México. Estamos construidos desde cero para el comercio mexicano.",
-      "searchPlaceholder": "Buscar productos, clientes, facturas...",
+      "searchPlaceholder": "Buscar cualquier producto o cliente…",
+      "searchHint": "Encuentra cualquier producto o cliente en menos de 1 segundo escribiendo su nombre.",
       "modular": {
-        "title": "Módulos que tú activas",
+        "title": "Solo pagas por lo que necesitas",
         "description": "6 módulos configurables: variantes, lotes, mermas, servicios, crédito y granel. Activa solo lo que necesitas. Nada de lo que no uses."
       },
       "cfdi": {
@@ -627,8 +641,12 @@
         "description": "CFDI 4.0 integrado. No necesitas software externo ni complementos. Timbra y cancela facturas desde el mismo POS."
       },
       "atomic": {
-        "title": "Operaciones atómicas",
-        "description": "Las ventas descuentan stock, las recepciones de compra lo aumentan, y los ajustes quedan registrados — todo en una transacción de base de datos."
+        "title": "Sincronización sin errores",
+        "description": "Al vender un producto, tu inventario se descuenta al instante sin duplicar datos. Las recepciones de compra y los ajustes también quedan registrados — todo en una sola operación."
+      },
+      "uptime": {
+        "title": "Disponibilidad 24/7 sin caídas",
+        "description": "Tu negocio nunca se detiene. El sistema responde al instante en cualquier dispositivo, sin importar el horario o la ubicación."
       }
     },
     "setup": {
@@ -646,8 +664,13 @@
     "cta": {
       "title": "Empieza a vender hoy",
       "subtitle": "Prueba gratis por 7 días. Sin tarjeta de crédito. Cancela cuando quieras.",
-      "price": "$400",
-      "period": "MXN / mes",
+      "monthly": "Mensual",
+      "yearly": "Anual",
+      "saveBadge": "Ahorra 20%",
+      "priceMonthly": "$400",
+      "priceYearly": "$320",
+      "periodMonthly": "MXN / mes",
+      "periodYearly": "MXN / mes facturado anualmente",
       "features": {
         "pos": "Punto de venta completo",
         "inventory": "Inventario con lotes y variantes",
@@ -656,17 +679,17 @@
         "users": "Hasta 3 usuarios",
         "support": "Soporte en español"
       },
-      "primary": "Comenzar prueba gratis",
-      "secondary": "Hablar con nosotros",
+      "primary": "Probar 7 días gratis (Sin tarjeta)",
+      "secondary": "Hablar por WhatsApp",
       "trialNote": "7 días gratis · Sin tarjeta de crédito · Cancela cuando quieras"
     },
     "about": {
-      "badge": "Nuestra Historia",
-      "title": "Dos egresados del Tecnológico de Estudios Superiores de Ecatepec",
-      "subtitle": "Creamos SYMVORA porque vimos que miles de negocios mexicanos querían crecer pero no tenían las herramientas adecuadas. Sin comisiones por venta, sin complicaciones técnicas.",
+      "badge": "Hecho en México",
+      "title": "Orgullosamente mexicanos, para el comercio local",
+      "subtitle": "SYMVORA nació para apoyar a los negocios mexicanos con herramientas modernas, sin comisiones por venta y con soporte en español.",
       "foundedBy": "Fundado por",
       "founders": "Egresados del TecNM Ecatepec",
-      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, decidieron crear una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos con OXXO y un POS que funciona sin internet.",
+      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos con OXXO y un POS que funciona sin internet.",
       "values": {
         "mission": "Misión",
         "missionDesc": "Democratizar la tecnología para el comercio mexicano",
