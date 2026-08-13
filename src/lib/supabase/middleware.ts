@@ -47,6 +47,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/marketing") ||
     request.nextUrl.pathname.startsWith("/api/conekta") ||
+    request.nextUrl.pathname.startsWith("/api/mercadopago/webhook") ||
     request.nextUrl.pathname.includes("/billing") ||
     request.nextUrl.pathname.includes("/demo") ||
     isLegalRoute ||

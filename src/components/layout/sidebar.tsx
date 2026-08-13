@@ -29,6 +29,7 @@ import {
   TrendingUp,
   CreditCard,
   Receipt,
+  Smartphone,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -53,6 +54,7 @@ const navigation: NavItem[] = [
   { name: "layout.users", href: "/users", icon: Users },
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings },
+  { name: "layout.payments", href: "/settings/payments", icon: Smartphone },
   { name: "layout.reports", href: "/reports", icon: TrendingUp },
   { name: "layout.billing", href: "/billing", icon: CreditCard },
 ];

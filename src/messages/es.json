@@ -146,6 +146,7 @@
     "finances": "Finanzas",
     "facturas": "Facturación",
     "settings": "Configuración",
+    "payments": "Métodos de pago",
     "users": "Usuarios",
     "variants": "Variantes",
     "lots": "Lotes",
@@ -211,7 +212,8 @@
       "CASH": "Efectivo",
       "CARD": "Tarjeta",
       "TRANSFER": "Transferencia",
-      "CREDIT": "Crédito / Fiado"
+      "CREDIT": "Crédito / Fiado",
+      "TERMINAL": "Tarjeta (terminal)"
     },
     "amountReceived": "Monto recibido",
     "change": "Cambio",

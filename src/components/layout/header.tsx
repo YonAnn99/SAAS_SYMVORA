@@ -47,6 +47,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
       "/users": "Usuarios",
       "/activity": "Bitácora",
       "/settings": "Configuración",
+      "/settings/payments": "Métodos de pago",
       "/reports": "Reportes",
       "/billing": "Suscripción",
       "/variants": "Variantes",

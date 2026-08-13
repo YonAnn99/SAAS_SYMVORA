@@ -283,7 +283,7 @@ export type Database = {
           subtotal: number;
           impuesto: number;
           descuento: number;
-          metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO";
+          metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
           estado: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
           notas: string | null;
           fecha_venta: string;
@@ -298,7 +298,7 @@ export type Database = {
           subtotal: number;
           impuesto?: number;
           descuento?: number;
-          metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO";
+          metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
           estado?: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
           notas?: string | null;
           fecha_venta?: string;
@@ -997,7 +997,7 @@ export type Database = {
     Enums: {
       app_role: "SUPER_ADMIN" | "ORG_ADMIN" | "CAJERO";
       unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
-      metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO";
+      metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
       estado_venta: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
       estado_compra: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
       estado_caja: "ABIERTA" | "CERRADA";
@@ -1062,6 +1062,21 @@ export type MetodoPagoCFDI = Database["public"]["Enums"]["metodo_pago_cfdi"];
 export type EstadoCancelacion =
   Database["public"]["Enums"]["estado_cancelacion"];
 
+export interface PagoTerminal {
+  id: string;
+  tenant_id: string;
+  usuario_id: string;
+  cliente_id: string | null;
+  mp_order_id: string | null;
+  external_reference: string;
+  monto: number;
+  estado: string;
+  payload_items: unknown;
+  venta_id: string | null;
+  creado_en: string;
+  actualizado_en: string;
+}
+
 export interface TenantConfiguracion {
   permite_granel: boolean;
   permite_variantes: boolean;
@@ -1077,11 +1092,19 @@ export interface POSConfig {
   impresion_automatica: boolean;
 }
 
+export interface MercadoPagoPointSettings {
+  habilitado: boolean;
+  terminal_id: string;
+  access_token_id: string;
+  webhook_secret_id: string;
+}
+
 export interface TenantSettingsJSON {
   tenant_id: string;
   giro_comercial: string;
   modulos_activos: TenantConfiguracion;
   pos_config: POSConfig;
+  mercado_pago_point?: MercadoPagoPointSettings;
 }
 
 export interface TenantConfiguracionFiscal {

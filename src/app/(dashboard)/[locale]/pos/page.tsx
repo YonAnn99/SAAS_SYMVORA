@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useCartStore } from "@/stores/cart";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Plus, Minus, ShoppingCart, Search, User, CreditCard, Banknote, ArrowRightLeft, AlertTriangle, Check, UserPlus } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Search, User, CreditCard, Banknote, ArrowRightLeft, AlertTriangle, Check, UserPlus, Smartphone, Loader2 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { completeSale, calculateSaleTotals } from "@/lib/supabase/sales";
+import { createTerminalOrder, getTerminalOrderStatus, cancelTerminalOrder } from "@/lib/mercadopago/browser";
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { Producto, Cliente } from "@/lib/types/database";
@@ -61,6 +62,17 @@ export default function POSPage() {
   const [processingSale, setProcessingSale] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [userId, setUserId] = useState<string>("");
+
+  const [mpReady, setMpReady] = useState<boolean | null>(null);
+  const [terminalOrder, setTerminalOrder] = useState<{
+    mpOrderId: string;
+    monto: number;
+  } | null>(null);
+  const [terminalStatus, setTerminalStatus] = useState<
+    "waiting" | "error" | "pagado" | "rechazada" | "cancelada" | "timeout" | null
+  >(null);
+  const [cancellingTerminal, setCancellingTerminal] = useState(false);
+  const pollIntervalRef = useRef<number | null>(null);
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
@@ -108,6 +120,39 @@ export default function POSPage() {
       fetchProductsAndUser();
     }
   }, [tenantLoading, fetchProductsAndUser]);
+
+  useEffect(() => {
+    if (tenantLoading) return;
+    let cancelled = false;
+    fetch("/api/mercadopago/config", { method: "GET" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const cfg = data?.config;
+        setMpReady(
+          Boolean(
+            cfg?.habilitado &&
+              cfg?.access_token_set &&
+              cfg?.webhook_secret_set &&
+              cfg?.terminal_id
+          )
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setMpReady(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        window.clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleCreateCustomer = async () => {
     if (!tenantId) return;
@@ -213,6 +258,11 @@ export default function POSPage() {
       return;
     }
 
+    if (selectedPayment === "TARJETA_TERMINAL") {
+      await handleTerminalSale();
+      return;
+    }
+
     setProcessingSale(true);
     try {
       await completeSale({
@@ -236,11 +286,117 @@ export default function POSPage() {
     }
   };
 
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      window.clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  const startTerminalPolling = (mpOrderId: string, monto: number) => {
+    let pollsElapsed = 0;
+    stopPolling();
+    pollIntervalRef.current = window.setInterval(async () => {
+      if (!tenantId) return;
+      pollsElapsed += 1;
+      if (pollsElapsed > 48) {
+        stopPolling();
+        setTerminalStatus("timeout");
+        return;
+      }
+      try {
+        const status = await getTerminalOrderStatus(tenantId, mpOrderId);
+        if (status.estado === "PAGADA") {
+          stopPolling();
+          setTerminalStatus("pagado");
+          toast.success(`Pago recibido en terminal: $${monto.toFixed(2)}`);
+          clearCart();
+          setSelectedCustomer("none");
+          setSelectedPayment("");
+          fetchProductsAndUser();
+        } else if (status.estado === "RECHAZADA") {
+          stopPolling();
+          setTerminalStatus("rechazada");
+        } else if (status.estado === "CANCELADA") {
+          stopPolling();
+          setTerminalStatus("cancelada");
+        }
+      } catch {
+        // Errores transitorios de red se ignoran durante el polling
+      }
+    }, 2500);
+  };
+
+  const handleTerminalSale = async () => {
+    if (!tenantId) return;
+    setProcessingSale(true);
+    try {
+      const order = await createTerminalOrder({
+        tenantId,
+        clienteId: selectedCustomer === "none" ? null : selectedCustomer,
+        items: items.map((item) => ({
+          productId: item.productId,
+          cantidad: item.cantidad,
+          descuento: item.descuento,
+        })),
+      });
+      setShowConfirmDialog(false);
+      setTerminalOrder({ mpOrderId: order.mp_order_id, monto: order.monto });
+      setTerminalStatus("waiting");
+      startTerminalPolling(order.mp_order_id, order.monto);
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Error al iniciar el cobro con terminal"
+      );
+    } finally {
+      setProcessingSale(false);
+    }
+  };
+
+  const handleCancelTerminal = async () => {
+    if (!tenantId || !terminalOrder) return;
+    setCancellingTerminal(true);
+    try {
+      const result = await cancelTerminalOrder(
+        tenantId,
+        terminalOrder.mpOrderId
+      );
+      stopPolling();
+      if (result.pagado) {
+        setTerminalStatus("pagado");
+        toast.success("El pago ya fue procesado en la terminal");
+        clearCart();
+        setSelectedCustomer("none");
+        setSelectedPayment("");
+        fetchProductsAndUser();
+      } else {
+        setTerminalStatus("cancelada");
+        toast.info("Cobro cancelado");
+      }
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al cancelar el cobro"
+      );
+    } finally {
+      setCancellingTerminal(false);
+    }
+  };
+
+  const closeTerminalDialog = () => {
+    if (terminalStatus === "waiting") return;
+    stopPolling();
+    setTerminalOrder(null);
+    setTerminalStatus(null);
+  };
+
   const paymentMethods = [
     { key: "EFECTIVO", label: t("pos.paymentMethods.CASH"), icon: Banknote },
     { key: "TARJETA", label: t("pos.paymentMethods.CARD"), icon: CreditCard },
     { key: "TRANSFERENCIA", label: t("pos.paymentMethods.TRANSFER"), icon: ArrowRightLeft },
     { key: "CREDITO", label: t("pos.paymentMethods.CREDIT"), icon: AlertTriangle },
+    { key: "TARJETA_TERMINAL", label: t("pos.paymentMethods.TERMINAL"), icon: Smartphone },
   ];
 
   return (
@@ -444,18 +600,28 @@ export default function POSPage() {
 
         {/* Payment method buttons */}
         <div className="mt-3 grid grid-cols-2 gap-1.5">
-          {paymentMethods.map((method) => (
-            <Button
-              key={method.key}
-              variant={selectedPayment === method.key ? "default" : "outline"}
-              className="w-full h-8 text-xs"
-              size="sm"
-              onClick={() => setSelectedPayment(method.key)}
-            >
-              <method.icon className="h-3 w-3 mr-1" />
-              {method.label}
-            </Button>
-          ))}
+          {paymentMethods.map((method) => {
+            const terminalDisabled =
+              method.key === "TARJETA_TERMINAL" && mpReady !== true;
+            return (
+              <Button
+                key={method.key}
+                variant={selectedPayment === method.key ? "default" : "outline"}
+                className="w-full h-8 text-xs"
+                size="sm"
+                disabled={terminalDisabled}
+                title={
+                  terminalDisabled
+                    ? "Configura Mercado Pago Point en Métodos de pago"
+                    : undefined
+                }
+                onClick={() => setSelectedPayment(method.key)}
+              >
+                <method.icon className="h-3 w-3 mr-1" />
+                {method.label}
+              </Button>
+            );
+          })}
         </div>
 
         <Button
@@ -547,6 +713,135 @@ export default function POSPage() {
                 </>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Terminal Payment Dialog */}
+      <Dialog
+        open={terminalStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) closeTerminalDialog();
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Cobro con terminal</DialogTitle>
+            <DialogDescription className="text-xs">
+              Pago por tarjeta con terminal Mercado Pago Point
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {terminalStatus === "waiting" && (
+              <>
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <div className="text-center">
+                  <p className="text-sm font-medium">
+                    Esperando pago en la terminal…
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Solicita al cliente que acerque su tarjeta o dispositivo
+                  </p>
+                </div>
+                <p className="font-mono text-xl font-semibold">
+                  ${terminalOrder?.monto.toFixed(2)}
+                </p>
+              </>
+            )}
+            {terminalStatus === "pagado" && (
+              <>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+                  <Check className="h-6 w-6 text-emerald-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium">Pago recibido</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    La venta se registró correctamente
+                  </p>
+                </div>
+                <p className="font-mono text-xl font-semibold">
+                  ${terminalOrder?.monto.toFixed(2)}
+                </p>
+              </>
+            )}
+            {terminalStatus === "rechazada" && (
+              <>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                  <AlertTriangle className="h-6 w-6 text-destructive" />
+                </div>
+                <p className="text-sm text-center">
+                  El pago fue rechazado en la terminal. Puedes intentar de nuevo.
+                </p>
+              </>
+            )}
+            {terminalStatus === "cancelada" && (
+              <>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Banknote className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-center">Cobro cancelado.</p>
+              </>
+            )}
+            {terminalStatus === "timeout" && (
+              <>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                  <AlertTriangle className="h-6 w-6 text-destructive" />
+                </div>
+                <p className="text-sm text-center">
+                  La terminal no respondió. Puedes cancelar el cobro o cerrar.
+                </p>
+              </>
+            )}
+            {terminalStatus === "error" && (
+              <p className="text-sm text-center">Ocurrió un error con el cobro.</p>
+            )}
+          </div>
+          <DialogFooter>
+            {terminalStatus === "waiting" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-full"
+                onClick={handleCancelTerminal}
+                disabled={cancellingTerminal}
+              >
+                {cancellingTerminal ? "Cancelando..." : "Cancelar cobro"}
+              </Button>
+            )}
+            {(terminalStatus === "timeout" ||
+              terminalStatus === "rechazada" ||
+              terminalStatus === "error") && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={closeTerminalDialog}
+                >
+                  Cerrar
+                </Button>
+                {terminalStatus === "timeout" && (
+                  <Button
+                    size="sm"
+                    className="h-8"
+                    onClick={handleCancelTerminal}
+                    disabled={cancellingTerminal}
+                  >
+                    {cancellingTerminal ? "Cancelando..." : "Cancelar cobro"}
+                  </Button>
+                )}
+              </>
+            )}
+            {(terminalStatus === "pagado" ||
+              terminalStatus === "cancelada") && (
+              <Button
+                size="sm"
+                className="h-8"
+                onClick={closeTerminalDialog}
+              >
+                Aceptar
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

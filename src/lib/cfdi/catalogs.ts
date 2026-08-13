@@ -206,6 +206,7 @@ export function getMetodoPagoByVenta(metodoPago: string): string {
   switch (metodoPago) {
     case "EFECTIVO": return "01";
     case "TARJETA": return "04";
+    case "TARJETA_TERMINAL": return "04";
     case "TRANSFERENCIA": return "03";
     case "CREDITO": return "01";
     default: return "01";

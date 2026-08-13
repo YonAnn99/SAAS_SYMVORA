@@ -125,7 +125,7 @@ export const cartItemSchema = z.object({
 
 export const saleSchema = z.object({
   cliente_id: z.string().uuid().optional(),
-  metodo_pago: z.enum(["EFECTIVO", "TARJETA", "TRANSFERENCIA", "CREDITO"]),
+  metodo_pago: z.enum(["EFECTIVO", "TARJETA", "TRANSFERENCIA", "CREDITO", "TARJETA_TERMINAL"]),
   monto_recibido: z.number().optional(),
   notas: z.string().optional(),
   items: z.array(cartItemSchema).min(1, "Agrega al menos un producto"),

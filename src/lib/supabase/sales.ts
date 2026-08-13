@@ -15,7 +15,7 @@ export interface CompleteSaleParams {
   tenantId: string;
   userId: string;
   clienteId: string | null;
-  metodoPago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO";
+  metodoPago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
   items: SaleItem[];
   notas?: string;
 }
