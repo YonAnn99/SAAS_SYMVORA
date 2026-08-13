@@ -1,7 +1,8 @@
--- Smoke test para el RPC public.complete_sale (migracion 009).
+-- Smoke test para el RPC public.complete_sale (migraciones 009 y 011).
 -- Emula el contexto autenticado via request.jwt.claims, siembra datos desechables,
--- valida 5 escenarios, registra resultados en _smoke_results y auto-limpia los
--- datos sembrados al final (DELETE del tenant, cascade limpia el resto).
+-- valida 8 escenarios (precio desde la BD, clamp de descuento, RBAC, stock),
+-- registra resultados en _smoke_results y auto-limpia los datos sembrados al
+-- final (DELETE del tenant, cascade limpia el resto).
 -- Ejecutar con "Without RLS" en el SQL Editor.
 
 CREATE TABLE IF NOT EXISTS public._smoke_results (
@@ -149,6 +150,68 @@ BEGIN
       v_fail := v_fail + 1;
       INSERT INTO public._smoke_results VALUES (5, 'FALLO', 'error inesperado: ' || SQLERRM);
     END IF;
+  END;
+
+  -- 6) Integridad de precio: el RPC IGNORA el precioUnitario del cliente
+  --    y usa productos.precio_venta (100). Se envia 1 a proposito.
+  BEGIN
+    SELECT public.complete_sale(
+      v_tenant, v_user, NULL,
+      'EFECTIVO'::public.metodo_pago,
+      jsonb_build_array(jsonb_build_object('productId', v_producto, 'cantidad', 1, 'precioUnitario', 1, 'descuento', 0)),
+      'price integrity'
+    ) INTO v_result;
+    IF (SELECT precio_unitario FROM public.detalle_ventas WHERE venta_id = (v_result->>'id')::uuid) = 100
+       AND (v_result->>'subtotal')::numeric = 100
+       AND (v_result->>'total')::numeric = 116 THEN
+      INSERT INTO public._smoke_results VALUES (6, 'OK', 'precio desde BD (100), ignora precioUnitario=1');
+    ELSE
+      v_fail := v_fail + 1;
+      INSERT INTO public._smoke_results VALUES (6, 'FALLO', 'uso precio cliente: ' || v_result->>'total');
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    v_fail := v_fail + 1;
+    INSERT INTO public._smoke_results VALUES (6, 'FALLO', SQLERRM);
+  END;
+
+  -- 7) Clamp de descuento: descuento 99999 > subtotal (100) -> se clampa a 100
+  BEGIN
+    SELECT public.complete_sale(
+      v_tenant, v_user, NULL,
+      'EFECTIVO'::public.metodo_pago,
+      jsonb_build_array(jsonb_build_object('productId', v_producto, 'cantidad', 1, 'precioUnitario', 100, 'descuento', 99999)),
+      'discount clamp'
+    ) INTO v_result;
+    IF (v_result->>'descuento')::numeric = 100
+       AND (v_result->>'total')::numeric = 0 THEN
+      INSERT INTO public._smoke_results VALUES (7, 'OK', 'descuento clampeado a 100, total=0');
+    ELSE
+      v_fail := v_fail + 1;
+      INSERT INTO public._smoke_results VALUES (7, 'FALLO', 'descuento=' || v_result->>'descuento' || ' total=' || v_result->>'total');
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    v_fail := v_fail + 1;
+    INSERT INTO public._smoke_results VALUES (7, 'FALLO', SQLERRM);
+  END;
+
+  -- 8) Descuento legitimo preservado: descuento 10 sobre precio 50 -> total 46.4
+  BEGIN
+    SELECT public.complete_sale(
+      v_tenant, v_user, NULL,
+      'EFECTIVO'::public.metodo_pago,
+      jsonb_build_array(jsonb_build_object('productId', v_producto_otro, 'cantidad', 1, 'precioUnitario', 50, 'descuento', 10)),
+      'legit discount'
+    ) INTO v_result;
+    IF (v_result->>'descuento')::numeric = 10
+       AND (v_result->>'total')::numeric = 46.4 THEN
+      INSERT INTO public._smoke_results VALUES (8, 'OK', 'descuento legitimo 10, total=46.4');
+    ELSE
+      v_fail := v_fail + 1;
+      INSERT INTO public._smoke_results VALUES (8, 'FALLO', 'descuento=' || v_result->>'descuento' || ' total=' || v_result->>'total');
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    v_fail := v_fail + 1;
+    INSERT INTO public._smoke_results VALUES (8, 'FALLO', SQLERRM);
   END;
 
   DELETE FROM public.ventas WHERE tenant_id IN (v_tenant, v_tenant_sin_membresia);

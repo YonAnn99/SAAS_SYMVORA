@@ -261,6 +261,8 @@ symvora-saas/
 3. Decrementa `stock_actual` en `productos` por cada item
 4. Si hay caja abierta, registra movimiento de ENTRADA en `movimientos_caja`
 
+**Integridad de precio (migración 011)**: el RPC `complete_sale` NO confía en el `precioUnitario` del cliente. Recalcula todo desde `productos.precio_venta` (única fuente de verdad) y clampa el descuento de línea a `[0, subtotal de línea]`. El cliente envía solo `productId`, `cantidad` y `descuento` por item.
+
 **Estado actual**: POS conectado a Supabase, funcional con búsqueda, venta, IVA, stock, caja.
 
 ---
@@ -601,6 +603,15 @@ symvora-saas/
   - **3.D Notificación de cambios**: `PolicyUpdateBanner` (cliente component) consulta `GET /api/legal/current-versions` al montar en el dashboard; si hay mismatch entre versión aceptada y versión vigente, muestra banner prominente con botón "Aceptar" (registra nueva versión vía `/api/legal/accept`) y X para dismiss (24h en localStorage `symvora_policy_banner_dismissed_until`). T&C §11 menciona 15 días de aviso. Aviso §9 detalla procedimiento de notificación
   - **Contenido Términos**: §5.1 trial 7 días, §5.2 reembolsos (sin reembolso, cancelación al final del periodo), §7.1 propiedad de datos del usuario (inventario/ventas/CFDI son del usuario, SYMVORA solo encargado)
   - **Contenido Aviso**: §2 incluye IP + datos técnicos + datos de uso; §5 incluye Cloudflare Turnstile y Sentry como terceros; §9 detalla notificación (correo + banner prominente + 15 días anticipación)
+
+### 27. CRITICAL: complete_sale() confiaba en precioUnitario del cliente + página onboarding huérfana
+- **Archivos**: `supabase/migrations/011_complete_sale_precio_desde_db.sql` (fix RPC), `src/lib/supabase/sales.ts`, `src/__tests__/complete-sale.test.ts`, `supabase/tests/complete_sale.sql`, `src/app/api/users/invite/route.ts`, `src/messages/{es,en}.json`, eliminado `src/app/(auth)/[locale]/onboarding/page.tsx`
+- **Problema A (integridad de precio)**: `complete_sale()` registraba en `detalle_ventas.precio_unitario` el `precioUnitario` enviado por el cliente en `p_items`. Un atacante con llamada directa al RPC (misma firma que el frontend) podía registrar ventas a un precio inventado/menor mientras el stock real se descontaba — pérdida económica sin fricción.
+- **Solución A**: Migración `011` reescribe el RPC para IGNORAR `precioUnitario` por completo: Pass 1 hace `SELECT ... FOR UPDATE` sobre `productos` y usa `productos.precio_venta` como única fuente de verdad, clampa el descuento de línea a `[0, subtotal de línea]` (nunca totales negativos), y guarda `(producto_id, cantidad, precio_venta, descuento)` en una temp table `_venta_items`; Pass 2 inserta `detalle_ventas` y decrementa stock desde esa tabla. Cliente `sales.ts` ya no envía `precioUnitario` al RPC (la interfaz `SaleItem` lo conserva solo para totales de UI).
+- **Detalles PL/pgSQL encontrados en el camino**: (a) un `FOR ... IN SELECT` de varias columnas con variable de tipo `jsonb` falla con `22P02 invalid input syntax for type json` (Postgres castea la fila compuesta a jsonb por texto) — se usa `v_line RECORD`; (b) una temp table con `ON COMMIT DROP` NO se suelta hasta el COMMIT, así que llamar al RPC dos veces en la misma transacción (p.ej. un DO block con 8 ventas) falla con `relation "_venta_items" already exists` — fix: `DROP TABLE IF EXISTS` antes del `CREATE TEMP TABLE` y sin `ON COMMIT DROP`.
+- **Problema B (código muerto)**: `src/app/(auth)/[locale]/onboarding/page.tsx` era huérfana (no había links/redirects hacia ella desde `src/`, el grep del usuario lo confirmó salvo una referencia que sí existía) y duplicaba lógica vieja del flujo de creación de tenant (`complete_onboarding`), que ahora vive en `auth-forms.tsx`. Invitados (magic link) llegaban a `/onboarding` por `src/app/api/users/invite/route.ts:63`.
+- **Solución B**: Eliminada la página. Redirect de invitados en `route.ts` ahora apunta a `/es/dashboard` (ya tienen tenant_id + rol + membresía creados en el flujo de invite). Borrados los bloques `onboarding` muertos de `es.json` (había 2, uno con claves duplicadas) y `en.json`.
+- **Verificación**: Smoke test `supabase/tests/complete_sale.sql` ampliado a 8 checks (precio desde BD ignorando `precioUnitario=1`, clamp de descuento 99999→subtotal, descuento legítimo preservado, RBAC, stock). 51 tests vitest + tsc + eslint verdes.
 
 ---
 

@@ -54,13 +54,11 @@ describe("completeSale", () => {
         {
           productId: "00000000-0000-0000-0000-000000000003",
           cantidad: 2,
-          precioUnitario: 18.5,
           descuento: 1.5,
         },
         {
           productId: "00000000-0000-0000-0000-000000000004",
           cantidad: 1,
-          precioUnitario: 22,
           descuento: 0,
         },
       ],

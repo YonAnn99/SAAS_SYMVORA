@@ -137,39 +137,6 @@
       "network": "Error de conexión"
     }
   },
-  "onboarding": {
-    "title": "Configura tu negocio",
-    "step1": "Datos de la empresa",
-    "step2": "Selecciona tu giro",
-    "step3": "Personalización",
-    "step4": "¡Listo!",
-    "companyName": "Nombre de la empresa",
-    "companyNamePlaceholder": "Mi Negocio",
-    "subdomain": "Subdominio",
-    "subdomainPlaceholder": "mi-negocio",
-    "subdomainSuffix": ".symvora.com",
-    "selectGiro": "Selecciona el giro de tu negocio",
-    "giros": {
-      "ABARROTES": "Abarrotes / Minimarket",
-      "VERDULERIA": "Verdulería",
-      "MASCOTAS": "Mascotas / Pet Shop",
-      "ROPA": "Tienda de Ropa / Calzado",
-      "FERRETERIA": "Ferretería / Refaccionaria",
-      "FARMACIA": "Farmacia",
-      "GENERAL": "General / Otro"
-    },
-    "giroDescription": {
-      "ABARROTES": "Productos de consumo diario, abarrotes y minimarket",
-      "VERDULERIA": "Frutas, verduras y productos frescos",
-      "MASCOTAS": "Alimentos, accesorios y servicios para mascotas",
-      "ROPA": "Ropa, calzado y accesorios de moda",
-      "FERRETERIA": "Herramientas, materiales de construcción y refacciones",
-      "FARMACIA": "Medicamentos y productos de salud",
-      "GENERAL": "Configuración general para cualquier negocio"
-    },
-    "complete": "Tu negocio está configurado",
-    "completeDescription": "Ya puedes empezar a usar SYMVORA"
-  },
   "layout": {
     "dashboard": "Dashboard",
     "pos": "Punto de Venta",
@@ -409,10 +376,6 @@
     "certificate": "Certificado digital",
     "certificateKey": "Llave privada",
     "certificatePassword": "Contraseña certificado"
-  },
-  "onboarding": {
-    "trialCode": "Código de prueba (opcional)",
-    "trialCodeHint": "Si tienes un código de promoción, ingrésalo aquí"
   },
   "tutorial": {
     "startHelp": "Iniciar tutorial",

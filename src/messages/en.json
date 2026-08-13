@@ -137,41 +137,6 @@
       "network": "Connection error"
     }
   },
-  "onboarding": {
-    "title": "Set up your business",
-    "step1": "Business information",
-    "step2": "Select your industry",
-    "step3": "Customization",
-    "step4": "All set!",
-    "companyName": "Business name",
-    "companyNamePlaceholder": "My Business",
-    "subdomain": "Subdomain",
-    "subdomainPlaceholder": "my-business",
-    "subdomainSuffix": ".symvora.com",
-    "selectGiro": "Select your business industry",
-    "giros": {
-      "ABARROTES": "Grocery Store / Minimarket",
-      "VERDULERIA": "Fruit & Vegetable Store",
-      "MASCOTAS": "Pet Store",
-      "ROPA": "Clothing / Shoe Store",
-      "FERRETERIA": "Hardware Store",
-      "FARMACIA": "Pharmacy",
-      "GENERAL": "General / Other"
-    },
-    "giroDescription": {
-      "ABARROTES": "Daily consumer products, groceries and minimarket",
-      "VERDULERIA": "Fruits, vegetables and fresh products",
-      "MASCOTAS": "Food, accessories and services for pets",
-      "ROPA": "Clothing, shoes and fashion accessories",
-      "FERRETERIA": "Tools, construction materials and spare parts",
-      "FARMACIA": "Medicines and health products",
-      "GENERAL": "General configuration for any business"
-    },
-    "complete": "Your business is set up",
-    "completeDescription": "You can start using SYMVORA now",
-    "trialCode": "Trial code (optional)",
-    "trialCodeHint": "If you have a promo code, enter it here"
-  },
   "layout": {
     "dashboard": "Dashboard",
     "pos": "Point of Sale",

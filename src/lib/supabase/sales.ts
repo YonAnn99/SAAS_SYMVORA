@@ -50,7 +50,6 @@ export async function completeSale(params: CompleteSaleParams) {
     p_items: items.map((item) => ({
       productId: item.productId,
       cantidad: item.cantidad,
-      precioUnitario: item.precioUnitario,
       descuento: item.descuento,
     })),
     p_notas: notas || null,

@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           tenant_id: tenantId,
           role: roleToAssign,
         },
-        redirectTo: `${supabaseUrl}/auth/v1/verify?redirect_to=${encodeURIComponent(`${supabaseUrl}/es/onboarding`)}`,
+        redirectTo: `${supabaseUrl}/auth/v1/verify?redirect_to=${encodeURIComponent(`${supabaseUrl}/es/dashboard`)}`,
       }
     );
 
