@@ -84,10 +84,16 @@ export function Hero() {
           <motion.div
             whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.1)" }}
             whileTap={{ scale: 0.98 }}
+            className="relative"
           >
+            <span
+              className="absolute inset-0 rounded-lg bg-neutral-400 animate-ping opacity-25"
+              aria-hidden="true"
+              style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
+            />
             <Link
               href={`/${locale}/demo`}
-              className="bg-white text-black font-medium px-6 py-3 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-all active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              className="relative bg-white text-black font-medium px-6 py-3 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-all active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               <Play className="w-4 h-4" aria-hidden="true" />
               {t("landing.hero.ctaSecondary")}
