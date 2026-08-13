@@ -105,6 +105,113 @@ export default function TerminosPage() {
         Para cualquier duda sobre estos Términos y Condiciones, contacte a
         [privacidad@symvora.com].
       </p>
+
+      <h2>11. Modificaciones a los Términos</h2>
+      <p>
+        SYMVORA se reserva el derecho de modificar estos Términos y Condiciones en
+        cualquier momento. Las modificaciones serán notificadas al usuario a través de
+        la Plataforma o por correo electrónico con al menos quince (15) días naturales
+        de anticipación a su entrada en vigor. El uso continuado de la Plataforma
+        después de la fecha de entrada en vigor de las modificaciones constituye la
+        aceptación de los nuevos términos. En caso de no estar de acuerdo con las
+        modificaciones, el usuario podrá cancelar su suscripción en los términos de la
+        sección 6 anterior.
+      </p>
+
+      <h2>12. Soporte técnico</h2>
+      <p>
+        SYMVORA ofrece soporte técnico para la Plataforma a través de los siguientes
+        canales:
+      </p>
+      <ul>
+        <li>
+          <strong>Correo electrónico:</strong> [soporte@symvora.com] — atención de lunes
+          a viernes, de 9:00 a 18:00 horas (hora del centro de México).
+        </li>
+        <li>
+          <strong>Centro de ayuda:</strong> disponible dentro de la Plataforma, con
+          artículos, preguntas frecuentes y guías de uso.
+        </li>
+      </ul>
+      <p>
+        SYMVORA hará sus mejores esfuerzos para responder a las solicitudes de soporte
+        en un plazo razonable, sin embargo los tiempos de respuesta pueden variar
+        dependiendo de la complejidad del incidente y del plan contratado.
+      </p>
+
+      <h2>13. Nivel de servicio (SLA)</h2>
+      <p>
+        SYMVORA se compromete a mantener una disponibilidad razonable de la Plataforma
+        procurando que se encuentre accesible la mayor parte del tiempo. Sin embargo, la
+        Plataforma se proporciona &ldquo;según disponibilidad&rdquo; y pueden ocurrir interrupciones
+        derivadas de:
+      </p>
+      <ul>
+        <li>
+          Mantenimientos programados o de emergencia, los cuales procuraremos notificar
+          con anticipación cuando sea posible.
+        </li>
+        <li>
+          Fallas en proveedores de terceros (infraestructura, red, proveedor de pagos,
+          proveedor de timbrado).
+        </li>
+        <li>
+          Eventos de fuerza mayor o causas fuera del control razonable de SYMVORA
+          (ver sección 16).
+        </li>
+      </ul>
+      <p>
+        SYMVORA no garantiza que la Plataforma estará libre de errores ni que operará
+        de manera ininterrumpida. Cualquier compromiso de nivel de servicio adicional
+        podrá establecerse por escrito en un anexo al contrato comercial.
+      </p>
+
+      <h2>14. Confidencialidad</h2>
+      <p>
+        Cada parte se obliga a mantener bajo estricta confidencialidad toda la
+        información que reciba de la otra parte con motivo de la prestación de los
+        servicios y que sea identificada como confidencial o que por su naturaleza deba
+        razonablemente considerarse reservada (incluyendo, sin limitación, datos
+        comerciales, financieros, técnicos, operativos y datos personales). Esta
+        obligación subsistirá por un periodo de tres (3) años posteriores a la
+        terminación de la relación contractual, independientemente de la causa que le
+        dé origen.
+      </p>
+
+      <h2>15. Cesión</h2>
+      <p>
+        El usuario no podrá ceder, transferir o transmitir los derechos y obligaciones
+        derivados de estos Términos y Condiciones, ni su cuenta en la Plataforma, sin
+        el consentimiento previo, expreso y por escrito de SYMVORA. SYMVORA podrá ceder
+        libremente sus derechos y obligaciones a cualquier tercero, incluyendo en caso
+        de fusión, escisión, adquisición o venta de activos, notificando al usuario a
+        través de la Plataforma o por correo electrónico.
+      </p>
+
+      <h2>16. Fuerza mayor</h2>
+      <p>
+        Ninguna de las partes será responsable por el incumplimiento o el retraso en el
+        cumplimiento de sus obligaciones cuando dicho incumplimiento o retraso sea
+        consecuencia de eventos fuera de su control razonable, incluyendo, de manera
+        enunciativa mas no limitativa: fenómenos naturales, sismos, inundaciones,
+        incendios, pandemias, guerras, disturbios civiles, huelgas, fallas en
+        servicios públicos, ataques cibernéticos masivos, caídas generalizadas de
+        proveedores de internet o de servicios en la nube, o disposiciones
+        gubernamentales. La parte afectada deberá notificar a la otra tan pronto como
+        le sea posible y ambas partes colaborarán para mitigar los efectos del evento.
+      </p>
+
+      <h2>17. Indemnidad</h2>
+      <p>
+        El usuario acepta indemnizar y mantener en paz y a salvo a SYMVORA, sus
+        empleados, directores, accionistas y colaboradores de cualquier reclamación,
+        demanda, daño, responsabilidad, sanción, pérdida o gasto (incluyendo honorarios
+        razonables de abogados) que derive de: (i) el uso indebido de la Plataforma por
+        parte del usuario o de las personas a las que haya dado acceso; (ii) la
+        violación por parte del usuario de estos Términos y Condiciones o de la
+        legislación aplicable; (iii) la inexactitud o falsedad de los datos
+        proporcionados por el usuario; o (iv) la infracción de derechos de terceros.
+      </p>
     </LegalShell>
   );
 }

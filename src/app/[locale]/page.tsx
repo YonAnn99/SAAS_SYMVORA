@@ -15,7 +15,7 @@ import { Footer } from "@/components/marketing/footer";
 
 export default function LocalePage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <Navbar />
       <main>
         <Hero />

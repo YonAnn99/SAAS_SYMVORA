@@ -614,5 +614,18 @@
       "terms": "Terms",
       "copyright": "© 2026 SYMVORA. All rights reserved."
     }
+  },
+  "cookies": {
+    "title": "Cookie notice",
+    "message": "We only use essential cookies for the Platform to function (session and language). By continuing, you accept their use.",
+    "accept": "Accept",
+    "learnMore": "Learn more"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist or was moved. Check the URL or go back home.",
+    "home": "Go home",
+    "back": "Go back"
   }
 }

@@ -128,12 +128,16 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const headerOpaque = scrolled || mobileOpen;
+
   return (
     <header
-      className={`fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl transition-all duration-300 pt-[env(safe-area-inset-top)] ${
-        scrolled
-          ? "shadow-[0_2px_12px_rgba(0,0,0,0.08)] border-b border-neutral-200/60"
-          : "shadow-[0_1px_8px_rgba(0,0,0,0.04)]"
+      className={`fixed top-0 w-full z-50 backdrop-blur-xl transition-all duration-300 pt-[env(safe-area-inset-top)] ${
+        headerOpaque
+          ? mobileOpen
+            ? "bg-black border-b border-white/10"
+            : "bg-white/95 shadow-[0_2px_12px_rgba(0,0,0,0.08)] border-b border-neutral-200/60"
+          : "bg-white/80 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"
       }`}
     >
       <div className="h-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -233,7 +237,9 @@ export function Navbar() {
             <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Link>
           <button
-            className="lg:hidden p-2 -mr-2"
+            className={`lg:hidden p-2 -mr-2 rounded-lg transition-colors ${
+              mobileOpen ? "text-white hover:bg-white/10" : "text-neutral-900 hover:bg-neutral-100"
+            }`}
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-menu"
@@ -258,7 +264,7 @@ export function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={springTransition}
-            className="lg:hidden bg-white border-t border-neutral-100 overflow-hidden pb-[env(safe-area-inset-bottom)]"
+            className="lg:hidden bg-black text-white border-t border-white/10 overflow-hidden pb-[env(safe-area-inset-bottom)]"
           >
             <div className="px-4 py-4 space-y-2">
               {navItems.map((item) => {
@@ -267,10 +273,10 @@ export function Navbar() {
 
                 if (hasChildren) {
                   return (
-                    <div key={item.label} className="border-t border-neutral-100 pt-2">
+                    <div key={item.label} className="border-t border-white/10 pt-2">
                       <button
                         onClick={() => handleDropdownClick(item.label)}
-                        className="w-full flex items-center justify-between text-sm font-medium text-neutral-600 hover:text-black py-2"
+                        className="w-full flex items-center justify-between text-sm font-medium text-neutral-300 hover:text-white py-2"
                         aria-expanded={isMobileOpen}
                       >
                         {t(item.label)}
@@ -295,7 +301,7 @@ export function Navbar() {
                               <Link
                                 key={child.label}
                                 href={child.href ?? "#"}
-                                className="block text-sm text-neutral-600 hover:text-black py-1"
+                                className="block text-sm text-neutral-400 hover:text-white py-1"
                                 onClick={() => {
                                   setMobileOpen(false);
                                   setMobileOpenDropdown(null);
@@ -314,24 +320,24 @@ export function Navbar() {
                   <a
                     key={item.label}
                     href={item.href}
-                    className="block text-sm font-medium text-neutral-600 hover:text-black py-2"
+                    className="block text-sm font-medium text-neutral-300 hover:text-white py-2"
                     onClick={() => setMobileOpen(false)}
                   >
                     {t(item.label)}
                   </a>
                 );
               })}
-              <div className="pt-4 border-t border-neutral-100 space-y-2">
+              <div className="pt-4 border-t border-white/10 space-y-2">
                 <Link
                   href="/login"
-                  className="block text-sm font-medium text-neutral-600 hover:text-black"
+                  className="block text-sm font-medium text-neutral-300 hover:text-white"
                   onClick={() => setMobileOpen(false)}
                 >
                   {t("landing.nav.login")}
                 </Link>
                 <Link
                   href="/signup"
-                  className="block bg-black text-white text-sm font-medium px-5 py-2 rounded-lg text-center hover:bg-neutral-800 transition-colors"
+                  className="block bg-white text-black text-sm font-medium px-5 py-2 rounded-lg text-center hover:bg-neutral-200 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   {t("landing.nav.cta")}

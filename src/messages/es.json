@@ -698,5 +698,12 @@
     "message": "Utilizamos únicamente cookies esenciales para el funcionamiento de la Plataforma (sesión e idioma). Al continuar, aceptas su uso.",
     "accept": "Aceptar",
     "learnMore": "Más información"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Página no encontrada",
+    "description": "La página que buscas no existe o fue movida. Verifica la URL o regresa al inicio.",
+    "home": "Ir al inicio",
+    "back": "Volver"
   }
 }

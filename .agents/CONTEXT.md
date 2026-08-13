@@ -110,6 +110,8 @@ symvora-saas/
         ├── [locale]/aviso-privacidad/page.tsx   # Aviso de privacidad integral (LFPDPPP) - pública
         ├── [locale]/terminos/page.tsx           # Términos y condiciones - pública
         ├── [locale]/politica-cookies/page.tsx   # Política de cookies - pública
+        ├── [locale]/not-found.tsx              # 404 dentro del locale (con Navbar/Footer, animación motion)
+        ├── not-found.tsx                        # 404 raíz fallback (minimalista, redirige a /es)
         ├── api/auth/callback/route.ts  # OAuth callback
         ├── api/users/
         │   └── invite/route.ts           # Invite: requiere org.manage_members + SUPER_ADMIN para invitar SUPER_ADMIN
@@ -189,8 +191,10 @@ symvora-saas/
 | `/[locale]/settings` | `(dashboard)` | Configuración del tenant |
 | `/` | Landing | Landing page pública (marketing) |
 | `/[locale]/aviso-privacidad` | Pública | Aviso de privacidad integral (LFPDPPP) |
-| `/[locale]/terminos` | Pública | Términos y condiciones |
+| `/[locale]/terminos` | Pública | Términos y condiciones (17 secciones: Aceptación, Registro, Uso, Responsabilidad fiscal, Suscripción, Cancelación, PI, Limitación, Ley aplicable, Contacto, Modificaciones, Soporte, SLA, Confidencialidad, Cesión, Fuerza mayor, Indemnidad) |
 | `/[locale]/politica-cookies` | Pública | Política de cookies |
+| `/[locale]/* (no match)` | Pública | Renderiza `not-found.tsx` con Navbar/Footer, animación motion, CTAs "Ir al inicio" / "Volver" |
+| `/* (no match raíz)` | Pública | Renderiza `not-found.tsx` minimalista que redirige a `/es` |
 | `/api/auth/callback` | API | OAuth code exchange |
 | `/api/users/invite` | API | Invitar usuario (org.manage_members; solo SUPER_ADMIN invita SUPER_ADMIN) |
 | `/api/facturas/list` | API | Listar facturas (billing.view) |
@@ -413,6 +417,9 @@ symvora-saas/
 - **Landing page pública**: Hero, features, navbar, footer con links legales, secciones marketing
 - **Hardening API routes**: Nuevo helper `requireTenantAccess()` en `src/lib/supabase/auth.ts`, aplicado a invite, facturas, create-checkout, trial-codes. Webhook Conekta firmado (RSA `DIGEST` header, fail-closed)
 - **Cumplimiento LFPDPPP**: Banner de consentimiento de cookies (`cookie-consent.tsx`, cookie `symvora_consent` 7 días), páginas aviso-privacidad/terminos/politica-cookies públicas, aviso abreviado en signup, footer legal con links reales
+- **Páginas 404**: `src/app/[locale]/not-found.tsx` (con Navbar/Footer, animación motion fadeInUp, CTAs Inicio/Volver) y `src/app/not-found.tsx` (fallback raíz minimalista). Strings i18n en `es.json`/`en.json` bajo `notFound`
+- **Navbar móvil a negro**: Panel móvil con fondo negro puro (`bg-black`), texto blanco/grises claros, separadores `border-white/10`, "Comenzar gratis" invertido a `bg-white text-black`, header se vuelve negro al abrir el menú. Fix overflow lateral con `overflow-x-hidden` en `html`/`body` (globals.css) y wrappers de marketing
+- **Términos y Condiciones expandido**: De 10 a 17 secciones (Modificaciones, Soporte técnico, SLA, Confidencialidad, Cesión, Fuerza mayor, Indemnidad)
 
 ### Pendiente
  - Conekta API credentials verification — actual Conekta error visible with improved error handling
@@ -559,6 +566,23 @@ symvora-saas/
   - **Headers** en `next.config.ts` (`headers()` + `poweredByHeader: false`): CSP (script/style/img/font/connect/frame cubriendo Supabase, Conekta, Turnstile `challenges.cloudflare.com`, unpkg Boxicons, Sentry, `'unsafe-eval'` solo en dev), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` restringida, HSTS solo en producción. Fonts self-hosted (`next/font`) por lo que no se abre googleapis/gstatic
   - **CAPTCHA Turnstile** (integración nativa Supabase): widgets en login y signup (ids de contenedor separados, refs separados), token en `options.captchaToken` de `signInWithPassword`/`signUp`. Gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (sin la env no se renderiza ni rompe dev). **Activación manual**: widget en Cloudflare + toggle en Supabase Dashboard + env en Vercel
   - **Throttle en cliente**: en `handleLogin`, 5 fallos del mismo navegador → backoff exponencial (30s→15min) con countdown en vivo; reset al iniciar sesión
+
+### 24. Navbar móvil: contraste pobre + overflow horizontal visible
+- **Archivos**: `src/components/marketing/navbar.tsx`, `src/app/[locale]/page.tsx`, `src/components/marketing/legal-shell.tsx`, `src/app/globals.css`
+- **Problema**: Panel móvil con `bg-white` y texto `text-neutral-600` se veía "lavado" sobre el header con backdrop-blur. Además, una "línea negra" aparecía al hacer scroll lateral porque alguna sección causaba overflow horizontal y el header `fixed` no cubría todo el viewport
+- **Solución**:
+  - **Panel móvil** → fondo negro puro (`bg-black text-white`), items `text-neutral-300`/`text-neutral-400`, separadores `border-white/10`, CTA "Comenzar gratis" invertido a `bg-white text-black`
+  - **Header** → nueva lógica `headerOpaque = scrolled || mobileOpen`: cuando mobileOpen es true el header pasa a `bg-black border-white/10` para evitar parpadeo al cerrar; ícono X del hamburger se vuelve blanco
+  - **Overflow fix** → `overflow-x-hidden` en `html`/`body` (globals.css) y wrappers `page.tsx`/`legal-shell.tsx` como red de seguridad
+
+### 25. Páginas 404 inexistentes
+- **Archivos**: `src/app/[locale]/not-found.tsx` (nuevo), `src/app/not-found.tsx` (nuevo), `src/app/[locale]/terminos/page.tsx` (expandido), `src/messages/es.json`, `src/messages/en.json`
+- **Problema**: No existía ninguna página 404 personalizada. Términos y Condiciones solo tenía 10 secciones, faltando cobertura legal típica de SaaS mexicanos
+- **Solución**:
+  - **`/[locale]/not-found.tsx`**: Cliente component con animación `motion` (fadeInUp escalonado), "404" display gigante (`text-[clamp(7rem,18vw,11rem)]`), título, descripción, 2 CTAs (Link "Ir al inicio" vía next-intl navigation + button "Volver" con `window.history.back()`)
+  - **`/not-found.tsx` (raíz)**: Server component minimalista con Link a `/es` como fallback para rutas fuera del locale
+  - **Términos**: Añadidas §11 Modificaciones (15 días de aviso), §12 Soporte técnico (canales email + horarios), §13 SLA (según disponibilidad, exclusiones), §14 Confidencialidad (3 años post-terminación), §15 Cesión, §16 Fuerza mayor, §17 Indemnidad
+  - **i18n**: Bloque `notFound` con keys `code`, `title`, `description`, `home`, `back` en ambos idiomas
 
 ---
 
