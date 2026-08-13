@@ -37,7 +37,7 @@ export function Hero() {
           transition={easeOutShort}
         >
           {t("landing.hero.title")}{" "}
-          <span className="text-blue-600 relative whitespace-nowrap">
+            <span className="text-blue-600 relative sm:whitespace-nowrap">
             {t("landing.hero.highlight")}
             <svg
               className="absolute -bottom-2 left-0 w-full h-3 text-blue-200"
@@ -140,7 +140,7 @@ export function Hero() {
       </motion.div>
 
       <motion.div
-        className="w-full lg:w-1/2 relative min-h-[320px] sm:min-h-[400px] lg:min-h-[600px] mt-12 lg:mt-0 flex items-center justify-center"
+        className="w-full lg:w-1/2 relative min-h-[280px] sm:min-h-[360px] lg:min-h-[600px] mt-8 lg:mt-0 flex items-center justify-center"
         initial={{ opacity: 0, x: 40 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.3 }}
@@ -164,7 +164,7 @@ export function Hero() {
         >
           <PosMockup />
           <motion.div
-            className="absolute left-2 sm:-left-6 bottom-6 sm:bottom-10 bg-white p-3 rounded-lg shadow-xl border border-neutral-200 flex items-center gap-3"
+            className="absolute left-2 right-auto sm:-left-6 bottom-4 sm:bottom-10 bg-white p-3 rounded-lg shadow-xl border border-neutral-200 flex items-center gap-3 max-w-[calc(100%-1rem)]"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.9, duration: 0.5, ease: "easeOut" }}

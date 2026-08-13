@@ -464,6 +464,13 @@
         "added": "Item added"
       }
     },
+    "compatibility": {
+      "ariaLabel": "Available on any device with internet",
+      "mobile": { "title": "Phone", "desc": "iOS and Android" },
+      "tablet": { "title": "Tablet", "desc": "Touch screen" },
+      "desktop": { "title": "Computer", "desc": "Any modern browser" },
+      "online": { "title": "Cloud-based", "desc": "Just need internet" }
+    },
     "features": {
       "title": "Everything your business needs",
       "subtitle": "Modules that work together to give you total control of your operations.",

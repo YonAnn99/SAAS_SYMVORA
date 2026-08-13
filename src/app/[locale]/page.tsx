@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/marketing/navbar";
 import { Hero } from "@/components/marketing/hero";
+import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import { Features } from "@/components/marketing/features";
 import { BusinessTypes } from "@/components/marketing/business-types";
 import { CFDISection } from "@/components/marketing/cfdi-section";
@@ -19,6 +20,7 @@ export default function LocalePage() {
       <Navbar />
       <main>
         <Hero />
+        <CompatibilityBar />
         <Features />
         <BusinessTypes />
         <CFDISection />

@@ -539,6 +539,13 @@
         "added": "Producto agregado"
       }
     },
+    "compatibility": {
+      "ariaLabel": "Disponible en cualquier dispositivo con internet",
+      "mobile": { "title": "Celular", "desc": "iOS y Android" },
+      "tablet": { "title": "Tablet", "desc": "Pantalla táctil" },
+      "desktop": { "title": "Computadora", "desc": "Cualquier navegador moderno" },
+      "online": { "title": "En la nube", "desc": "Solo necesitas internet" }
+    },
     "features": {
       "title": "Todo lo que tu negocio necesita",
       "subtitle": "Módulos que trabajan juntos para darte control total de tus operaciones.",
