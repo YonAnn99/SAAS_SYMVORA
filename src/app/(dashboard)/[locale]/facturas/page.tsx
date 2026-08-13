@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, FileText, Stamp, XCircle, Trash2 } from "lucide-react";
+import { Plus, Search, FileText, Stamp, XCircle, Trash2, Settings2, Download, FileDown, Eye } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -73,6 +73,7 @@ const defaultLinea: FacturaLinea = {
 
 export default function FacturasPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [facturas, setFacturas] = useState<Factura[]>([]);
@@ -343,14 +344,25 @@ export default function FacturasPage() {
             Facturación electrónica CFDI 4.0
           </p>
         </div>
-        <Button
-          size="sm"
-          className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
-          onClick={() => setShowCreateDialog(true)}
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Nueva Factura
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
+            onClick={() => router.push(`/${locale}/facturas/config`)}
+          >
+            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
+            {t("facturas.configFiscal")}
+          </Button>
+          <Button
+            size="sm"
+            className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
+            onClick={() => setShowCreateDialog(true)}
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Nueva Factura
+          </Button>
+        </div>
       </div>
 
       {/* Search + Filter */}
@@ -440,6 +452,15 @@ export default function FacturasPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => router.push(`/${locale}/facturas/${factura.id}`)}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            Ver
+                          </Button>
                           {factura.estado === "BORRADOR" && (
                             <Button
                               variant="ghost"
@@ -453,15 +474,39 @@ export default function FacturasPage() {
                             </Button>
                           )}
                           {factura.estado === "TIMBRADA" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
-                              onClick={() => setShowCancelDialog(factura)}
-                            >
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Cancelar
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() =>
+                                  window.open(`/api/facturas/${factura.id}/xml`, "_blank")
+                                }
+                                title={t("facturas.viewXml")}
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() =>
+                                  window.open(`/api/facturas/${factura.id}/pdf`, "_blank")
+                                }
+                                title={t("facturas.downloadPdf")}
+                              >
+                                <FileDown className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-destructive hover:text-destructive"
+                                onClick={() => setShowCancelDialog(factura)}
+                              >
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Cancelar
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>

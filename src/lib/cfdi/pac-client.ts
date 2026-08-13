@@ -23,22 +23,24 @@ export interface PACClient {
   }): Promise<PACCancelResult>;
 }
 
+export function isPACTestsEnabled(): boolean {
+  return process.env.PAC_TEST_MODE === "true";
+}
+
+function resolveIsTest(isTest?: boolean): boolean {
+  if (isTest !== undefined) return isTest;
+  return isPACTestsEnabled();
+}
+
 export class FinkokClient implements PACClient {
   private username: string;
   private password: string;
   private isTest: boolean;
 
-  constructor(config: TenantConfiguracionFiscal, isTest = true) {
+  constructor(config: TenantConfiguracionFiscal, isTest?: boolean) {
     this.username = config.pac_usuario;
     this.password = config.pac_password;
-    this.isTest = isTest;
-  }
-
-  private getEndpoint(): string {
-    if (this.isTest) {
-      return "https://demo-finkok.33mail.com/stamp";
-    }
-    return "https://demo-finkok.33mail.com/stamp";
+    this.isTest = resolveIsTest(isTest);
   }
 
   async stamp(xml: string): Promise<PACStampResult> {
@@ -120,10 +122,10 @@ export class SWSapienClient implements PACClient {
   private password: string;
   private isTest: boolean;
 
-  constructor(config: TenantConfiguracionFiscal, isTest = true) {
+  constructor(config: TenantConfiguracionFiscal, isTest?: boolean) {
     this.username = config.pac_usuario;
     this.password = config.pac_password;
-    this.isTest = isTest;
+    this.isTest = resolveIsTest(isTest);
   }
 
   async stamp(xml: string): Promise<PACStampResult> {
@@ -204,14 +206,15 @@ export class SWSapienClient implements PACClient {
 
 export function createPACClient(
   config: TenantConfiguracionFiscal,
-  isTest = true
+  isTest?: boolean
 ): PACClient {
+  const test = resolveIsTest(isTest);
   switch (config.pac_proveedor) {
     case "finkok":
-      return new FinkokClient(config, isTest);
+      return new FinkokClient(config, test);
     case "swsapien":
-      return new SWSapienClient(config, isTest);
+      return new SWSapienClient(config, test);
     default:
-      return new FinkokClient(config, isTest);
+      return new FinkokClient(config, test);
   }
 }

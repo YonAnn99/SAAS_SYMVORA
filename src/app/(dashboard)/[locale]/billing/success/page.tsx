@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 export default function BillingSuccessPage() {
   const t = useTranslations();
   const router = useRouter();
+  const locale = useLocale();
+  const billingPath = `/${locale}/billing`;
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function BillingSuccessPage() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.push("/es/billing");
+          router.push(billingPath);
           return 0;
         }
         return prev - 1;
@@ -31,7 +33,7 @@ export default function BillingSuccessPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [router]);
+  }, [router, billingPath]);
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -56,7 +58,7 @@ export default function BillingSuccessPage() {
               `Redirigiendo en ${countdown} segundos...`}
           </p>
           <Button
-            onClick={() => router.push("/es/billing")}
+            onClick={() => router.push(billingPath)}
             className="w-full"
           >
             {t("billing.goToBilling") || "Ir a Suscripción"}

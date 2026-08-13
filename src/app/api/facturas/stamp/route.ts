@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     const xml = generateCFDIXML(factura, detalle);
 
     // Create PAC client and stamp
-    const pacClient = createPACClient(fiscalConfig, true); // true = test mode
+    const pacClient = createPACClient(fiscalConfig);
 
     try {
       const result = await pacClient.stamp(xml);
@@ -88,6 +88,8 @@ export async function POST(request: NextRequest) {
           fecha_timbrado: new Date().toISOString(),
           pac_nombre: fiscalConfig.pac_proveedor,
           pac_response: result.rawResponse as Record<string, unknown>,
+          xml_url: `/api/facturas/${body.factura_id}/xml`,
+          pdf_url: `/api/facturas/${body.factura_id}/pdf`,
         })
         .eq("id", body.factura_id);
 

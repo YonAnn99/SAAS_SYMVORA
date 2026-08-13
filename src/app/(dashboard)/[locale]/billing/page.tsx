@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,6 +11,22 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { toast } from "sonner";
@@ -20,6 +36,7 @@ import {
   CheckCircle,
   ExternalLink,
   Calendar,
+  History,
 } from "lucide-react";
 
 interface Subscription {
@@ -34,12 +51,27 @@ interface Subscription {
   conekta_customer_id: string | null;
 }
 
+interface PaymentRecord {
+  id: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: string;
+  reference: string | null;
+  conekta_order_id: string | null;
+  paid_at: string | null;
+  created_at: string;
+}
+
 export default function BillingPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const fetchSubscription = async () => {
     if (!tenantId) {
@@ -57,9 +89,17 @@ export default function BillingPage() {
 
       if (data) {
         setSubscription(data);
+
+        const { data: paymentData } = await supabase
+          .from("payment_history")
+          .select("*")
+          .eq("subscription_id", data.id)
+          .order("created_at", { ascending: false });
+
+        if (paymentData) setPayments(paymentData);
       }
-    } catch {
-      // Subscription might not exist yet for new users
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
     } finally {
       setLoading(false);
     }
@@ -120,7 +160,7 @@ export default function BillingPage() {
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "card" }),
+        body: JSON.stringify({ tenant_id: tenantId, type: "card", locale }),
       });
 
       const data = await response.json();
@@ -143,7 +183,7 @@ export default function BillingPage() {
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "oxxo" }),
+        body: JSON.stringify({ tenant_id: tenantId, type: "oxxo", locale }),
       });
 
       const data = await response.json();
@@ -160,28 +200,71 @@ export default function BillingPage() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm(t("billing.confirmCancel"))) return;
+    if (!tenantId) return;
     setProcessing(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase
-        .from("subscriptions")
-        .update({ status: "canceled", updated_at: new Date().toISOString() })
-        .eq("tenant_id", tenantId);
+      const response = await fetch("/api/conekta/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: tenantId }),
+      });
 
-      if (error) throw error;
-
-      await supabase
-        .from("tenants")
-        .update({ subscription_status: "canceled" })
-        .eq("id", tenantId);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || t("common.error"));
 
       toast.success(t("billing.subscriptionCanceled"));
+      setShowCancelDialog(false);
       fetchSubscription();
-    } catch {
-      toast.error(t("common.error"));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t("common.error"));
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid":
+        return (
+          <Badge variant="outline" className="border-green-500/40 text-green-600 text-[10px]">
+            Pagado
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge variant="outline" className="text-amber-600 border-amber-500/40 text-[10px]">
+            Pendiente
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge variant="outline" className="text-destructive border-destructive/40 text-[10px]">
+            Fallido
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="text-[10px]">
+            {status}
+          </Badge>
+        );
+    }
+  };
+
+  const getPaymentMethodLabel = (method: string) => {
+    switch (method) {
+      case "card":
+        return "Tarjeta";
+      case "cash":
+        return "Efectivo";
+      case "bank_transfer":
+        return "Transferencia";
+      case "oxxo":
+        return "OXXO";
+      case "default":
+        return "Tarjeta";
+      default:
+        return method;
     }
   };
 
@@ -309,7 +392,7 @@ export default function BillingPage() {
               <>
                 <Separator />
                 <Button
-                  onClick={handleCancelSubscription}
+                  onClick={() => setShowCancelDialog(true)}
                   disabled={processing}
                   variant="destructive"
                   className="w-full"
@@ -325,16 +408,84 @@ export default function BillingPage() {
 
       <Card className="animate-fade-in-up stagger-4">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" />
             {t("billing.paymentHistory")}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground text-center py-8">
-            {t("billing.noPayments")}
-          </div>
+          {payments.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-8">
+              {t("billing.noPayments")}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs uppercase tracking-wider">Fecha</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Método</TableHead>
+                    <TableHead className="text-right text-xs uppercase tracking-wider">Monto</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Estado</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Referencia</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(payment.paid_at || payment.created_at).toLocaleString("es-MX", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {getPaymentMethodLabel(payment.payment_method)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-mono">
+                        ${payment.amount.toFixed(2)} {payment.currency}
+                      </TableCell>
+                      <TableCell>{getPaymentStatusBadge(payment.status)}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground font-mono">
+                        {payment.conekta_order_id || payment.reference || "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("billing.cancelSubscription")}</DialogTitle>
+            <DialogDescription>{t("billing.confirmCancel")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setShowCancelDialog(false)}
+              disabled={processing}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-8"
+              onClick={handleCancelSubscription}
+              disabled={processing}
+            >
+              {processing ? t("common.loading") : t("billing.cancelSubscription")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

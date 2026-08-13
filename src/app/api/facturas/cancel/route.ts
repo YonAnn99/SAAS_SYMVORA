@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create PAC client and cancel
-    const pacClient = createPACClient(fiscalConfig, true);
+    const pacClient = createPACClient(fiscalConfig);
 
     try {
       const result = await pacClient.cancel({

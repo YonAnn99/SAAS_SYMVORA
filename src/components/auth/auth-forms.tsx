@@ -193,7 +193,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
     setFailedLoginAttempts(0);
     setLoginCaptchaToken(null);
     turnstileLoginRef.current?.reset();
-    router.push("/es/dashboard");
+    router.push(`/${locale}/dashboard`);
     router.refresh();
   };
 
@@ -373,7 +373,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenant.id, type: "card" }),
+        body: JSON.stringify({ tenant_id: tenant.id, type: "card", locale }),
       });
 
       const data = await response.json();
@@ -386,7 +386,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
     }
 
     // Fallback: go to billing page
-    router.push("/es/billing");
+    router.push(`/${locale}/billing`);
     router.refresh();
   };
 

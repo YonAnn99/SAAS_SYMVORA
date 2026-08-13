@@ -8,6 +8,10 @@ export function generateCFDIXML(factura: Factura, detalle: FacturaDetalle[]): st
     .join("\n      ");
 
   const fecha = formatCFDFecha(factura.fecha_emision);
+  const fechaTimbrado = factura.fecha_timbrado
+    ? formatCFDFecha(factura.fecha_timbrado)
+    : "";
+  const uuid = factura.uuid_cfdi || "";
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <cfdi:Comprobante
@@ -59,9 +63,9 @@ export function generateCFDIXML(factura: Factura, detalle: FacturaDetalle[]): st
     <tfd:TimbreFiscalDigital
         xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
         Version="1.1"
-        UUID=""
-        FechaTimbrado=""
-        RfcProvCertif=""
+        UUID="${uuid}"
+        FechaTimbrado="${fechaTimbrado}"
+        RfcProvCertif="${escapeXml(factura.pac_nombre || "")}"
         SelloCFD=""
         NoCertificadoSAT=""
         SelloSAT="" />

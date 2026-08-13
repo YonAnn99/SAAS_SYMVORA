@@ -7,7 +7,10 @@ const INVITABLE_ROLES: UserRole[] = ["ORG_ADMIN", "CAJERO"];
 
 export async function POST(request: Request) {
   try {
-    const { email, role, tenantId } = await request.json();
+    const { email, role, tenantId, locale: requestLocale } = await request.json();
+    const locale = typeof requestLocale === "string" && /^(es|en)$/.test(requestLocale)
+      ? requestLocale
+      : "es";
 
     if (!email || !role || !tenantId) {
       return NextResponse.json(
@@ -41,6 +44,7 @@ export async function POST(request: Request) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json(
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
           tenant_id: tenantId,
           role: roleToAssign,
         },
-        redirectTo: `${supabaseUrl}/auth/v1/verify?redirect_to=${encodeURIComponent(`${supabaseUrl}/es/dashboard`)}`,
+        redirectTo: `${supabaseUrl}/auth/v1/verify?redirect_to=${encodeURIComponent(`${appUrl}/${locale}/dashboard`)}`,
       }
     );
 

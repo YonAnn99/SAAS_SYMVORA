@@ -28,12 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Plus, Minus, ShoppingCart, Search, User, CreditCard, Banknote, ArrowRightLeft, AlertTriangle, Check } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, Search, User, CreditCard, Banknote, ArrowRightLeft, AlertTriangle, Check, UserPlus } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { completeSale, calculateSaleTotals } from "@/lib/supabase/sales";
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { Producto, Cliente } from "@/lib/types/database";
+import { USOS_CFDI } from "@/lib/cfdi/catalogs";
 
 export default function POSPage() {
   const t = useTranslations();
@@ -60,6 +61,19 @@ export default function POSPage() {
   const [processingSale, setProcessingSale] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [userId, setUserId] = useState<string>("");
+
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [savingCustomer, setSavingCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    nombre: "",
+    telefono: "",
+    email: "",
+    rfc: "",
+    razon_social: "",
+    regimen_fiscal_receptor: "",
+    uso_cfdi: "",
+    codigo_postal: "",
+  });
 
   const fetchProductsAndUser = useCallback(async () => {
     if (!tenantId) return;
@@ -94,6 +108,54 @@ export default function POSPage() {
       fetchProductsAndUser();
     }
   }, [tenantLoading, fetchProductsAndUser]);
+
+  const handleCreateCustomer = async () => {
+    if (!tenantId) return;
+    if (!newCustomer.nombre.trim()) {
+      toast.error("El nombre del cliente es requerido");
+      return;
+    }
+    setSavingCustomer(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from("clientes")
+        .insert({
+          tenant_id: tenantId,
+          nombre: newCustomer.nombre.trim(),
+          telefono: newCustomer.telefono || null,
+          email: newCustomer.email || null,
+          rfc: newCustomer.rfc?.trim() || null,
+          razon_social: newCustomer.razon_social?.trim() || null,
+          regimen_fiscal_receptor: newCustomer.regimen_fiscal_receptor || null,
+          uso_cfdi: newCustomer.uso_cfdi || null,
+          codigo_postal: newCustomer.codigo_postal || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success(`Cliente ${data.nombre} creado`);
+      setSelectedCustomer(data.id);
+      setShowNewCustomerDialog(false);
+      setNewCustomer({
+        nombre: "",
+        telefono: "",
+        email: "",
+        rfc: "",
+        razon_social: "",
+        regimen_fiscal_receptor: "",
+        uso_cfdi: "",
+        codigo_postal: "",
+      });
+      fetchProductsAndUser();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Error al crear el cliente");
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
 
   const filteredProducts = products.filter(
     (p) =>
@@ -260,19 +322,30 @@ export default function POSPage() {
             <User className="inline h-3 w-3 mr-1" />
             Cliente (opcional)
           </Label>
-          <Select value={selectedCustomer} onValueChange={(v) => setSelectedCustomer(v ?? "none")}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Cliente general" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Cliente general</SelectItem>
-              {customers.map((customer) => (
-                <SelectItem key={customer.id} value={customer.id}>
-                  {customer.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-1.5">
+            <Select value={selectedCustomer} onValueChange={(v) => setSelectedCustomer(v ?? "none")}>
+              <SelectTrigger className="h-8 text-sm flex-1">
+                <SelectValue placeholder="Cliente general" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Cliente general</SelectItem>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0"
+              onClick={() => setShowNewCustomerDialog(true)}
+              title="Nuevo cliente"
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <Card className="flex-1 flex flex-col">
@@ -473,6 +546,147 @@ export default function POSPage() {
                   Completar venta
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New customer dialog */}
+      <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuevo cliente</DialogTitle>
+            <DialogDescription>
+              Crea un cliente y registra sus datos fiscales para facturar (opcional).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-nombre">Nombre*</Label>
+                <Input
+                  id="nc-nombre"
+                  value={newCustomer.nombre}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, nombre: e.target.value })
+                  }
+                  placeholder="Nombre o razón de la persona"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-rfc">RFC</Label>
+                <Input
+                  id="nc-rfc"
+                  value={newCustomer.rfc}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, rfc: e.target.value.toUpperCase() })
+                  }
+                  placeholder="XAXX010101000"
+                  className="uppercase"
+                  maxLength={13}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-razon">Razón social</Label>
+                <Input
+                  id="nc-razon"
+                  value={newCustomer.razon_social}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, razon_social: e.target.value })
+                  }
+                  placeholder="Empresa S.A. de C.V."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-regimen">Régimen fiscal</Label>
+                <Input
+                  id="nc-regimen"
+                  value={newCustomer.regimen_fiscal_receptor}
+                  onChange={(e) =>
+                    setNewCustomer({
+                      ...newCustomer,
+                      regimen_fiscal_receptor: e.target.value,
+                    })
+                  }
+                  placeholder="612"
+                  maxLength={3}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-uso">Uso CFDI</Label>
+                <Select
+                  value={newCustomer.uso_cfdi}
+                  onValueChange={(v) =>
+                    setNewCustomer({ ...newCustomer, uso_cfdi: v ?? "" })
+                  }
+                >
+                  <SelectTrigger id="nc-uso" className="w-full">
+                    <SelectValue placeholder="Selecciona un uso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(USOS_CFDI).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>
+                        {key} — {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-cp">Código postal</Label>
+                <Input
+                  id="nc-cp"
+                  value={newCustomer.codigo_postal}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, codigo_postal: e.target.value })
+                  }
+                  placeholder="06600"
+                  maxLength={5}
+                  inputMode="numeric"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-tel">Teléfono</Label>
+                <Input
+                  id="nc-tel"
+                  value={newCustomer.telefono}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, telefono: e.target.value })
+                  }
+                  placeholder="55 0000 0000"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nc-email">Email</Label>
+                <Input
+                  id="nc-email"
+                  type="email"
+                  value={newCustomer.email}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, email: e.target.value })
+                  }
+                  placeholder="cliente@correo.com"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setShowNewCustomerDialog(false)}
+              disabled={savingCustomer}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              size="sm"
+              className="h-8 active:scale-[0.98] transition-transform"
+              onClick={handleCreateCustomer}
+              disabled={savingCustomer}
+            >
+              {savingCustomer ? "Guardando..." : "Crear cliente"}
             </Button>
           </DialogFooter>
         </DialogContent>

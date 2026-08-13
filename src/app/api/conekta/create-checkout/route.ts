@@ -8,6 +8,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { tenant_id, type } = body;
+    const locale = typeof body.locale === "string" && /^(es|en)$/.test(body.locale)
+      ? body.locale
+      : "es";
 
     if (!tenant_id) {
       return NextResponse.json(
@@ -108,9 +111,9 @@ export async function POST(request: Request) {
         customerId: customerId!,
         amount: 40000,
         description: "SYMVORA Basico - Mensual",
-        successUrl: `${APP_URL}/es/billing/success`,
-        cancelUrl: `${APP_URL}/es/billing`,
-        failureUrl: `${APP_URL}/es/billing`,
+        successUrl: `${APP_URL}/${locale}/billing/success`,
+        cancelUrl: `${APP_URL}/${locale}/billing`,
+        failureUrl: `${APP_URL}/${locale}/billing`,
         allowedPaymentMethods: allowedMethods,
       });
     } catch (orderError: unknown) {

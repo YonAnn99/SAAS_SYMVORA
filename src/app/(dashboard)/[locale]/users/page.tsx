@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,7 @@ const roleColors: Record<string, string> = {
 
 export default function UsersPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const [memberships, setMemberships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -109,6 +110,7 @@ export default function UsersPage() {
           email: inviteEmail,
           role: inviteRole,
           tenantId,
+          locale,
         }),
       });
 
