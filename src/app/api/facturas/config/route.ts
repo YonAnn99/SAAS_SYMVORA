@@ -2,9 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { tenantFiscalConfigSchema } from "@/lib/validations/schemas";
+import { saveFiscalSecret } from "@/lib/cfdi/fiscal-secrets";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 
 const PAC_PROVEEDORES = ["finkok", "swsapien", "mascarilla"] as const;
+
+const NON_SECRET_FIELDS: (keyof TenantConfiguracionFiscal)[] = [
+  "cfdi_serie",
+  "cfdi_metodo_pago",
+  "cfdi_forma_pago_default",
+  "pac_proveedor",
+  "pac_usuario",
+  "email_envio_facturas",
+];
+
+const SECRET_FIELDS = {
+  pac_password: "pac_password_id",
+  certificado_cer: "certificado_cer_id",
+  certificado_key: "certificado_key_id",
+  certificado_password: "certificado_password_id",
+} as const;
 
 function validateFiscalConfig(config: Record<string, unknown>) {
   const result = tenantFiscalConfigSchema.safeParse(config);
@@ -16,6 +33,36 @@ function validateFiscalConfig(config: Record<string, unknown>) {
     };
   }
   return { ok: true as const, data: result.data };
+}
+
+function sanitizeConfig(
+  config: TenantConfiguracionFiscal | null | undefined
+): TenantConfiguracionFiscal | null {
+  if (!config) return null;
+
+  const sanitized: TenantConfiguracionFiscal = {
+    cfdi_serie: config.cfdi_serie ?? "A",
+    cfdi_metodo_pago: config.cfdi_metodo_pago ?? "PUE",
+    cfdi_forma_pago_default: config.cfdi_forma_pago_default ?? "01",
+    pac_proveedor: config.pac_proveedor ?? "finkok",
+    pac_usuario: config.pac_usuario ?? "",
+    pac_password_id: config.pac_password_id ?? "",
+    certificado_cer_id: config.certificado_cer_id ?? "",
+    certificado_key_id: config.certificado_key_id ?? "",
+    certificado_password_id: config.certificado_password_id ?? "",
+    email_envio_facturas: config.email_envio_facturas ?? "",
+  };
+
+  return sanitized;
+}
+
+function secretsSet(config: TenantConfiguracionFiscal | null | undefined) {
+  return {
+    pac_password: Boolean(config?.pac_password_id),
+    certificado_cer: Boolean(config?.certificado_cer_id),
+    certificado_key: Boolean(config?.certificado_key_id),
+    certificado_password: Boolean(config?.certificado_password_id),
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -52,6 +99,10 @@ export async function GET(request: NextRequest) {
         .single(),
     ]);
 
+    const fiscalConfig = settings?.configuracion_fiscal as
+      | TenantConfiguracionFiscal
+      | null;
+
     return NextResponse.json({
       success: true,
       tenant_id: membership.tenant_id,
@@ -61,8 +112,8 @@ export async function GET(request: NextRequest) {
         regimen_fiscal: tenant?.regimen_fiscal ?? "",
         codigo_postal: tenant?.codigo_postal ?? "",
       },
-      configuracion_fiscal:
-        (settings?.configuracion_fiscal as TenantConfiguracionFiscal | null) ?? null,
+      configuracion_fiscal: sanitizeConfig(fiscalConfig),
+      secrets_set: secretsSet(fiscalConfig),
     });
   } catch (error) {
     console.error("Get facturas config error:", error);
@@ -81,7 +132,20 @@ interface SaveConfigRequest {
     regimen_fiscal?: string;
     codigo_postal?: string;
   };
-  configuracion_fiscal?: Partial<TenantConfiguracionFiscal>;
+  configuracion_fiscal?: {
+    cfdi_serie?: string;
+    cfdi_metodo_pago?: string;
+    cfdi_forma_pago_default?: string;
+    pac_proveedor?: string;
+    pac_usuario?: string;
+    email_envio_facturas?: string;
+  };
+  secrets?: {
+    pac_password?: string;
+    certificado_cer?: string;
+    certificado_key?: string;
+    certificado_password?: string;
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -109,12 +173,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (
-      body.configuracion_fiscal?.pac_proveedor &&
-      !PAC_PROVEEDORES.includes(
-        body.configuracion_fiscal.pac_proveedor as (typeof PAC_PROVEEDORES)[number]
-      )
-    ) {
+    const pacProveedor = body.configuracion_fiscal?.pac_proveedor;
+    if (pacProveedor && !PAC_PROVEEDORES.includes(pacProveedor as (typeof PAC_PROVEEDORES)[number])) {
       return NextResponse.json(
         { error: "Proveedor PAC inválido" },
         { status: 400 }
@@ -128,24 +188,41 @@ export async function POST(request: NextRequest) {
       .eq("tenant_id", body.tenant_id)
       .single();
 
-    const currentConfig =
-      (currentSettings?.configuracion_fiscal as TenantConfiguracionFiscal | null) ?? {
-        cfdi_serie: "A",
-        cfdi_metodo_pago: "PUE",
-        cfdi_forma_pago_default: "01",
-        pac_proveedor: "finkok",
-        pac_usuario: "",
-        pac_password: "",
-        certificado_cer: "",
-        certificado_key: "",
-        certificado_password: "",
-        email_envio_facturas: "",
-      };
+    const currentConfig = sanitizeConfig(
+      currentSettings?.configuracion_fiscal as TenantConfiguracionFiscal | null
+    ) ?? {
+      cfdi_serie: "A",
+      cfdi_metodo_pago: "PUE",
+      cfdi_forma_pago_default: "01",
+      pac_proveedor: "finkok",
+      pac_usuario: "",
+      pac_password_id: "",
+      certificado_cer_id: "",
+      certificado_key_id: "",
+      certificado_password_id: "",
+      email_envio_facturas: "",
+    };
 
+    const incoming = body.configuracion_fiscal ?? {};
     const mergedConfig: TenantConfiguracionFiscal = {
       ...currentConfig,
-      ...(body.configuracion_fiscal ?? {}),
+      ...NON_SECRET_FIELDS.reduce((acc, field) => {
+        if (field in incoming) {
+          (acc as Record<string, unknown>)[field] = (incoming as Record<string, unknown>)[field];
+        }
+        return acc;
+      }, {} as Partial<TenantConfiguracionFiscal>),
     };
+
+    // Store any provided secret in the vault (cifrado) and keep only its ID
+    const secrets = body.secrets ?? {};
+    for (const [field, idField] of Object.entries(SECRET_FIELDS)) {
+      const valor = (secrets as Record<string, string>)[field];
+      if (valor && valor.trim().length > 0) {
+        const secretId = await saveFiscalSecret(supabase, body.tenant_id, field, valor);
+        (mergedConfig as unknown as Record<string, string>)[idField] = secretId;
+      }
+    }
 
     const [tenantResult, settingsResult] = await Promise.all([
       supabase

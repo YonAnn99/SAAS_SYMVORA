@@ -553,12 +553,12 @@
     },
     "cfdi": {
       "badge": "Facturación Electrónica",
-      "title": "CFDI 4.0 integrado, sin complementos",
-      "subtitle": "Genera facturas electrónicas directamente desde el sistema. Cumple con el SAT sin necesidad de software externo.",
+      "title": "CFDI 4.0 con sello y timbrado reales",
+      "subtitle": "Firma cada factura con tu certificado de sello digital (.cer/.key) y envía el XML al PAC para timbrarlo ante el SAT. Credenciales del PAC y del CSD cifradas, nunca en texto plano.",
       "features": {
-        "stamp": { "title": "Timbrado directo", "description": "Envía el XML al PAC y recibe el UUID de validación en segundos. Soporta Finkok, SWSapien y otros proveedores." },
+        "stamp": { "title": "Sello digital y timbrado directo", "description": "Genera la cadena original, firma con tu CSD y envía el sello al PAC. Recibe el UUID del SAT en segundos. Compatible con Finkok y SWSapien." },
         "catalogs": { "title": "Catálogos SAT incluidos", "description": "100+ formas de pago, 80+ claves de unidad, 20+ regímenes fiscales y 17+ claves de producto — todo precargado." },
-        "cancel": { "description": "Cancela facturas con motivo registrado. Folio de sustitución opcional. Todo queda en bitácora de auditoría.", "title": "Cancelación con trazabilidad" },
+        "cancel": { "description": "Cancela facturas con motivo registrado y tu CSD. Folio de sustitución opcional. Todo queda en bitácora de auditoría.", "title": "Cancelación con trazabilidad" },
         "payment": { "title": "PUE y PPD", "description": "Soporta Pago en Una Exhibición y Pago en Parcialidades. Métodos de pago: Efectivo, Transferencia, Tarjeta de crédito/débito y más." }
       },
       "cta": "Configura tu PAC y empieza a facturar"

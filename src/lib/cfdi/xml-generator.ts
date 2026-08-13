@@ -1,114 +1,152 @@
+import { CFDI, Concepto, Emisor, Impuestos, Receptor } from "@cfdi/xml";
+import { mkdtemp, rm, writeFile } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
 import type { Factura, FacturaDetalle } from "@/lib/types/database";
 import { CLAVE_UNIDAD_SAT } from "./catalogs";
 
+const XSLT_CFDI_PATH = join(
+  process.cwd(),
+  "resources/cfdi/4.0/cadenaoriginal.xslt"
+);
+
+export interface SealInputs {
+  certificadoCer: string;
+  certificadoKey: string;
+  certificadoPassword: string;
+}
+
+export interface SealResult {
+  xml: string;
+  cadenaOriginal: string;
+  sello: string;
+  noCertificado: string;
+  certificado: string;
+}
+
 export function generateCFDIXML(factura: Factura, detalle: FacturaDetalle[]): string {
-  const conceptos = detalle
-    .sort((a, b) => a.orden - b.orden)
-    .map((d) => generateConcepto(d))
-    .join("\n      ");
-
-  const fecha = formatCFDFecha(factura.fecha_emision);
-  const fechaTimbrado = factura.fecha_timbrado
-    ? formatCFDFecha(factura.fecha_timbrado)
-    : "";
-  const uuid = factura.uuid_cfdi || "";
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<cfdi:Comprobante
-    xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"
-    Version="4.0"
-    Serie="${escapeXml(factura.serie)}"
-    Folio="${factura.folio}"
-    Fecha="${fecha}"
-    FormaPago="${factura.forma_pago}"
-    NoCertificado="30001000000500003416"
-    Certificado="MIIFuzCCA6OgAwIBAgIUMzAwMDEwMDAwMDA1MDAwMDM0MTYwDQYJKoZIhvcNAQELBQA..."
-    SubTotal="${formatDecimal(factura.subtotal)}"
-    Descuento="${formatDecimal(factura.descuento)}"
-    Moneda="MXN"
-    Total="${formatDecimal(factura.total)}"
-    TipoDeComprobante="I"
-    Exportacion="01"
-    MetodoPago="${factura.metodo_pago}"
-    LugarExpedicion="${factura.emisor_codigo_postal}"
-    Sello="...">
-  <cfdi:Emisor
-      Rfc="${escapeXml(factura.emisor_rfc)}"
-      Nombre="${escapeXml(factura.emisor_razon_social)}"
-      RegimenFiscal="${factura.emisor_regimen_fiscal}" />
-  <cfdi:Receptor
-      Rfc="${escapeXml(factura.receptor_rfc)}"
-      Nombre="${escapeXml(factura.receptor_razon_social)}"
-      RegimenFiscalReceptor="${factura.receptor_regimen_fiscal}"
-      UsoCFDI="${factura.receptor_uso_cfdi}"
-      DomicilioFiscalReceptor="${factura.receptor_codigo_postal}" />
-  <cfdi:Conceptos>
-      ${conceptos}
-  </cfdi:Conceptos>
-  <cfdi:Impuestos
-      TotalImpuestosTrasladados="${formatDecimal(factura.impuesto)}"
-      TotalImpuestosRetenidos="0.00">
-    <cfdi:Traslados>
-      <cfdi:Traslado
-          Base="${formatDecimal(factura.subtotal - factura.descuento)}"
-          Impuesto="002"
-          TipoFactor="Tasa"
-          TasaOCuota="0.160000"
-          Importe="${formatDecimal(factura.impuesto)}" />
-    </cfdi:Traslados>
-  </cfdi:Impuestos>
-  <cfdi:Complemento>
-    <tfd:TimbreFiscalDigital
-        xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
-        Version="1.1"
-        UUID="${uuid}"
-        FechaTimbrado="${fechaTimbrado}"
-        RfcProvCertif="${escapeXml(factura.pac_nombre || "")}"
-        SelloCFD=""
-        NoCertificadoSAT=""
-        SelloSAT="" />
-  </cfdi:Complemento>
-</cfdi:Comprobante>`;
-
-  return xml;
+  const cfdi = buildCFDI(factura, detalle);
+  return cfdi.getXmlCdfi();
 }
 
-function generateConcepto(detalle: FacturaDetalle): string {
-  const claveUnidad = CLAVE_UNIDAD_SAT[detalle.clave_unidad] ? detalle.clave_unidad : "H87";
+export async function generateSealedCFDIXML(
+  factura: Factura,
+  detalle: FacturaDetalle[],
+  inputs: SealInputs
+): Promise<SealResult> {
+  const dir = await mkdtemp(join(tmpdir(), "cfdi-symvora-"));
 
-  return `<cfdi:Concepto
-          ClaveProdServ="${escapeXml(detalle.clave_prod_serv)}"
-          NoIdentificacion="${escapeXml(detalle.no_identificacion || "")}"
-          Cantidad="${formatDecimal(detalle.cantidad)}"
-          ClaveUnidad="${claveUnidad}"
-          Unidad="${escapeXml(detalle.unidad)}"
-          Descripcion="${escapeXml(detalle.descripcion)}"
-          ValorUnitario="${formatDecimal(detalle.precio_unitario)}"
-          Importe="${formatDecimal(detalle.subtotal)}"
-          Descuento="${formatDecimal(detalle.descuento)}"
-          ObjetoImp="002">
-        <cfdi:Impuestos>
-          <cfdi:Traslados>
-            <cfdi:Traslado
-                Base="${formatDecimal(detalle.base_impuesto)}"
-                Impuesto="002"
-                TipoFactor="Tasa"
-                TasaOCuota="${formatDecimal(detalle.tasa_impuesto)}"
-                Importe="${formatDecimal(detalle.importe_impuesto)}" />
-          </cfdi:Traslados>
-        </cfdi:Impuestos>
-      </cfdi:Concepto>`;
+  try {
+    const cerPath = join(dir, "certificado.cer");
+    const keyPath = join(dir, "llave.key");
+    await writeFile(cerPath, Buffer.from(inputs.certificadoCer, "base64"));
+    await writeFile(keyPath, Buffer.from(inputs.certificadoKey, "base64"));
+
+    const cfdi = buildCFDI(factura, detalle);
+    cfdi.certificar(cerPath);
+    await cfdi.sellar(keyPath, inputs.certificadoPassword);
+
+    const attrs = cfdi.getJsonCdfi()["cfdi:Comprobante"]._attributes;
+    const sello = cfdi.sello;
+    const cadenaOriginal = cfdi.cadenaOriginal;
+    const xml = cfdi.getXmlCdfi();
+
+    return {
+      xml,
+      cadenaOriginal,
+      sello,
+      noCertificado: attrs.NoCertificado ?? "",
+      certificado: attrs.Certificado ?? "",
+    };
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+function buildCFDI(factura: Factura, detalle: FacturaDetalle[]): CFDI {
+  const cfdi = new CFDI({ xslt: { path: XSLT_CFDI_PATH } });
+
+  cfdi.comprobante({
+    Serie: escapeXml(factura.serie),
+    Folio: String(factura.folio),
+    Fecha: formatCFDFecha(factura.fecha_emision),
+    FormaPago: factura.forma_pago,
+    SubTotal: formatDecimal(factura.subtotal),
+    Descuento: factura.descuento > 0 ? formatDecimal(factura.descuento) : undefined,
+    Moneda: "MXN",
+    Total: formatDecimal(factura.total),
+    TipoDeComprobante: "I",
+    Exportacion: "01",
+    MetodoPago: factura.metodo_pago,
+    LugarExpedicion: factura.emisor_codigo_postal,
+  });
+
+  cfdi.emisor(
+    new Emisor({
+      Rfc: factura.emisor_rfc,
+      Nombre: escapeXml(factura.emisor_razon_social),
+      RegimenFiscal: factura.emisor_regimen_fiscal,
+    })
+  );
+
+  cfdi.receptor(
+    new Receptor({
+      Rfc: factura.receptor_rfc,
+      Nombre: escapeXml(factura.receptor_razon_social),
+      UsoCFDI: factura.receptor_uso_cfdi,
+      DomicilioFiscalReceptor: factura.receptor_codigo_postal,
+      RegimenFiscalReceptor: factura.receptor_regimen_fiscal,
+    })
+  );
+
+  const lineas = [...detalle].sort((a, b) => a.orden - b.orden);
+  for (const d of lineas) {
+    const concepto = new Concepto({
+      ClaveProdServ: d.clave_prod_serv,
+      NoIdentificacion: d.no_identificacion ? escapeXml(d.no_identificacion) : undefined,
+      Cantidad: formatDecimal(d.cantidad),
+      ClaveUnidad: resolveClaveUnidad(d),
+      Unidad: escapeXml(d.unidad),
+      Descripcion: escapeXml(d.descripcion),
+      ValorUnitario: formatDecimal(d.precio_unitario),
+      Importe: formatDecimal(d.subtotal),
+      Descuento: d.descuento > 0 ? formatDecimal(d.descuento) : undefined,
+      ObjetoImp: "02",
+    });
+
+    if (d.importe_impuesto > 0) {
+      concepto.traslado({
+        Base: formatDecimal(d.base_impuesto),
+        Impuesto: "002",
+        TipoFactor: "Tasa",
+        TasaOCuota: formatDecimal(d.tasa_impuesto),
+        Importe: formatDecimal(d.importe_impuesto),
+      });
+    }
+
+    cfdi.concepto(concepto);
+  }
+
+  if (factura.impuesto > 0) {
+    cfdi.impuesto(
+      new Impuestos({
+        TotalImpuestosTrasladados: formatDecimal(factura.impuesto),
+        TotalImpuestosRetenidos: "0.00",
+      }).traslados({
+        Base: formatDecimal(factura.subtotal - factura.descuento),
+        Impuesto: "002",
+        TipoFactor: "Tasa",
+        TasaOCuota: "0.160000",
+        Importe: formatDecimal(factura.impuesto),
+      })
+    );
+  }
+
+  return cfdi;
+}
+
+function resolveClaveUnidad(detalle: FacturaDetalle): string {
+  return CLAVE_UNIDAD_SAT[detalle.clave_unidad] ? detalle.clave_unidad : "H87";
 }
 
 function formatDecimal(num: number): string {
@@ -126,23 +164,24 @@ function formatCFDFecha(dateStr: string): string {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
+function escapeXml(value: string): string {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function parseCFDIXML(xml: string): {
   uuid: string;
   fechaTimbrado: string;
   rfcProvCertif: string;
 } | null {
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xml, "text/xml");
-    const complemento = doc.querySelector("Complemento TimbreFiscalDigital");
-    if (!complemento) return null;
+  const uuid = xml.match(/UUID="([^"]+)"/)?.[1] ?? "";
+  const fechaTimbrado = xml.match(/FechaTimbrado="([^"]+)"/)?.[1] ?? "";
+  const rfcProvCertif = xml.match(/RfcProvCertif="([^"]+)"/)?.[1] ?? "";
 
-    return {
-      uuid: complemento.getAttribute("UUID") || "",
-      fechaTimbrado: complemento.getAttribute("FechaTimbrado") || "",
-      rfcProvCertif: complemento.getAttribute("RfcProvCertif") || "",
-    };
-  } catch {
-    return null;
-  }
+  if (!uuid) return null;
+
+  return { uuid, fechaTimbrado, rfcProvCertif };
 }

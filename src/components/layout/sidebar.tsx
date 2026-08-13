@@ -33,15 +33,23 @@ import {
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { User } from "@supabase/supabase-js";
+import type { LucideIcon } from "lucide-react";
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  beta?: boolean;
+}
+
+const navigation: NavItem[] = [
   { name: "layout.dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "layout.pos", href: "/pos", icon: ShoppingCart },
   { name: "layout.products", href: "/products", icon: Package },
   { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon },
   { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText },
   { name: "layout.finances", href: "/finances", icon: Wallet },
-  { name: "layout.facturas", href: "/facturas", icon: Receipt },
+  { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true },
   { name: "layout.users", href: "/users", icon: Users },
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings },
@@ -136,7 +144,14 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
                 )}
               >
                 <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
-                {!collapsed && <span>{t(item.name)}</span>}
+                {!collapsed && (
+                  <span className="flex-1 truncate">{t(item.name)}</span>
+                )}
+                {!collapsed && item.beta && (
+                  <span className="rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400">
+                    Beta
+                  </span>
+                )}
               </Link>
             );
           })}

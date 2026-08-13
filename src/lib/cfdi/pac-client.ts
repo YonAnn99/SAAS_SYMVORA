@@ -1,3 +1,4 @@
+import soap from "soap";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 
 export interface PACStampResult {
@@ -11,16 +12,25 @@ export interface PACCancelResult {
   rawResponse: unknown;
 }
 
+export interface CancelParams {
+  uuid: string;
+  rfcEmisor: string;
+  rfcReceptor: string;
+  total: string;
+  motivo: string;
+  folioSustitucion?: string;
+}
+
+export interface ResolvedFiscalSecrets {
+  pac_password: string;
+  certificado_cer: string;
+  certificado_key: string;
+  certificado_password: string;
+}
+
 export interface PACClient {
   stamp(xml: string): Promise<PACStampResult>;
-  cancel(params: {
-    uuid: string;
-    rfcEmisor: string;
-    rfcReceptor: string;
-    total: string;
-    motivo: string;
-    folioSustitucion?: string;
-  }): Promise<PACCancelResult>;
+  cancel(params: CancelParams): Promise<PACCancelResult>;
 }
 
 export function isPACTestsEnabled(): boolean {
@@ -32,88 +42,134 @@ function resolveIsTest(isTest?: boolean): boolean {
   return isPACTestsEnabled();
 }
 
+const FINKOK_STAMP_WSDL = {
+  test: "https://demo-facturacion.finkok.com/servicios/soap/stamp.wsdl",
+  prod: "https://facturacion.finkok.com/servicios/soap/stamp.wsdl",
+};
+
+const FINKOK_CANCEL_WSDL = {
+  test: "https://demo-facturacion.finkok.com/servicios/soap/cancel.wsdl",
+  prod: "https://facturacion.finkok.com/servicios/soap/cancel.wsdl",
+};
+
+function finkokEndpoint(base: { test: string; prod: string }, isTest: boolean) {
+  return isTest ? base.test : base.prod;
+}
+
+interface FinkokAcuse {
+  xml?: string;
+  UUID?: string;
+  faultstring?: string;
+  Fecha?: string;
+  CodEstatus?: string;
+  Incidencias?: {
+    Incidencia?: Array<{
+      CodigoError?: string;
+      MensajeIncidencia?: string;
+      ExtraInfo?: string;
+    }>;
+  };
+}
+
 export class FinkokClient implements PACClient {
   private username: string;
   private password: string;
+  private secrets: ResolvedFiscalSecrets;
   private isTest: boolean;
 
-  constructor(config: TenantConfiguracionFiscal, isTest?: boolean) {
+  constructor(
+    config: TenantConfiguracionFiscal,
+    secrets: ResolvedFiscalSecrets,
+    isTest?: boolean
+  ) {
     this.username = config.pac_usuario;
-    this.password = config.pac_password;
+    this.password = secrets.pac_password;
+    this.secrets = secrets;
     this.isTest = resolveIsTest(isTest);
   }
 
   async stamp(xml: string): Promise<PACStampResult> {
-    const endpoint = this.isTest
-      ? "https://demo-finkok.33mail.com/stamp"
-      : "https://app.finkok.com/sessions/sign";
+    const wsdl = finkokEndpoint(FINKOK_STAMP_WSDL, this.isTest);
+    const client = await soap.createClientAsync(wsdl);
+    const xmlBase64 = Buffer.from(xml, "utf8").toString("base64");
 
-    const formData = new FormData();
-    formData.append("xml", xml);
-    formData.append("username", this.username);
-    formData.append("password", this.password);
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      body: formData,
+    const [result] = await client.sign_stampAsync({
+      xml: xmlBase64,
+      username: this.username,
+      password: this.password,
     });
 
-    if (!response.ok) {
-      throw new Error(`PAC error: ${response.statusText}`);
+    const acuse = (result as { sign_stampResult?: FinkokAcuse })
+      .sign_stampResult as FinkokAcuse | undefined;
+
+    if (!acuse) {
+      throw new Error("Finkok no devolvió un acuse de timbrado");
     }
 
-    const data = await response.json();
+    if (acuse.Incidencias?.Incidencia?.length) {
+      const incidencia = acuse.Incidencias.Incidencia[0];
+      throw new Error(
+        `Finkok: ${incidencia.MensajeIncidencia || incidencia.CodigoError || "incidencia de timbrado"}`
+      );
+    }
 
-    if (data.Error) {
-      throw new Error(`PAC error: ${data.Error}`);
+    if (acuse.faultstring) {
+      throw new Error(`Finkok: ${acuse.faultstring}`);
+    }
+
+    if (!acuse.xml && !acuse.UUID) {
+      throw new Error(`Finkok: ${acuse.CodEstatus || "respuesta sin XML timbrado"}`);
     }
 
     return {
-      uuid: data.uuid || data.UUID || "",
-      xml: data.xml || data.Xml || "",
-      rawResponse: data,
+      uuid: acuse.UUID || "",
+      xml: acuse.xml ? Buffer.from(acuse.xml, "base64").toString("utf8") : "",
+      rawResponse: result,
     };
   }
 
-  async cancel(params: {
-    uuid: string;
-    rfcEmisor: string;
-    rfcReceptor: string;
-    total: string;
-    motivo: string;
-    folioSustitucion?: string;
-  }): Promise<PACCancelResult> {
-    const endpoint = this.isTest
-      ? "https://demo-finkok.33mail.com/cancel"
-      : "https://app.finkok.com/cancel/cancel";
+  async cancel(params: CancelParams): Promise<PACCancelResult> {
+    const wsdl = finkokEndpoint(FINKOK_CANCEL_WSDL, this.isTest);
+    const client = await soap.createClientAsync(wsdl);
 
-    const formData = new FormData();
-    formData.append("uuid", params.uuid);
-    formData.append("rfc_emisor", params.rfcEmisor);
-    formData.append("rfc_receptor", params.rfcReceptor);
-    formData.append("total", params.total);
-    formData.append("motivo", params.motivo);
-    if (params.folioSustitucion) {
-      formData.append("folio_sustitucion", params.folioSustitucion);
-    }
-    formData.append("username", this.username);
-    formData.append("password", this.password);
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      body: formData,
+    const [result] = await client.cancelAsync({
+      UUIDS: {
+        UUID: [
+          {
+            _attributes: {
+              UUID: params.uuid,
+              FolioSustitucion: params.folioSustitucion || undefined,
+              Motivo: params.motivo,
+            },
+          },
+        ],
+      },
+      username: this.username,
+      password: this.password,
+      taxpayer_id: params.rfcEmisor,
+      cer: this.secrets.certificado_cer,
+      key: this.secrets.certificado_key,
+      store_pending: false,
     });
 
-    if (!response.ok) {
-      throw new Error(`PAC cancel error: ${response.statusText}`);
+    const cancelResult = (result as {
+      cancelResult?: {
+        Folios?: { Folio?: Array<{ UUID?: string; EstatusUUID?: string }> };
+        CodEstatus?: string;
+        Acuse?: string;
+      };
+    }).cancelResult;
+
+    if (!cancelResult) {
+      throw new Error("Finkok no devolvió un resultado de cancelación");
     }
 
-    const data = await response.json();
+    const folios = cancelResult.Folios?.Folio ?? [];
+    const accepted = folios.some(
+      (folio) => folio.EstatusUUID === "Cancelado" || folio.EstatusUUID === "Cancelado sin aceptación"
+    );
 
-    return {
-      accepted: data.acuse || data.success || false,
-      rawResponse: data,
-    };
+    return { accepted, rawResponse: result };
   }
 }
 
@@ -122,9 +178,13 @@ export class SWSapienClient implements PACClient {
   private password: string;
   private isTest: boolean;
 
-  constructor(config: TenantConfiguracionFiscal, isTest?: boolean) {
+  constructor(
+    config: TenantConfiguracionFiscal,
+    secrets: ResolvedFiscalSecrets,
+    isTest?: boolean
+  ) {
     this.username = config.pac_usuario;
-    this.password = config.pac_password;
+    this.password = secrets.pac_password;
     this.isTest = resolveIsTest(isTest);
   }
 
@@ -162,14 +222,7 @@ export class SWSapienClient implements PACClient {
     };
   }
 
-  async cancel(params: {
-    uuid: string;
-    rfcEmisor: string;
-    rfcReceptor: string;
-    total: string;
-    motivo: string;
-    folioSustitucion?: string;
-  }): Promise<PACCancelResult> {
+  async cancel(params: CancelParams): Promise<PACCancelResult> {
     const endpoint = this.isTest
       ? "https://testing.facturaonline.mx/ws/cancelacion"
       : "https://facturaonline.mx/ws/cancelacion";
@@ -206,15 +259,16 @@ export class SWSapienClient implements PACClient {
 
 export function createPACClient(
   config: TenantConfiguracionFiscal,
+  secrets: ResolvedFiscalSecrets,
   isTest?: boolean
 ): PACClient {
   const test = resolveIsTest(isTest);
   switch (config.pac_proveedor) {
     case "finkok":
-      return new FinkokClient(config, test);
+      return new FinkokClient(config, secrets, test);
     case "swsapien":
-      return new SWSapienClient(config, test);
+      return new SWSapienClient(config, secrets, test);
     default:
-      return new FinkokClient(config, test);
+      return new FinkokClient(config, secrets, test);
   }
 }

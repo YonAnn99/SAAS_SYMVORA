@@ -48,6 +48,9 @@ function securityHeaders() {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/**": ["./resources/cfdi/**"],
+  },
   images: {
     remotePatterns: [
       {

@@ -480,12 +480,12 @@
     },
     "cfdi": {
       "badge": "Electronic Invoicing",
-      "title": "CFDI 4.0 built-in, no add-ons",
-      "subtitle": "Generate electronic invoices directly from the system. Comply with SAT without external software.",
+      "title": "CFDI 4.0 with real seal and stamping",
+      "subtitle": "Sign every invoice with your digital seal certificate (.cer/.key) and send the XML to the PAC to be stamped with SAT. PAC and CSD credentials are encrypted, never in plain text.",
       "features": {
-        "stamp": { "title": "Direct stamping", "description": "Send XML to the PAC and receive the validation UUID in seconds. Supports Finkok, SWSapien and other providers." },
+        "stamp": { "title": "Digital seal and direct stamping", "description": "Generate the original string, sign with your CSD and send the seal to the PAC. Get the SAT UUID in seconds. Compatible with Finkok and SWSapien." },
         "catalogs": { "title": "SAT catalogs included", "description": "100+ payment forms, 80+ unit codes, 20+ fiscal regimes and 17+ product codes — all pre-loaded." },
-        "cancel": { "title": "Cancellation with traceability", "description": "Cancel invoices with registered reason. Optional substitution folio. Everything logged in audit trail.", "description": "Cancel invoices with registered reason. Optional substitution folio. Everything logged in audit trail." },
+        "cancel": { "title": "Cancellation with traceability", "description": "Cancel invoices with registered reason and your CSD. Optional substitution folio. Everything logged in audit trail." },
         "payment": { "title": "PUE and PPD", "description": "Supports Single Payment and Installment Payment. Payment methods: Cash, Transfer, Credit/Debit card and more." }
       },
       "cta": "Configure your PAC and start invoicing"

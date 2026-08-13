@@ -30,20 +30,24 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
 
-    const { data: detalle, error: detalleError } = await supabase
-      .from("factura_detalle")
-      .select("*")
-      .eq("factura_id", id)
-      .order("orden");
+    let xml = factura.xml_timbrado;
 
-    if (detalleError || !detalle) {
-      return NextResponse.json(
-        { error: "No se encontraron los conceptos de la factura" },
-        { status: 404 }
-      );
+    if (!xml) {
+      const { data: detalle, error: detalleError } = await supabase
+        .from("factura_detalle")
+        .select("*")
+        .eq("factura_id", id)
+        .order("orden");
+
+      if (detalleError || !detalle) {
+        return NextResponse.json(
+          { error: "No se encontraron los conceptos de la factura" },
+          { status: 404 }
+        );
+      }
+
+      xml = generateCFDIXML(factura, detalle);
     }
-
-    const xml = generateCFDIXML(factura, detalle);
 
     return new NextResponse(xml, {
       status: 200,

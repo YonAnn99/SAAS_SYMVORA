@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { createPACClient } from "@/lib/cfdi/pac-client";
+import { readFiscalSecrets, requiresSecrets } from "@/lib/cfdi/fiscal-secrets";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 
 interface CancelRequest {
@@ -64,8 +65,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Resolve encrypted credentials (FISCAL_SECRET_KEY)
+    const secrets = await readFiscalSecrets(supabase, factura.tenant_id, fiscalConfig);
+    requiresSecrets(
+      secrets,
+      ["pac_password", "certificado_cer", "certificado_key"],
+      "Configuración PAC incompleta para cancelación"
+    );
+
     // Create PAC client and cancel
-    const pacClient = createPACClient(fiscalConfig);
+    const pacClient = createPACClient(fiscalConfig, secrets);
 
     try {
       const result = await pacClient.cancel({

@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Building2, Server, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Save, Building2, Server, ShieldCheck, BadgeCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -35,17 +35,34 @@ interface Emisor {
   codigo_postal: string;
 }
 
+type SecretKey = "pac_password" | "certificado_cer" | "certificado_key" | "certificado_password";
+type SecretsSet = Record<SecretKey, boolean>;
+
 const emptyConfig: TenantConfiguracionFiscal = {
   cfdi_serie: "A",
   cfdi_metodo_pago: "PUE",
   cfdi_forma_pago_default: "01",
   pac_proveedor: "finkok",
   pac_usuario: "",
+  pac_password_id: "",
+  certificado_cer_id: "",
+  certificado_key_id: "",
+  certificado_password_id: "",
+  email_envio_facturas: "",
+};
+
+const emptySecrets: Record<SecretKey, string> = {
   pac_password: "",
   certificado_cer: "",
   certificado_key: "",
   certificado_password: "",
-  email_envio_facturas: "",
+};
+
+const emptySecretsSet: SecretsSet = {
+  pac_password: false,
+  certificado_cer: false,
+  certificado_key: false,
+  certificado_password: false,
 };
 
 export default function FacturasConfigPage() {
@@ -63,6 +80,8 @@ export default function FacturasConfigPage() {
     codigo_postal: "",
   });
   const [config, setConfig] = useState<TenantConfiguracionFiscal>(emptyConfig);
+  const [secrets, setSecrets] = useState<Record<SecretKey, string>>(emptySecrets);
+  const [secretsSet, setSecretsSet] = useState<SecretsSet>(emptySecretsSet);
 
   useEffect(() => {
     if (tenantLoading || !tenantId) return;
@@ -84,6 +103,9 @@ export default function FacturasConfigPage() {
         if (data.configuracion_fiscal) {
           setConfig({ ...emptyConfig, ...data.configuracion_fiscal });
         }
+        if (data.secrets_set) {
+          setSecretsSet({ ...emptySecretsSet, ...data.secrets_set });
+        }
       } catch (error) {
         console.error("Error fetching config:", error);
         toast.error("Error al cargar la configuración fiscal");
@@ -99,20 +121,39 @@ export default function FacturasConfigPage() {
     if (!tenantId) return;
     setSaving(true);
     try {
+      const payloadSecrets = Object.fromEntries(
+        Object.entries(secrets).filter(([, value]) => value.trim().length > 0)
+      );
+
       const response = await fetch("/api/facturas/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, emisor, configuracion_fiscal: config }),
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          emisor,
+          configuracion_fiscal: config,
+          secrets: payloadSecrets,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Error al guardar");
       toast.success("Configuración fiscal guardada correctamente");
+      setSecrets(emptySecrets);
+      setSecretsSet({
+        pac_password: Boolean(config.pac_password_id) || "pac_password" in payloadSecrets,
+        certificado_cer: Boolean(config.certificado_cer_id) || "certificado_cer" in payloadSecrets,
+        certificado_key: Boolean(config.certificado_key_id) || "certificado_key" in payloadSecrets,
+        certificado_password: Boolean(config.certificado_password_id) || "certificado_password" in payloadSecrets,
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al guardar");
     } finally {
       setSaving(false);
     }
   };
+
+  const updateSecret = (key: SecretKey, value: string) =>
+    setSecrets((prev) => ({ ...prev, [key]: value }));
 
   if (loading) {
     return (
@@ -135,9 +176,14 @@ export default function FacturasConfigPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-              {t("facturas.configFiscal")}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
+                {t("facturas.configFiscal")}
+              </h2>
+              <span className="inline-flex items-center rounded-full bg-yellow-500/15 px-2 py-0.5 text-[11px] font-semibold text-yellow-700 dark:text-yellow-400">
+                Beta
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               Configuración para facturación electrónica CFDI 4.0
             </p>
@@ -285,7 +331,8 @@ export default function FacturasConfigPage() {
             <CardHeader>
               <CardTitle className="text-base">Configuración PAC</CardTitle>
               <CardDescription>
-                Proveedor de timbrado y credenciales de acceso.
+                Proveedor de timbrado y credenciales de acceso. Las credenciales se
+                guardan cifradas (nunca se muestran de nuevo).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -323,15 +370,20 @@ export default function FacturasConfigPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="pac-password">Contraseña PAC</Label>
-                  <Input
-                    id="pac-password"
-                    type="password"
-                    value={config.pac_password}
-                    onChange={(e) =>
-                      setConfig({ ...config, pac_password: e.target.value })
-                    }
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="pac-password"
+                      type="password"
+                      value={secrets.pac_password}
+                      onChange={(e) => updateSecret("pac_password", e.target.value)}
+                      placeholder={secretsSet.pac_password ? "Dejar en blanco para conservar" : "••••••••"}
+                    />
+                    {secretsSet.pac_password && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400">
+                        <BadgeCheck className="h-4 w-4" />
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="metodo-pago">Método de pago CFDI</Label>
@@ -364,45 +416,61 @@ export default function FacturasConfigPage() {
               <CardTitle className="text-base">Certificados digitales</CardTitle>
               <CardDescription>
                 Certificado de sello digital (.cer), llave privada (.key) y contraseña.
+                Se guardan cifrados; deja un campo en blanco para conservar el actual.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="cert-cer">Certificado (.cer)</Label>
-                  <Input
-                    id="cert-cer"
-                    value={config.certificado_cer}
-                    onChange={(e) =>
-                      setConfig({ ...config, certificado_cer: e.target.value })
-                    }
-                    placeholder="Contenido base64 del certificado"
-                    className="font-mono text-xs"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="cert-cer"
+                      value={secrets.certificado_cer}
+                      onChange={(e) => updateSecret("certificado_cer", e.target.value)}
+                      placeholder={secretsSet.certificado_cer ? "Dejar en blanco para conservar" : "Contenido base64 del certificado"}
+                      className="font-mono text-xs pr-9"
+                    />
+                    {secretsSet.certificado_cer && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400">
+                        <BadgeCheck className="h-4 w-4" />
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cert-key">Llave privada (.key)</Label>
-                  <Input
-                    id="cert-key"
-                    value={config.certificado_key}
-                    onChange={(e) =>
-                      setConfig({ ...config, certificado_key: e.target.value })
-                    }
-                    placeholder="Contenido base64 de la llave privada"
-                    className="font-mono text-xs"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="cert-key"
+                      value={secrets.certificado_key}
+                      onChange={(e) => updateSecret("certificado_key", e.target.value)}
+                      placeholder={secretsSet.certificado_key ? "Dejar en blanco para conservar" : "Contenido base64 de la llave privada"}
+                      className="font-mono text-xs pr-9"
+                    />
+                    {secretsSet.certificado_key && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400">
+                        <BadgeCheck className="h-4 w-4" />
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cert-password">Contraseña de la llave</Label>
-                  <Input
-                    id="cert-password"
-                    type="password"
-                    value={config.certificado_password}
-                    onChange={(e) =>
-                      setConfig({ ...config, certificado_password: e.target.value })
-                    }
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="cert-password"
+                      type="password"
+                      value={secrets.certificado_password}
+                      onChange={(e) => updateSecret("certificado_password", e.target.value)}
+                      placeholder={secretsSet.certificado_password ? "Dejar en blanco para conservar" : "••••••••"}
+                    />
+                    {secretsSet.certificado_password && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400">
+                        <BadgeCheck className="h-4 w-4" />
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

@@ -756,6 +756,7 @@ export type Database = {
           fecha_emision: string;
           xml_url: string | null;
           pdf_url: string | null;
+          xml_timbrado: string | null;
           pac_nombre: string | null;
           pac_response: Json | null;
           fecha_cancelacion: string | null;
@@ -791,6 +792,7 @@ export type Database = {
           fecha_emision?: string;
           xml_url?: string | null;
           pdf_url?: string | null;
+          xml_timbrado?: string | null;
           pac_nombre?: string | null;
           pac_response?: Json | null;
           fecha_cancelacion?: string | null;
@@ -826,6 +828,7 @@ export type Database = {
           fecha_emision?: string;
           xml_url?: string | null;
           pdf_url?: string | null;
+          xml_timbrado?: string | null;
           pac_nombre?: string | null;
           pac_response?: Json | null;
           fecha_cancelacion?: string | null;
@@ -1087,9 +1090,9 @@ export interface TenantConfiguracionFiscal {
   cfdi_forma_pago_default: string;
   pac_proveedor: "finkok" | "swsapien" | "mascarilla";
   pac_usuario: string;
-  pac_password: string;
-  certificado_cer: string;
-  certificado_key: string;
-  certificado_password: string;
+  pac_password_id: string;
+  certificado_cer_id: string;
+  certificado_key_id: string;
+  certificado_password_id: string;
   email_envio_facturas: string;
 }

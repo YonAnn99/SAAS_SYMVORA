@@ -84,8 +84,13 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="hidden sm:block text-sm font-semibold tracking-wide text-foreground">
+        <h1 className="hidden sm:flex items-center gap-2 text-sm font-semibold tracking-wide text-foreground">
           {getModuleLabel(pathname)}
+          {pathname.includes("/facturas") && (
+            <span className="rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400">
+              Beta
+            </span>
+          )}
         </h1>
       </div>
 

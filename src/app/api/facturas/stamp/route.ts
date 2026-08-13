@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { createPACClient } from "@/lib/cfdi/pac-client";
-import { generateCFDIXML } from "@/lib/cfdi/xml-generator";
+import { generateSealedCFDIXML } from "@/lib/cfdi/xml-generator";
+import { readFiscalSecrets, requiresSecrets } from "@/lib/cfdi/fiscal-secrets";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 
 interface StampRequest {
@@ -70,14 +71,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate XML
-    const xml = generateCFDIXML(factura, detalle);
+    // Resolve encrypted credentials (FISCAL_SECRET_KEY)
+    const secrets = await readFiscalSecrets(supabase, factura.tenant_id, fiscalConfig);
+    requiresSecrets(
+      secrets,
+      ["pac_password", "certificado_cer", "certificado_key", "certificado_password"],
+      "Configuración PAC incompleta"
+    );
+
+    // Generate sealed XML (sello digital real con el CSD)
+    const sealed = await generateSealedCFDIXML(factura, detalle, {
+      certificadoCer: secrets.certificado_cer,
+      certificadoKey: secrets.certificado_key,
+      certificadoPassword: secrets.certificado_password,
+    });
 
     // Create PAC client and stamp
-    const pacClient = createPACClient(fiscalConfig);
+    const pacClient = createPACClient(fiscalConfig, secrets);
 
     try {
-      const result = await pacClient.stamp(xml);
+      const result = await pacClient.stamp(sealed.xml);
 
       // Update factura with CFDI data
       const { error: updateError } = await supabase
@@ -88,6 +101,7 @@ export async function POST(request: NextRequest) {
           fecha_timbrado: new Date().toISOString(),
           pac_nombre: fiscalConfig.pac_proveedor,
           pac_response: result.rawResponse as Record<string, unknown>,
+          xml_timbrado: result.xml || sealed.xml,
           xml_url: `/api/facturas/${body.factura_id}/xml`,
           pdf_url: `/api/facturas/${body.factura_id}/pdf`,
         })
