@@ -106,7 +106,12 @@ export async function POST(request: Request) {
   //     pensado para enviar por email al usuario.
   //   - `properties.hashed_token`: el token de un solo uso (en el SDK se llama
   //     `hashed_token`; otros SDKs lo exponen como `token_hash`) que el cliente
-  //     puede canjear llamando a `supabase.auth.verifyOtp({ email, token_hash, type: "magiclink" })`.
+  //     puede canjear llamando a `supabase.auth.verifyOtp({ token_hash, type: "magiclink" })`.
+  //     IMPORTANTE: no incluir `email` en esa llamada — verifyOtp trata
+  //     `token_hash` y `email+token` como modos mutuamente excluyentes; mandar
+  //     ambos dispara el error de GoTrue "Only the token_hash and type should
+  //     be provided". Seguimos devolviendo `email` en la respuesta solo para
+  //     validación en el cliente, no para pasarlo a verifyOtp.
   //
   // El cliente no debe seguir `action_link` directamente: Supabase lo sirve desde
   // su propio dominio (pagina de confirmacion) y no encadena un redirect al callback

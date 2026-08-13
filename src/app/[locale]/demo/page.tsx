@@ -47,7 +47,6 @@ export default function DemoEntryPage({
         const supabase = createSupabaseBrowserClient();
 
         const { error: verifyError } = await supabase.auth.verifyOtp({
-          email: data.email,
           token_hash: data.token_hash,
           type: "magiclink",
         });
