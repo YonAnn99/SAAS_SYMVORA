@@ -218,8 +218,11 @@
     @apply transition-all duration-300;
   }
 
-  [data-slot="card"]:hover {
-    @apply shadow-[0_4px_12px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.06)] -translate-y-0.5;
+  /* See note on hover: hover above (touch devices stick :hover). */
+  @media (hover: hover) {
+    [data-slot="card"]:hover {
+      @apply shadow-[0_4px_12px_rgba(0,0,0,0.15),0_8px_16px_rgba(0,0,0,0.06)] -translate-y-0.5;
+    }
   }
 
   /* KPI Cards - add colored left border */
@@ -232,8 +235,17 @@
     @apply transition-all duration-200;
   }
 
-  [data-slot="button"]:not(:disabled):hover {
-    @apply -translate-y-0.5;
+  /* Hover lift only on devices that actually support hover (mouse / trackpad).
+     Touch devices stick :hover after a tap on iOS Safari, which would leave
+     every button visually pressed until the next tap elsewhere. */
+  @media (hover: hover) {
+    [data-slot="button"]:not(:disabled):hover {
+      @apply -translate-y-0.5;
+    }
+
+    [data-slot="button"]:not(:disabled):hover:active {
+      @apply translate-y-0;
+    }
   }
 
   [data-slot="button"]:not(:disabled):active {

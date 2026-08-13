@@ -140,7 +140,7 @@ export function Hero() {
       </motion.div>
 
       <motion.div
-        className="w-full lg:w-1/2 relative min-h-[400px] lg:min-h-[600px] mt-12 lg:mt-0 flex items-center justify-center"
+        className="w-full lg:w-1/2 relative min-h-[320px] sm:min-h-[400px] lg:min-h-[600px] mt-12 lg:mt-0 flex items-center justify-center"
         initial={{ opacity: 0, x: 40 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.3 }}
@@ -172,7 +172,7 @@ export function Hero() {
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
           <motion.div
-            className="absolute -left-6 bottom-12 bg-white p-3 rounded-lg shadow-xl border border-neutral-200 flex items-center gap-3"
+            className="absolute left-2 sm:-left-6 bottom-8 sm:bottom-12 bg-white p-3 rounded-lg shadow-xl border border-neutral-200 flex items-center gap-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.8, duration: 0.5, ease: "easeOut" }}

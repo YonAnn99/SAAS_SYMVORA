@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import "./globals.css";
 import "sonner/dist/styles.css";
@@ -19,19 +20,25 @@ export const metadata: Metadata = {
   description: "Plataforma SaaS Multi-Tenant basada en Mini-ERP modular",
 };
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FBFBFA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0C0C0C" },
+  ],
+};
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link
-          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >

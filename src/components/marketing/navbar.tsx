@@ -4,9 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Menu, X, ChevronDown, ChevronRight } from "lucide-react";
+import { usePathname } from "@/i18n/navigation";
+import { ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { MorphIcon } from "morphicons/react";
 import { springTransition } from "./animations";
+import { MENU, X, CHEVRON_DOWN, CHEVRON_RIGHT } from "./morph-icons";
 
 interface NavItem {
   label: string;
@@ -50,11 +53,23 @@ const navItems: NavItem[] = [
 
 export function Navbar() {
   const t = useTranslations();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpenDropdown, setMobileOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const dropdownRefs = useRef<Record<string, HTMLDivElement>>({});
+
+  // Reset transient UI state on route change. The link onClick handlers also
+  // close the menu, but this catches programmatic navigation (router.push,
+  // browser back/forward). The react-hooks/set-state-in-effect rule flags this
+  // pattern; it is intentional for route-driven UI resets.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileOpen(false);
+    setMobileOpenDropdown(null);
+    setOpenDropdown(null);
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -115,7 +130,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl transition-all duration-300 ${
+      className={`fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl transition-all duration-300 pt-[env(safe-area-inset-top)] ${
         scrolled
           ? "shadow-[0_2px_12px_rgba(0,0,0,0.08)] border-b border-neutral-200/60"
           : "shadow-[0_1px_8px_rgba(0,0,0,0.04)]"
@@ -157,8 +172,11 @@ export function Navbar() {
                       aria-haspopup="true"
                     >
                       {t(item.label)}
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                      <MorphIcon
+                        icon={isOpen ? CHEVRON_RIGHT : CHEVRON_DOWN}
+                        size={16}
+                        spring="snappy"
+                        reducedMotion="user"
                         aria-hidden="true"
                       />
                     </button>
@@ -200,7 +218,7 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/login"
             className="hidden sm:block text-sm font-medium text-neutral-600 hover:text-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
@@ -209,19 +227,25 @@ export function Navbar() {
           </Link>
           <Link
             href="/signup"
-            className="bg-black text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-neutral-800 transition-all active:translate-y-px flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+            className="hidden sm:inline-flex bg-black text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-neutral-800 transition-all active:translate-y-px items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
           >
             {t("landing.nav.cta")}
             <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Link>
           <button
-            className="lg:hidden p-2"
+            className="lg:hidden p-2 -mr-2"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-menu"
             aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <MorphIcon
+              icon={mobileOpen ? X : MENU}
+              size={20}
+              spring="snappy"
+              reducedMotion="user"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
@@ -234,7 +258,7 @@ export function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={springTransition}
-            className="lg:hidden bg-white border-t border-neutral-100 overflow-hidden"
+            className="lg:hidden bg-white border-t border-neutral-100 overflow-hidden pb-[env(safe-area-inset-bottom)]"
           >
             <div className="px-4 py-4 space-y-2">
               {navItems.map((item) => {
@@ -250,8 +274,11 @@ export function Navbar() {
                         aria-expanded={isMobileOpen}
                       >
                         {t(item.label)}
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${isMobileOpen ? "rotate-180" : ""}`}
+                        <MorphIcon
+                          icon={isMobileOpen ? CHEVRON_RIGHT : CHEVRON_DOWN}
+                          size={16}
+                          spring="snappy"
+                          reducedMotion="user"
                           aria-hidden="true"
                         />
                       </button>

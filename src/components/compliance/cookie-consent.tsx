@@ -48,7 +48,7 @@ export function CookieConsent() {
       role="dialog"
       aria-live="polite"
       aria-label={t("title")}
-      className="fixed bottom-0 inset-x-0 z-[999] px-4 pb-4"
+      className="fixed bottom-0 inset-x-0 z-[999] px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
     >
       <div className="max-w-3xl mx-auto bg-white border border-neutral-200 rounded-xl shadow-lg ring-1 ring-black/5 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
         <p className="flex-1 text-sm text-neutral-600 leading-relaxed">
