@@ -9,6 +9,7 @@ import { TutorialDialog } from "@/components/tutorial/tutorial-dialog";
 import { TutorialMinimized } from "@/components/tutorial/tutorial-minimized";
 import { LegalFooter } from "@/components/dashboard/legal-footer";
 import { PolicyUpdateBanner } from "@/components/compliance/policy-update-banner";
+import { DemoBanner } from "@/components/demo/demo-banner";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -17,6 +18,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TutorialProvider>
+      <DemoBanner />
       <PolicyUpdateBanner />
       <div className="flex h-screen overflow-hidden">
         <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />

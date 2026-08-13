@@ -623,6 +623,13 @@
       "secondary": "Chat on WhatsApp",
       "trialNote": "7-day free trial · No credit card · Cancel anytime"
     },
+    "demo": {
+      "banner": {
+        "text": "You're trying the demo. Data resets when you leave.",
+        "cta": "Create my free account",
+        "exit": "Exit"
+      }
+    },
     "about": {
       "badge": "Made in Mexico",
       "title": "Proudly Mexican, for local commerce",

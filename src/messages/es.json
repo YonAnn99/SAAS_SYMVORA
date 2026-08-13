@@ -696,6 +696,13 @@
       "secondary": "Hablar por WhatsApp",
       "trialNote": "7 días gratis · Sin tarjeta de crédito · Cancela cuando quieras"
     },
+    "demo": {
+      "banner": {
+        "text": "Estás probando la demo. Los datos se reinician al salir.",
+        "cta": "Crear mi cuenta gratis",
+        "exit": "Salir"
+      }
+    },
     "about": {
       "badge": "Hecho en México",
       "title": "Orgullosamente mexicanos, para el comercio local",
