@@ -16,6 +16,7 @@
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@gsap/react": "^2.1.2",
+    "@marsidev/react-turnstile": "^1.6.0",
     "@radix-ui/react-scroll-area": "^1.2.18",
     "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.12.4",

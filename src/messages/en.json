@@ -105,7 +105,9 @@
     "customization": "Customization",
     "email": "Email",
     "password": "Enter password",
-    "confirmPasswordLabel": "Confirm password"
+    "confirmPasswordLabel": "Confirm password",
+    "captchaRequired": "Solve the captcha to continue",
+    "tooManyAttempts": "Too many attempts. Try again in"
   },
   "toast": {
     "success": {

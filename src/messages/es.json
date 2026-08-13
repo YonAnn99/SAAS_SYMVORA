@@ -107,7 +107,9 @@
     "password": "Ingresa contraseña",
     "confirmPasswordLabel": "Confirmar contraseña",
     "privacyAcknowledgment": "Al crear tu cuenta aceptas el",
-    "privacyLink": "Aviso de Privacidad"
+    "privacyLink": "Aviso de Privacidad",
+    "captchaRequired": "Resuelve el captcha para continuar",
+    "tooManyAttempts": "Demasiados intentos. Intenta de nuevo en"
   },
   "toast": {
     "success": {

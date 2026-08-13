@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -79,6 +80,33 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
   const [signupLoading, setSignupLoading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  const turnstileLoginRef = useRef<TurnstileInstance>(null);
+  const turnstileSignupRef = useRef<TurnstileInstance>(null);
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
+  const [signupCaptchaToken, setSignupCaptchaToken] = useState<string | null>(null);
+
+  const loginMaxAttempts = 5;
+  const [failedLoginAttempts, setFailedLoginAttempts] = useState(0);
+  const [lockUntil, setLockUntil] = useState(0);
+  const [lockRemaining, setLockRemaining] = useState(0);
+
+  useEffect(() => {
+    if (lockUntil <= Date.now()) return;
+    const tick = () => {
+      const remaining = Math.max(0, Math.round((lockUntil - Date.now()) / 1000));
+      setLockRemaining(remaining);
+      if (remaining === 0) {
+        setLockUntil(0);
+        setLockRemaining(0);
+      }
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [lockUntil]);
+
   const handleLogoSelect = useCallback((file: File) => {
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
@@ -107,7 +135,20 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    setLoginLoading(true);
+
+    if (Date.now() < lockUntil) {
+      setLoginError(
+        `${t("auth.tooManyAttempts") || "Demasiados intentos. Intenta de nuevo en"} ${
+          lockRemaining || 1
+        }s.`
+      );
+      return;
+    }
+
+    if (turnstileSiteKey && !loginCaptchaToken) {
+      setLoginError(t("auth.captchaRequired") || "Resuelve el captcha para continuar");
+      return;
+    }
 
     const validation = loginSchema.safeParse({
       email: loginEmail,
@@ -120,18 +161,36 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       return;
     }
 
+    setLoginLoading(true);
+
     const supabase = createSupabaseBrowserClient();
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: loginPassword,
+      options: { captchaToken: loginCaptchaToken ?? undefined },
     });
 
     if (authError) {
+      const attempts = failedLoginAttempts + 1;
+      setFailedLoginAttempts(attempts);
+      if (attempts >= loginMaxAttempts) {
+        const backoffSecs = Math.min(
+          15 * 60,
+          30 * Math.pow(2, attempts - loginMaxAttempts)
+        );
+        setLockUntil(Date.now() + backoffSecs * 1000);
+        setLockRemaining(backoffSecs);
+      }
       setLoginError(authError.message);
+      setLoginCaptchaToken(null);
+      turnstileLoginRef.current?.reset();
       setLoginLoading(false);
       return;
     }
 
+    setFailedLoginAttempts(0);
+    setLoginCaptchaToken(null);
+    turnstileLoginRef.current?.reset();
     router.push("/es/dashboard");
     router.refresh();
   };
@@ -140,6 +199,12 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
     e.preventDefault();
     setSignupError(null);
     setSignupLoading(true);
+
+    if (turnstileSiteKey && !signupCaptchaToken) {
+      setSignupError(t("auth.captchaRequired") || "Resuelve el captcha para continuar");
+      setSignupLoading(false);
+      return;
+    }
 
     const validation = signupSchema.safeParse({
       nombre,
@@ -177,8 +242,12 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
           giro_comercial: giroComercial,
           color_primario: colorPrimario,
         },
+        captchaToken: signupCaptchaToken ?? undefined,
       },
     });
+
+    setSignupCaptchaToken(null);
+    turnstileSignupRef.current?.reset();
 
     if (authError) {
       setSignupError(authError.message);
@@ -463,6 +532,19 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
               </AccordionItem>
             </Accordion>
 
+            {turnstileSiteKey && (
+                <div style={{ width: "100%", marginTop: "12px" }}>
+                  <Turnstile
+                    id="cf-turnstile-signup"
+                    siteKey={turnstileSiteKey}
+                    onSuccess={setSignupCaptchaToken}
+                    onError={() => setSignupCaptchaToken(null)}
+                    onExpire={() => setSignupCaptchaToken(null)}
+                    ref={turnstileSignupRef}
+                  />
+                </div>
+              )}
+
             <button type="submit" className="auth-btn" disabled={signupLoading} style={{ width: "100%", marginTop: "16px" }}>
               {signupLoading ? t("common.loading") : t("auth.signup")}
             </button>
@@ -524,6 +606,19 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
           <a href="#" style={{ alignSelf: "flex-start", margin: "5px 0 15px", color: "#333", fontSize: "13px" }}>
             {t("auth.forgotPassword")}
           </a>
+
+          {turnstileSiteKey && (
+            <div style={{ width: "100%", marginBottom: "12px" }}>
+              <Turnstile
+                id="cf-turnstile-login"
+                siteKey={turnstileSiteKey}
+                onSuccess={setLoginCaptchaToken}
+                onError={() => setLoginCaptchaToken(null)}
+                onExpire={() => setLoginCaptchaToken(null)}
+                ref={turnstileLoginRef}
+              />
+            </div>
+          )}
 
           <button type="submit" className="auth-btn" disabled={loginLoading} style={{ width: "100%" }}>
             {loginLoading ? t("common.loading") : t("auth.login")}

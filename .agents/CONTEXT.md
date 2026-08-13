@@ -29,8 +29,9 @@ symvora-saas/
 │   └── migrations/
 │       ├── 001_initial_schema.sql      # Schema completo + RLS + seed
 │       ├── 002_rls_rbac.sql           # RBAC fix: políticas granulares por operación
-│       └── 003_activity_logs.sql       # Tabla activity_logs + función log_activity()
-│       └── 004_complete_onboarding.sql # SECURITY DEFINER para onboarding
+│       ├── 003_activity_logs.sql       # Tabla activity_logs + función log_activity()
+│       ├── 004_complete_onboarding.sql # SECURITY DEFINER para onboarding
+│       └── 007_facturacion.sql         # Tablas facturas/factura_detalle + permisos billing.*
 └── src/
     ├── hooks/
     │   └── use-current-tenant.ts      # Hook centralizado para obtener tenant del usuario
@@ -55,6 +56,7 @@ symvora-saas/
     │   │   ├── client.ts              # Cliente browser
     │   │   ├── server.ts              # Cliente server (cookies) + createSupabaseServiceRoleClient()
     │   │   ├── middleware.ts          # Refresh sesión + auth guard + subscription access control
+    │   │   ├── auth.ts                # requireTenantAccess(): autentica por cookie y valida membresía/permiso por tenant (usado en API routes)
     │   │   └── activity-logger.ts     # Helper para registrar acciones en activity_logs
     │   ├── conekta/
     │   │   ├── config.ts             # Conekta SDK init (conekta v9.0.1)
@@ -62,6 +64,10 @@ symvora-saas/
     │   │   ├── customers.ts          # Customer CRUD (createCustomer, getCustomer)
     │   │   ├── subscriptions.ts      # Subscription CRUD (createSubscription, cancelSubscription)
     │   │   └── orders.ts             # HostedPayment order creation via OrdersApi
+    │   ├── cfdi/
+    │   │   ├── catalogs.ts           # Catálogos SAT (claves prod/serv, unidades, formas pago)
+    │   │   ├── pac-client.ts         # Clientes PAC (Finkok/SWSapien) para timbrado
+    │   │   └── xml-generator.ts      # Generación de XML CFDI 4.0
     │   ├── validations/
     │   │   └── schemas.ts            # Schemas Zod (login, signup mejorado, tenant, etc.)
     │   ├── export/
@@ -81,6 +87,15 @@ symvora-saas/
     │   │   └── command-menu.tsx       # Modal Cmd+K de búsqueda global
     │   ├── auth/
     │   │   └── auth-forms.tsx         # Formulario login/signup con acordeones, logo en panel oscuro
+    │   ├── marketing/
+    │   │   ├── hero.tsx               # Sección hero de la landing
+    │   │   ├── features.tsx           # Sección de features
+    │   │   ├── navbar.tsx             # Navbar de marketing
+    │   │   ├── footer.tsx             # Footer de marketing con links (incluye legales)
+    │   │   ├── legal-shell.tsx        # Layout compartido para páginas legales
+    │   │   └── ...                    # Otros componentes de la landing
+    │   ├── compliance/
+    │   │   └── cookie-consent.tsx     # Banner de consentimiento de cookies (symvora_consent)
     │   └── ui/                        # 20+ componentes shadcn/ui (base-nova)
     │       ├── sonner.tsx             # Toaster con theme del proyecto
     │       ├── data-table-toolbar.tsx # Toolbar con botones export CSV/PDF
@@ -91,8 +106,18 @@ symvora-saas/
     └── app/
         ├── layout.tsx                  # Root layout: fuentes, ThemeProvider, Toaster
         ├── page.tsx                    # Redirect a /es
-        ├── [locale]/layout.tsx         # Locale wrapper: NextIntlClientProvider
+        ├── [locale]/layout.tsx         # Locale wrapper: NextIntlClientProvider + CookieConsent
+        ├── [locale]/aviso-privacidad/page.tsx   # Aviso de privacidad integral (LFPDPPP) - pública
+        ├── [locale]/terminos/page.tsx           # Términos y condiciones - pública
+        ├── [locale]/politica-cookies/page.tsx   # Política de cookies - pública
         ├── api/auth/callback/route.ts  # OAuth callback
+        ├── api/users/
+        │   └── invite/route.ts           # Invite: requiere org.manage_members + SUPER_ADMIN para invitar SUPER_ADMIN
+        ├── api/facturas/
+        │   ├── list/route.ts             # Listar facturas (billing.view)
+        │   ├── create/route.ts           # Crear factura CFDI (billing.create)
+        │   ├── stamp/route.ts            # Timbrar factura vía PAC (billing.stamp)
+        │   └── cancel/route.ts           # Cancelar factura (billing.cancel)
         ├── api/conekta/
         │   ├── create-checkout/route.ts  # Creates Conekta customer + hosted checkout, returns checkout_url
         │   └── webhook/route.ts          # Conekta webhook: subscription.*, order.paid
@@ -129,6 +154,13 @@ symvora-saas/
             ├── users/
             │   ├── page.tsx            # Gestión usuarios con roles
             │   └── loading.tsx         # Skeleton loader usuarios
+            ├── facturas/
+            │   └── page.tsx            # Módulo CFDI 4.0: crear/timbrar/cancelar facturas
+            ├── lots/                   # Lotes (products extend)
+            ├── variants/               # Variantes de producto
+            ├── inventory-adjustments/  # Ajustes de inventario
+            ├── purchase-orders/        # Órdenes de compra dedicadas
+            ├── reports/                # Reportes con 4 cards + 3 charts
             └── settings/
                 ├── page.tsx            # Config: General, Apariencia, Módulos
                 └── loading.tsx         # Skeleton loader configuración
@@ -153,8 +185,18 @@ symvora-saas/
 | `/[locale]/finances` | `(dashboard)` | Gestión de caja y movimientos |
 | `/[locale]/users` | `(dashboard)` | Gestión de usuarios y roles |
 | `/[locale]/activity` | `(dashboard)` | Bitácora de actividad |
+| `/[locale]/facturas` | `(dashboard)` | Facturación CFDI 4.0 (crear, listar, timbrar, cancelar) |
 | `/[locale]/settings` | `(dashboard)` | Configuración del tenant |
+| `/` | Landing | Landing page pública (marketing) |
+| `/[locale]/aviso-privacidad` | Pública | Aviso de privacidad integral (LFPDPPP) |
+| `/[locale]/terminos` | Pública | Términos y condiciones |
+| `/[locale]/politica-cookies` | Pública | Política de cookies |
 | `/api/auth/callback` | API | OAuth code exchange |
+| `/api/users/invite` | API | Invitar usuario (org.manage_members; solo SUPER_ADMIN invita SUPER_ADMIN) |
+| `/api/facturas/list` | API | Listar facturas (billing.view) |
+| `/api/facturas/create` | API | Crear factura CFDI (billing.create) |
+| `/api/facturas/stamp` | API | Timbrar vía PAC (billing.stamp) |
+| `/api/facturas/cancel` | API | Cancelar vía PAC (billing.cancel) |
 | `/api/conekta/create-checkout` | API | Crear checkout Conekta (hosted payment) |
 | `/api/conekta/webhook` | API | Webhook Conekta (pagos, suscripciones) |
 | `/api/trial-codes/generate` | API | Generar códigos de prueba |
@@ -174,8 +216,9 @@ symvora-saas/
 3. **Login**: Email/password -> `supabase.auth.signInWithPassword()` -> redirige a `/es/dashboard`
 4. **Sesión**: Middleware refresca JWT en cada request via `getUser()`. El `custom_access_token_hook` inyecta `user_role` y `tenant_id` en el JWT
 5. **Logout**: `supabase.auth.signOut()` -> redirige a `/es/login`
-6. **Protección de rutas**: Middleware verifica autenticación + subscription status. Usuarios con trial expirado o pago vencido son redirigidos a `/billing`. `/billing` está en `isPublicRoute` para evitar loops
-7. **Email confirmation**: DESHABILITADA en Supabase Dashboard (requerida para el flujo signup → Conekta)
+6. **Protección de rutas**: Middleware verifica autenticación + subscription status. Usuarios con trial expirado o pago vencido son redirigidos a `/billing`. `/billing` está en `isPublicRoute` para evitar loops. Páginas legales (`aviso-privacidad`, `terminos`, `politica-cookies`) públicas (`isLegalRoute`)
+7. **API routes (hardening)**: Todas las rutas `/api/*` usan `requireTenantAccess()` (`src/lib/supabase/auth.ts`) que autentica vía cookies y valida membresía + permiso por tenant. Control de acceso del usuario — nunca confiar en JWT claims para permisos. El webhook de Conekta usa verificación de firma RSA del header `DIGEST` (fail-closed)
+8. **Email confirmation**: DESHABILITADA en Supabase Dashboard (requerida para el flujo signup → Conekta)
 
 ---
 
@@ -285,6 +328,8 @@ symvora-saas/
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 - `006_subscriptions.sql` - Tablas subscriptions, payment_history, trial_codes + enum subscription_status + RLS policies + subscription INSERT policy
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
+- `007_facturacion.sql` - Tablas `facturas`, `factura_detalle` + catálogos CFDI + permisos `billing.view/create/stamp/cancel` en `role_permissions`
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 
 ### MCP Server (Supabase)
 - **Config**: `opencode.json` en raíz del proyecto
@@ -364,12 +409,21 @@ symvora-saas/
 - **Middleware subscription access**: Redirects expired/past_due to `/billing`. `/billing` in `isPublicRoute` to prevent redirect loops
 - **Trial codes API**: Generate, validate, redeem endpoints for partner trial codes
 - **Reports page** (`/reports`): Period selector, 4 summary cards, 3 charts
+- **Módulo CFDI 4.0** (`/facturas`): Tablas `facturas`/`factura_detalle`, catálogos SAT, generador XML, clientes PAC (Finkok/SWSapien). APIs create/stamp/cancel/list con permisos `billing.*`
+- **Landing page pública**: Hero, features, navbar, footer con links legales, secciones marketing
+- **Hardening API routes**: Nuevo helper `requireTenantAccess()` en `src/lib/supabase/auth.ts`, aplicado a invite, facturas, create-checkout, trial-codes. Webhook Conekta firmado (RSA `DIGEST` header, fail-closed)
+- **Cumplimiento LFPDPPP**: Banner de consentimiento de cookies (`cookie-consent.tsx`, cookie `symvora_consent` 7 días), páginas aviso-privacidad/terminos/politica-cookies públicas, aviso abreviado en signup, footer legal con links reales
 
 ### Pendiente
-- Conekta API credentials verification — actual Conekta error visible with improved error handling
-- Conekta plan `symvora-basic` not yet confirmed as created in Conekta panel
-- `NEXT_PUBLIC_APP_URL` env var needs to be set in Vercel for checkout success/cancel URLs
-- User testing billing checkout flow
+ - Conekta API credentials verification — actual Conekta error visible with improved error handling
+ - Conekta plan `symvora-basic` not yet confirmed as created in Conekta panel
+ - `NEXT_PUBLIC_APP_URL` env var needs to be set in Vercel for checkout success/cancel URLs
+ - User testing billing checkout flow
+ - **Legal stubs**: Reemplazar `[Domicilio del responsable]`, `[privacidad@symvora.com]`, `[Ciudad]` en aviso de privacidad con datos reales
+ - **Env novo**: `CONEKTA_WEBHOOK_PUBLIC_KEY` (llave pública RSA de https://api.conekta.io/webhook_keys) aún no establecida — sin ella el webhook rechaza todo (fail-closed), `STITCH_API_KEY` pendiente de configurar
+ - **CAPTCHA Turnstile — activación manual**: crear widget en Cloudflare (Sitekey+Secret), activar CAPTCHA en Supabase Dashboard (Auth → Bot and Abuse Protection → Cloudflare Turnstile + secret key) y fijar `NEXT_PUBLIC_TURNSTILE_SITE_KEY` en Vercel. Código ya listo (gated por env).
+ - **Advisor: `role_permissions` con RLS deshabilitado** — tabla de lookup; decidir si se habilita RLS con políticas adecuadas
+ - **`auth-forms.tsx` redirect hardcoded**: `router.push("/es/dashboard")` en login (y signup fallback) aún hardcodea locale (`/es`)
 
 ---
 
@@ -477,6 +531,34 @@ symvora-saas/
 - **Archivo**: `src/app/api/conekta/create-checkout/route.ts`
 - **Problema**: El catch block simplemente retornaba "Failed to create checkout" sin mostrar el error real de Conekta
 - **Solución**: Agregar `console.error` con el error real y retornar un mensaje detallado (`error.message || error`) para que el usuario pueda diagnosticar el problema
+
+### 19. CRITICAL: API routes sin autenticación (QA findings)
+- **Archivos**: `src/lib/supabase/auth.ts` (nuevo helper), todas las rutas `/api/*`
+- **Problema**: El QA reveló que todas las rutas API usaban `createSupabaseServiceRoleClient()` (bypass RLS) sin verificar identidad ni permisos. Cualquier llamada externa (ej. a `/api/users/invite`) podía crear miembros con rol SUPER_ADMIN
+- **Solución**: Crear `requireTenantAccess(request, { tenantId?, permission?, selfUserId? })` que autentica vía cookie (nunca JWT claims), obtiene rol de `tenant_memberships` y compara contra `role_permissions`. Aplicado a: `users/invite` (org.manage_members + solo SUPER_ADMIN invita SUPER_ADMIN), `facturas/*` (billing.view/create/stamp/cancel), `conekta/create-checkout` (membresía), `trial-codes/redeem` (membresía + self), `trial-codes/generate` (SUPER_ADMIN). `trial-codes/validate` y `conekta/webhook` quedan públicos por diseño (webhook con firma)
+
+### 20. Conekta webhook aceptaba payloads no firmados
+- **Archivo**: `src/app/api/conekta/webhook/route.ts`
+- **Problema**: El webhook procesaba cualquier POST sin validar firma, permitiendo falsificar eventos (ej. marcar `order.paid`)
+- **Solución**: Implementar verificación RSA/SHA-256 del header `DIGEST` (Conekta no usa HMAC). Fail-closed: sin `CONEKTA_WEBHOOK_PUBLIC_KEY` rechaza con 401. Reemplaza el patrón de secreto HMAC previo (`CONEKTA_WEBHOOK_SECRET` removido de `.env.example`)
+
+### 21. complete_onboarding: ON CONFLICT roto + sin validación de auth.uid()
+- **Archivos**: `supabase/migrations/008_complete_onboarding_security.sql` (aplicada en vivo via MCP)
+- **Problema**: Existían 2 overloads con drift: la 6-arg corregida en vivo pero sin auth.uid(), y la 7-arg (con `p_logo_url`) **aún con `ON CONFLICT (user_id)`** que no corresponde a la constraint real `UNIQUE(user_id, role)` (podía lanzar unique_violation). Ninguna validaba `auth.uid() = p_user_id` → cualquiera podía autoasignarse una membresía/tenant a nombre de otro usuario
+- **Solución**: Migración 008 que dropea ambos overloads y crea UNA función unificada (con `p_logo_url` DEFAULT NULL, por lo que los callers de 6 y 7 args siguen funcionando) con: validación `auth.uid() = p_user_id`, `ON CONFLICT (user_id, role) DO NOTHING`, y `EXCEPTION WHEN unique_violation` para mensaje limpio del `UNIQUE(subdominio)`. Verificado en vivo
+
+### 22. completeSale(): patrón no atómico expuesto a sobreventa
+- **Archivos**: `supabase/migrations/009_complete_sale_atomico.sql` (aplicada en vivo via MCP), `src/lib/supabase/sales.ts` (refactorizado → RPC)
+- **Problema**: El cliente hacía "leer stock → calcular → escribir" en 3 queries separadas; dos ventas concurrentes podían sobrevender. Además insertaba venta, detalle y stock en pasos sin transacción (datos parciales si fallaba uno)
+- **Solución**: RPC `complete_sale` SECURITY DEFINER, transacción única (función plpgsql). Usa `SELECT ... FOR UPDATE` por producto (mata la sobreventa), valida stock, RBAC desde `tenant_memberships` + `role_permissions.sales.create` (no confía en JWT), valida `auth.uid() = p_usuario_id` y el cliente pertenece al tenant. `sales.ts:45` ahora llama al RPC. Los tests de `calculateSaleTotals` siguen pasando (función no removida)
+
+### 23. Login: CAPTCHA (Turnstile) + throttle + headers de seguridad
+- **Archivos**: `next.config.ts`, `src/components/auth/auth-forms.tsx`, `src/messages/{es,en}.json`, `.env.example`, deps `@marsidev/react-turnstile@1.6.0`
+- **Problema**: Login/signup sin protección contra bots/brute-force y sin headers de seguridad (no CSP, no nosniff, sin HSTS)
+- **Solución**:
+  - **Headers** en `next.config.ts` (`headers()` + `poweredByHeader: false`): CSP (script/style/img/font/connect/frame cubriendo Supabase, Conekta, Turnstile `challenges.cloudflare.com`, unpkg Boxicons, Sentry, `'unsafe-eval'` solo en dev), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` restringida, HSTS solo en producción. Fonts self-hosted (`next/font`) por lo que no se abre googleapis/gstatic
+  - **CAPTCHA Turnstile** (integración nativa Supabase): widgets en login y signup (ids de contenedor separados, refs separados), token en `options.captchaToken` de `signInWithPassword`/`signUp`. Gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (sin la env no se renderiza ni rompe dev). **Activación manual**: widget en Cloudflare + toggle en Supabase Dashboard + env en Vercel
+  - **Throttle en cliente**: en `handleLogin`, 5 fallos del mismo navegador → backoff exponencial (30s→15min) con countdown en vivo; reset al iniciar sesión
 
 ---
 
@@ -695,7 +777,7 @@ symvora-saas/
 ## Plan Pendiente: Completar Módulo de Facturación (CFDI 4.0 + Suscripciones)
 
 **Fecha del plan:** 2026-08-12
-**Estado:** Pendiente — se detuvo por reinicio del equipo
+**Estado:** En progreso — módulo base implementado (schema, APIs, UI, librerías); pendiente la configuración fiscal para producción
 
 ### Lo que ya existe
 
