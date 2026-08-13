@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
+import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
 import "@/styles/auth-toggle.css";
 
 function convertToWebP(file: File): Promise<File> {
@@ -78,6 +79,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupLoading, setSignupLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -217,6 +219,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       password: signupPassword,
       password_confirm: passwordConfirm,
       color_primario: colorPrimario || undefined,
+      acceptTerms,
     });
 
     if (!validation.success) {
@@ -259,6 +262,23 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       setSignupError("Error al crear la cuenta");
       setSignupLoading(false);
       return;
+    }
+
+    // Registrar la aceptación de documentos legales como evidencia de auditoría.
+    // Si falla, no bloqueamos el signup — el consentimiento ya quedó registrado en el click
+    // del checkbox y la existencia de la cuenta; el registro en BD es solo evidencia adicional.
+    try {
+      await fetch("/api/legal/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          termsVersion: LEGAL_DOCUMENT_VERSIONS.terms,
+          privacyVersion: LEGAL_DOCUMENT_VERSIONS.privacy,
+          cookiesVersion: LEGAL_DOCUMENT_VERSIONS.cookies,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to record legal acceptance:", err);
     }
 
     // Upload logo if provided
@@ -545,7 +565,53 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                 </div>
               )}
 
-            <button type="submit" className="auth-btn" disabled={signupLoading} style={{ width: "100%", marginTop: "16px" }}>
+            <label
+              htmlFor="acceptTerms"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "8px",
+                fontSize: "12px",
+                color: "#1a1a1a",
+                lineHeight: "1.5",
+                marginTop: "16px",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <input
+                id="acceptTerms"
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                required
+                aria-required="true"
+                style={{ marginTop: "2px", flexShrink: 0, accentColor: "#1a1a1a" }}
+              />
+              <span>
+                {t("auth.acceptTermsIntro")}{" "}
+                <Link
+                  href={`/${locale}/terminos`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 500 }}
+                >
+                  {t("auth.acceptTermsTerms")}
+                </Link>
+                {t("auth.acceptTermsAnd")}{" "}
+                <Link
+                  href={`/${locale}/aviso-privacidad`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 500 }}
+                >
+                  {t("auth.acceptTermsPrivacy")}
+                </Link>
+                {t("auth.acceptTermsSuffix")}
+              </span>
+            </label>
+
+            <button type="submit" className="auth-btn" disabled={signupLoading || !acceptTerms} style={{ width: "100%", marginTop: "16px" }}>
               {signupLoading ? t("common.loading") : t("auth.signup")}
             </button>
 
@@ -553,6 +619,8 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
               {t("auth.privacyAcknowledgment")}{" "}
               <Link
                 href={`/${locale}/aviso-privacidad`}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{ textDecoration: "underline", color: "#1a1a1a" }}
               >
                 {t("auth.privacyLink")}

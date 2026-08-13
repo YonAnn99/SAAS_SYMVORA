@@ -310,6 +310,7 @@ symvora-saas/
 | `subscriptions` | Suscripciones por tenant (status, trial, billing, payment methods) |
 | `payment_history` | Historial de pagos (conekta事件) |
 | `trial_codes` | Códigos de prueba canjeables |
+| `legal_acceptances` | Auditoría legal: cada aceptación de Términos/Privacidad/Cookies con versiones, IP, user_agent y timestamp (migración 010) |
 
 ### Funciones SQL
 - `user_tenant_ids()` - Retorna UUID[] de tenants del usuario actual
@@ -333,6 +334,8 @@ symvora-saas/
 - `006_subscriptions.sql` - Tablas subscriptions, payment_history, trial_codes + enum subscription_status + RLS policies + subscription INSERT policy
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 - `007_facturacion.sql` - Tablas `facturas`, `factura_detalle` + catálogos CFDI + permisos `billing.view/create/stamp/cancel` en `role_permissions`
+  - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
+- `010_legal_acceptance.sql` - Tabla `legal_acceptances` (user_id, terms_version, privacy_version, cookies_version, ip_address, user_agent, accepted_at) + RLS. Sirve como evidencia legal ante aclaraciones/contracargos. UNIQUE INDEX evita duplicados exactos por versión
   - **Ejecutar en Supabase SQL Editor** con opción "Without RLS"
 
 ### MCP Server (Supabase)
@@ -419,7 +422,8 @@ symvora-saas/
 - **Cumplimiento LFPDPPP**: Banner de consentimiento de cookies (`cookie-consent.tsx`, cookie `symvora_consent` 7 días), páginas aviso-privacidad/terminos/politica-cookies públicas, aviso abreviado en signup, footer legal con links reales
 - **Páginas 404**: `src/app/[locale]/not-found.tsx` (con Navbar/Footer, animación motion fadeInUp, CTAs Inicio/Volver) y `src/app/not-found.tsx` (fallback raíz minimalista). Strings i18n en `es.json`/`en.json` bajo `notFound`
 - **Navbar móvil a negro**: Panel móvil con fondo negro puro (`bg-black`), texto blanco/grises claros, separadores `border-white/10`, "Comenzar gratis" invertido a `bg-white text-black`, header se vuelve negro al abrir el menú. Fix overflow lateral con `overflow-x-hidden` en `html`/`body` (globals.css) y wrappers de marketing
-- **Términos y Condiciones expandido**: De 10 a 17 secciones (Modificaciones, Soporte técnico, SLA, Confidencialidad, Cesión, Fuerza mayor, Indemnidad)
+- **Términos y Condiciones expandido**: De 10 a 17 secciones (Modificaciones, Soporte técnico, SLA, Confidencialidad, Cesión, Fuerza mayor, Indemnidad) + §5.1 trial 7 días, §5.2 política de reembolsos (sin reembolso, cancelación al final del periodo), §7.1 propiedad de datos del usuario
+- **Cumplimiento legal completo (3.A/3.B/3.C/3.D)**: Checkbox obligatorio en signup (`acceptTerms: z.literal(true)`) con links a Términos/Privacidad en `target="_blank" rel="noopener noreferrer"`, tabla `legal_acceptances` con IP+UA+timestamp para auditoría (`supabase/migrations/010_legal_acceptance.sql`), endpoints `POST /api/legal/accept` y `GET /api/legal/current-versions`, banner post-login (`PolicyUpdateBanner`) que muestra aviso prominente al iniciar sesión cuando hay nueva versión, footer legal en dashboard (`LegalFooter`). Versiones constantes en `src/lib/legal/versions.ts`
 
 ### Pendiente
  - Conekta API credentials verification — actual Conekta error visible with improved error handling
@@ -583,6 +587,17 @@ symvora-saas/
   - **`/not-found.tsx` (raíz)**: Server component minimalista con Link a `/es` como fallback para rutas fuera del locale
   - **Términos**: Añadidas §11 Modificaciones (15 días de aviso), §12 Soporte técnico (canales email + horarios), §13 SLA (según disponibilidad, exclusiones), §14 Confidencialidad (3 años post-terminación), §15 Cesión, §16 Fuerza mayor, §17 Indemnidad
   - **i18n**: Bloque `notFound` con keys `code`, `title`, `description`, `home`, `back` en ambos idiomas
+
+### 26. Cumplimiento legal completo (3.A consentimiento, 3.B accesibilidad, 3.C auditoría, 3.D notificación)
+- **Archivos**: `src/components/auth/auth-forms.tsx`, `src/lib/validations/schemas.ts`, `src/lib/legal/versions.ts`, `supabase/migrations/010_legal_acceptance.sql`, `src/app/api/legal/accept/route.ts`, `src/app/api/legal/current-versions/route.ts`, `src/components/compliance/policy-update-banner.tsx`, `src/components/dashboard/legal-footer.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/app/[locale]/terminos/page.tsx`, `src/app/[locale]/aviso-privacidad/page.tsx`, `src/messages/{es,en}.json`
+- **Problema**: Auditoría reveló que el cumplimiento legal estaba incompleto: (a) sin checkbox de consentimiento expreso en signup, solo un texto legal; (b) sin footer legal en dashboard; (c) sin tabla de auditoría que registrara versiones aceptadas, IP y timestamp; (d) sin mecanismo para notificar cambios de políticas. Además, T&C no mencionaba propiedad de datos del usuario, reembolsos ni periodo de prueba; Aviso de Privacidad no incluía IP ni Cloudflare/Sentry como terceros
+- **Solución**:
+  - **3.A Consentimiento expreso**: Checkbox obligatorio (`<input type="checkbox" required>`) antes del botón submit con texto "Acepto los Términos y Condiciones y he leído el Aviso de Privacidad" + links a ambos documentos con `target="_blank" rel="noopener noreferrer"`. Botón submit deshabilitado hasta que se marque. Validación Zod: `acceptTerms: z.literal(true)` con mensaje custom. i18n en `auth.acceptTermsIntro/And/Suffix/Terms/Privacy`
+  - **3.B Accesibilidad**: Footer legal en dashboard (`LegalFooter`) con links a Términos/Privacidad/Cookies; visible en cada página del dashboard (no solo en landing)
+  - **3.C Auditoría**: Migración `010_legal_acceptance.sql` crea tabla `legal_acceptances` con `user_id`, `terms_version`, `privacy_version`, `cookies_version`, `ip_address` (inet), `user_agent` y `accepted_at`. RLS: usuarios solo ven/insertan sus propias filas. UNIQUE INDEX evita duplicados por versión. Versiones constantes en `src/lib/legal/versions.ts`. Endpoint `POST /api/legal/accept` captura IP (`x-forwarded-for`/`x-real-ip`) + user_agent e inserta. Llamada desde `auth-forms.tsx` después de `signUp` exitoso (no bloqueante — el checkbox ya es evidencia)
+  - **3.D Notificación de cambios**: `PolicyUpdateBanner` (cliente component) consulta `GET /api/legal/current-versions` al montar en el dashboard; si hay mismatch entre versión aceptada y versión vigente, muestra banner prominente con botón "Aceptar" (registra nueva versión vía `/api/legal/accept`) y X para dismiss (24h en localStorage `symvora_policy_banner_dismissed_until`). T&C §11 menciona 15 días de aviso. Aviso §9 detalla procedimiento de notificación
+  - **Contenido Términos**: §5.1 trial 7 días, §5.2 reembolsos (sin reembolso, cancelación al final del periodo), §7.1 propiedad de datos del usuario (inventario/ventas/CFDI son del usuario, SYMVORA solo encargado)
+  - **Contenido Aviso**: §2 incluye IP + datos técnicos + datos de uso; §5 incluye Cloudflare Turnstile y Sentry como terceros; §9 detalla notificación (correo + banner prominente + 15 días anticipación)
 
 ---
 

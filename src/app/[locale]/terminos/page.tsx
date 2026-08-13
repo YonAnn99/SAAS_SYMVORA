@@ -70,6 +70,26 @@ export default function TerminosPage() {
         cancelación del acceso a la Plataforma.
       </p>
 
+      <h2>5.1 Periodo de prueba</h2>
+      <p>
+        SYMVORA ofrece un periodo de prueba gratuito de siete (7) días naturales a
+        partir del registro de la cuenta. Durante este periodo el usuario puede
+        utilizar todas las funcionalidades de la Plataforma sin costo y puede cancelar
+        en cualquier momento sin cargo alguno. Si el usuario no cancela antes del
+        vencimiento del periodo de prueba, la suscripción se renovará automáticamente
+        al plan vigente y se realizará el cargo correspondiente al método de pago
+        registrado.
+      </p>
+
+      <h2>5.2 Reembolsos</h2>
+      <p>
+        SYMVORA no realiza reembolsos por periodos parciales de suscripción. El
+        usuario podrá cancelar su suscripción en cualquier momento; en tal caso,
+        seguirá teniendo acceso a la Plataforma hasta el final del periodo pagado y,
+        una vez concluido, no se realizarán cargos adicionales. Esta política aplica
+        también a los cargos derivados del fin del periodo de prueba.
+      </p>
+
       <h2>6. Cancelación y terminación</h2>
       <p>
         El usuario podrá cancelar su suscripción en cualquier momento conforme a las
@@ -82,6 +102,24 @@ export default function TerminosPage() {
         La Plataforma, su software, marcas, logotipos y contenidos son propiedad de
         SYMVORA o de sus licenciantes y están protegidos por la legislación aplicable en
         materia de propiedad intelectual.
+      </p>
+
+      <h2>7.1 Propiedad de los datos del usuario</h2>
+      <p>
+        La información que el usuario ingresa a la Plataforma — incluyendo, de manera
+        enunciativa mas no limitativa, datos de productos, inventario, ventas,
+        compras, clientes, proveedores, movimientos de caja, comprobantes fiscales
+        (CFDI), reportes y cualquier otro dato generado por la operación de su
+        negocio — es y seguirá siendo propiedad exclusiva del usuario. SYMVORA actúa
+        únicamente como encargado del almacenamiento y procesamiento de dichos datos
+        para la prestación del servicio contratado.
+      </p>
+      <p>
+        El usuario conserva en todo momento el derecho de acceder, exportar y, en su
+        caso, solicitar la eliminación de sus datos conforme a lo establecido en el
+        Aviso de Privacidad y la legislación aplicable. SYMVORA no podrá utilizar los
+        datos del usuario para fines distintos a los expresamente autorizados en el
+        Aviso de Privacidad.
       </p>
 
       <h2>8. Limitación de responsabilidad</h2>

@@ -108,6 +108,13 @@
     "confirmPasswordLabel": "Confirmar contraseña",
     "privacyAcknowledgment": "Al crear tu cuenta aceptas el",
     "privacyLink": "Aviso de Privacidad",
+    "acceptTerms": "Acepto los {terms} y he leído el {privacy}.",
+    "acceptTermsIntro": "Acepto los",
+    "acceptTermsAnd": "y he leído el",
+    "acceptTermsSuffix": ".",
+    "acceptTermsTerms": "Términos y Condiciones",
+    "acceptTermsPrivacy": "Aviso de Privacidad",
+    "acceptTermsRequired": "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
     "captchaRequired": "Resuelve el captcha para continuar",
     "tooManyAttempts": "Demasiados intentos. Intenta de nuevo en"
   },

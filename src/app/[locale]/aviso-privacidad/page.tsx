@@ -37,6 +37,16 @@ export default function AvisoPrivacidadPage() {
           débito; su manejo se realiza directamente por el proveedor de pagos.
         </li>
         <li>Datos de acceso: credenciales de usuario e información de inicio de sesión.</li>
+        <li>
+          Datos técnicos y de navegación: dirección IP, tipo y versión de navegador,
+          sistema operativo, información del dispositivo, identificadores de sesión y
+          cookies estrictamente necesarias. Estos datos se utilizan para fines de
+          seguridad, prevención de fraude y mejora del servicio.
+        </li>
+        <li>
+          Datos de uso: interacciones con la Plataforma, bitácora de actividad (con
+          sello de tiempo) y métricas de uso agregadas.
+        </li>
       </ul>
 
       <h2>3. Finalidades del tratamiento</h2>
@@ -80,6 +90,16 @@ export default function AvisoPrivacidadPage() {
         <li>Proveedor de alojamiento de la Plataforma (Vercel).</li>
         <li>Proveedor de cobros en línea (Conekta) para el procesamiento de pagos.</li>
         <li>
+          Proveedor de protección contra bots (Cloudflare Turnstile) cuando esté
+          habilitado, para validar que los registros e inicios de sesión no sean
+          automatizados.
+        </li>
+        <li>
+          Proveedor de monitoreo de errores y observabilidad (Sentry) cuando esté
+          habilitado, para identificar y resolver problemas técnicos que afecten la
+          operación de la Plataforma.
+        </li>
+        <li>
           Autoridades competentes, cuando sea requerido por ley, mandamiento judicial o
           resolución de autoridad.
         </li>
@@ -122,8 +142,22 @@ export default function AvisoPrivacidadPage() {
       <h2>9. Cambios al Aviso de Privacidad</h2>
       <p>
         Nos reservamos el derecho de efectuar modificaciones al presente Aviso de
-        Privacidad; en tal caso, se publicarán en esta página con la fecha de última
-        actualización.
+        Privacidad. Cualquier cambio sustancial será notificado con al menos quince
+        (15) días naturales de anticipación a su entrada en vigor, mediante:
+      </p>
+      <ul>
+        <li>Correo electrónico enviado a la dirección registrada por el usuario.</li>
+        <li>
+          Aviso prominente al iniciar sesión en la Plataforma, requiriendo la
+          aceptación de la nueva versión para continuar utilizando el servicio.
+        </li>
+        <li>Publicación de la versión actualizada en esta misma página.</li>
+      </ul>
+      <p>
+        Se consideran cambios sustanciales, entre otros: las finalidades del
+        tratamiento, los terceros a los que se transfieren datos, los medios para
+        ejercer derechos ARCO, o cualquier modificación que afecte la forma en que
+        SYMVORA utiliza los datos personales del titular.
       </p>
     </LegalShell>
   );

@@ -33,6 +33,10 @@ export const signupSchema = z
     password: passwordValidation,
     password_confirm: z.string(),
     color_primario: z.string().optional(),
+    acceptTerms: z.literal(true, {
+      message:
+        "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
+    }),
   })
   .refine((data) => data.password === data.password_confirm, {
     message: "Las contraseñas no coinciden",
