@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { MessageCircle } from "lucide-react";
+import { WhatsAppLogo } from "./whatsapp-logo";
 
 const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";
@@ -31,7 +31,11 @@ export function WhatsAppFab() {
         className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-30"
         aria-hidden="true"
       />
-      <MessageCircle className="w-6 h-6 relative" aria-hidden="true" />
+      <WhatsAppLogo
+        size={28}
+        className="relative text-white"
+        aria-hidden="true"
+      />
     </motion.a>
   );
 }

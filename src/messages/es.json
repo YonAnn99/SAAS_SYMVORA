@@ -668,6 +668,49 @@
         "4": { "title": "Abre caja y vende", "description": "Abre una caja con fondo inicial, busca productos y completa tu primera venta." }
       }
     },
+    "faq": {
+      "badge": "Preguntas Frecuentes",
+      "title": "Resolvemos tus dudas",
+      "subtitle": "Las respuestas a lo que más nos preguntan antes de empezar. Si tienes alguna otra, escríbenos por WhatsApp.",
+      "items": {
+        "1": {
+          "question": "¿Necesito comprar equipo especial o lector de código de barras?",
+          "answer": "No. Puedes empezar solo con tu celular, tablet o computadora. Si ya tienes un lector USB de código de barras, también es compatible. Y si no tienes uno, la cámara de tu celular funciona como escáner desde la app."
+        },
+        "2": {
+          "question": "¿Puedo usarlo en mi teléfono, tablet o computadora?",
+          "answer": "Sí. SYMVORA funciona en cualquier dispositivo con navegador moderno e internet: iOS, Android, Windows, macOS y Linux. No necesitas instalar nada — entras desde el navegador y listo."
+        },
+        "3": {
+          "question": "¿Qué pasa cuando termina mi prueba gratuita de 7 días?",
+          "answer": "Al finalizar los 7 días, tu suscripción se renueva automáticamente al plan vigente ($400 MXN/mes) y se cobra al método de pago que registraste al inicio. Si no quieres continuar, puedes cancelar en cualquier momento antes del cargo sin ningún costo."
+        },
+        "4": {
+          "question": "¿Necesito conocimientos técnicos para configurarlo?",
+          "answer": "No. El onboarding es de 4 pasos guiados y toma menos de 10 minutos. Tu equipo aprende a usarlo en horas, no en semanas. Además, tienes soporte en español por WhatsApp y correo."
+        },
+        "5": {
+          "question": "¿Cobra comisión por venta?",
+          "answer": "No. SYMVORA cobra una suscripción mensual fija de $400 MXN independientemente del número de transacciones. Lo que vendas es tuyo — sin comisiones ocultas, sin porcentaje por venta."
+        },
+        "6": {
+          "question": "¿Puedo facturar (CFDI 4.0) desde el sistema?",
+          "answer": "Sí. La facturación electrónica CFDI 4.0 viene integrada sin costo adicional. Puedes timbrar y cancelar facturas directamente desde el POS o el módulo de Facturas. Compatible con los PAC Finkok y SWSapien."
+        },
+        "7": {
+          "question": "¿Mis datos están seguros?",
+          "answer": "Sí. Cada negocio opera en su propia base de datos aislada (Aislamiento Total de Datos). Tu información nunca se mezcla ni es visible para otros tenants. Además, cada movimiento queda registrado en una bitácora de auditoría."
+        },
+        "8": {
+          "question": "¿Puedo cancelar cuando quiera?",
+          "answer": "Sí. Sin penalizaciones ni cláusulas de permanencia. Si cancelas, sigues teniendo acceso hasta el final del periodo que ya pagaste. No hacemos devoluciones por periodos parciales."
+        }
+      },
+      "cta": {
+        "noAnswer": "¿No encontraste tu respuesta?",
+        "contactUs": "Escríbenos por WhatsApp"
+      }
+    },
     "cta": {
       "title": "Empieza a vender hoy",
       "subtitle": "Prueba gratis por 7 días. Sin tarjeta de crédito. Cancela cuando quieras.",

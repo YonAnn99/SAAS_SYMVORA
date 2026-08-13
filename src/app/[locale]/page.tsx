@@ -9,6 +9,7 @@ import { SecuritySection } from "@/components/marketing/security-section";
 import { Benefits } from "@/components/marketing/benefits";
 import { Integrations } from "@/components/marketing/integrations";
 import { Setup } from "@/components/marketing/setup";
+import { FAQ } from "@/components/marketing/faq";
 import { CTA } from "@/components/marketing/cta";
 import { AboutUs } from "@/components/marketing/about-us";
 import { Footer } from "@/components/marketing/footer";
@@ -29,6 +30,7 @@ export default function LocalePage() {
         <Benefits />
         <Integrations />
         <Setup />
+        <FAQ />
         <CTA />
         <AboutUs />
       </main>

@@ -593,6 +593,49 @@
         "4": { "title": "Open register and sell", "description": "Open a register with initial fund, search products and complete your first sale." }
       }
     },
+    "faq": {
+      "badge": "Frequently Asked Questions",
+      "title": "Answers to common questions",
+      "subtitle": "The questions we hear most before getting started. If you have any other, message us on WhatsApp.",
+      "items": {
+        "1": {
+          "question": "Do I need special equipment or a barcode scanner?",
+          "answer": "No. You can start with just your phone, tablet or computer. If you already have a USB barcode scanner, it's also compatible. And if you don't have one, your phone's camera works as a scanner from the app."
+        },
+        "2": {
+          "question": "Can I use it on my phone, tablet or computer?",
+          "answer": "Yes. SYMVORA works on any device with a modern browser and internet: iOS, Android, Windows, macOS and Linux. You don't need to install anything — open it from your browser and you're set."
+        },
+        "3": {
+          "question": "What happens when my 7-day free trial ends?",
+          "answer": "After 7 days, your subscription renews automatically to the current plan ($400 MXN/month) and is charged to the payment method you registered at signup. If you don't want to continue, you can cancel anytime before the charge at no cost."
+        },
+        "4": {
+          "question": "Do I need technical knowledge to set it up?",
+          "answer": "No. The onboarding is a guided 4-step process that takes less than 10 minutes. Your team learns to use it in hours, not weeks. Plus, you have Spanish-language support via WhatsApp and email."
+        },
+        "5": {
+          "question": "Is there a per-sale commission?",
+          "answer": "No. SYMVORA charges a flat monthly subscription of $400 MXN regardless of the number of transactions. What you sell is yours — no hidden fees, no per-sale percentage."
+        },
+        "6": {
+          "question": "Can I invoice (CFDI 4.0) from the system?",
+          "answer": "Yes. CFDI 4.0 electronic invoicing is built in at no extra cost. You can stamp and cancel invoices directly from the POS or the Invoicing module. Compatible with Finkok and SWSapien PACs."
+        },
+        "7": {
+          "question": "Is my data secure?",
+          "answer": "Yes. Each business operates in its own isolated database (Total Data Isolation). Your information is never mixed or visible to other tenants. Plus, every action is logged in an audit trail."
+        },
+        "8": {
+          "question": "Can I cancel anytime?",
+          "answer": "Yes. No penalties and no long-term contracts. If you cancel, you keep access until the end of the period you already paid for. We don't offer refunds for partial periods."
+        }
+      },
+      "cta": {
+        "noAnswer": "Didn't find your answer?",
+        "contactUs": "Message us on WhatsApp"
+      }
+    },
     "cta": {
       "title": "Start selling today",
       "subtitle": "Free 7-day trial. No credit card. Cancel anytime.",
