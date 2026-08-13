@@ -11,13 +11,32 @@ export function DemoBanner() {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isDemo = searchParams?.get("demo") === "1";
   const [signingOut, setSigningOut] = useState(false);
+
+  // Lazy state init: la primera lectura solo corre en el cliente (este
+  // componente es "use client"), asi que sessionStorage es seguro. El query
+  // param se consulta en cada render para reflejar cambios de navegacion
+  // interna. Cualquiera de las dos fuentes activa el banner.
+  const [isDemoFromStorage] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return sessionStorage.getItem("demo_active") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const isDemoFromQuery = searchParams?.get("demo") === "1";
+  const isDemo = isDemoFromQuery || isDemoFromStorage;
 
   if (!isDemo) return null;
 
   const handleExit = async () => {
     setSigningOut(true);
+    try {
+      sessionStorage.removeItem("demo_active");
+    } catch {
+      // ignore
+    }
     try {
       const supabase = createSupabaseBrowserClient();
       await supabase.auth.signOut();

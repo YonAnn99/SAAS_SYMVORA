@@ -34,6 +34,16 @@ export default function DemoEntryPage({
           return;
         }
 
+        // Marca la sesion como demo en sessionStorage como respaldo. Si por
+        // algun motivo el callback pierde el query param `?demo=1` durante
+        // la cadena de redirects de Supabase, el banner seguira mostrandose.
+        try {
+          sessionStorage.setItem("demo_active", "1");
+        } catch {
+          // sessionStorage no disponible (modo incognito restrictivo): el
+          // query param sigue siendo la fuente primaria.
+        }
+
         window.location.href = data.redirect_url;
       } catch (err) {
         if (cancelled) return;

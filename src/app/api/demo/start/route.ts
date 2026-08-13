@@ -60,8 +60,12 @@ export async function POST(request: Request) {
 
   // 2. Genera magic link para demo@symvora.com. La redirectTo lleva al callback
   //    existente, que intercambia code por session y redirige a /<locale>/dashboard?demo=1.
+  //    Importante: el valor de `next` debe URL-encodearse, si no el segundo `?`
+  //    (de demo=1) se parsea como un searchParam separado y el callback pierde el flag.
   const locale = "es"; // default; el callback preserva el locale si viene en la URL
-  const redirectTo = `${APP_URL}/api/auth/callback?next=/${locale}/dashboard?demo=1`;
+  const callbackUrl = new URL("/api/auth/callback", APP_URL);
+  callbackUrl.searchParams.set("next", `/${locale}/dashboard?demo=1`);
+  const redirectTo = callbackUrl.toString();
 
   const { data: linkData, error: linkError } =
     await supabase.auth.admin.generateLink({
