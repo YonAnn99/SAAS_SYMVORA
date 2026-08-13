@@ -119,7 +119,7 @@ export function Benefits() {
           transition={{ ...easeOutShort, delay: 0.2 }}
         >
           <motion.div
-            className="relative rounded-2xl overflow-hidden shadow-2xl border border-neutral-200 aspect-video bg-neutral-50 flex items-center justify-center"
+            className="relative rounded-2xl overflow-hidden shadow-2xl border border-neutral-200 bg-neutral-50 flex items-center justify-center min-h-[260px] sm:aspect-video"
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}

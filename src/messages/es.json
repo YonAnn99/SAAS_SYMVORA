@@ -650,7 +650,7 @@
         },
         "4": {
           "question": "¿Necesito conocimientos técnicos para configurarlo?",
-          "answer": "No. El onboarding es de 4 pasos guiados y toma menos de 10 minutos. Tu equipo aprende a usarlo en horas, no en semanas. Además, tienes soporte en español por WhatsApp y correo."
+          "answer": "No. Al entrar al dashboard verás un tutorial con ventanas flotantes que te guía paso a paso (15 pasos: bienvenida, tu negocio, usuarios, productos, POS, finanzas y más). Si lo cierras, puedes volver a abrirlo cuando quieras desde el botón ? del header. Además, tienes soporte en español por WhatsApp y correo."
         },
         "5": {
           "question": "¿Cobra comisión por venta?",
