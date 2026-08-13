@@ -77,13 +77,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { error: updateError } = await supabase
+    // Update condicional: solo marca CANCELADA si el webhook NO confirmó
+    // el pago mientras tanto (venta_id sigue NULL). Esto evita la race
+    // donde el pago llega justo después de la comprobación inicial.
+    const { data: updatedRows, error: updateError } = await supabase
       .from("pagos_terminal")
       .update({
         estado: "CANCELADA",
         actualizado_en: new Date().toISOString(),
       })
-      .eq("id", pago.id);
+      .eq("id", pago.id)
+      .is("venta_id", null);
 
     if (updateError) {
       console.error("Error cancelando pago_terminal:", updateError);
@@ -91,6 +95,15 @@ export async function POST(request: NextRequest) {
         { error: "No se pudo cancelar el cobro" },
         { status: 500 }
       );
+    }
+
+    const updated = (updatedRows ?? []) as unknown[];
+    if (updated.length === 0) {
+      return NextResponse.json({
+        success: true,
+        pagado: true,
+        message: "El pago ya fue procesado",
+      });
     }
 
     return NextResponse.json({ success: true, pagado: false });

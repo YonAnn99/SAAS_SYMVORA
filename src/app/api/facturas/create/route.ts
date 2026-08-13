@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
       .from("clientes")
       .select("rfc, razon_social, regimen_fiscal_receptor, uso_cfdi, codigo_postal")
       .eq("id", body.cliente_id)
+      .eq("tenant_id", body.tenant_id)
       .single();
 
     if (!cliente?.rfc) {
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
         .from("ventas")
         .select("metodo_pago")
         .eq("id", body.venta_id)
+        .eq("tenant_id", body.tenant_id)
         .single();
 
       if (venta) {

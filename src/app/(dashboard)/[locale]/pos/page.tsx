@@ -73,6 +73,7 @@ export default function POSPage() {
   >(null);
   const [cancellingTerminal, setCancellingTerminal] = useState(false);
   const pollIntervalRef = useRef<number | null>(null);
+  const cancelPendingRef = useRef<() => void | Promise<unknown>>(() => {});
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
@@ -151,6 +152,9 @@ export default function POSPage() {
       if (pollIntervalRef.current) {
         window.clearInterval(pollIntervalRef.current);
       }
+      // Al desmontar con una orden pendiente de pago, se cancela la orden
+      // en Mercado Pago para que un pago tardio no cree una venta fantasma.
+      void cancelPendingRef.current();
     };
   }, []);
 
@@ -258,6 +262,11 @@ export default function POSPage() {
       return;
     }
 
+    if (selectedPayment === "CREDITO" && selectedCustomer === "none") {
+      toast.error("Selecciona un cliente para la venta a crédito");
+      return;
+    }
+
     if (selectedPayment === "TARJETA_TERMINAL") {
       await handleTerminalSale();
       return;
@@ -293,6 +302,28 @@ export default function POSPage() {
     }
   };
 
+  // Cancela la orden de terminal si sigue pendiente (waiting/timeout).
+  // Devuelve true si el pago se proceso mientras tanto (el webhook creo
+  // la venta): en ese caso NO se puede cancelar y hay que notificar.
+  const cancelTerminalOrderIfPending = useCallback(async () => {
+    if (!tenantId || !terminalOrder) return false;
+    if (terminalStatus !== "waiting" && terminalStatus !== "timeout") {
+      return false;
+    }
+    stopPolling();
+    try {
+      const result = await cancelTerminalOrder(tenantId, terminalOrder.mpOrderId);
+      return Boolean(result.pagado);
+    } catch {
+      // La orden expirara sola en Mercado Pago (120s); no bloquear la UI.
+      return false;
+    }
+  }, [tenantId, terminalOrder, terminalStatus]);
+
+  useEffect(() => {
+    cancelPendingRef.current = cancelTerminalOrderIfPending;
+  }, [cancelTerminalOrderIfPending]);
+
   const startTerminalPolling = (mpOrderId: string, monto: number) => {
     let pollsElapsed = 0;
     stopPolling();
@@ -302,6 +333,16 @@ export default function POSPage() {
       if (pollsElapsed > 48) {
         stopPolling();
         setTerminalStatus("timeout");
+        // Cancelar la orden en MP: un pago tardio no debe crear una venta fantasma.
+        const pagado = await cancelTerminalOrderIfPending();
+        if (pagado) {
+          setTerminalStatus("pagado");
+          toast.success("El pago ya fue procesado en la terminal");
+          clearCart();
+          setSelectedCustomer("none");
+          setSelectedPayment("");
+          fetchProductsAndUser();
+        }
         return;
       }
       try {
@@ -331,6 +372,11 @@ export default function POSPage() {
     if (!tenantId) return;
     setProcessingSale(true);
     try {
+      // Si queda una orden previa pendiente/timeout, se cancela antes de
+      // crear otra: evita que un pago tardio cree venta + stock fantasma.
+      if (terminalOrder && (terminalStatus === "waiting" || terminalStatus === "timeout")) {
+        await cancelTerminalOrderIfPending();
+      }
       const order = await createTerminalOrder({
         tenantId,
         clienteId: selectedCustomer === "none" ? null : selectedCustomer,
@@ -384,9 +430,19 @@ export default function POSPage() {
     }
   };
 
-  const closeTerminalDialog = () => {
+  const closeTerminalDialog = async () => {
     if (terminalStatus === "waiting") return;
     stopPolling();
+    if (terminalStatus === "timeout") {
+      const pagado = await cancelTerminalOrderIfPending();
+      if (pagado) {
+        toast.success("El pago ya fue procesado en la terminal");
+        clearCart();
+        setSelectedCustomer("none");
+        setSelectedPayment("");
+        fetchProductsAndUser();
+      }
+    }
     setTerminalOrder(null);
     setTerminalStatus(null);
   };
