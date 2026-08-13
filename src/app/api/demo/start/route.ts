@@ -26,6 +26,28 @@ function isRateLimited(ip: string): boolean {
 
 const DEMO_EMAIL = "demo@symvora.com";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const SUPPORTED_LOCALES = ["es", "en"] as const;
+type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+function resolveLocale(request: Request): SupportedLocale {
+  // 1. Query param explícito enviado por la página cliente (?locale=en).
+  //    Es la fuente más confiable porque refleja el locale del router de next-intl.
+  try {
+    const url = new URL(request.url);
+    const fromQuery = url.searchParams.get("locale");
+    if (fromQuery && (SUPPORTED_LOCALES as readonly string[]).includes(fromQuery)) {
+      return fromQuery as SupportedLocale;
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. Header Accept-Language del navegador como fallback.
+  const acceptLanguage = request.headers.get("accept-language") ?? "";
+  const primary = acceptLanguage.split(",")[0]?.trim().toLowerCase() ?? "";
+  if (primary.startsWith("en")) return "en";
+  return "es";
+}
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -58,11 +80,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // 2. Genera magic link para demo@symvora.com. La redirectTo lleva al callback
+  // 2. Resolver locale del usuario para preservar el idioma en el redirect.
+  const locale = resolveLocale(request);
+
+  // 3. Genera magic link para demo@symvora.com. La redirectTo lleva al callback
   //    existente, que intercambia code por session y redirige a /<locale>/dashboard?demo=1.
-  //    Importante: el valor de `next` debe URL-encodearse, si no el segundo `?`
-  //    (de demo=1) se parsea como un searchParam separado y el callback pierde el flag.
-  const locale = "es"; // default; el callback preserva el locale si viene en la URL
+  //    Importante: el valor de `next` se pasa via URLSearchParams.set, que lo URL-encodea
+  //    automaticamente. Si se concatenara como string crudo, el segundo `?` (de demo=1)
+  //    se parsearia como un searchParam separado y el callback perderia el flag.
   const callbackUrl = new URL("/api/auth/callback", APP_URL);
   callbackUrl.searchParams.set("next", `/${locale}/dashboard?demo=1`);
   const redirectTo = callbackUrl.toString();

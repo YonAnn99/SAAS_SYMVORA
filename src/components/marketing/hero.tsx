@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Play, Star } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ import { PosMockup } from "./pos-mockup";
 
 export function Hero() {
   const t = useTranslations();
+  const locale = useLocale();
   const reduceMotion = useReducedMotion();
 
   return (
@@ -85,7 +86,7 @@ export function Hero() {
             whileTap={{ scale: 0.98 }}
           >
             <Link
-              href="/es/demo"
+              href={`/${locale}/demo`}
               className="bg-white text-black font-medium px-6 py-3 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-all active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               <Play className="w-4 h-4" aria-hidden="true" />

@@ -21,10 +21,14 @@ export default function DemoEntryPage({
     if (!locale) return;
 
     let cancelled = false;
+    const resolvedLocale = locale;
 
     async function startDemo() {
       try {
-        const res = await fetch("/api/demo/start", { method: "POST" });
+        const res = await fetch(
+          `/api/demo/start?locale=${encodeURIComponent(resolvedLocale)}`,
+          { method: "POST" }
+        );
         const data = (await res.json()) as { redirect_url?: string; error?: string };
 
         if (cancelled) return;

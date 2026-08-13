@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/marketing") ||
     request.nextUrl.pathname.startsWith("/api/conekta") ||
     request.nextUrl.pathname.includes("/billing") ||
+    request.nextUrl.pathname.includes("/demo") ||
     isLegalRoute ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);
 

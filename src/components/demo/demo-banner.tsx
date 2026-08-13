@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Sparkles, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function DemoBanner() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [signingOut, setSigningOut] = useState(false);
@@ -60,7 +61,7 @@ export function DemoBanner() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/es/signup"
+            href={`/${locale}/signup`}
             className="inline-flex items-center gap-1.5 bg-white text-blue-700 font-semibold px-3.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600"
           >
             {t("landing.demo.banner.cta")}
