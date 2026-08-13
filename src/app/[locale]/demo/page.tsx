@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function DemoEntryPage({
   params,
@@ -29,18 +30,42 @@ export default function DemoEntryPage({
           `/api/demo/start?locale=${encodeURIComponent(resolvedLocale)}`,
           { method: "POST" }
         );
-        const data = (await res.json()) as { redirect_url?: string; error?: string };
+        const data = (await res.json()) as {
+          email?: string;
+          token_hash?: string;
+          locale?: string;
+          error?: string;
+        };
 
         if (cancelled) return;
 
-        if (!res.ok || !data.redirect_url) {
+        if (!res.ok || !data.email || !data.token_hash) {
           setError(data.error ?? "No se pudo iniciar la demo.");
           return;
         }
 
+        const supabase = createSupabaseBrowserClient();
+
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          email: data.email,
+          token_hash: data.token_hash,
+          type: "magiclink",
+        });
+
+        if (cancelled) return;
+
+        if (verifyError) {
+          console.error("[demo] verifyOtp failed:", verifyError);
+          setError(
+            verifyError.message ||
+              "No se pudo validar el acceso a la demo. Intenta de nuevo."
+          );
+          return;
+        }
+
         // Marca la sesion como demo en sessionStorage como respaldo. Si por
-        // algun motivo el callback pierde el query param `?demo=1` durante
-        // la cadena de redirects de Supabase, el banner seguira mostrandose.
+        // algun motivo se pierde el query param `?demo=1` durante navegaciones
+        // internas del dashboard, el banner seguira mostrandose.
         try {
           sessionStorage.setItem("demo_active", "1");
         } catch {
@@ -48,7 +73,11 @@ export default function DemoEntryPage({
           // query param sigue siendo la fuente primaria.
         }
 
-        window.location.href = data.redirect_url;
+        // Hard navigation para que el middleware refresque la sesion antes de
+        // evaluar las RLS del dashboard. `router.push` solo re-renderiza cliente
+        // y el server cookie store quedaria desincronizado en el primer fetch.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- requiere hard reload para sincronizar cookies tras verifyOtp
+        window.location.href = `/${data.locale ?? resolvedLocale}/dashboard?demo=1`;
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Error de red");

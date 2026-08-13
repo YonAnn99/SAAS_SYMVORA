@@ -25,7 +25,6 @@ function isRateLimited(ip: string): boolean {
 }
 
 const DEMO_EMAIL = "demo@symvora.com";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const SUPPORTED_LOCALES = ["es", "en"] as const;
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
@@ -81,14 +80,17 @@ export async function POST(request: Request) {
   }
 
   // 2. Resolver locale del usuario para preservar el idioma en el redirect.
+  //    Lo devolvemos al cliente: despues de `verifyOtp` exitoso, este hace
+  //    `router.push("/<locale>/dashboard?demo=1")`.
   const locale = resolveLocale(request);
 
-  // 3. Genera magic link para demo@symvora.com. La redirectTo lleva al callback
-  //    existente, que intercambia code por session y redirige a /<locale>/dashboard?demo=1.
-  //    Importante: el valor de `next` se pasa via URLSearchParams.set, que lo URL-encodea
-  //    automaticamente. Si se concatenara como string crudo, el segundo `?` (de demo=1)
-  //    se parsearia como un searchParam separado y el callback perderia el flag.
-  const callbackUrl = new URL("/api/auth/callback", APP_URL);
+  // 3. Genera magic link para demo@symvora.com. El `redirectTo` es requerido por
+  //    la Admin API (campo obligatorio en `options`), pero no se usa para el
+  //    flujo del cliente: en su lugar el cliente verifica el `token_hash` localmente
+  //    con `supabase.auth.verifyOtp`. Mantener un redirectTo valido evita warnings
+  //    y queda como red de seguridad si en el futuro se quisiera volver al
+  //    flujo por email.
+  const callbackUrl = new URL("/api/auth/callback", process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
   callbackUrl.searchParams.set("next", `/${locale}/dashboard?demo=1`);
   const redirectTo = callbackUrl.toString();
 
@@ -99,7 +101,19 @@ export async function POST(request: Request) {
       options: { redirectTo },
     });
 
-  if (linkError || !linkData?.properties?.action_link) {
+  // `generateLink({ type: "magiclink" })` devuelve:
+  //   - `properties.action_link`: URL absoluto hacia Supabase (https://<ref>.supabase.co/auth/v1/verify?...)
+  //     pensado para enviar por email al usuario.
+  //   - `properties.hashed_token`: el token de un solo uso (en el SDK se llama
+  //     `hashed_token`; otros SDKs lo exponen como `token_hash`) que el cliente
+  //     puede canjear llamando a `supabase.auth.verifyOtp({ email, token_hash, type: "magiclink" })`.
+  //
+  // El cliente no debe seguir `action_link` directamente: Supabase lo sirve desde
+  // su propio dominio (pagina de confirmacion) y no encadena un redirect al callback
+  // con `code`. En su lugar, devolvemos `hashed_token` + `email` para que el cliente
+  // verifique el OTP y establezca la sesion localmente.
+  const hashedToken = linkData?.properties?.hashed_token;
+  if (linkError || !hashedToken) {
     console.error("[demo/start] generateLink failed:", linkError);
     return NextResponse.json(
       { error: "No se pudo generar el acceso a la demo." },
@@ -108,7 +122,9 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    redirect_url: linkData.properties.action_link,
+    email: DEMO_EMAIL,
+    token_hash: hashedToken,
+    locale,
     tenant_id: (resetData as { tenant_id?: string } | null)?.tenant_id ?? null,
   });
 }
