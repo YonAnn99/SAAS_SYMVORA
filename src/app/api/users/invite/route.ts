@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import type { UserRole } from "@/lib/types/database";
 
 const INVITABLE_ROLES: UserRole[] = ["ORG_ADMIN", "CAJERO"];
@@ -32,6 +33,9 @@ export async function POST(request: Request) {
       permission: "org.manage_members",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     if (requestedRole === "SUPER_ADMIN" && auth.role !== "SUPER_ADMIN") {
       return NextResponse.json(

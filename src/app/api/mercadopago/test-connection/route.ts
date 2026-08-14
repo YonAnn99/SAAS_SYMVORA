@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
@@ -33,6 +34,9 @@ export async function POST(request: NextRequest) {
       permission: "billing.config",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     const config = await getMercadoPagoPointConfig(body.tenant_id);
     const secrets = await readMercadoPagoSecrets(body.tenant_id, config);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { createPACClient } from "@/lib/cfdi/pac-client";
 import { readFiscalSecrets, requiresSecrets } from "@/lib/cfdi/fiscal-secrets";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest) {
       permission: "billing.cancel",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     if (factura.estado !== "TIMBRADA") {
       return NextResponse.json(

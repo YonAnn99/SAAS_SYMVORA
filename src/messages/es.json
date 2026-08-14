@@ -703,6 +703,13 @@
         "text": "Estás probando la demo. Los datos se reinician al salir.",
         "cta": "Crear mi cuenta gratis",
         "exit": "Salir"
+      },
+      "restricted": {
+        "eyebrow": "Modo demo",
+        "title": "Esta función no está disponible en la demo",
+        "description": "Para mantener aislados los datos reales, las integraciones externas (Conekta, Mercado Pago, PAC de facturación CFDI e invitaciones por email) están deshabilitadas en la demo. Crea una cuenta gratuita para probarlas con tus propias credenciales.",
+        "cta": "Crear mi cuenta gratis",
+        "back": "Volver al dashboard"
       }
     },
     "about": {

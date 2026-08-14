@@ -34,11 +34,14 @@ import {
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Factura, FacturaDetalle } from "@/lib/types/database";
+import { useIsDemo } from "@/hooks/use-is-demo";
+import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 
 export default function FacturaDetailPage() {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
+  const isDemo = useIsDemo();
   const params = useParams<{ id: string }>();
   const facturaId = params.id;
 
@@ -76,6 +79,10 @@ export default function FacturaDetailPage() {
 
   const handleStamp = async () => {
     if (!factura) return;
+    if (isDemo) {
+      toast.error("Las acciones de facturación no están disponibles en el modo demo.");
+      return;
+    }
     setProcessing(true);
     try {
       const response = await fetch("/api/facturas/stamp", {

@@ -25,6 +25,8 @@ import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useIsDemo } from "@/hooks/use-is-demo";
+import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 import { REGIMENES_FISCALES } from "@/lib/cfdi/catalogs";
 
@@ -70,6 +72,7 @@ export default function FacturasConfigPage() {
   const router = useRouter();
   const locale = useLocale();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const isDemo = useIsDemo();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -119,6 +122,10 @@ export default function FacturasConfigPage() {
 
   const handleSave = async () => {
     if (!tenantId) return;
+    if (isDemo) {
+      toast.error("La configuración fiscal no está disponible en el modo demo.");
+      return;
+    }
     setSaving(true);
     try {
       const payloadSecrets = Object.fromEntries(
@@ -161,6 +168,10 @@ export default function FacturasConfigPage() {
         Cargando configuración...
       </div>
     );
+  }
+
+  if (isDemo) {
+    return <DemoRestrictedNotice />;
   }
 
   return (

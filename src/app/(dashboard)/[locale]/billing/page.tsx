@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useIsDemo } from "@/hooks/use-is-demo";
+import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
 import {
   CreditCard,
@@ -67,6 +69,7 @@ export default function BillingPage() {
   const t = useTranslations();
   const locale = useLocale();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const isDemo = useIsDemo();
 const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,6 +283,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
         {t("common.loading")}
+      </div>
+    );
+  }
+
+  if (isDemo) {
+    return (
+      <div className="space-y-6">
+        <DemoRestrictedNotice />
       </div>
     );
   }

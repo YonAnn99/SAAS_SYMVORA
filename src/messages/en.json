@@ -630,6 +630,13 @@
         "text": "You're trying the demo. Data resets when you leave.",
         "cta": "Create my free account",
         "exit": "Exit"
+      },
+      "restricted": {
+        "eyebrow": "Demo mode",
+        "title": "This feature isn't available in the demo",
+        "description": "To keep your real data isolated, external integrations (Conekta, Mercado Pago, CFDI invoicing PAC and email invitations) are disabled in the demo. Create a free account to try them with your own credentials.",
+        "cta": "Create my free account",
+        "back": "Back to dashboard"
       }
     },
     "about": {

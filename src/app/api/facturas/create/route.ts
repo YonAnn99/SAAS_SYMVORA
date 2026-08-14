@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import {
   getMetodoPagoByVenta,
   getMetodoPagoCFDI,
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest) {
       permission: "billing.create",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     // Get tenant fiscal config
     const { data: settings } = await supabase

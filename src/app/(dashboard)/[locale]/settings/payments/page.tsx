@@ -32,6 +32,8 @@ import {
   Info,
 } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useIsDemo } from "@/hooks/use-is-demo";
+import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 
 interface MpConfigStatus {
   habilitado: boolean;
@@ -72,6 +74,7 @@ const INSTRUCTIONS = [
 export default function PaymentsPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const isDemo = useIsDemo();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -182,6 +185,10 @@ export default function PaymentsPage() {
         {t("common.loading")}
       </div>
     );
+  }
+
+  if (isDemo) {
+    return <DemoRestrictedNotice />;
   }
 
   const isReady =

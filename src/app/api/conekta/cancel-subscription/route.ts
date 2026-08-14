@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,9 @@ export async function POST(request: Request) {
 
     const auth = await requireTenantAccess(request, { tenantId: tenant_id });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     const supabase = createSupabaseServiceRoleClient();
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { createPACClient } from "@/lib/cfdi/pac-client";
 import { generateSealedCFDIXML } from "@/lib/cfdi/xml-generator";
 import { readFiscalSecrets, requiresSecrets } from "@/lib/cfdi/fiscal-secrets";
@@ -34,6 +35,9 @@ export async function POST(request: NextRequest) {
       permission: "billing.stamp",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     if (factura.estado !== "BORRADOR") {
       return NextResponse.json(

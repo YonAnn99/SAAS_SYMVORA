@@ -38,6 +38,8 @@ import {
 import { Plus, Users, Shield, UserCog } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { TenantMembership } from "@/lib/types/database";
+import { useIsDemo } from "@/hooks/use-is-demo";
+import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
 
 const roleColors: Record<string, string> = {
@@ -49,6 +51,7 @@ const roleColors: Record<string, string> = {
 export default function UsersPage() {
   const t = useTranslations();
   const locale = useLocale();
+  const isDemo = useIsDemo();
   const [memberships, setMemberships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -134,6 +137,8 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {isDemo && <DemoRestrictedNotice />}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
           <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
@@ -143,7 +148,12 @@ export default function UsersPage() {
             Gestiona los usuarios y permisos de tu organización
           </p>
         </div>
-        <Button onClick={() => setShowInviteDialog(true)} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+        <Button
+          onClick={() => setShowInviteDialog(true)}
+          size="sm"
+          className="h-8 active:scale-[0.98] transition-transform"
+          disabled={isDemo}
+        >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           {t("users.addUser")}
         </Button>

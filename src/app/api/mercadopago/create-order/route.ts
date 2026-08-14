@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { createOrder } from "@/lib/mercadopago/orders";
 import {
   getMercadoPagoPointConfig,
@@ -36,6 +37,9 @@ export async function POST(request: NextRequest) {
       permission: "sales.create",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     const config = await getMercadoPagoPointConfig(body.tenant_id);
     const secrets = await readMercadoPagoSecrets(body.tenant_id, config);

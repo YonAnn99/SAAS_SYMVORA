@@ -4,6 +4,7 @@ import {
   createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types/database";
+import { DEMO_USER_EMAIL } from "@/lib/supabase/demo-guard";
 
 interface TenantAccessOptions {
   tenantId?: string;
@@ -16,6 +17,7 @@ export type TenantAccessResult =
       ok: true;
       userId: string;
       role?: UserRole;
+      isDemo: boolean;
     }
   | {
       ok: false;
@@ -39,6 +41,10 @@ export async function requireTenantAccess(
     };
   }
 
+  const isDemo =
+    user.email === DEMO_USER_EMAIL ||
+    (user.app_metadata as Record<string, unknown> | null)?.is_demo === true;
+
   if (options.selfUserId && options.selfUserId !== user.id) {
     return {
       ok: false,
@@ -50,7 +56,7 @@ export async function requireTenantAccess(
   }
 
   if (!options.tenantId) {
-    return { ok: true, userId: user.id };
+    return { ok: true, userId: user.id, isDemo };
   }
 
   const serviceClient = createSupabaseServiceRoleClient();
@@ -93,5 +99,5 @@ export async function requireTenantAccess(
     }
   }
 
-  return { ok: true, userId: user.id, role };
+  return { ok: true, userId: user.id, role, isDemo };
 }

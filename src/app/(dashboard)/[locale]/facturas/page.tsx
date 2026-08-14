@@ -41,6 +41,8 @@ import { Plus, Search, FileText, Stamp, XCircle, Trash2, Settings2, Download, Fi
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useIsDemo } from "@/hooks/use-is-demo";
+import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import type { Factura, Cliente, Producto } from "@/lib/types/database";
 import {
   CLAVE_PROD_SERV_COMMON,
@@ -76,6 +78,7 @@ export default function FacturasPage() {
   const locale = useLocale();
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const isDemo = useIsDemo();
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -256,6 +259,10 @@ export default function FacturasPage() {
   };
 
   const handleStamp = async (factura: Factura) => {
+    if (isDemo) {
+      toast.error("Las acciones de facturación no están disponibles en el modo demo.");
+      return;
+    }
     setSaving(true);
     try {
       const response = await fetch("/api/facturas/stamp", {
@@ -281,6 +288,10 @@ export default function FacturasPage() {
 
   const handleCancel = async () => {
     if (!showCancelDialog || !cancelMotivo) return;
+    if (isDemo) {
+      toast.error("Las acciones de facturación no están disponibles en el modo demo.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -335,6 +346,8 @@ export default function FacturasPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {isDemo && <DemoRestrictedNotice />}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
           <h2 className="text-xl md:text-2xl font-semibold tracking-tight">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { tenantFiscalConfigSchema } from "@/lib/validations/schemas";
 import { saveFiscalSecret } from "@/lib/cfdi/fiscal-secrets";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
@@ -165,6 +166,9 @@ export async function POST(request: NextRequest) {
       permission: "billing.config",
     });
     if (!auth.ok) return auth.response;
+
+    const demo = await assertNotDemo();
+    if (!demo.ok) return demo.response;
 
     const emisor = body.emisor ?? {};
 
