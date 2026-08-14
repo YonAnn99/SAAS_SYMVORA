@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { PasswordInput } from "@/components/ui/password-input";
-import { ColorPicker } from "@/components/ui/color-picker";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import {
   Select,
@@ -74,7 +73,6 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [colorPrimario, setColorPrimario] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -218,7 +216,6 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
       email: signupEmail,
       password: signupPassword,
       password_confirm: passwordConfirm,
-      color_primario: colorPrimario || undefined,
       acceptTerms,
     });
 
@@ -243,7 +240,6 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
           nombre: fullName,
           nombre_establecimiento: nombreEstablecimiento,
           giro_comercial: giroComercial,
-          color_primario: colorPrimario,
         },
         captchaToken: signupCaptchaToken ?? undefined,
       },
@@ -333,7 +329,6 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
         p_nombre_comercial: nombreEstablecimiento,
         p_subdominio: subdominio,
         p_giro_comercial: giroComercial,
-        p_color_primario: colorPrimario,
         p_configuracion_json: configuracionJson,
         p_logo_url: logoUrl,
       }
@@ -543,11 +538,10 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
 
               <AccordionItem title={t("auth.customization") || "Personalización"} index={3}>
                 <div style={{ width: "100%", margin: "6px 0" }}>
-                  <ColorPicker
-                    value={colorPrimario}
-                    onChange={setColorPrimario}
-                    label={t("auth.colorPalette")}
-                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("auth.customizationHint") ||
+                      "Personaliza tu cuenta desde Configuración una vez que inicies sesión."}
+                  </p>
                 </div>
               </AccordionItem>
             </Accordion>

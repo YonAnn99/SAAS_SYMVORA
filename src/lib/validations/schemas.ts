@@ -32,7 +32,6 @@ export const signupSchema = z
     email: z.string().email("Correo electrónico inválido"),
     password: passwordValidation,
     password_confirm: z.string(),
-    color_primario: z.string().optional(),
     acceptTerms: z.literal(true, {
       message:
         "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",

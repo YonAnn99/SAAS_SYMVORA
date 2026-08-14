@@ -50,15 +50,16 @@ Todas las props tienen defaults. La paleta por defecto reproduce exactamente el 
 
 | Param | Default | Por qué |
 |---|---|---|
-| `horizonColor` | `#FFFFFF` | Cielo blanco, integra con el top del gradiente original |
-| `waveColor` | `#1a1a1a` | Mismo hex que el toggle panel del auth (`auth-toggle.css` línea 214) |
-| `crestColor` | `#A3A3A3` | Mismo gris que el stop del 60% del gradiente original |
+| `horizonColor` | `#E5E5E5` | Gris muy claro (no blanco puro). Si fuera `#FFFFFF` las crestas blancas se perderían contra el horizonte — el efecto quedaría plano en la mitad superior del viewport. |
+| `waveColor` | `#0a0a0a` | Negro casi puro para el cuerpo de las olas. |
+| `crestColor` | `#FFFFFF` | Crestas blancas sobre fondo gris → alto contraste, perceptible incluso en la zona clara. |
 | `speed` | `0.3` | Más lento que el default (0.4) — fondo, no protagonista |
-| `amplitude` | `2.0` | Más calmado (default 2.5) |
-| `tilt` | `1.05` | Horizonte más recto (default 1.11) |
-| `fogDepth` | `18` | Niebla más densa para integrarlo al fondo |
+| `amplitude` | `2.8` | Crestas más altas para que asciendan visiblemente sobre el horizonte |
+| `waveScale` | `0.7` | Más detalle que el default (0.6) |
+| `tilt` | `0.9` | Horizonte más bajo que el default (1.11) → más área ocupada por olas |
+| `fogDepth` | `12` | Menos niebla que el default (15) → las crestas llegan más cerca, más color de cuerpo |
 | `detail` | `"low"` | 40 steps en lugar de 70 — menos GPU en mobile |
-| `opacity` | `0.85` | Semi-transparente: la card blanca encima se mantiene nítida |
+| `opacity` | `1.0` | Opaco total: WebGL controla el fondo sin dejar ver el gradiente CSS |
 | `grainIntensity` | `0.03` | Conserva textura sin ruido visible |
 
 ### Z-index layering

@@ -78,7 +78,6 @@
     "logo": "Logo del negocio",
     "logoDragDrop": "Arrastra tu logo aquí o haz clic para seleccionar",
     "logoMaxSize": "Máximo 2MB · JPG, PNG, SVG",
-    "colorPalette": "Paleta de colores",
     "businessType": "Tipo de negocio",
     "businessTypePlaceholder": "Selecciona el tipo de negocio",
     "businessTypes": {
@@ -103,6 +102,7 @@
     "business": "Empresa",
     "security": "Seguridad",
     "customization": "Personalización",
+    "customizationHint": "Personaliza tu cuenta desde Configuración una vez que inicies sesión.",
     "email": "Correo electrónico",
     "password": "Ingresa contraseña",
     "confirmPasswordLabel": "Confirmar contraseña",
