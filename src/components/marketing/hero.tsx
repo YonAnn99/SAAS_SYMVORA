@@ -20,7 +20,7 @@ export function Hero() {
 
   return (
     <motion.section
-      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-12"
+      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 lg:pt-36 pb-20 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-12"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}

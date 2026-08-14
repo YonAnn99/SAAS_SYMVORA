@@ -16,7 +16,7 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden flex flex-col">
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 pb-20">
         <motion.div
           className="max-w-xl w-full text-center flex flex-col items-center gap-6"
           initial={{ opacity: 0, y: 20 }}

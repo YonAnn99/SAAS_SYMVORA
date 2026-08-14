@@ -11,7 +11,7 @@ export function LegalShell({ title, updatedAt, children }: LegalShellProps) {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <Navbar />
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-20">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-black">
           {title}
         </h1>
