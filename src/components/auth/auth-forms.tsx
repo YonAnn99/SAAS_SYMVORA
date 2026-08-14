@@ -543,10 +543,12 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                 display: "flex",
                 alignItems: "flex-start",
                 gap: "8px",
-                fontSize: "12px",
+                fontSize: "13px",
                 color: "#1a1a1a",
-                lineHeight: "1.5",
-                marginTop: "16px",
+                lineHeight: "1.6",
+                marginTop: "20px",
+                paddingTop: "16px",
+                borderTop: "1px solid #f0f0f0",
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -558,7 +560,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 required
                 aria-required="true"
-                style={{ marginTop: "2px", flexShrink: 0, accentColor: "#1a1a1a" }}
+                style={{ marginTop: "3px", flexShrink: 0, accentColor: "#1a1a1a", width: "16px", height: "16px" }}
               />
               <span>
                 {t("auth.acceptTermsIntro")}{" "}
@@ -566,7 +568,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                   href={`/${locale}/terminos`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 500 }}
+                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 600 }}
                 >
                   {t("auth.acceptTermsTerms")}
                 </Link>
@@ -575,7 +577,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                   href={`/${locale}/aviso-privacidad`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 500 }}
+                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 600 }}
                 >
                   {t("auth.acceptTermsPrivacy")}
                 </Link>
@@ -600,17 +602,28 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
               {signupLoading ? t("common.loading") : t("auth.signup")}
             </button>
 
-            <p style={{ fontSize: "11px", color: "#888", lineHeight: "1.5", marginTop: "10px", textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#555",
+                lineHeight: "1.6",
+                marginTop: "12px",
+                padding: "10px 14px",
+                backgroundColor: "#f8f8f8",
+                borderRadius: "8px",
+                textAlign: "center",
+              }}
+            >
               {t("auth.privacyAcknowledgment")}{" "}
               <Link
                 href={`/${locale}/aviso-privacidad`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: "underline", color: "#1a1a1a" }}
+                style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 600 }}
               >
                 {t("auth.privacyLink")}
               </Link>
-            </p>
+            </div>
 
             <div className="auth-form-link">
               {t("auth.hasAccount")}{" "}

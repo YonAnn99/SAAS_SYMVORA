@@ -8,7 +8,7 @@
   overflow: hidden;
   width: 960px;
   max-width: 100%;
-  min-height: 650px;
+  min-height: 760px;
   font-family: 'Montserrat', sans-serif;
 }
 
@@ -133,6 +133,8 @@
   opacity: 0;
   z-index: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .auth-container.active .auth-sign-up {
@@ -152,6 +154,8 @@
 }
 
 .auth-form-scroll {
+  flex: 1;
+  min-height: 0;
   height: 100%;
   overflow-y: auto;
   padding: 20px 35px;
