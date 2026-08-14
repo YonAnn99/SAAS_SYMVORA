@@ -663,12 +663,12 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
             onChange={(e) => setLoginEmail(e.target.value)}
             required
           />
-          <input
-            type="password"
+          <PasswordInput
             placeholder={t("auth.passwordPlaceholder")}
             value={loginPassword}
             onChange={(e) => setLoginPassword(e.target.value)}
             required
+            className="auth-password-input"
           />
 
           <a href="#" style={{ alignSelf: "flex-start", margin: "5px 0 15px", color: "#333", fontSize: "13px" }}>

@@ -92,6 +92,15 @@
   transition: background-color 0.3s ease;
 }
 
+.auth-password-input {
+  width: 100%;
+  margin: 6px 0;
+}
+
+.auth-password-input > .relative {
+  width: 100%;
+}
+
 .auth-container input::placeholder {
   color: #888;
 }
