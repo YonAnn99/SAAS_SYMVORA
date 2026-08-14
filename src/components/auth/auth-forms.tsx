@@ -535,29 +535,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                   />
                 </div>
               </AccordionItem>
-
-              <AccordionItem title={t("auth.customization") || "Personalización"} index={3}>
-                <div style={{ width: "100%", margin: "6px 0" }}>
-                  <p className="text-xs text-muted-foreground">
-                    {t("auth.customizationHint") ||
-                      "Personaliza tu cuenta desde Configuración una vez que inicies sesión."}
-                  </p>
-                </div>
-              </AccordionItem>
             </Accordion>
-
-            {turnstileSiteKey && (
-                <div style={{ width: "100%", marginTop: "12px" }}>
-                  <Turnstile
-                    id="cf-turnstile-signup"
-                    siteKey={turnstileSiteKey}
-                    onSuccess={setSignupCaptchaToken}
-                    onError={() => setSignupCaptchaToken(null)}
-                    onExpire={() => setSignupCaptchaToken(null)}
-                    ref={turnstileSignupRef}
-                  />
-                </div>
-              )}
 
             <label
               htmlFor="acceptTerms"
@@ -604,6 +582,19 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
                 {t("auth.acceptTermsSuffix")}
               </span>
             </label>
+
+            {turnstileSiteKey && (
+              <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "16px" }}>
+                <Turnstile
+                  id="cf-turnstile-signup"
+                  siteKey={turnstileSiteKey}
+                  onSuccess={setSignupCaptchaToken}
+                  onError={() => setSignupCaptchaToken(null)}
+                  onExpire={() => setSignupCaptchaToken(null)}
+                  ref={turnstileSignupRef}
+                />
+              </div>
+            )}
 
             <button type="submit" className="auth-btn" disabled={signupLoading || !acceptTerms} style={{ width: "100%", marginTop: "16px" }}>
               {signupLoading ? t("common.loading") : t("auth.signup")}
