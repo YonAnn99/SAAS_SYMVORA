@@ -10,7 +10,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { MorphIcon } from "morphicons/react";
 import { cn } from "@/lib/utils";
 import { springTransition } from "./animations";
+import { useBubbleMenuAnimation } from "./use-bubble-menu-animation";
 import { MENU, X, CHEVRON_DOWN, CHEVRON_RIGHT } from "./morph-icons";
+import "@/styles/bubble-menu.css";
 
 interface NavItem {
   label: string;
@@ -60,6 +62,9 @@ export function Navbar() {
   const [mobileOpenDropdown, setMobileOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const dropdownRefs = useRef<Record<string, HTMLDivElement>>({});
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileItemRefs = useRef<HTMLElement[]>([]);
+  const mobileLabelRefs = useRef<HTMLElement[]>([]);
 
   // Reset transient UI state on route change. The link onClick handlers also
   // close the menu, but this catches programmatic navigation (router.push,
@@ -128,6 +133,13 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useBubbleMenuAnimation({
+    containerRef: mobileMenuRef,
+    itemRefs: mobileItemRefs,
+    labelRefs: mobileLabelRefs,
+    isOpen: mobileOpen,
+  });
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] pointer-events-none">
@@ -276,97 +288,111 @@ export function Navbar() {
           </div>
         </div>
 
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              id="mobile-menu"
-              initial={{ opacity: 0, y: -8, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -8, height: 0 }}
-              transition={springTransition}
-              className="lg:hidden pointer-events-auto mt-2 rounded-2xl overflow-hidden bg-neutral-950/95 backdrop-blur-2xl border border-white/10 shadow-2xl text-white pb-[env(safe-area-inset-bottom)]"
-            >
-              <div className="px-4 py-4 space-y-2">
-                {navItems.map((item) => {
-                  const hasChildren = item.children && item.children.length > 0;
-                  const isMobileOpen = mobileOpenDropdown === item.label;
+        <div
+          ref={mobileMenuRef}
+          id="mobile-menu"
+          className="lg:hidden pointer-events-auto mt-2 rounded-2xl overflow-hidden bg-neutral-950/95 backdrop-blur-2xl border border-white/10 shadow-2xl text-white pb-[env(safe-area-inset-bottom)] invisible"
+          aria-hidden={!mobileOpen}
+        >
+          <div className="px-4 py-4 space-y-2">
+            {navItems.map((item, idx) => {
+              const hasChildren = item.children && item.children.length > 0;
+              const isMobileOpen = mobileOpenDropdown === item.label;
+              const itemRef = (el: HTMLDivElement | null) => {
+                if (el) mobileItemRefs.current[idx] = el;
+              };
+              const labelRef = (el: HTMLSpanElement | null) => {
+                if (el) mobileLabelRefs.current[idx] = el;
+              };
 
-                  if (hasChildren) {
-                    return (
-                      <div key={item.label} className="border-t border-white/10 pt-2 first:border-t-0 first:pt-0">
-                        <button
-                          onClick={() => handleDropdownClick(item.label)}
-                          className="w-full flex items-center justify-between text-sm font-medium text-neutral-300 hover:text-white py-2"
-                          aria-expanded={isMobileOpen}
-                        >
-                          {t(item.label)}
-                          <MorphIcon
-                            icon={isMobileOpen ? CHEVRON_RIGHT : CHEVRON_DOWN}
-                            size={16}
-                            spring="snappy"
-                            reducedMotion="user"
-                            aria-hidden="true"
-                          />
-                        </button>
-                        <AnimatePresence>
-                          {isMobileOpen && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={springTransition}
-                              className="pl-4 mt-2 space-y-1"
-                            >
-                              {item.children!.map((child) => (
-                                <Link
-                                  key={child.label}
-                                  href={child.href ?? "#"}
-                                  className="block text-sm text-neutral-400 hover:text-white py-1"
-                                  onClick={() => {
-                                    setMobileOpen(false);
-                                    setMobileOpenDropdown(null);
-                                  }}
-                                >
-                                  {t(child.label)}
-                                </Link>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  }
-                  return (
-                    <a
-                      key={item.label}
-                      href={item.href}
-                      className="block text-sm font-medium text-neutral-300 hover:text-white py-2"
-                      onClick={() => setMobileOpen(false)}
+              if (hasChildren) {
+                return (
+                  <div
+                    key={item.label}
+                    ref={itemRef}
+                    className="bubble-menu-item border-t border-white/10 pt-2 first:border-t-0 first:pt-0"
+                  >
+                    <button
+                      onClick={() => handleDropdownClick(item.label)}
+                      className="w-full flex items-center justify-between text-sm font-medium text-neutral-300 hover:text-white py-2"
+                      aria-expanded={isMobileOpen}
                     >
-                      {t(item.label)}
-                    </a>
-                  );
-                })}
-                <div className="pt-4 border-t border-white/10 space-y-2">
-                  <Link
-                    href="/login"
-                    className="block text-sm font-medium text-neutral-300 hover:text-white"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {t("landing.nav.login")}
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="block bg-white text-black text-sm font-medium px-5 py-2 rounded-lg text-center hover:bg-neutral-200 transition-colors"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {t("landing.nav.cta")}
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      <span ref={labelRef}>{t(item.label)}</span>
+                      <MorphIcon
+                        icon={isMobileOpen ? CHEVRON_RIGHT : CHEVRON_DOWN}
+                        size={16}
+                        spring="snappy"
+                        reducedMotion="user"
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <AnimatePresence>
+                      {isMobileOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={springTransition}
+                          className="pl-4 mt-2 space-y-1"
+                        >
+                          {item.children!.map((child) => (
+                            <Link
+                              key={child.label}
+                              href={child.href ?? "#"}
+                              className="block text-sm text-neutral-400 hover:text-white py-1"
+                              onClick={() => {
+                                setMobileOpen(false);
+                                setMobileOpenDropdown(null);
+                              }}
+                            >
+                              {t(child.label)}
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+              return (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  ref={itemRef as unknown as React.Ref<HTMLAnchorElement>}
+                  className="bubble-menu-item block text-sm font-medium text-neutral-300 hover:text-white py-2"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span ref={labelRef}>{t(item.label)}</span>
+                </a>
+              );
+            })}
+            <div
+              ref={(el) => {
+                if (el) {
+                  const i = navItems.length;
+                  mobileItemRefs.current[i] = el;
+                  mobileLabelRefs.current[i] = el;
+                }
+              }}
+              className="bubble-menu-item pt-4 border-t border-white/10 space-y-2"
+            >
+              <Link
+                href="/login"
+                className="block text-sm font-medium text-neutral-300 hover:text-white"
+                onClick={() => setMobileOpen(false)}
+              >
+                {t("landing.nav.login")}
+              </Link>
+              <Link
+                href="/signup"
+                className="block bg-white text-black text-sm font-medium px-5 py-2 rounded-lg text-center hover:bg-neutral-200 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                {t("landing.nav.cta")}
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
   );
