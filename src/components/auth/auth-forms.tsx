@@ -240,7 +240,6 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
         provider,
         options: {
           redirectTo: `${window.location.origin}/api/auth/callback`,
-          captchaToken: loginCaptchaToken ?? undefined,
         },
       });
 
