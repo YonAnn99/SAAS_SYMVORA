@@ -114,7 +114,12 @@
     "acceptTermsPrivacy": "Privacy Policy",
     "acceptTermsRequired": "You must accept the Terms and Conditions and the Privacy Policy to continue",
     "captchaRequired": "Solve the captcha to continue",
-    "tooManyAttempts": "Too many attempts. Try again in"
+    "tooManyAttempts": "Too many attempts. Try again in",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithMicrosoft": "Continue with Microsoft",
+    "orContinueWith": "Or continue with email",
+    "oauthAccountNotFound": "We couldn't find an account with this provider. Please sign up first.",
+    "oauthGenericError": "Error signing in with the provider"
   },
   "toast": {
     "success": {

@@ -57,6 +57,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 2. **Login** → `signInWithPassword` + CAPTCHA Turnstile (gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) + throttle (5 intentos, backoff 30s→15min, countdown en vivo).
 3. **Middleware** refresca JWT por request; `custom_access_token_hook` inyecta `user_role` + `tenant_id` en el JWT.
 4. **Hardening**: `requireTenantAccess()` autentica por cookie (nunca JWT claims) y valida el permiso contra `role_permissions`.
+5. **OAuth login**: Google habilitado (provider activo en Supabase + UI en `/auth?mode=login` con `signInWithOAuth` → callback `/api/auth/callback`). Microsoft (Azure) **pendiente** — keys aún no funcionales en Supabase, dejar como TODO. Nuevos OAuth users bloqueados (config `Allow new users: OFF` por provider).
 
 ---
 
@@ -125,6 +126,7 @@ next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zu
 - Legal stubs en aviso de privacidad (`[Domicilio del responsable]`, `[privacidad@symvora.com]`).
 - Env pendientes: `CONEKTA_WEBHOOK_PUBLIC_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_APP_URL`, `STITCH_API_KEY`.
 - `role_permissions` con RLS deshabilitado (decidir si habilitar).
+- **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
 
 ---
 

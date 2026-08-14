@@ -209,6 +209,69 @@
   border-color: #1a1a1a;
 }
 
+.auth-social-icons-buttons {
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 12px 0 4px;
+}
+
+.auth-social-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.auth-social-btn:hover:not(:disabled) {
+  background-color: #f8f8f8;
+  border-color: #1a1a1a;
+}
+
+.auth-social-btn:active:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.auth-social-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 14px 0 8px;
+  gap: 10px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.auth-divider span {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
 .auth-toggle-container {
   position: absolute;
   top: 0;
@@ -403,5 +466,10 @@
 
   .auth-grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  .auth-social-btn {
+    font-size: 12px;
+    padding: 10px 12px;
   }
 }

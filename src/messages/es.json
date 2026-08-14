@@ -114,7 +114,12 @@
     "acceptTermsPrivacy": "Aviso de Privacidad",
     "acceptTermsRequired": "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
     "captchaRequired": "Resuelve el captcha para continuar",
-    "tooManyAttempts": "Demasiados intentos. Intenta de nuevo en"
+    "tooManyAttempts": "Demasiados intentos. Intenta de nuevo en",
+    "continueWithGoogle": "Continuar con Google",
+    "continueWithMicrosoft": "Continuar con Microsoft",
+    "orContinueWith": "O continúa con email",
+    "oauthAccountNotFound": "No encontramos una cuenta con este proveedor. Regístrate primero.",
+    "oauthGenericError": "Error al iniciar sesión con el proveedor"
   },
   "toast": {
     "success": {
