@@ -11,7 +11,6 @@ import { MorphIcon } from "morphicons/react";
 import { cn } from "@/lib/utils";
 import { springTransition } from "./animations";
 import { useBubbleMenuAnimation } from "./use-bubble-menu-animation";
-import { useCardNavAnimation } from "./use-card-nav-animation";
 import { MENU, X, CHEVRON_DOWN, CHEVRON_RIGHT } from "./morph-icons";
 import "@/styles/bubble-menu.css";
 
@@ -62,13 +61,10 @@ export function Navbar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpenDropdown, setMobileOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [desktopNavOpen, setDesktopNavOpen] = useState(false);
   const dropdownRefs = useRef<Record<string, HTMLDivElement>>({});
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileItemRefs = useRef<HTMLElement[]>([]);
   const mobileLabelRefs = useRef<HTMLElement[]>([]);
-  const desktopNavRef = useRef<HTMLDivElement>(null);
-  const desktopNavCardRefs = useRef<HTMLElement[]>([]);
 
   // Reset transient UI state on route change. The link onClick handlers also
   // close the menu, but this catches programmatic navigation (router.push,
@@ -79,7 +75,6 @@ export function Navbar() {
     setMobileOpen(false);
     setMobileOpenDropdown(null);
     setOpenDropdown(null);
-    setDesktopNavOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -93,16 +88,6 @@ export function Navbar() {
       });
       if (!clickedInside) {
         setOpenDropdown(null);
-      }
-
-      const navEl = desktopNavRef.current;
-      if (
-        desktopNavOpen &&
-        navEl &&
-        !navEl.contains(target) &&
-        !(event.target as HTMLElement)?.closest?.("[data-navbar-island]")
-      ) {
-        setDesktopNavOpen(false);
       }
     }
 
@@ -156,18 +141,10 @@ export function Navbar() {
     isOpen: mobileOpen,
   });
 
-  useCardNavAnimation({
-    containerRef: desktopNavRef,
-    cardRefs: desktopNavCardRefs,
-    isOpen: desktopNavOpen,
-    onClose: () => setDesktopNavOpen(false),
-  });
-
   return (
     <header className="fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] pointer-events-none">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 lg:pt-5">
         <div
-          data-navbar-island
           className={cn(
             "pointer-events-auto rounded-2xl transition-all duration-300",
             "backdrop-blur-2xl backdrop-saturate-150",
@@ -179,46 +156,91 @@ export function Navbar() {
           )}
         >
           <div className="h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
+            <Link href="/" className="flex items-center gap-2 sm:gap-3">
+              <Image
+                alt="SYMVORA Logo"
+                className="h-7 sm:h-8 w-auto object-contain"
+                src="/symvora-logo.webp"
+                width={32}
+                height={32}
+                priority
+              />
+              <span
                 className={cn(
-                  "hidden lg:flex p-2 rounded-lg transition-colors",
-                  desktopNavOpen
-                    ? "bg-neutral-100/80 text-black"
-                    : "text-neutral-900 hover:bg-neutral-100/80"
+                  "text-lg sm:text-xl font-bold tracking-tight font-[var(--font-montserrat)]",
+                  mobileOpen ? "text-white" : "text-black"
                 )}
-                onClick={() => setDesktopNavOpen(!desktopNavOpen)}
-                aria-expanded={desktopNavOpen}
-                aria-controls="desktop-nav-panel"
-                aria-label={desktopNavOpen ? "Cerrar menú" : "Abrir menú"}
               >
-                <MorphIcon
-                  icon={desktopNavOpen ? X : MENU}
-                  size={20}
-                  spring="snappy"
-                  reducedMotion="user"
-                  aria-hidden="true"
-                />
-              </button>
-              <Link href="/" className="flex items-center gap-2 sm:gap-3">
-                <Image
-                  alt="SYMVORA Logo"
-                  className="h-7 sm:h-8 w-auto object-contain"
-                  src="/symvora-logo.webp"
-                  width={32}
-                  height={32}
-                  priority
-                />
-                <span
-                  className={cn(
-                    "text-lg sm:text-xl font-bold tracking-tight font-[var(--font-montserrat)]",
-                    mobileOpen ? "text-white" : "text-black"
-                  )}
-                >
-                  SYMVORA
-                </span>
-              </Link>
-            </div>
+                SYMVORA
+              </span>
+            </Link>
+
+            <nav className="hidden lg:flex items-center gap-2" role="navigation" aria-label="Navegación principal">
+              {navItems.map((item) => {
+                const hasChildren = item.children && item.children.length > 0;
+                const isOpen = openDropdown === item.label;
+
+                return (
+                  <div
+                    key={item.label}
+                    ref={(el) => { if (el) dropdownRefs.current[item.label] = el; }}
+                    className="relative"
+                    onMouseEnter={() => handleDropdownMouseEnter(item.label)}
+                    onMouseLeave={handleDropdownMouseLeave}
+                  >
+                    {hasChildren ? (
+                      <>
+                        <button
+                          className="flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                          aria-expanded={isOpen}
+                          aria-haspopup="true"
+                        >
+                          {t(item.label)}
+                          <MorphIcon
+                            icon={isOpen ? CHEVRON_RIGHT : CHEVRON_DOWN}
+                            size={16}
+                            spring="snappy"
+                            reducedMotion="user"
+                            aria-hidden="true"
+                          />
+                        </button>
+                        <AnimatePresence>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -8 }}
+                              transition={springTransition}
+                              className="absolute top-full left-0 mt-2 w-56 bg-white/90 backdrop-blur-xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/60 py-2 ring-1 ring-black/5 z-50"
+                              role="menu"
+                            >
+                              {item.children!.map((child) => (
+                                <Link
+                                  key={child.label}
+                                  href={child.href ?? "#"}
+                                  className="block px-4 py-2 text-sm text-neutral-600 hover:text-black hover:bg-neutral-50/80 transition-colors"
+                                  role="menuitem"
+                                  onClick={() => setOpenDropdown(null)}
+                                >
+                                  {t(child.label)}
+                                </Link>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="text-sm font-medium text-neutral-600 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80"
+                      >
+                        {t(item.label)}
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
 
             <div className="flex items-center gap-2 sm:gap-4">
               <Link
@@ -263,91 +285,6 @@ export function Navbar() {
                 />
               </button>
             </div>
-          </div>
-
-          <div
-            ref={desktopNavRef}
-            id="desktop-nav-panel"
-            className="hidden lg:block overflow-hidden h-0"
-            aria-hidden={!desktopNavOpen}
-          >
-            <nav
-              className="px-3 sm:px-4 lg:px-6 pb-4 pt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 border-t border-neutral-200/60"
-              role="navigation"
-              aria-label="Navegación principal"
-            >
-              {navItems.map((item, idx) => {
-                const hasChildren = item.children && item.children.length > 0;
-                const isOpen = openDropdown === item.label;
-                const cardRef = (el: HTMLDivElement | null) => {
-                  if (el) desktopNavCardRefs.current[idx] = el;
-                };
-
-                return (
-                  <div
-                    key={item.label}
-                    ref={cardRef}
-                    className="desktop-nav-card relative"
-                    onMouseEnter={() => handleDropdownMouseEnter(item.label)}
-                    onMouseLeave={handleDropdownMouseLeave}
-                  >
-                    {hasChildren ? (
-                      <>
-                        <button
-                          className="w-full flex items-center justify-between text-sm font-medium text-neutral-700 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-                          aria-expanded={isOpen}
-                          aria-haspopup="true"
-                        >
-                          {t(item.label)}
-                          <MorphIcon
-                            icon={isOpen ? CHEVRON_RIGHT : CHEVRON_DOWN}
-                            size={16}
-                            spring="snappy"
-                            reducedMotion="user"
-                            aria-hidden="true"
-                          />
-                        </button>
-                        <AnimatePresence>
-                          {isOpen && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -8 }}
-                              transition={springTransition}
-                              className="absolute top-full left-0 mt-2 w-56 bg-white/90 backdrop-blur-xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/60 py-2 ring-1 ring-black/5 z-50"
-                              role="menu"
-                            >
-                              {item.children!.map((child) => (
-                                <Link
-                                  key={child.label}
-                                  href={child.href ?? "#"}
-                                  className="block px-4 py-2 text-sm text-neutral-600 hover:text-black hover:bg-neutral-50/80 transition-colors"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    setOpenDropdown(null);
-                                    setDesktopNavOpen(false);
-                                  }}
-                                >
-                                  {t(child.label)}
-                                </Link>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </>
-                    ) : (
-                      <a
-                        href={item.href}
-                        className="block text-sm font-medium text-neutral-700 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80"
-                        onClick={() => setDesktopNavOpen(false)}
-                      >
-                        {t(item.label)}
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
           </div>
         </div>
 
