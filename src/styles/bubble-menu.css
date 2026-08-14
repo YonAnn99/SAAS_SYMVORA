@@ -3,3 +3,9 @@
   transform-origin: 50% 50%;
   will-change: transform;
 }
+
+.desktop-nav-card {
+  display: block;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
