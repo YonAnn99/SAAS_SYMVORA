@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 
 // Rate limit en memoria: 5 requests / minuto / IP
 const rateLimitMap = new Map<string, number[]>();

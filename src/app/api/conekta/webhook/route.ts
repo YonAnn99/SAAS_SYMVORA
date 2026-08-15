@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 
 const conektaWebhookPublicKey = process.env.CONEKTA_WEBHOOK_PUBLIC_KEY;
 const legacyWebhookSecret = process.env.CONEKTA_WEBHOOK_SECRET;

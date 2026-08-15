@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
-} from "@/lib/supabase/server";
+} from "@/lib/supabase/server.server";
 import type { UserRole } from "@/lib/types/database";
 import { DEMO_USER_EMAIL } from "@/lib/supabase/demo-guard";
 

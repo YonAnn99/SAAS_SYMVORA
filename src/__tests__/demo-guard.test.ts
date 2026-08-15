@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getUserMock = vi.fn();
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/lib/supabase/server.server", () => ({
   createSupabaseServerClient: () => ({
     auth: {
       getUser: () => getUserMock(),

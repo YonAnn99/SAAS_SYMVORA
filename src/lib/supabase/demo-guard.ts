@@ -13,7 +13,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server.server";
 
 export const DEMO_USER_EMAIL = "demo@symvora.com";
 

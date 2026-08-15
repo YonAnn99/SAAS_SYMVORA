@@ -1,4 +1,4 @@
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 
 const IVA_RATE = 0.16;
 

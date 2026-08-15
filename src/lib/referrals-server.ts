@@ -1,4 +1,4 @@
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 
 export async function getReferrerBusinessName(code: string): Promise<string | null> {
   const clean = code.trim();

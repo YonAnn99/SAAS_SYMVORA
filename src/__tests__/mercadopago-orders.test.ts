@@ -6,7 +6,7 @@ import {
 
 const productsMock = vi.fn();
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/lib/supabase/server.server", () => ({
   createSupabaseServiceRoleClient: () => ({
     from: () => ({
       select: () => ({

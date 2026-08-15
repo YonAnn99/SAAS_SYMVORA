@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server.server";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
 
 const acceptSchema = z.object({

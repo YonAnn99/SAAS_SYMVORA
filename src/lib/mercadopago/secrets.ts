@@ -1,4 +1,4 @@
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { getFiscalSecretKey } from "@/lib/cfdi/fiscal-secrets";
 
 export const MP_ACCESS_TOKEN_SECRET = "mercado_pago_access_token";
