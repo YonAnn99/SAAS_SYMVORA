@@ -491,7 +491,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             {t("referrals.subtitle")}
           </p>
 
-          {subscription?.status === "active" && referralCode ? (
+          {referralCode ? (
             <>
               <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
                 <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -524,13 +524,15 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 <MessageCircle className="mr-2 h-4 w-4" />
                 {t("referrals.shareWhatsapp")}
               </Button>
+
+              {subscription?.status !== "active" && (
+                <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-sm text-muted-foreground">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                  <span>{t("referrals.inactiveNote")}</span>
+                </div>
+              )}
             </>
-          ) : (
-            <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-sm text-muted-foreground">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-              <span>{t("referrals.inactiveNote")}</span>
-            </div>
-          )}
+          ) : null}
 
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg border p-3">
