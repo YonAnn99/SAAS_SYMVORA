@@ -58,3 +58,15 @@ export async function getOrder(orderId: string) {
   const response = await ordersApi.getOrderById(orderId);
   return response.data;
 }
+
+export async function refundOrder(params: {
+  orderId: string;
+  amountCents: number;
+  reason: string;
+}) {
+  const response = await ordersApi.orderRefund(params.orderId, {
+    amount: params.amountCents,
+    reason: params.reason,
+  });
+  return response.data;
+}

@@ -31,6 +31,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
+import { generateReferralCode, getReferralSignupUrl } from "@/lib/referrals";
 import { toast } from "sonner";
 import {
   CreditCard,
@@ -39,6 +40,13 @@ import {
   ExternalLink,
   Calendar,
   History,
+  Gift,
+  Copy,
+  Check,
+  MessageCircle,
+  Users,
+  Info,
+  Link2,
 } from "lucide-react";
 
 interface Subscription {
@@ -51,6 +59,14 @@ interface Subscription {
   last_payment_at: string | null;
   next_payment_due: string | null;
   conekta_customer_id: string | null;
+  creditos_mes_gratis: number;
+}
+
+interface ReferralRecord {
+  id: string;
+  estado: string;
+  registrado_en: string | null;
+  convertido_en: string | null;
 }
 
 interface PaymentRecord {
@@ -75,6 +91,9 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [referralCode, setReferralCode] = useState<string>("");
+  const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
+  const [copied, setCopied] = useState(false);
 
   const fetchSubscription = async () => {
     if (!tenantId) {
@@ -101,6 +120,24 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
 
         if (paymentData) setPayments(paymentData);
       }
+
+      const { data: tenantData } = await supabase
+        .from("tenants")
+        .select("codigo_referido")
+        .eq("id", tenantId)
+        .single();
+
+      setReferralCode(
+        tenantData?.codigo_referido || generateReferralCode(tenantId)
+      );
+
+      const { data: referralData } = await supabase
+        .from("referidos")
+        .select("id, estado, registrado_en, convertido_en")
+        .eq("tenant_referidor_id", tenantId)
+        .order("creado_en", { ascending: false });
+
+      if (referralData) setReferrals(referralData);
     } catch (error) {
       console.error("Error fetching subscription:", error);
     } finally {
@@ -245,6 +282,12 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             Fallido
           </Badge>
         );
+      case "credited":
+        return (
+          <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 text-[10px]">
+            {t("referrals.credited")}
+          </Badge>
+        );
       default:
         return (
           <Badge variant="secondary" className="text-[10px]">
@@ -269,6 +312,25 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       default:
         return method;
     }
+  };
+
+  const referralUrl = getReferralSignupUrl(referralCode);
+
+  const handleCopyReferral = async () => {
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const message = encodeURIComponent(
+      `${t("referrals.whatsappMessage")} ${referralUrl}`
+    );
+    window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
   if (!tenantLoading && !tenantId) {
@@ -418,6 +480,119 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       </div>
 
       <Card className="animate-fade-in-up stagger-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Gift className="h-4 w-4 text-muted-foreground" />
+            {t("referrals.title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t("referrals.subtitle")}
+          </p>
+
+          {subscription?.status === "active" && referralCode ? (
+            <>
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
+                <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="flex-1 truncate text-sm font-mono">
+                  {referralUrl}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 shrink-0"
+                  onClick={handleCopyReferral}
+                >
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  <span className="ml-1.5">
+                    {copied ? t("referrals.copied") : t("referrals.copy")}
+                  </span>
+                </Button>
+              </div>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={handleShareWhatsApp}
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {t("referrals.shareWhatsapp")}
+              </Button>
+            </>
+          ) : (
+            <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-sm text-muted-foreground">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <span>{t("referrals.inactiveNote")}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-lg border p-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                {t("referrals.referralsCount")}
+              </div>
+              <div className="mt-1 text-xl font-semibold">
+                {referrals.length}
+              </div>
+            </div>
+            <div className="rounded-lg border p-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Gift className="h-3.5 w-3.5" />
+                {t("referrals.monthsWon")}
+              </div>
+              <div className="mt-1 text-xl font-semibold">
+                {referrals.filter((r) => r.estado === "CONVERTIDO").length}
+              </div>
+            </div>
+            <div className="rounded-lg border p-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CheckCircle className="h-3.5 w-3.5" />
+                {t("referrals.creditsAvailable")}
+              </div>
+              <div className="mt-1 text-xl font-semibold">
+                {subscription?.creditos_mes_gratis ?? 0}
+              </div>
+            </div>
+          </div>
+
+          {referrals.length > 0 && (
+            <div className="space-y-2">
+              {referrals.map((r) => {
+                const refDate = r.registrado_en || r.convertido_en;
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                  >
+                    <span className="text-muted-foreground">
+                      {refDate
+                        ? new Date(refDate).toLocaleDateString(locale)
+                        : "—"}
+                    </span>
+                    <Badge
+                      variant={r.estado === "CONVERTIDO" ? "default" : "secondary"}
+                      className="text-[10px]"
+                    >
+                      {r.estado === "CONVERTIDO"
+                        ? t("referrals.converted")
+                        : t("referrals.registered")}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="animate-fade-in-up stagger-5">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />

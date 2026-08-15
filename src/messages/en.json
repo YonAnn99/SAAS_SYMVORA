@@ -119,7 +119,24 @@
     "continueWithMicrosoft": "Continue with Microsoft",
     "orContinueWith": "Or continue with email",
     "oauthAccountNotFound": "We couldn't find an account with this provider. Please sign up first.",
-    "oauthGenericError": "Error signing in with the provider"
+    "oauthGenericError": "Error signing in with the provider",
+    "referralInvite": "Invited by {business}"
+  },
+  "referrals": {
+    "title": "Referral Program",
+    "subtitle": "Invite another business with your link. When they pay their first month, you both get a free month.",
+    "yourLink": "Your invite link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "shareWhatsapp": "Share on WhatsApp",
+    "whatsappMessage": "I invite you to try SYMVORA, the loyalty points system for your business. If you pay your first month, we both get a free month!",
+    "inactiveNote": "Activate your subscription to unlock your referral link and start earning free months.",
+    "referralsCount": "Invited",
+    "monthsWon": "Months won",
+    "creditsAvailable": "Available",
+    "registered": "Registered",
+    "converted": "Converted (paid)",
+    "credited": "Free month applied"
   },
   "toast": {
     "success": {

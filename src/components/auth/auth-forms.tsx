@@ -84,7 +84,15 @@ function convertToWebP(file: File): Promise<File> {
 
 type AuthMode = "login" | "signup";
 
-export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode }) {
+export function AuthForms({
+  initialMode = "login",
+  referralCode = null,
+  referrerBusinessName = null,
+}: {
+  initialMode?: AuthMode;
+  referralCode?: string | null;
+  referrerBusinessName?: string | null;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
@@ -398,6 +406,7 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
         p_giro_comercial: giroComercial,
         p_configuracion_json: configuracionJson,
         p_logo_url: logoUrl,
+        p_referral_code: referralCode || undefined,
       }
     );
 
@@ -463,6 +472,15 @@ export function AuthForms({ initialMode = "login" }: { initialMode?: AuthMode })
             {signupError && (
               <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive text-center">
                 {signupError}
+              </div>
+            )}
+
+            {referralCode && referrerBusinessName && (
+              <div
+                className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800 text-center leading-relaxed"
+                role="note"
+              >
+                {t("auth.referralInvite", { business: referrerBusinessName })}
               </div>
             )}
 

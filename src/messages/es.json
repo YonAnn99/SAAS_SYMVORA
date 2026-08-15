@@ -119,7 +119,24 @@
     "continueWithMicrosoft": "Continuar con Microsoft",
     "orContinueWith": "O continúa con email",
     "oauthAccountNotFound": "No encontramos una cuenta con este proveedor. Regístrate primero.",
-    "oauthGenericError": "Error al iniciar sesión con el proveedor"
+    "oauthGenericError": "Error al iniciar sesión con el proveedor",
+    "referralInvite": "Te invitó {business}"
+  },
+  "referrals": {
+    "title": "Programa de Referidos",
+    "subtitle": "Invita a otro negocio con tu enlace. Cuando paguen su primer mes, ambos ganan un mes gratis.",
+    "yourLink": "Tu enlace de invitación",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "shareWhatsapp": "Compartir por WhatsApp",
+    "whatsappMessage": "Te invito a probar SYMVORA, el sistema de puntos para tu negocio. Si pagas tu primer mes, ¡los dos ganamos un mes gratis!",
+    "inactiveNote": "Activa tu suscripción para desbloquear tu enlace de referidos y empezar a ganar meses gratis.",
+    "referralsCount": "Invitados",
+    "monthsWon": "Meses ganados",
+    "creditsAvailable": "Disponibles",
+    "registered": "Registrado",
+    "converted": "Convertido (pagó)",
+    "credited": "Mes gratis aplicado"
   },
   "toast": {
     "success": {
