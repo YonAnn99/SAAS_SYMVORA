@@ -12,7 +12,7 @@ import {
 } from "./animations";
 import { WhatsAppLogo } from "./whatsapp-logo";
 
-const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
+export const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
 
 const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";

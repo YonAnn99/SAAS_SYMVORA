@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
+import { JsonLd } from "@/components/marketing/json-ld";
+import { getSiteUrl } from "@/lib/site";
+import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import "./globals.css";
 import "sonner/dist/styles.css";
 
@@ -36,6 +39,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
+  const siteUrl = getSiteUrl();
+  const org = organizationSchema(siteUrl, {
+    description:
+      "Sistema de punto de venta, inventarios y facturación CFDI 4.0 para PyMEs mexicanas.",
+  });
+  const site = websiteSchema(siteUrl);
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -43,6 +52,8 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >
         <Providers>{children}</Providers>
+        <JsonLd id="ld-organization" data={org} />
+        <JsonLd id="ld-website" data={site} />
       </body>
     </html>
   );
