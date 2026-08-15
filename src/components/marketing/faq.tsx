@@ -12,7 +12,11 @@ import {
 } from "./animations";
 import { WhatsAppLogo } from "./whatsapp-logo";
 
-export const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
+// FAQ_KEYS se mantiene local (no export) porque este archivo es "use client".
+// El Server Component src/app/[locale]/page.tsx declara su propia copia
+// para evitar el bug "FAQ_KEYS.map is not a function" al cruzar el
+// boundary server→client (Next.js serializa referencias, no valores).
+const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
 
 const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";

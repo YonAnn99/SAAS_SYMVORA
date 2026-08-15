@@ -1,3 +1,9 @@
+// FAQ_KEYS debe vivir aquí (Server Component) — NO se puede importar
+// desde faq.tsx porque tiene "use client" y al cruzar el boundary
+// server→client se serializa como referencia, no como array literal.
+// En runtime resultaba en: "TypeError: o.FAQ_KEYS.map is not a function"
+const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
+
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Navbar } from "@/components/marketing/navbar";
@@ -11,7 +17,7 @@ import { SecuritySection } from "@/components/marketing/security-section";
 import { Benefits } from "@/components/marketing/benefits";
 import { Integrations } from "@/components/marketing/integrations";
 import { Setup } from "@/components/marketing/setup";
-import { FAQ, FAQ_KEYS } from "@/components/marketing/faq";
+import { FAQ } from "@/components/marketing/faq";
 import { CTA } from "@/components/marketing/cta";
 import { AboutUs } from "@/components/marketing/about-us";
 import { Footer } from "@/components/marketing/footer";
