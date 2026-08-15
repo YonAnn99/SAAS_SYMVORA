@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { AuthForms } from "@/components/auth/auth-forms";
-import { getReferrerBusinessName } from "@/lib/referrals";
+import { getReferrerBusinessName } from "@/lib/referrals-server";
 
 export default async function AuthPage({
   searchParams,
