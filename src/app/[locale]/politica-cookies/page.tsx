@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/marketing/legal-shell";
+import { PRIVACY_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "Política de Cookies | SYMVORA",
@@ -73,7 +74,7 @@ export default function PoliticaCookiesPage() {
 
       <h2>6. Contacto</h2>
       <p>
-        Para cualquier duda sobre esta Política, contacte a [privacidad@symvora.com].
+        Para cualquier duda sobre esta Política, contacte a <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">{PRIVACY_EMAIL}</a>.
       </p>
     </LegalShell>
   );

@@ -1,10 +1,11 @@
 import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
+import { NO_REPLY_EMAIL } from "@/lib/contact";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
 function getFromAddress(): string {
-  return process.env.RESEND_FROM_EMAIL || "SYMVORA <hola@symvora.mx>";
+  return process.env.RESEND_FROM_EMAIL || `SYMVORA <${NO_REPLY_EMAIL}>`;
 }
 
 export async function sendWelcomeEmail(params: {

@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/marketing/legal-shell";
+import { PRIVACY_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "Aviso de Privacidad | SYMVORA",
@@ -22,7 +23,7 @@ export default function AvisoPrivacidadPage() {
       <h2>1. Responsable de los datos</h2>
       <p>
         El responsable del tratamiento de sus datos personales es SYMVORA, con domicilio
-        en [Domicilio del responsable] y correo de contacto [privacidad@symvora.com].
+        en [Domicilio del responsable] y correo de contacto <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">{PRIVACY_EMAIL}</a>.
       </p>
 
       <h2>2. Datos personales que recabamos</h2>
@@ -70,7 +71,7 @@ export default function AvisoPrivacidadPage() {
         De manera adicional, podremos usar sus datos para finalidades secundarias como
         el envío de comunicaciones sobre la Plataforma y encuestas de satisfacción.
         En todo caso, usted puede oponerse al uso de sus datos con fines secundarios o
-        revocar su consentimiento enviando una solicitud a [privacidad@symvora.com].
+        revocar su consentimiento enviando una solicitud a <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">{PRIVACY_EMAIL}</a>.
       </p>
 
       <h2>4. Datos de los clientes finales del usuario</h2>
@@ -135,7 +136,7 @@ export default function AvisoPrivacidadPage() {
       <p>
         Usted o su representante legal podrán ejercer los derechos de Acceso,
         Rectificación, Cancelación y Oposición (derechos ARCO), así como revocar el
-        consentimiento otorgado, enviando una solicitud al correo [privacidad@symvora.com],
+        consentimiento otorgado, enviando una solicitud al correo <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">{PRIVACY_EMAIL}</a>,
         con: (i) su nombre y correo registrado; (ii) una descripción clara y precisa de
         los datos respecto de los cuales busca ejercer alguno de los derechos; y (iii)
         cualquier otro documento que facilite su localización. Le daremos respuesta en

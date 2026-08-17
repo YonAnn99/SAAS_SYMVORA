@@ -17,6 +17,8 @@ interface FooterColumnItem {
   href?: string;
 }
 
+import { HELLO_EMAIL } from "@/lib/contact";
+
 export function Footer() {
   const t = useTranslations();
   const locale = useLocale();
@@ -116,14 +118,15 @@ export function Footer() {
               >
                 <Globe className="w-5 h-5" />
               </motion.span>
-              <motion.span
+              <motion.a
+                href={`mailto:${HELLO_EMAIL}`}
                 className="w-5 h-5 text-neutral-400 cursor-pointer hover:text-blue-600 transition-colors inline-block"
                 whileHover={{ scale: 1.1, x: 4 }}
                 whileTap={{ scale: 0.9 }}
                 aria-label="Email"
               >
                 <Mail className="w-5 h-5" />
-              </motion.span>
+              </motion.a>
             </motion.div>
           </motion.div>
 

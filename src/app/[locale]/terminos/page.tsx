@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/marketing/legal-shell";
+import { CONTACT_EMAIL, LEGAL_EMAIL, PAYMENTS_EMAIL } from "@/lib/contact";
 
 export const metadata = {
   title: "Términos y Condiciones | SYMVORA",
@@ -70,7 +71,8 @@ export default function TerminosPage() {
         Los servicios se ofrecen mediante planes de suscripción. Los cobros se procesan
         a través del proveedor de pagos (Conekta). El usuario autoriza expresamente el
         cargo correspondiente. La falta de pago podrá dar lugar a la suspensión o
-        cancelación del acceso a la Plataforma.
+        cancelación del acceso a la Plataforma. Para dudas sobre cobros o el estado de
+        tu suscripción, contacta a <a href={`mailto:${PAYMENTS_EMAIL}`} className="underline">{PAYMENTS_EMAIL}</a>.
       </p>
 
       <h2>5.1 Periodo de prueba</h2>
@@ -144,7 +146,7 @@ export default function TerminosPage() {
       <h2>10. Contacto</h2>
       <p>
         Para cualquier duda sobre estos Términos y Condiciones, contacte a
-        [privacidad@symvora.com].
+        <a href={`mailto:${LEGAL_EMAIL}`} className="underline">{LEGAL_EMAIL}</a>.
       </p>
 
       <h2>11. Modificaciones a los Términos</h2>
@@ -166,7 +168,7 @@ export default function TerminosPage() {
       </p>
       <ul>
         <li>
-          <strong>Correo electrónico:</strong> [soporte@symvora.com] — atención de lunes
+          <strong>Correo electrónico:</strong> <a href={`mailto:${CONTACT_EMAIL}`} className="underline">{CONTACT_EMAIL}</a> — atención de lunes
           a viernes, de 9:00 a 18:00 horas (hora del centro de México).
         </li>
         <li>
