@@ -87,7 +87,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute =
     request.nextUrl.pathname.includes("/login") ||
     request.nextUrl.pathname.includes("/signup") ||
-    request.nextUrl.pathname.includes("/auth");
+    request.nextUrl.pathname.includes("/auth") ||
+    request.nextUrl.pathname.includes("/reset-password");
 
   const isLegalRoute = ["/aviso-privacidad", "/terminos", "/politica-cookies"].some(
     (segment) => request.nextUrl.pathname.endsWith(segment)
@@ -105,7 +106,8 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isAuthRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/es/login";
+    const locale = request.nextUrl.pathname.split("/")[1] || "es";
+    url.pathname = `/${locale}/login`;
     return NextResponse.redirect(url);
   }
 

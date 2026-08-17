@@ -44,11 +44,24 @@ export default function ResetPasswordPage() {
       }
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) {
+    const tryRecover = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      if (data.session) {
         setStatus("ready");
+        return;
       }
-    });
+      const code = new URL(window.location.href).searchParams.get("code");
+      if (code) {
+        const { data: exchanged, error } =
+          await supabase.auth.exchangeCodeForSession(code);
+        if (active && !error && exchanged.session) {
+          setStatus("ready");
+        }
+      }
+    };
+
+    tryRecover();
 
     const timer = window.setTimeout(() => {
       if (active) {
