@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     siteName: "SYMVORA",
     images: [
       {
-        url: "/og-symvora-v2.png",
+        url: "/og-symvora-v3.jpg",
         width: 1200,
         height: 630,
         alt: "SYMVORA — Punto de venta, inventario y facturación CFDI 4.0 para PyMEs",
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     title: "SYMVORA — Punto de venta, inventario y CFDI para PyMEs mexicanas",
     description:
       "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
-    images: ["/og-symvora-v2.png"],
+    images: ["/og-symvora-v3.jpg"],
   },
 };
 
