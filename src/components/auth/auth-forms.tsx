@@ -105,6 +105,8 @@ export function AuthForms({
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const turnstileForgotRef = useRef<TurnstileInstance>(null);
+  const [forgotCaptchaToken, setForgotCaptchaToken] = useState<string | null>(null);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -248,22 +250,33 @@ export function AuthForms({
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotError(null);
+
+    if (turnstileSiteKey && !forgotCaptchaToken) {
+      setForgotError(t("auth.captchaRequired") || "Resuelve el captcha para continuar");
+      return;
+    }
+
     setForgotLoading(true);
 
     const supabase = createSupabaseBrowserClient();
     const redirectTo = `${getAppUrl()}/${locale}/reset-password`;
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
       redirectTo,
+      captchaToken: forgotCaptchaToken ?? undefined,
     });
 
     if (error) {
       setForgotError(error.message);
       setForgotLoading(false);
+      turnstileForgotRef.current?.reset();
+      setForgotCaptchaToken(null);
       return;
     }
 
     setForgotLoading(false);
     setForgotSent(true);
+    turnstileForgotRef.current?.reset();
+    setForgotCaptchaToken(null);
   };
 
   const handleOAuth = async (provider: "google" | "azure") => {
@@ -786,6 +799,20 @@ export function AuthForms({
                   onChange={(e) => setForgotEmail(e.target.value)}
                   required
                 />
+
+                {turnstileSiteKey && (
+                  <div style={{ width: "100%", marginBottom: "12px" }}>
+                    <Turnstile
+                      id="cf-turnstile-forgot"
+                      siteKey={turnstileSiteKey}
+                      onSuccess={setForgotCaptchaToken}
+                      onError={() => setForgotCaptchaToken(null)}
+                      onExpire={() => setForgotCaptchaToken(null)}
+                      ref={turnstileForgotRef}
+                    />
+                  </div>
+                )}
+
                 <button type="submit" className="auth-btn" disabled={forgotLoading} style={{ width: "100%" }}>
                   {forgotLoading ? t("common.loading") : t("auth.sendResetLink")}
                 </button>
