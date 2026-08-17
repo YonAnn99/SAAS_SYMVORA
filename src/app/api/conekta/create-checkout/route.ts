@@ -3,7 +3,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://saas-symvora.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.symvora.com.mx";
 
 export async function POST(request: Request) {
   try {

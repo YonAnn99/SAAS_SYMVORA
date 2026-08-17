@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://saas-symvora.vercel.app";
+const DEFAULT_SITE_URL = "https://www.symvora.com.mx";
 
 export function getSiteUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();

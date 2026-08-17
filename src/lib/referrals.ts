@@ -5,6 +5,6 @@ export function generateReferralCode(tenantId: string): string {
 }
 
 export function getReferralSignupUrl(code: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "https://saas-symvora.vercel.app";
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://app.symvora.com.mx";
   return `${base}/es/signup?ref=${encodeURIComponent(code)}`;
 }

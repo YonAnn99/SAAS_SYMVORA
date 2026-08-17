@@ -2,8 +2,58 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
+const APP_HOST = "https://app.symvora.com.mx";
+const MARKETING_HOST = "https://www.symvora.com.mx";
+const PROD_HOSTS = new Set([
+  "app.symvora.com.mx",
+  "www.symvora.com.mx",
+  "symvora.com.mx",
+]);
+const MARKETING_SEGMENTS = [
+  "/marketing",
+  "/terminos",
+  "/aviso-privacidad",
+  "/politica-cookies",
+];
+
+function stripLocale(path: string): string {
+  const match = path.match(/^\/(es|en)(?=\/|$)/);
+  return match ? path.slice(match[0].length) || "/" : path;
+}
+
+function isMarketingPath(path: string): boolean {
+  const clean = stripLocale(path);
+  if (clean === "/") return true;
+  return MARKETING_SEGMENTS.some(
+    (segment) => clean === segment || clean.startsWith(`${segment}/`)
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+
+  const host = request.headers.get("host") ?? "";
+
+  // Host routing: app.symvora.com.mx sirve el sistema, www/apex el marketing.
+  // En dev (localhost) y previews de Vercel no se aplica.
+  if (PROD_HOSTS.has(host)) {
+    const isAppHost = host === "app.symvora.com.mx";
+    const isMarketing = isMarketingPath(request.nextUrl.pathname);
+
+    if (isAppHost && isMarketing) {
+      return NextResponse.redirect(
+        new URL(request.nextUrl.pathname + request.nextUrl.search, MARKETING_HOST),
+        308
+      );
+    }
+
+    if (!isAppHost && !isMarketing) {
+      return NextResponse.redirect(
+        new URL(request.nextUrl.pathname + request.nextUrl.search, APP_HOST),
+        308
+      );
+    }
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

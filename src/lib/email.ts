@@ -37,7 +37,7 @@ export async function sendWelcomeEmail(params: {
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;">
       <div style="text-align:center;margin-bottom:24px;">
-        <img src="https://saas-symvora.vercel.app/symvora-logo.webp" alt="SYMVORA" width="140" style="border-radius:8px;" />
+        <img src="https://www.symvora.com.mx/symvora-logo.webp" alt="SYMVORA" width="140" style="border-radius:8px;" />
       </div>
       <h1 style="font-size:22px;color:#111827;margin:0 0 12px;">
         ¡Bienvenido, ${params.businessName}!
