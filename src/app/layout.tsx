@@ -19,6 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "SYMVORA",
   description: "Plataforma SaaS Multi-Tenant basada en Mini-ERP modular",
 };

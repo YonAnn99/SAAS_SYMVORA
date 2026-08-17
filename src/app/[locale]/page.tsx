@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   description:
     "Sistema de punto de venta e inventarios con facturación CFDI 4.0 para abarrotes, tiendas y comercios en México. Sin comisiones por venta, soporte en español y demo gratuita de 7 días.",
   alternates: {
-    canonical: "/",
+    canonical: "/es",
   },
   robots: {
     index: true,
@@ -53,12 +53,14 @@ export const metadata: Metadata = {
     locale: "es_MX",
     type: "website",
     siteName: "SYMVORA",
+    images: ["/og-symvora.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "SYMVORA — Punto de venta, inventario y CFDI para PyMEs mexicanas",
     description:
       "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
+    images: ["/og-symvora.png"],
   },
 };
 

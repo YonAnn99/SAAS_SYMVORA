@@ -4,6 +4,9 @@ export const metadata = {
   title: "Aviso de Privacidad | SYMVORA",
   description:
     "Aviso de Privacidad Integral de SYMVORA conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.",
+  alternates: {
+    canonical: "/es/aviso-privacidad",
+  },
 };
 
 export default function AvisoPrivacidadPage() {

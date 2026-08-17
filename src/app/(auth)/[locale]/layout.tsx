@@ -1,8 +1,16 @@
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
 import { GradientWaves } from "@/components/auth/gradient-waves";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function AuthLayout({
   children,

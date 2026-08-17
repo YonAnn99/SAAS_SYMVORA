@@ -4,6 +4,9 @@ export const metadata = {
   title: "Política de Cookies | SYMVORA",
   description:
     "Política de Cookies de la Plataforma SYMVORA: qué cookies utilizamos y cómo administrarlas.",
+  alternates: {
+    canonical: "/es/politica-cookies",
+  },
 };
 
 export default function PoliticaCookiesPage() {

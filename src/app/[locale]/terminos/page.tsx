@@ -4,6 +4,9 @@ export const metadata = {
   title: "Términos y Condiciones | SYMVORA",
   description:
     "Términos y Condiciones de uso de la Plataforma SYMVORA.",
+  alternates: {
+    canonical: "/es/terminos",
+  },
 };
 
 export default function TerminosPage() {
