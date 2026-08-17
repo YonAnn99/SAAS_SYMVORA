@@ -30,9 +30,9 @@ import {
 } from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
-  title: "SYMVORA — Punto de venta, inventario y facturación CFDI para PyMEs en México",
+  title: "SYMVORA — POS, inventario y facturación CFDI para PyMEs",
   description:
-    "Sistema de punto de venta e inventarios con facturación CFDI 4.0 para abarrotes, tiendas y comercios en México. Sin comisiones por venta, soporte en español y demo gratuita de 7 días.",
+    "Sistema de punto de venta e inventarios con facturación CFDI 4.0 para PyMEs en México. Sin comisiones por venta y demo gratuita de 7 días.",
   alternates: {
     canonical: "/es",
   },
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "SYMVORA — Punto de venta, inventario y CFDI para PyMEs mexicanas",
+    title: "SYMVORA — POS, inventario y facturación CFDI para PyMEs",
     description:
       "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
     url: "https://www.symvora.com.mx/es",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SYMVORA — Punto de venta, inventario y CFDI para PyMEs mexicanas",
+    title: "SYMVORA — POS, inventario y facturación CFDI para PyMEs",
     description:
       "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
     images: ["/og-symvora-v3.jpg"],
