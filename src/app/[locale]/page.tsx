@@ -50,17 +50,25 @@ export const metadata: Metadata = {
     title: "SYMVORA — Punto de venta, inventario y CFDI para PyMEs mexicanas",
     description:
       "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
+    url: "https://www.symvora.com.mx/es",
     locale: "es_MX",
     type: "website",
     siteName: "SYMVORA",
-    images: ["/og-symvora.png"],
+    images: [
+      {
+        url: "/og-symvora-v2.png",
+        width: 1200,
+        height: 630,
+        alt: "SYMVORA — Punto de venta, inventario y facturación CFDI 4.0 para PyMEs",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "SYMVORA — Punto de venta, inventario y CFDI para PyMEs mexicanas",
     description:
       "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
-    images: ["/og-symvora.png"],
+    images: ["/og-symvora-v2.png"],
   },
 };
 

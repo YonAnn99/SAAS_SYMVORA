@@ -21,7 +21,32 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: "SYMVORA",
-  description: "Plataforma SaaS Multi-Tenant basada en Mini-ERP modular",
+  description:
+    "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+  openGraph: {
+    title: "SYMVORA",
+    description:
+      "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+    url: `${getSiteUrl()}/es`,
+    siteName: "SYMVORA",
+    locale: "es_MX",
+    type: "website",
+    images: [
+      {
+        url: "/og-symvora-v2.png",
+        width: 1200,
+        height: 630,
+        alt: "SYMVORA — Punto de venta, inventario y facturación CFDI 4.0 para PyMEs",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SYMVORA",
+    description:
+      "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+    images: ["/og-symvora-v2.png"],
+  },
 };
 
 export const viewport: Viewport = {

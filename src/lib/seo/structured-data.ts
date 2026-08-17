@@ -116,7 +116,7 @@ export function organizationSchema(
     "@id": organizationId(siteUrl),
     name: "SYMVORA",
     url: siteUrl,
-    logo: `${siteUrl}/icon`,
+    logo: `${siteUrl}/symvora-logo.webp`,
     description: options.description,
     areaServed: [{ "@type": "Country", name: "Mexico" }],
     knowsLanguage: ["es-MX"],
