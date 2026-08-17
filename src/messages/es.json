@@ -120,7 +120,17 @@
     "orContinueWith": "O continúa con email",
     "oauthAccountNotFound": "No encontramos una cuenta con este proveedor. Regístrate primero.",
     "oauthGenericError": "Error al iniciar sesión con el proveedor",
-    "referralInvite": "Te invitó {business}"
+    "referralInvite": "Te invitó {business}",
+    "forgotTitle": "Recupera tu contraseña",
+    "forgotSubtitle": "Te enviaremos un enlace para restablecer tu contraseña.",
+    "forgotSent": "Revisa tu correo. Te enviamos un enlace para restablecer tu contraseña.",
+    "sendResetLink": "Enviar enlace",
+    "backToLogin": "Volver a iniciar sesión",
+    "resetTitle": "Nueva contraseña",
+    "resetSubtitle": "Elige una nueva contraseña para tu cuenta de SYMVORA.",
+    "resetSuccess": "Contraseña actualizada. Ya puedes iniciar sesión.",
+    "resetInvalidLink": "El enlace es inválido o expiró. Solicita uno nuevo.",
+    "resetGoToLogin": "Ir a iniciar sesión"
   },
   "referrals": {
     "title": "Programa de Referidos",

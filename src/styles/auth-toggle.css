@@ -116,6 +116,15 @@
   transition: all 0.6s ease-in-out;
 }
 
+.auth-container.forgot .auth-sign-in {
+  width: 100%;
+  z-index: 5;
+}
+
+.auth-container.forgot .auth-toggle-container {
+  display: none;
+}
+
 .auth-sign-in {
   left: 0;
   width: 50%;

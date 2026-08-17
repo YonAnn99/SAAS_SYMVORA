@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAppUrl } from "@/lib/site";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
 import "@/styles/auth-toggle.css";
@@ -82,7 +83,7 @@ function convertToWebP(file: File): Promise<File> {
   });
 }
 
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "signup" | "forgot";
 
 export function AuthForms({
   initialMode = "login",
@@ -98,6 +99,12 @@ export function AuthForms({
   const locale = useLocale();
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
+
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -236,6 +243,27 @@ export function AuthForms({
     turnstileLoginRef.current?.reset();
     router.push(`/${locale}/dashboard`);
     router.refresh();
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotLoading(true);
+
+    const supabase = createSupabaseBrowserClient();
+    const redirectTo = `${getAppUrl()}/${locale}/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo,
+    });
+
+    if (error) {
+      setForgotError(error.message);
+      setForgotLoading(false);
+      return;
+    }
+
+    setForgotLoading(false);
+    setForgotSent(true);
   };
 
   const handleOAuth = async (provider: "google" | "azure") => {
@@ -464,7 +492,12 @@ export function AuthForms({
   const inputStyle = { width: "100%", marginBottom: "6px" };
 
   return (
-    <div className={`auth-container ${mode === "signup" ? "active" : ""}`} id="authContainer">
+    <div
+      className={`auth-container ${mode === "signup" ? "active" : ""} ${
+        mode === "forgot" ? "forgot" : ""
+      }`}
+      id="authContainer"
+    >
       {/* ── SIGN UP FORM ── */}
       <div className="auth-form-container auth-sign-up">
         <div className="auth-form-scroll">
@@ -722,7 +755,51 @@ export function AuthForms({
 
       {/* ── SIGN IN FORM ── */}
       <div className="auth-form-container auth-sign-in">
-        <form onSubmit={handleLogin} style={{ justifyContent: "center" }}>
+        {mode === "forgot" ? (
+          <form onSubmit={handleForgot} style={{ justifyContent: "center" }}>
+            <div className="auth-form-center">
+              <h1 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "4px", color: "#1a1a1a" }}>
+                {t("auth.forgotTitle")}
+              </h1>
+            </div>
+
+            <span style={{ color: "#555", fontSize: "13px" }}>
+              {t("auth.forgotSubtitle")}
+            </span>
+
+            {forgotError && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive text-center">
+                {forgotError}
+              </div>
+            )}
+
+            {forgotSent ? (
+              <div className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700 text-center">
+                {t("auth.forgotSent")}
+              </div>
+            ) : (
+              <>
+                <input
+                  type="email"
+                  placeholder={t("auth.emailPlaceholder")}
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                />
+                <button type="submit" className="auth-btn" disabled={forgotLoading} style={{ width: "100%" }}>
+                  {forgotLoading ? t("common.loading") : t("auth.sendResetLink")}
+                </button>
+              </>
+            )}
+
+            <div className="auth-form-link">
+              <button type="button" onClick={() => setMode("login")}>
+                {t("auth.backToLogin")}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin} style={{ justifyContent: "center" }}>
           <div className="auth-form-center">
             <h1 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "4px", color: "#1a1a1a" }}>
               {t("auth.login")}
@@ -771,9 +848,22 @@ export function AuthForms({
             className="auth-password-input"
           />
 
-          <a href="#" style={{ alignSelf: "flex-start", margin: "5px 0 15px", color: "#333", fontSize: "13px" }}>
+          <button
+            type="button"
+            onClick={() => setMode("forgot")}
+            style={{
+              alignSelf: "flex-start",
+              margin: "5px 0 15px",
+              color: "#333",
+              fontSize: "13px",
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+            }}
+          >
             {t("auth.forgotPassword")}
-          </a>
+          </button>
 
           {turnstileSiteKey && (
             <div style={{ width: "100%", marginBottom: "12px" }}>
@@ -799,9 +889,11 @@ export function AuthForms({
             </button>
           </div>
         </form>
+        )}
       </div>
 
       {/* ── TOGGLE PANEL ── */}
+      {mode !== "forgot" && (
       <div className="auth-toggle-container">
         <div className="auth-toggle">
           <div className="auth-toggle-panel auth-toggle-left">
@@ -831,6 +923,7 @@ export function AuthForms({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
