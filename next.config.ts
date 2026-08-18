@@ -12,9 +12,9 @@ function securityHeaders() {
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://js.sentry-cdn.com" +
       (isDev ? " 'unsafe-eval'" : ""),
-    "style-src 'self' 'unsafe-inline' https://unpkg.com",
+    "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com",
     "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://lh3.googleusercontent.com",
-    "font-src 'self' data: https://unpkg.com",
+    "font-src 'self' data: https://unpkg.com https://fonts.gstatic.com",
     "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.conekta.io https://*.conekta.io https://*.sentry.io https://challenges.cloudflare.com" +
       (isDev ? " ws://localhost:*" : ""),
     "frame-src https://challenges.cloudflare.com https://*.conekta.io",

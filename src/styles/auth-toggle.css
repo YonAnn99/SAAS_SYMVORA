@@ -440,7 +440,7 @@
   font-family: inherit;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
   .auth-container {
     min-height: 100vh;
     border-radius: 0;
