@@ -111,11 +111,11 @@ export default function BubbleMenu({
 
       <nav className={containerClassName} style={style} aria-label="Main navigation">
         <div
-          className="bubble logo-bubble inline-flex items-center justify-center rounded-full bg-white shadow-[0_4px_16px_rgba(0,0,0,0.12)] pointer-events-auto h-12 md:h-14 px-4 md:px-8 gap-2 will-change-transform transition-colors duration-300"
+          className="bubble logo-bubble inline-flex items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.12)] pointer-events-auto h-10 md:h-12 px-4 md:px-6 gap-2 will-change-transform transition-colors duration-300 overflow-hidden"
           aria-label="Logo"
-          style={{ background: menuBg, minHeight: '48px', borderRadius: '9999px' }}
+          style={{ background: menuBg, borderRadius: '9999px' }}
         >
-          <span className="logo-content inline-flex items-center justify-center w-auto h-full">
+          <span className="logo-content inline-flex items-center justify-center w-auto h-full overflow-hidden">
             {logo}
           </span>
         </div>

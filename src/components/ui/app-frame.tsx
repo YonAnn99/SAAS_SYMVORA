@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import BubbleMenu from "./bubble-menu";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
@@ -10,7 +9,18 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         
         <div className="md:hidden">
           <BubbleMenu
-            logo={<Image src="/symvora-logo.webp" alt="SYMVORA" width={110} height={24} className="object-contain dark:brightness-0 dark:invert transition-all" />}
+            logo={
+              <div className="w-[100px] h-[28px] overflow-hidden">
+                <img 
+                  src="/symvora-logo.webp" 
+                  alt="SYMVORA" 
+                  width="100" 
+                  height="28"
+                  className="w-full h-full object-contain dark:brightness-0 dark:invert transition-all"
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
+            }
             menuBg="var(--bubble-bg)"
             menuContentColor="var(--bubble-text)"
             useFixedPosition={false}
@@ -19,7 +29,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
         <div className="relative flex-1 bg-white dark:bg-zinc-900 rounded-[32px] sm:rounded-[40px] overflow-hidden shadow-2xl flex flex-col">
           
-          <header className="absolute top-0 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-4xl bg-zinc-950 text-white rounded-b-[24px] sm:rounded-b-[32px] px-6 py-4 z-50 items-center justify-between shadow-sm h-[72px] hidden md:flex">
+          <header className="absolute top-0 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-4xl bg-zinc-950 text-white rounded-b-[24px] sm:rounded-b-[32px] px-6 py-4 z-50 items-center justify-between shadow-sm h-[88px] hidden md:flex">
             
             <svg className="absolute -top-[1px] -left-6 w-6 h-[26px] text-zinc-950" viewBox="0 0 24 24" fill="currentColor">
               <path d="M24 24V0H0C13.2548 0 24 10.7452 24 24Z" />
@@ -29,14 +39,18 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
               <path d="M0 24V0H24C10.7452 0 0 10.7452 0 24Z" />
             </svg>
 
-            <div className="flex items-center">
-              <Image 
-                src="/symvora-logo.webp" 
-                alt="SYMVORA" 
-                width={140} 
-                height={30} 
-                className="object-contain brightness-0 invert"
-              />
+            <div className="flex items-center gap-3">
+              <div className="w-[80px] h-[56px] flex-shrink-0 overflow-hidden">
+                <img 
+                  src="/symvora-logo.webp" 
+                  alt="SYMVORA" 
+                  width="80" 
+                  height="56"
+                  className="w-full h-full object-contain brightness-0 invert"
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
+              <span className="font-semibold text-lg tracking-tight text-white hidden sm:block">SYMVORA</span>
             </div>
 
             <nav className="flex items-center gap-8 text-sm font-medium text-zinc-300">
@@ -55,7 +69,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto overflow-x-hidden pt-24 md:pt-28 pb-10 scrollbar-hide">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden pt-28 md:pt-32 pb-10 scrollbar-hide">
             {children}
           </main>
         </div>
