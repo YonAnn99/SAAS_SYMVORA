@@ -24,7 +24,7 @@ export function CFDISection() {
 
   return (
     <motion.section
-      className="w-full py-24 bg-white"
+      className="w-full py-24 bg-white dark:bg-[#0C0C0C]"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -40,7 +40,7 @@ export function CFDISection() {
           transition={easeOutShort}
         >
           <motion.div
-            className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full w-max border border-blue-100"
+            className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full w-max border border-blue-100 dark:border-blue-500/20"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={easeOutShort}
@@ -50,7 +50,7 @@ export function CFDISection() {
             </span>
           </motion.div>
           <motion.h2
-            className="text-3xl sm:text-4xl font-bold text-black leading-tight"
+            className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50 leading-tight"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...easeOutShort, delay: 0.1 }}
@@ -58,7 +58,7 @@ export function CFDISection() {
             {t("landing.cfdi.title")}
           </motion.h2>
           <motion.p
-            className="text-lg text-neutral-500 leading-relaxed"
+            className="text-lg text-neutral-500 dark:text-neutral-400 leading-relaxed"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...easeOutShort, delay: 0.2 }}
@@ -87,13 +87,13 @@ export function CFDISection() {
           {features.map(({ key, icon: Icon }) => (
             <motion.div
               key={key}
-              className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+              className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
               variants={fadeInUp}
               transition={easeOutLong}
               whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
             >
               <motion.div
-                className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center"
+                className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-lg flex items-center justify-center"
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.1, ...springIcon }}
@@ -101,7 +101,7 @@ export function CFDISection() {
                 <Icon className="w-5 h-5" aria-hidden="true" />
               </motion.div>
               <motion.h3
-                className="text-sm font-bold text-black"
+                className="text-sm font-bold text-black dark:text-neutral-50"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, ...easeOutShort }}
@@ -109,7 +109,7 @@ export function CFDISection() {
                 {t(`landing.cfdi.features.${key}.title`)}
               </motion.h3>
               <motion.p
-                className="text-xs text-neutral-500 leading-relaxed"
+                className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, ...easeOutShort }}

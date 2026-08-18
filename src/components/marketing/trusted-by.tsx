@@ -21,7 +21,7 @@ export function TrustedBy() {
 
   return (
     <motion.section
-      className="w-full bg-neutral-50 border-y border-neutral-200 py-8"
+      className="w-full bg-neutral-50 dark:bg-neutral-900 border-y border-neutral-200 dark:border-neutral-800 py-8"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -29,7 +29,7 @@ export function TrustedBy() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
         <motion.p
-          className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-6 text-center"
+          className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-6 text-center"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -47,7 +47,7 @@ export function TrustedBy() {
           {logos.map((logo) => (
             <motion.span
               key={logo.name}
-              className={`text-lg sm:text-xl text-neutral-600 ${logo.className}`}
+              className={`text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 ${logo.className}`}
               variants={fadeInUpSmall}
               transition={easeOutLong}
               whileHover={{ opacity: 1, scale: 1.05 }}

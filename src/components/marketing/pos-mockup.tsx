@@ -16,25 +16,25 @@ export function PosMockup() {
   const t = useTranslations();
 
   return (
-    <div className="bg-white rounded-xl border border-neutral-200 shadow-2xl overflow-hidden flex flex-col h-full">
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 bg-neutral-50">
+    <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col h-full">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60">
         <span className="w-3 h-3 rounded-full bg-red-400" aria-hidden="true" />
         <span className="w-3 h-3 rounded-full bg-amber-400" aria-hidden="true" />
         <span className="w-3 h-3 rounded-full bg-emerald-400" aria-hidden="true" />
-        <span className="ml-3 text-xs text-neutral-500 font-medium">SYMVORA · POS</span>
+        <span className="ml-3 text-xs text-neutral-500 dark:text-neutral-400 font-medium">SYMVORA · POS</span>
       </div>
 
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center gap-2">
-        <Search className="w-4 h-4 text-neutral-400 shrink-0" aria-hidden="true" />
-        <span className="text-xs text-neutral-400 truncate">
+      <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-2">
+        <Search className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0" aria-hidden="true" />
+        <span className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
           {t("landing.hero.mockup.searchPlaceholder")}
         </span>
-        <Barcode className="w-4 h-4 text-neutral-400 ml-auto shrink-0" aria-hidden="true" />
+        <Barcode className="w-4 h-4 text-neutral-400 dark:text-neutral-500 ml-auto shrink-0" aria-hidden="true" />
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 p-3 grid grid-cols-2 gap-2 content-start overflow-hidden">
-          <span className="col-span-2 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+          <span className="col-span-2 text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
             {t("landing.hero.mockup.products")}
           </span>
           {items.map((item, i) => (
@@ -43,13 +43,13 @@ export function PosMockup() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 + i * 0.08, ...easeOutShort }}
-              className="border border-neutral-200 rounded-lg p-2 hover:border-blue-400 transition-colors cursor-pointer"
+              className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 hover:border-blue-400 dark:hover:border-blue-900 transition-colors cursor-pointer"
             >
-              <div className="text-[11px] font-medium text-neutral-900 truncate leading-tight">
+              <div className="text-[11px] font-medium text-neutral-900 dark:text-neutral-100 truncate leading-tight">
                 {t(`landing.hero.mockup.items.${item.key}`)}
               </div>
               <div className="flex items-center justify-between mt-1.5">
-                <span className="text-xs font-bold text-neutral-900">${item.price}</span>
+                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">${item.price}</span>
                 <motion.span
                   className="w-5 h-5 bg-blue-600 text-white rounded flex items-center justify-center"
                   whileHover={{ scale: 1.15 }}
@@ -64,13 +64,13 @@ export function PosMockup() {
           ))}
         </div>
 
-        <div className="w-[42%] border-l border-neutral-200 p-3 flex flex-col bg-neutral-50">
+        <div className="w-[42%] border-l border-neutral-200 dark:border-neutral-800 p-3 flex flex-col bg-neutral-50 dark:bg-neutral-800/40">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1">
+            <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-1">
               <ShoppingCart className="w-3 h-3" aria-hidden="true" />
               {t("landing.hero.mockup.cart")}
             </span>
-            <span className="text-[10px] text-neutral-400">3</span>
+            <span className="text-[10px] text-neutral-400 dark:text-neutral-500">3</span>
           </div>
 
           <div className="flex-1 space-y-1.5 overflow-hidden">
@@ -84,27 +84,27 @@ export function PosMockup() {
                 initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.2 + i * 0.1, ...easeOutShort }}
-                className="bg-white border border-neutral-200 rounded px-2 py-1.5 flex items-center gap-1"
+                className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded px-2 py-1.5 flex items-center gap-1"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-medium text-neutral-900 truncate">
+                  <div className="text-[10px] font-medium text-neutral-900 dark:text-neutral-100 truncate">
                     {row.name}
                   </div>
-                  <div className="text-[9px] text-neutral-500">
+                  <div className="text-[9px] text-neutral-500 dark:text-neutral-400">
                     {row.qty} × ${row.price}
                   </div>
                 </div>
-                <X className="w-3 h-3 text-neutral-300" aria-hidden="true" />
+                <X className="w-3 h-3 text-neutral-300 dark:text-neutral-600" aria-hidden="true" />
               </motion.div>
             ))}
           </div>
 
-          <div className="mt-2 pt-2 border-t border-neutral-200 space-y-1">
-            <div className="flex justify-between text-[10px] text-neutral-500">
+          <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-1">
+            <div className="flex justify-between text-[10px] text-neutral-500 dark:text-neutral-400">
               <span>{t("landing.hero.mockup.subtotal")}</span>
               <span>$126.00</span>
             </div>
-            <div className="flex justify-between text-xs font-bold text-neutral-900">
+            <div className="flex justify-between text-xs font-bold text-neutral-900 dark:text-neutral-50">
               <span>{t("landing.hero.mockup.total")}</span>
               <span>$146.16</span>
             </div>

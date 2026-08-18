@@ -24,7 +24,7 @@ export function Setup() {
 
   return (
     <motion.section
-      className="w-full py-24 bg-white"
+      className="w-full py-24 bg-white dark:bg-[#0C0C0C]"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -39,7 +39,7 @@ export function Setup() {
           transition={easeOutShort}
         >
           <motion.div
-            className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100"
+            className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-500/20"
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -50,7 +50,7 @@ export function Setup() {
             </span>
           </motion.div>
           <motion.h2
-            className="text-3xl sm:text-4xl font-bold text-black"
+            className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -59,7 +59,7 @@ export function Setup() {
             {t("landing.setup.title")}
           </motion.h2>
           <motion.p
-            className="text-lg text-neutral-500"
+            className="text-lg text-neutral-500 dark:text-neutral-400"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -84,7 +84,7 @@ export function Setup() {
               transition={easeOutLong}
             >
               <motion.div
-                className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 relative z-10"
+                className="w-14 h-14 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 dark:border-blue-500/20 relative z-10"
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.1, ...springIcon }}
@@ -93,7 +93,7 @@ export function Setup() {
                 <Icon className="w-6 h-6" aria-hidden="true" />
               </motion.div>
               <motion.span
-                className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100"
+                className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-500/20"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, ...easeOutShort }}
@@ -101,7 +101,7 @@ export function Setup() {
                 {t("landing.setup.stepLabel")} {key}
               </motion.span>
               <motion.h3
-                className="text-base font-bold text-black"
+                className="text-base font-bold text-black dark:text-neutral-50"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, ...easeOutShort }}
@@ -109,7 +109,7 @@ export function Setup() {
                 {t(`landing.setup.steps.${key}.title`)}
               </motion.h3>
               <motion.p
-                className="text-sm text-neutral-500 leading-relaxed"
+                className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, ...easeOutShort }}
@@ -118,7 +118,7 @@ export function Setup() {
               </motion.p>
               {index < steps.length - 1 && (
                 <motion.div
-                  className="hidden lg:block absolute top-7 left-[60%] w-[80%] border-t border-dashed border-neutral-300"
+                  className="hidden lg:block absolute top-7 left-[60%] w-[80%] border-t border-dashed border-neutral-300 dark:border-neutral-700"
                   initial={{ width: 0 }}
                   animate={{ width: "80%" }}
                   transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}

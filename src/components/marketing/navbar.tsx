@@ -151,15 +151,15 @@ export function Navbar() {
             mobileOpen
               ? "bg-neutral-900/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
               : scrolled
-                ? "bg-white/75 border border-white/50 shadow-[0_12px_40px_rgba(0,0,0,0.12)]"
-                : "bg-white/50 border border-white/50 shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+                ? "bg-white/75 border border-white/50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:bg-neutral-950/70 dark:border-white/10"
+                : "bg-white/50 border border-white/50 shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:bg-neutral-950/40 dark:border-white/10"
           )}
         >
           <div className="h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
               <Image
                 alt="SYMVORA Logo"
-                className="h-7 sm:h-8 w-auto object-contain"
+                className="h-7 sm:h-8 w-auto object-contain dark:invert"
                 src="/symvora-logo.webp"
                 width={32}
                 height={32}
@@ -167,7 +167,7 @@ export function Navbar() {
               />
               <span
                 className={cn(
-                  "text-lg sm:text-xl font-bold tracking-tight font-[var(--font-montserrat)]",
+                  "text-lg sm:text-xl font-bold tracking-tight font-[var(--font-montserrat)] dark:text-white",
                   mobileOpen ? "text-white" : "text-black"
                 )}
               >
@@ -191,7 +191,7 @@ export function Navbar() {
                     {hasChildren ? (
                       <>
                         <button
-                          className="flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                          className="flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80 dark:text-neutral-300 dark:hover:text-white dark:hover:bg-neutral-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                           aria-expanded={isOpen}
                           aria-haspopup="true"
                         >
@@ -211,14 +211,14 @@ export function Navbar() {
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -8 }}
                               transition={springTransition}
-                              className="absolute top-full left-0 mt-2 w-56 bg-white/90 backdrop-blur-xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/60 py-2 ring-1 ring-black/5 z-50"
+                              className="absolute top-full left-0 mt-2 w-56 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/60 dark:border-white/10 py-2 ring-1 ring-black/5 dark:ring-white/10 z-50"
                               role="menu"
                             >
                               {item.children!.map((child) => (
                                 <Link
                                   key={child.label}
                                   href={child.href ?? "#"}
-                                  className="block px-4 py-2 text-sm text-neutral-600 hover:text-black hover:bg-neutral-50/80 transition-colors"
+                                  className="block px-4 py-2 text-sm text-neutral-600 hover:text-black hover:bg-neutral-50/80 dark:text-neutral-300 dark:hover:text-white dark:hover:bg-neutral-800/60 transition-colors"
                                   role="menuitem"
                                   onClick={() => setOpenDropdown(null)}
                                 >
@@ -232,7 +232,7 @@ export function Navbar() {
                     ) : (
                       <a
                         href={item.href}
-                        className="text-sm font-medium text-neutral-600 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80"
+                        className="text-sm font-medium text-neutral-600 hover:text-black transition-colors px-3 py-2 rounded-lg hover:bg-neutral-100/80 dark:text-neutral-300 dark:hover:text-white dark:hover:bg-neutral-800/60"
                       >
                         {t(item.label)}
                       </a>
@@ -246,7 +246,7 @@ export function Navbar() {
               <Link
                 href="/login"
                 className={cn(
-                  "hidden sm:block text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded",
+                  "hidden sm:block text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded dark:text-neutral-300 dark:hover:text-white",
                   mobileOpen
                     ? "text-neutral-300 hover:text-white"
                     : "text-neutral-600 hover:text-black"
@@ -260,7 +260,7 @@ export function Navbar() {
                   "hidden sm:inline-flex text-sm font-medium px-5 py-2 rounded-lg transition-all active:translate-y-px items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   mobileOpen
                     ? "bg-white text-black hover:bg-neutral-200 focus-visible:ring-white"
-                    : "bg-black text-white hover:bg-neutral-800 focus-visible:ring-neutral-500"
+                    : "bg-black text-white hover:bg-neutral-800 focus-visible:ring-neutral-500 dark:bg-white dark:text-black dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-300"
                 )}
               >
                 {t("landing.nav.cta")}
@@ -268,8 +268,8 @@ export function Navbar() {
               </Link>
               <button
                 className={cn(
-                  "lg:hidden p-2 -mr-1 sm:-mr-2 rounded-lg transition-colors",
-                  mobileOpen ? "text-white hover:bg-white/10" : "text-neutral-900 hover:bg-neutral-100/80"
+                  "lg:hidden p-2 -mr-1 sm:-mr-2 rounded-lg transition-colors dark:text-neutral-100",
+                  mobileOpen ? "text-white hover:bg-white/10" : "text-neutral-900 hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60"
                 )}
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-expanded={mobileOpen}

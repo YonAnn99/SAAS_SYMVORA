@@ -50,7 +50,7 @@ export function WhyChooseUs() {
 
   return (
     <motion.section
-      className="w-full bg-[#1A1A1A] text-white py-24"
+      className="w-full bg-[#1A1A1A] dark:bg-[#141414] text-white py-24"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}

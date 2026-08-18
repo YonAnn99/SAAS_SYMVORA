@@ -51,7 +51,7 @@ export function CTA() {
       transition={easeOutLong}
     >
       <div
-        className="absolute inset-0 opacity-[0.03] z-0 pointer-events-none"
+        className="absolute inset-0 opacity-[0.03] dark:opacity-0 z-0 pointer-events-none"
         style={{
           backgroundImage:
             "radial-gradient(circle at 2px 2px, black 1px, transparent 0)",
@@ -59,8 +59,17 @@ export function CTA() {
         }}
         aria-hidden="true"
       />
+      <div
+        className="absolute inset-0 opacity-0 dark:opacity-[0.04] z-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+          backgroundSize: "32px 32px",
+        }}
+        aria-hidden="true"
+      />
       <motion.div
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center gap-6 bg-white border border-neutral-200 p-8 lg:p-20 rounded-2xl shadow-xl"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center gap-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-8 lg:p-20 rounded-2xl shadow-xl"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
@@ -68,7 +77,7 @@ export function CTA() {
         transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       >
         <motion.div
-          className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 transform -rotate-6 shadow-sm border border-blue-100"
+          className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 transform -rotate-6 shadow-sm border border-blue-100 dark:border-blue-500/20"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: -6 }}
           transition={{ delay: 0.3, ...springIcon }}
@@ -77,7 +86,7 @@ export function CTA() {
           <Rocket className="w-8 h-8 text-blue-600" aria-hidden="true" />
         </motion.div>
         <motion.h2
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black"
+          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black dark:text-neutral-50"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -86,7 +95,7 @@ export function CTA() {
           {t("landing.cta.title")}
         </motion.h2>
         <motion.p
-          className="text-lg text-neutral-500 max-w-2xl mb-2 leading-relaxed"
+          className="text-lg text-neutral-500 dark:text-neutral-400 max-w-2xl mb-2 leading-relaxed"
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -98,7 +107,7 @@ export function CTA() {
         <motion.div
           role="radiogroup"
           aria-label="Periodo de facturación"
-          className="inline-flex items-center bg-neutral-100 rounded-full p-1 border border-neutral-200"
+          className="inline-flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-full p-1 border border-neutral-200 dark:border-neutral-700"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
@@ -110,13 +119,13 @@ export function CTA() {
             aria-checked={!isYearly}
             onClick={() => setBilling("monthly")}
             className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              !isYearly ? "text-white" : "text-neutral-600 hover:text-black"
+              !isYearly ? "text-white dark:text-neutral-900" : "text-neutral-600 hover:text-black dark:text-neutral-300 dark:hover:text-white"
             }`}
           >
             {!isYearly && (
               <motion.span
                 layoutId="billing-pill"
-                className="absolute inset-0 bg-black rounded-full"
+                className="absolute inset-0 bg-neutral-900 dark:bg-white rounded-full"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
             )}
@@ -128,20 +137,20 @@ export function CTA() {
             aria-checked={isYearly}
             onClick={() => setBilling("yearly")}
             className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
-              isYearly ? "text-white" : "text-neutral-600 hover:text-black"
+              isYearly ? "text-white dark:text-neutral-900" : "text-neutral-600 hover:text-black dark:text-neutral-300 dark:hover:text-white"
             }`}
           >
             {isYearly && (
               <motion.span
                 layoutId="billing-pill"
-                className="absolute inset-0 bg-black rounded-full"
+                className="absolute inset-0 bg-neutral-900 dark:bg-white rounded-full"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
             )}
             <span className="relative">{t("landing.cta.yearly")}</span>
             <span
               className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                isYearly ? "bg-emerald-400 text-black" : "bg-emerald-100 text-emerald-700"
+                isYearly ? "bg-emerald-400 text-black" : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
               }`}
             >
               {t("landing.cta.saveBadge")}
@@ -156,8 +165,8 @@ export function CTA() {
           transition={easeOutShort}
           className="flex items-baseline gap-2 mt-2"
         >
-          <span className="text-5xl font-bold text-black">{price}</span>
-          <span className="text-sm text-neutral-500 max-w-[200px] text-left">{period}</span>
+          <span className="text-5xl font-bold text-black dark:text-neutral-50">{price}</span>
+          <span className="text-sm text-neutral-500 dark:text-neutral-400 max-w-[200px] text-left">{period}</span>
         </motion.div>
 
         <motion.div
@@ -183,7 +192,7 @@ export function CTA() {
               >
                 <Check className="w-4 h-4" />
               </motion.span>
-              <span className="text-sm text-neutral-600">
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">
                 {t(`landing.cta.features.${key}`)}
               </span>
             </motion.div>
@@ -213,7 +222,7 @@ export function CTA() {
             href={buildWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-black font-medium px-8 py-4 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-all active:translate-y-px w-full sm:w-auto whitespace-nowrap text-center"
+            className="bg-white dark:bg-transparent text-black dark:text-neutral-100 font-medium px-8 py-4 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:translate-y-px w-full sm:w-auto whitespace-nowrap text-center"
             whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.1)" }}
             whileTap={{ scale: 0.98 }}
           >
@@ -221,7 +230,7 @@ export function CTA() {
           </motion.a>
         </motion.div>
         <motion.span
-          className="text-xs text-neutral-500 mt-2"
+          className="text-xs text-neutral-500 dark:text-neutral-400 mt-2"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.3 }}

@@ -24,7 +24,7 @@ export function SecuritySection() {
 
   return (
     <motion.section
-      className="w-full py-24 bg-[#1A1A1A] text-white"
+      className="w-full py-24 bg-[#1A1A1A] dark:bg-[#141414] text-white"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}

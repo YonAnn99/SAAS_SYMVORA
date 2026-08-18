@@ -23,7 +23,7 @@ export function Integrations() {
 
   return (
     <motion.section
-      className="w-full py-24 bg-neutral-50 border-t border-neutral-100"
+      className="w-full py-24 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -38,7 +38,7 @@ export function Integrations() {
           transition={easeOutShort}
         >
           <motion.div
-            className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100"
+            className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-500/20"
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -49,7 +49,7 @@ export function Integrations() {
             </span>
           </motion.div>
           <motion.h2
-            className="text-3xl sm:text-4xl font-bold text-black"
+            className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -58,7 +58,7 @@ export function Integrations() {
             {t("landing.integrations.title")}
           </motion.h2>
           <motion.p
-            className="text-lg text-neutral-500"
+            className="text-lg text-neutral-500 dark:text-neutral-400"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -78,13 +78,13 @@ export function Integrations() {
           {items.map(({ key, icon: Icon }) => (
             <motion.div
               key={key}
-              className="bg-white border border-neutral-200 rounded-xl p-6 flex flex-col items-center gap-3 hover:shadow-lg hover:border-blue-200 transition-all group"
+              className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col items-center gap-3 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 transition-all group"
               variants={fadeInUp}
               transition={easeOutLong}
               whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
             >
               <motion.div
-                className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors"
+                className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors"
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.1, ...springIcon }}
@@ -92,7 +92,7 @@ export function Integrations() {
                 <Icon className="w-6 h-6" aria-hidden="true" />
               </motion.div>
               <motion.h3
-                className="text-sm font-bold text-black"
+                className="text-sm font-bold text-black dark:text-neutral-50"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, ...easeOutShort }}
@@ -100,7 +100,7 @@ export function Integrations() {
                 {t(`landing.integrations.items.${key}.name`)}
               </motion.h3>
               <motion.p
-                className="text-xs text-neutral-500 text-center leading-relaxed"
+                className="text-xs text-neutral-500 dark:text-neutral-400 text-center leading-relaxed"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, ...easeOutShort }}
@@ -118,7 +118,7 @@ export function Integrations() {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ ...easeOutShort, delay: 0.4 }}
         >
-          <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-4 py-2 text-sm font-medium">
+          <span className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-4 py-2 text-sm font-medium">
             <BadgeCheck className="w-4 h-4" aria-hidden="true" />
             {t("landing.integrations.conektaBadge")}
           </span>

@@ -7,6 +7,8 @@ const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Navbar } from "@/components/marketing/navbar";
+import { PageFrame } from "@/components/marketing/page-frame";
+import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import { Features } from "@/components/marketing/features";
@@ -97,7 +99,8 @@ export default async function LocalePage() {
   const faqSchema = faqPageSchema(siteUrl, faqs);
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#0C0C0C] overflow-x-hidden">
+      <PageFrame />
       <Navbar />
       <main>
         <Hero />
@@ -118,6 +121,7 @@ export default async function LocalePage() {
       </main>
       <Footer />
       <WhatsAppFab />
+      <ThemeToggleFab />
     </div>
   );
 }

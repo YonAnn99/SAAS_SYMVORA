@@ -40,7 +40,7 @@ export function Features() {
       >
         <div className="max-w-2xl">
           <motion.h2
-            className="text-3xl sm:text-4xl font-bold text-black mb-3"
+            className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50 mb-3"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -49,7 +49,7 @@ export function Features() {
             {t("landing.features.title")}
           </motion.h2>
           <motion.p
-            className="text-lg text-neutral-500"
+            className="text-lg text-neutral-500 dark:text-neutral-400"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -79,13 +79,13 @@ export function Features() {
         viewport={{ once: true, amount: 0.2 }}
       >
         <motion.div
-          className="lg:col-span-8 bg-white border border-neutral-200 rounded-xl p-6 lg:p-8 flex flex-col gap-6 group hover:shadow-lg transition-shadow relative overflow-hidden"
+          className="lg:col-span-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col gap-6 group hover:shadow-lg transition-shadow relative overflow-hidden"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
         >
           <motion.div
-            className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-700"
+            className="absolute top-0 right-0 w-64 h-64 bg-blue-50 dark:bg-blue-950 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-700"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 1, ease: "easeOut" }}
@@ -93,7 +93,7 @@ export function Features() {
             aria-hidden="true"
           />
           <motion.div
-            className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-2 z-10"
+            className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-lg flex items-center justify-center mb-2 z-10"
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.2, ...springIcon }}
@@ -106,18 +106,18 @@ export function Features() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, ...easeOutShort }}
           >
-            <h3 className="text-xl font-bold text-black mb-2">
+            <h3 className="text-xl font-bold text-black dark:text-neutral-50 mb-2">
               {t("landing.features.pos.title")}
             </h3>
-            <p className="text-neutral-500 leading-relaxed mb-4">
+            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
               {t("landing.features.pos.description")}
             </p>
-            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+            <span className="text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full">
               {t("landing.features.pos.stats")}
             </span>
           </motion.div>
           <motion.div
-            className="mt-auto pt-6 border-t border-neutral-100 flex items-end gap-2 h-32 w-full max-w-sm z-10"
+            className="mt-auto pt-6 border-t border-neutral-100 dark:border-neutral-800 flex items-end gap-2 h-32 w-full max-w-sm z-10"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, ...easeOutShort }}
@@ -128,7 +128,7 @@ export function Features() {
                 className={`w-1/6 rounded-t-sm transition-colors ${
                   i === 5
                     ? "bg-blue-600 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                    : "bg-blue-100 hover:bg-blue-200"
+                    : "bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800"
                 }`}
                 style={{ height: `${h}%` }}
                 initial={{ height: 0 }}
@@ -140,13 +140,13 @@ export function Features() {
         </motion.div>
 
         <motion.div
-          className="lg:col-span-4 bg-white border border-neutral-200 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
+          className="lg:col-span-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
         >
           <motion.div
-            className="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center mb-2"
+            className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-lg flex items-center justify-center mb-2"
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.2, ...springIcon }}
@@ -154,7 +154,7 @@ export function Features() {
             <Package className="w-6 h-6" aria-hidden="true" />
           </motion.div>
           <motion.h3
-            className="text-xl font-bold text-black"
+            className="text-xl font-bold text-black dark:text-neutral-50"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, ...easeOutShort }}
@@ -162,7 +162,7 @@ export function Features() {
             {t("landing.features.inventory.title")}
           </motion.h3>
           <motion.p
-            className="text-neutral-500 flex-grow leading-relaxed"
+            className="text-neutral-500 dark:text-neutral-400 flex-grow leading-relaxed"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, ...easeOutShort }}
@@ -170,7 +170,7 @@ export function Features() {
             {t("landing.features.inventory.description")}
           </motion.p>
           <motion.span
-            className="text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full self-start"
+            className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-3 py-1 rounded-full self-start"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, ...easeOutShort }}
@@ -178,29 +178,29 @@ export function Features() {
             {t("landing.features.inventory.stats")}
           </motion.span>
           <motion.div
-            className="mt-2 bg-neutral-50 rounded-lg p-3 border border-neutral-200 flex items-center justify-between"
+            className="mt-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 flex items-center justify-between"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45, ...easeOutShort }}
           >
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" aria-hidden="true" />
-              <span className="text-xs uppercase tracking-wider text-neutral-500 font-medium">
+              <span className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">
                 {t("landing.features.inventory.stockAlert")}
               </span>
             </div>
-            <span className="text-sm font-bold text-black">SKU-892</span>
+            <span className="text-sm font-bold text-black dark:text-neutral-50">SKU-892</span>
           </motion.div>
         </motion.div>
 
         <motion.div
-          className="lg:col-span-4 bg-white border border-neutral-200 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
+          className="lg:col-span-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
         >
           <motion.div
-            className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center mb-2"
+            className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-lg flex items-center justify-center mb-2"
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.2, ...springIcon }}
@@ -208,7 +208,7 @@ export function Features() {
             <FileText className="w-6 h-6" aria-hidden="true" />
           </motion.div>
           <motion.h3
-            className="text-xl font-bold text-black"
+            className="text-xl font-bold text-black dark:text-neutral-50"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, ...easeOutShort }}
@@ -216,7 +216,7 @@ export function Features() {
             {t("landing.features.purchases.title")}
           </motion.h3>
           <motion.p
-            className="text-neutral-500 flex-grow leading-relaxed"
+            className="text-neutral-500 dark:text-neutral-400 flex-grow leading-relaxed"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, ...easeOutShort }}
@@ -224,7 +224,7 @@ export function Features() {
             {t("landing.features.purchases.description")}
           </motion.p>
           <motion.span
-            className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full self-start"
+            className="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full self-start"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, ...easeOutShort }}
@@ -232,7 +232,7 @@ export function Features() {
             {t("landing.features.purchases.stats")}
           </motion.span>
           <motion.svg
-            className="absolute -right-4 -bottom-4 w-32 h-32 text-neutral-200 group-hover:text-neutral-300 transition-colors"
+            className="absolute -right-4 -bottom-4 w-32 h-32 text-neutral-200 dark:text-neutral-800 group-hover:text-neutral-300 dark:group-hover:text-neutral-700 transition-colors"
             fill="none"
             stroke="currentColor"
             strokeWidth="1"
@@ -251,7 +251,7 @@ export function Features() {
         </motion.div>
 
         <motion.div
-          className="lg:col-span-8 bg-white border border-neutral-200 rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-shadow"
+          className="lg:col-span-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-shadow"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
@@ -263,24 +263,24 @@ export function Features() {
             transition={{ delay: 0.2, ...easeOutShort }}
           >
             <motion.div
-              className="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center mb-6"
+              className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 text-purple-600 rounded-lg flex items-center justify-center mb-6"
               initial={{ scale: 0, rotate: -90 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.2, ...springIcon }}
             >
               <BarChart3 className="w-6 h-6" aria-hidden="true" />
             </motion.div>
-            <h3 className="text-xl font-bold text-black mb-2">
+            <h3 className="text-xl font-bold text-black dark:text-neutral-50 mb-2">
               {t("landing.features.finances.title")}
             </h3>
-            <p className="text-neutral-500 leading-relaxed mb-4">
+            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
               {t("landing.features.finances.description")}
             </p>
-            <span className="text-xs font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full self-start mb-4">
+            <span className="text-xs font-medium text-purple-600 bg-purple-50 dark:bg-purple-500/10 px-3 py-1 rounded-full self-start mb-4">
               {t("landing.features.finances.stats")}
             </span>
             <motion.button
-              className="mt-auto self-start text-sm font-medium text-black border border-black px-4 py-2 rounded hover:bg-black hover:text-white transition-colors"
+              className="mt-auto self-start text-sm font-medium text-black border border-black px-4 py-2 rounded hover:bg-black hover:text-white dark:text-neutral-50 dark:border-neutral-300 dark:hover:bg-neutral-50 dark:hover:text-black transition-colors"
               whileHover={{ backgroundColor: "black", color: "white", scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -293,7 +293,7 @@ export function Features() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, ...easeOutShort }}
           >
-            <div className="w-48 h-48 rounded-full border-[16px] border-neutral-100 relative">
+            <div className="w-48 h-48 rounded-full border-[16px] border-neutral-100 dark:border-neutral-800 relative">
               <motion.div
                 className="absolute inset-[-16px] rounded-full border-[16px] border-transparent border-t-blue-600 border-r-blue-600 rotate-45 transition-transform duration-1000 hover:scale-105 cursor-pointer"
                 animate={{ rotate: 405 }}
@@ -307,10 +307,10 @@ export function Features() {
                 style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-black">
+                <span className="text-4xl font-bold text-black dark:text-neutral-50">
                   87<span className="text-lg">%</span>
                 </span>
-                <span className="text-xs text-neutral-500 uppercase font-medium">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 uppercase font-medium">
                   {t("landing.features.finances.efficiency")}
                 </span>
               </div>
