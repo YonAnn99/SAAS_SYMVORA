@@ -216,14 +216,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
     }
   };
 
-  const handlePayOxxo = async () => {
+  const handlePayCash = async () => {
     if (!tenantId) return;
     setProcessing(true);
     try {
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "oxxo", locale }),
+        body: JSON.stringify({ tenant_id: tenantId, type: "cash", locale }),
       });
 
       const data = await response.json();
@@ -305,8 +305,16 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
         return "Efectivo";
       case "bank_transfer":
         return "Transferencia";
-      case "oxxo":
-        return "OXXO";
+      case "pay_by_bank":
+        return "Pago directo BBVA";
+      case "spei":
+        return "SPEI";
+      case "apple":
+        return "Apple Pay";
+      case "google":
+        return "Google Pay";
+      case "bnpl":
+        return "Crédito directo";
       case "default":
         return "Tarjeta";
       default:
@@ -451,13 +459,13 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               </Button>
 
               <Button
-                onClick={handlePayOxxo}
+                onClick={handlePayCash}
                 disabled={processing || !tenantId}
                 className="w-full"
                 variant="outline"
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                {t("billing.payOxxo")}
+                {t("billing.payCash")}
               </Button>
             </div>
 

@@ -101,11 +101,24 @@ export async function POST(request: Request) {
       }
     }
 
-    // Determine allowed payment methods
-    const allowedMethods =
-      type === "oxxo"
-        ? ["cash", "card", "bank_transfer"]
-        : ["card", "cash", "bank_transfer"];
+    // Determine allowed payment methods (Conekta v2.3 current methods)
+    const ALL_METHODS: string[] = [
+      "card",
+      "cash",
+      "bank_transfer",
+      "bnpl",
+      "pay_by_bank",
+      "apple",
+      "google",
+    ];
+
+    const METHOD_MAP: Record<string, string[]> = {
+      card: ["card", "apple", "google"],
+      cash: ["cash"],
+      bank_transfer: ["bank_transfer", "pay_by_bank"],
+    };
+
+    const allowedMethods = METHOD_MAP[type] ?? ALL_METHODS;
 
     // Create hosted checkout order
     let order;

@@ -45,7 +45,15 @@ export async function createHostedCheckoutOrder(params: {
         "card",
         "cash",
         "bank_transfer",
-      ]) as Array<"card" | "cash" | "bank_transfer">,
+      ]) as Array<
+        | "card"
+        | "cash"
+        | "bank_transfer"
+        | "bnpl"
+        | "pay_by_bank"
+        | "apple"
+        | "google"
+      >,
       name: params.description,
     },
   };

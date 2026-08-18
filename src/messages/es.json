@@ -334,9 +334,7 @@
     "plan": "Plan",
     "addCard": "Agregar tarjeta",
     "addCardRedirect": "Redirigiendo a Conekta...",
-    "payOxxo": "Pagar en OXXO",
-    "oxxoReference": "Referencia de pago",
-    "oxxoInstructions": "Paga esta referencia en cualquier tienda OXXO antes de 3 días",
+    "payCash": "Pagar en efectivo en tienda",
     "referenceGenerated": "Referencia generada",
     "referenceCopied": "Referencia copiada",
     "cancelSubscription": "Cancelar suscripción",
@@ -610,9 +608,9 @@
       "badge": "Integraciones",
       "title": "Conectado con los mejores proveedores",
       "subtitle": "Pagos con Conekta, facturación con PAC, backend en Supabase — todo probado y confiable.",
-      "conektaBadge": "Acepta tarjetas de crédito, débito y pagos en OXXO",
+      "conektaBadge": "Acepta tarjetas, SPEI, billeteras digitales y efectivo en tiendas",
       "items": {
-        "conekta": { "name": "Conekta", "description": "Gateway de pagos mexicano. Acepta tarjetas y OXXO." },
+        "conekta": { "name": "Conekta", "description": "Gateway de pagos mexicano. Acepta tarjetas, SPEI, billeteras digitales y efectivo en BBVA, 7Eleven, Farmacia del Ahorro, Waldo's y más." },
         "pac": { "name": "PAC", "description": "Proveedor Autorizado de Certificación para timbrado CFDI." },
         "supabase": { "name": "Supabase", "description": "Backend con PostgreSQL, autenticación y storage." },
         "vercel": { "name": "Vercel", "description": "Hosting y despliegue con edge functions." }
@@ -748,7 +746,7 @@
       "subtitle": "SYMVORA nació para apoyar a los negocios mexicanos con herramientas modernas, sin comisiones por venta y con soporte en español.",
       "foundedBy": "Fundado por",
       "founders": "Egresados del TecNM Ecatepec",
-      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos con OXXO y un POS que funciona sin internet.",
+      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos en efectivo en tiendas de conveniencia y un POS que funciona sin internet.",
       "values": {
         "mission": "Misión",
         "missionDesc": "Democratizar la tecnología para el comercio mexicano",

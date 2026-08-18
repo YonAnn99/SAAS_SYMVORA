@@ -334,9 +334,7 @@
     "plan": "Plan",
     "addCard": "Add card",
     "addCardRedirect": "Redirecting to Conekta...",
-    "payOxxo": "Pay with OXXO",
-    "oxxoReference": "Payment reference",
-    "oxxoInstructions": "Pay this reference at any OXXO store within 3 days",
+    "payCash": "Pay with cash in-store",
     "referenceGenerated": "Reference generated",
     "referenceCopied": "Reference copied",
     "cancelSubscription": "Cancel subscription",
@@ -537,9 +535,9 @@
       "badge": "Integrations",
       "title": "Connected with the best providers",
       "subtitle": "Payments with Conekta, invoicing with PAC, backend on Supabase — all tested and reliable.",
-      "conektaBadge": "Accepts credit cards, debit cards and OXXO payments",
+      "conektaBadge": "Accepts cards, SPEI, digital wallets and in-store cash",
       "items": {
-        "conekta": { "name": "Conekta", "description": "Mexican payment gateway. Accepts cards and OXXO." },
+        "conekta": { "name": "Conekta", "description": "Mexican payment gateway. Accepts cards, SPEI, digital wallets and cash at BBVA, 7-Eleven, Farmacia del Ahorro, Waldo's and more." },
         "pac": { "name": "PAC", "description": "Authorized Certification Provider for CFDI stamping." },
         "supabase": { "name": "Supabase", "description": "Backend with PostgreSQL, authentication and storage." },
         "vercel": { "name": "Vercel", "description": "Hosting and deployment with edge functions." }
@@ -675,7 +673,7 @@
       "subtitle": "SYMVORA was born to support Mexican businesses with modern tools, no per-sale commissions and Spanish-language support.",
       "foundedBy": "Founded by",
       "founders": "TecNM Ecatepec Graduates",
-      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they built a solution that truly understands the Mexican market: automatic VAT, CFDI 4.0 invoicing, OXXO payments, and a POS that works offline.",
+      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they built a solution that truly understands the Mexican market: automatic VAT, CFDI 4.0 invoicing, cash payments at convenience stores, and a POS that works offline.",
       "values": {
         "mission": "Mission",
         "missionDesc": "Democratize technology for Mexican commerce",
