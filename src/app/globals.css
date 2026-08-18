@@ -154,6 +154,16 @@
   }
 }
 
+/* Ocultar scrollbar pero mantener funcionalidad */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
 /* Subtle entrance animation with spring physics */
 @keyframes fade-in-up {
   from {

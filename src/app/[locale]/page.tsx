@@ -6,7 +6,7 @@ const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
 
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { AppFrame } from "@/components/marketing/app-frame";
+import { AppFrame } from "@/components/ui/app-frame";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import { Features } from "@/components/marketing/features";
