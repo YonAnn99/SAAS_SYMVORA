@@ -48,18 +48,18 @@ export function AccordionItem({ children, title, index, className }: AccordionIt
   }, [isOpen, index, setActiveIndex]);
 
   return (
-    <div className={cn("border-b border-gray-200", className)}>
+    <div className={cn("auth-accordion-item border-b border-gray-200", className)}>
       <button
         type="button"
         onClick={toggle}
         className="flex w-full items-center justify-between py-3 text-left"
         style={{ background: "none", border: "none", padding: "12px 0", cursor: "pointer" }}
       >
-        <span style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a" }}>
+        <span className="auth-accordion-title">
           {title}
         </span>
         <ChevronDown
-          className="h-4 w-4 text-gray-500 transition-transform duration-200"
+          className="auth-accordion-chevron h-4 w-4 text-gray-500 transition-transform duration-200"
           style={{
             transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
             flexShrink: 0,

@@ -603,9 +603,9 @@ export function AuthForms({
                   required
                   style={inputStyle}
                 />
-                <div style={{ width: "100%", marginBottom: "6px" }}>
+                <div className="auth-field-block">
                   <Select value={giroComercial} onValueChange={(v) => setGiroComercial(v || "GENERAL")}>
-                    <SelectTrigger style={{ width: "100%", height: "40px", backgroundColor: "#f0f0f0", border: "none", borderRadius: "8px", fontSize: "13px", color: "#1a1a1a" }}>
+                    <SelectTrigger className="auth-select-trigger">
                       <SelectValue placeholder={t("auth.businessTypePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -619,8 +619,8 @@ export function AuthForms({
                     </SelectContent>
                   </Select>
                 </div>
-                <div style={{ width: "100%", marginBottom: "6px" }}>
-                  <label style={{ fontSize: "13px", fontWeight: 500, color: "#1a1a1a", marginBottom: "4px", display: "block" }}>
+                <div className="auth-field-block">
+                  <label className="auth-field-label">
                     {t("auth.logo")}
                   </label>
                   {logoPreview ? (
@@ -628,12 +628,12 @@ export function AuthForms({
                       <img
                         src={logoPreview}
                         alt="Logo"
-                        style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "cover", border: "1px solid #e0e0e0" }}
+                        className="auth-logo-preview-img"
                       />
                       <button
                         type="button"
                         onClick={handleLogoRemove}
-                        style={{ fontSize: "12px", color: "#dc2626", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                        className="auth-logo-remove-btn"
                       >
                         {t("common.delete") || "Eliminar"}
                       </button>
@@ -642,18 +642,7 @@ export function AuthForms({
                     <button
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
-                      style={{
-                        width: "100%",
-                        height: "40px",
-                        backgroundColor: "#f0f0f0",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        color: "#888",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        padding: "0 14px",
-                      }}
+                      className="auth-logo-select-btn"
                     >
                       {t("auth.logoDragDrop") || "Seleccionar logo (opcional)"}
                     </button>
@@ -699,16 +688,15 @@ export function AuthForms({
 
             <label
               htmlFor="acceptTerms"
+              className="auth-terms-label"
               style={{
                 display: "flex",
                 alignItems: "flex-start",
                 gap: "8px",
                 fontSize: "13px",
-                color: "#1a1a1a",
                 lineHeight: "1.6",
                 marginTop: "20px",
                 paddingTop: "16px",
-                borderTop: "1px solid #f0f0f0",
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -720,7 +708,7 @@ export function AuthForms({
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 required
                 aria-required="true"
-                style={{ marginTop: "3px", flexShrink: 0, accentColor: "#1a1a1a", width: "16px", height: "16px" }}
+                style={{ marginTop: "3px", flexShrink: 0, width: "16px", height: "16px" }}
               />
               <span>
                 {t("auth.acceptTermsIntro")}{" "}
@@ -728,7 +716,7 @@ export function AuthForms({
                   href={`/${locale}/terminos`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 600 }}
+                  className="auth-inline-link"
                 >
                   {t("auth.acceptTermsTerms")}
                 </Link>
@@ -737,7 +725,7 @@ export function AuthForms({
                   href={`/${locale}/aviso-privacidad`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 600 }}
+                  className="auth-inline-link"
                 >
                   {t("auth.acceptTermsPrivacy")}
                 </Link>
@@ -762,24 +750,13 @@ export function AuthForms({
               {signupLoading ? t("common.loading") : t("auth.signup")}
             </button>
 
-            <div
-              style={{
-                fontSize: "12px",
-                color: "#555",
-                lineHeight: "1.6",
-                marginTop: "12px",
-                padding: "10px 14px",
-                backgroundColor: "#f8f8f8",
-                borderRadius: "8px",
-                textAlign: "center",
-              }}
-            >
+            <div className="auth-privacy-note">
               {t("auth.privacyAcknowledgment")}{" "}
               <Link
                 href={`/${locale}/aviso-privacidad`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: "underline", color: "#1a1a1a", fontWeight: 600 }}
+                className="auth-inline-link"
               >
                 {t("auth.privacyLink")}
               </Link>
