@@ -111,6 +111,7 @@ export function AuthForms({
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -511,6 +512,34 @@ export function AuthForms({
       }`}
       id="authContainer"
     >
+      {/* ── MOBILE-ONLY: curved logo header ── */}
+      <div className="auth-mobile-header">
+        <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-mobile-logo" />
+        <span className="auth-mobile-brand">SYMVORA</span>
+      </div>
+
+      {/* ── MOBILE-ONLY: pill toggle (replaces the desktop toggle panel on small screens) ── */}
+      <div className="auth-mobile-pill-toggle" role="tablist" aria-label={`${t("auth.login")} / ${t("auth.signup")}`}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "login"}
+          className={mode === "login" ? "active" : ""}
+          onClick={() => setMode("login")}
+        >
+          {t("auth.login")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "signup"}
+          className={mode === "signup" ? "active" : ""}
+          onClick={() => setMode("signup")}
+        >
+          {t("auth.signup")}
+        </button>
+      </div>
+
       {/* ── SIGN UP FORM ── */}
       <div className="auth-form-container auth-sign-up">
         <div className="auth-form-scroll">
@@ -771,12 +800,12 @@ export function AuthForms({
         {mode === "forgot" ? (
           <form onSubmit={handleForgot} style={{ justifyContent: "center" }}>
             <div className="auth-form-center">
-              <h1 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "4px", color: "#1a1a1a" }}>
+              <h1 className="auth-form-title-text">
                 {t("auth.forgotTitle")}
               </h1>
             </div>
 
-            <span style={{ color: "#555", fontSize: "13px" }}>
+            <span className="auth-form-subtitle-text">
               {t("auth.forgotSubtitle")}
             </span>
 
@@ -828,12 +857,12 @@ export function AuthForms({
         ) : (
           <form onSubmit={handleLogin} style={{ justifyContent: "center" }}>
           <div className="auth-form-center">
-            <h1 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "4px", color: "#1a1a1a" }}>
+            <h1 className="auth-form-title-text">
               {t("auth.login")}
             </h1>
           </div>
 
-          <span style={{ color: "#555", fontSize: "13px" }}>
+          <span className="auth-form-subtitle-text">
             {t("auth.loginSubtitle")}
           </span>
 
@@ -875,22 +904,25 @@ export function AuthForms({
             className="auth-password-input"
           />
 
-          <button
-            type="button"
-            onClick={() => setMode("forgot")}
-            style={{
-              alignSelf: "flex-start",
-              margin: "5px 0 15px",
-              color: "#333",
-              fontSize: "13px",
-              background: "none",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-            }}
-          >
-            {t("auth.forgotPassword")}
-          </button>
+          <div className="auth-login-row">
+            <button
+              type="button"
+              onClick={() => setMode("forgot")}
+              className="auth-forgot-link"
+            >
+              {t("auth.forgotPassword")}
+            </button>
+          </div>
+
+          <label className="auth-remember-me">
+            <span>{t("auth.rememberMe")}</span>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span className="auth-remember-switch" aria-hidden="true" />
+          </label>
 
           {turnstileSiteKey && (
             <div style={{ width: "100%", marginBottom: "12px" }}>

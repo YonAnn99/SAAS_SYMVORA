@@ -48,6 +48,7 @@ function securityHeaders() {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  allowedDevOrigins: ["192.168.1.75:3000"],
   outputFileTracingIncludes: {
     "/api/**": ["./resources/cfdi/**"],
   },

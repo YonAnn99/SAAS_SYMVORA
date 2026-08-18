@@ -53,6 +53,7 @@
     "login": "Iniciar sesión",
     "signup": "Crear cuenta",
     "forgotPassword": "¿Olvidaste tu contraseña?",
+    "rememberMe": "Recordarme",
     "resetPassword": "Restablecer contraseña",
     "logout": "Cerrar sesión",
     "emailPlaceholder": "tu@correo.com",
