@@ -22,7 +22,7 @@ export function ThemeToggleFab() {
       type="button"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       aria-label="Cambiar entre modo claro y oscuro"
-      className="fixed bottom-5 left-5 z-[110] flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-transform hover:scale-105 active:scale-95 dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+      className="absolute bottom-5 left-5 z-[110] flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-transform hover:scale-105 active:scale-95 dark:border-white/10 dark:bg-neutral-900 dark:text-white"
     >
       {mounted && theme === "dark" ? (
         <Sun className="h-4 w-4" />

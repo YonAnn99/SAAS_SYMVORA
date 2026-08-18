@@ -6,9 +6,7 @@ const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
 
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { Navbar } from "@/components/marketing/navbar";
-import { PageFrame } from "@/components/marketing/page-frame";
-import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
+import { AppFrame } from "@/components/marketing/app-frame";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import { Features } from "@/components/marketing/features";
@@ -23,7 +21,6 @@ import { FAQ } from "@/components/marketing/faq";
 import { CTA } from "@/components/marketing/cta";
 import { AboutUs } from "@/components/marketing/about-us";
 import { Footer } from "@/components/marketing/footer";
-import { WhatsAppFab } from "@/components/marketing/whatsapp-fab";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
 import {
@@ -99,29 +96,23 @@ export default async function LocalePage() {
   const faqSchema = faqPageSchema(siteUrl, faqs);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0C0C0C] overflow-x-hidden">
-      <PageFrame />
-      <Navbar />
-      <main>
-        <Hero />
-        <CompatibilityBar />
-        <Features />
-        <BusinessTypes />
-        <CFDISection />
-        <WhyChooseUs />
-        <SecuritySection />
-        <Benefits />
-        <Integrations />
-        <Setup />
-        <FAQ />
-        <CTA />
-        <AboutUs />
-        <JsonLd id="ld-software" data={software} />
-        <JsonLd id="ld-faq" data={faqSchema} />
-      </main>
+    <AppFrame>
+      <Hero />
+      <CompatibilityBar />
+      <Features />
+      <BusinessTypes />
+      <CFDISection />
+      <WhyChooseUs />
+      <SecuritySection />
+      <Benefits />
+      <Integrations />
+      <Setup />
+      <FAQ />
+      <CTA />
+      <AboutUs />
       <Footer />
-      <WhatsAppFab />
-      <ThemeToggleFab />
-    </div>
+      <JsonLd id="ld-software" data={software} />
+      <JsonLd id="ld-faq" data={faqSchema} />
+    </AppFrame>
   );
 }
