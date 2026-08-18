@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
-import { createOrder } from "@/lib/mercadopago/orders";
+import { createOrder } from "@/features/payments/services/mercadopago/orders";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
   isMercadoPagoReady,
-} from "@/lib/mercadopago/secrets";
+} from "@/features/payments/services/mercadopago/secrets";
 import {
   computeTerminalOrderTotal,
   type TerminalOrderItem,
-} from "@/lib/mercadopago/order-amount";
+} from "@/features/payments/services/mercadopago/order-amount";
 
 export const dynamic = "force-dynamic";
 

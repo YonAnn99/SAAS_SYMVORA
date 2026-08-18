@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
-import { generateCFDIXML } from "@/lib/cfdi/xml-generator";
+import {
+  FacturacionError,
+  getFacturaXml,
+} from "@/features/facturacion/services/factura-service";
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +16,7 @@ export async function GET(
 
     const { data: factura, error: facturaError } = await supabase
       .from("facturas")
-      .select("*")
+      .select("tenant_id")
       .eq("id", id)
       .single();
 
@@ -30,34 +33,23 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
 
-    let xml = factura.xml_timbrado;
+    const result = await getFacturaXml(supabase, id);
 
-    if (!xml) {
-      const { data: detalle, error: detalleError } = await supabase
-        .from("factura_detalle")
-        .select("*")
-        .eq("factura_id", id)
-        .order("orden");
-
-      if (detalleError || !detalle) {
-        return NextResponse.json(
-          { error: "No se encontraron los conceptos de la factura" },
-          { status: 404 }
-        );
-      }
-
-      xml = generateCFDIXML(factura, detalle);
-    }
-
-    return new NextResponse(xml, {
+    return new NextResponse(result.xml, {
       status: 200,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Content-Disposition": `attachment; filename="factura-${factura.serie}-${factura.folio}.xml"`,
+        "Content-Disposition": `attachment; filename="factura-${result.factura.serie}-${result.factura.folio}.xml"`,
       },
     });
   } catch (error) {
     console.error("Download factura XML error:", error);
+    if (error instanceof FacturacionError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   computeTerminalOrderTotal,
   validateTerminalItems,
-} from "@/lib/mercadopago/order-amount";
+} from "@/features/payments/services/mercadopago/order-amount";
 
 const productsMock = vi.fn();
 

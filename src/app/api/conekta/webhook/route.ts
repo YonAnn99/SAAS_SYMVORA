@@ -182,7 +182,7 @@ async function consumeFreeMonthCredit(
   // 3. Reembolsa el cobro en Conekta (best-effort: si falla el reembolso, el
   //    credito ya fue consumido y queda registrado para soporte manual).
   try {
-    const { refundOrder } = await import("@/lib/conekta/orders");
+    const { refundOrder } = await import("@/features/payments/services/conekta/orders");
     await refundOrder({
       orderId: conektaOrderId,
       amountCents,

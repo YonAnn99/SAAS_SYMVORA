@@ -1,5 +1,6 @@
 import soap from "soap";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
+import type { ResolvedFiscalSecrets } from "@/lib/fiscal-secrets";
 
 export interface PACStampResult {
   uuid: string;
@@ -19,13 +20,6 @@ export interface CancelParams {
   total: string;
   motivo: string;
   folioSustitucion?: string;
-}
-
-export interface ResolvedFiscalSecrets {
-  pac_password: string;
-  certificado_cer: string;
-  certificado_key: string;
-  certificado_password: string;
 }
 
 export interface PACClient {

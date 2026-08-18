@@ -43,13 +43,18 @@ import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
-import type { Factura, Cliente, Producto } from "@/lib/types/database";
+import {
+  CustomerSelector,
+  NewCustomerDialog,
+  useCustomers,
+} from "@/features/customers";
+import type { Factura, Producto } from "@/lib/types/database";
 import {
   CLAVE_PROD_SERV_COMMON,
   CLAVE_UNIDAD_SAT,
   FORMAS_PAGO,
   USOS_CFDI,
-} from "@/lib/cfdi/catalogs";
+} from "@/features/facturacion/catalogs";
 
 interface FacturaLinea {
   producto_id: string;
@@ -80,15 +85,17 @@ export default function FacturasPage() {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const isDemo = useIsDemo();
   const [facturas, setFacturas] = useState<Factura[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState<Factura | null>(null);
   const [cancelMotivo, setCancelMotivo] = useState("");
   const [saving, setSaving] = useState(false);
   const [filterEstado, setFilterEstado] = useState<string>("all");
+
+  const { customers } = useCustomers(tenantId);
 
   // Create form state
   const [clienteId, setClienteId] = useState("");
@@ -111,19 +118,6 @@ export default function FacturasPage() {
     setLoading(false);
   }, [tenantId]);
 
-  const fetchClientes = useCallback(async () => {
-    if (!tenantId) return;
-    const supabase = createSupabaseBrowserClient();
-
-    const { data } = await supabase
-      .from("clientes")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .order("nombre");
-
-    if (data) setClientes(data);
-  }, [tenantId]);
-
   const fetchProductos = useCallback(async () => {
     if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
@@ -140,10 +134,9 @@ export default function FacturasPage() {
   useEffect(() => {
     if (!tenantLoading) {
       fetchFacturas();
-      fetchClientes();
       fetchProductos();
     }
-  }, [tenantLoading, fetchFacturas, fetchClientes, fetchProductos]);
+  }, [tenantLoading, fetchFacturas, fetchProductos]);
 
   const filteredFacturas = facturas.filter((f) => {
     const matchesSearch =
@@ -546,18 +539,15 @@ export default function FacturasPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Cliente *</Label>
-                <Select value={clienteId} onValueChange={(v) => setClienteId(v || "")}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Selecciona cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nombre} {c.rfc ? `(${c.rfc})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CustomerSelector
+                  customers={customers}
+                  selectedCustomer={clienteId}
+                  onSelectCustomer={setClienteId}
+                  onNewCustomer={() => setShowNewCustomerDialog(true)}
+                  showLabel={false}
+                  allowGeneral={false}
+                  placeholder="Selecciona cliente"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Venta (opcional)</Label>
@@ -749,6 +739,16 @@ export default function FacturasPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Customer Dialog */}
+      <NewCustomerDialog
+        open={showNewCustomerDialog}
+        onOpenChange={setShowNewCustomerDialog}
+        tenantId={tenantId}
+        onCreated={(customer) => {
+          setClienteId(customer.id);
+        }}
+      />
 
       {/* Cancel Dialog */}
       <Dialog open={!!showCancelDialog} onOpenChange={() => setShowCancelDialog(null)}>

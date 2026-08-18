@@ -4,7 +4,7 @@ import {
   normalizeDataId,
   parseWebhookPayload,
   verifyMercadoPagoSignature,
-} from "@/lib/mercadopago/webhook";
+} from "@/features/payments/services/mercadopago/webhook";
 
 const buildSignature = (
   secret: string,

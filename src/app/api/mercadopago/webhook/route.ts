@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
-import { getOrder } from "@/lib/mercadopago/orders";
+import { getOrder } from "@/features/payments/services/mercadopago/orders";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
-} from "@/lib/mercadopago/secrets";
+} from "@/features/payments/services/mercadopago/secrets";
 import {
   parseWebhookPayload,
   verifyMercadoPagoSignature,
-} from "@/lib/mercadopago/webhook";
+} from "@/features/payments/services/mercadopago/webhook";
 
 export const dynamic = "force-dynamic";
 

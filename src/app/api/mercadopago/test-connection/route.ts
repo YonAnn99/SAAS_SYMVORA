@@ -4,12 +4,12 @@ import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
-} from "@/lib/mercadopago/secrets";
+} from "@/features/payments/services/mercadopago/secrets";
 import {
   listTerminals,
   setTerminalOperatingMode,
   type MpTerminal,
-} from "@/lib/mercadopago/orders";
+} from "@/features/payments/services/mercadopago/orders";
 
 export const dynamic = "force-dynamic";
 

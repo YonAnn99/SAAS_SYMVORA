@@ -1,4 +1,6 @@
-import { createSupabaseBrowserClient } from "./client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { Producto } from "@/lib/types/database";
+import type { MetodoPago, SaleTotals } from "../types/pos.types";
 
 const IVA_RATE = 0.16;
 
@@ -15,12 +17,12 @@ export interface CompleteSaleParams {
   tenantId: string;
   userId: string;
   clienteId: string | null;
-  metodoPago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
+  metodoPago: MetodoPago;
   items: SaleItem[];
   notas?: string;
 }
 
-export function calculateSaleTotals(items: SaleItem[]) {
+export function calculateSaleTotals(items: SaleItem[]): SaleTotals {
   const subtotal = items.reduce(
     (sum, item) => sum + item.precioUnitario * item.cantidad,
     0
@@ -59,4 +61,17 @@ export async function completeSale(params: CompleteSaleParams) {
   if (!venta) throw new Error("Error al procesar la venta");
 
   return venta;
+}
+
+export async function fetchPosProducts(tenantId: string): Promise<Producto[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("productos")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .gt("stock_actual", 0)
+    .order("nombre");
+
+  if (error) throw error;
+  return data ?? [];
 }

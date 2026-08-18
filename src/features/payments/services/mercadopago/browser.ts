@@ -1,33 +1,17 @@
-export interface TerminalOrderItemPayload {
-  productId: string;
-  cantidad: number;
-  descuento: number;
-}
+import type {
+  CancelTerminalOrderResponse,
+  CreateTerminalOrderParams,
+  CreateTerminalOrderResponse,
+  TerminalOrderStatusResponse,
+} from "@/features/payments/types/payments.types";
 
-export interface CreateTerminalOrderParams {
-  tenantId: string;
-  clienteId: string | null;
-  items: TerminalOrderItemPayload[];
-}
-
-export interface CreateTerminalOrderResponse {
-  success: boolean;
-  mp_order_id: string;
-  monto: number;
-}
-
-export interface TerminalOrderStatusResponse {
-  success: boolean;
-  estado: string;
-  venta_id: string | null;
-  monto: number;
-}
-
-export interface CancelTerminalOrderResponse {
-  success: boolean;
-  pagado: boolean;
-  message?: string;
-}
+export type {
+  CancelTerminalOrderResponse,
+  CreateTerminalOrderParams,
+  CreateTerminalOrderResponse,
+  TerminalOrderItemPayload,
+  TerminalOrderStatusResponse,
+} from "@/features/payments/types/payments.types";
 
 export async function createTerminalOrder(
   params: CreateTerminalOrderParams

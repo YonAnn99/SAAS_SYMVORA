@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { calculateSaleTotals } from "@/lib/supabase/sales";
-import type { SaleItem } from "@/lib/supabase/sales";
+import {
+  calculateSaleTotals,
+  type SaleItem,
+} from "@/features/pos/services/pos-service";
 
 describe("calculateSaleTotals", () => {
   const makeItem = (overrides: Partial<SaleItem> = {}): SaleItem => ({

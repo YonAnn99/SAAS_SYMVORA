@@ -28,7 +28,7 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
-import { REGIMENES_FISCALES } from "@/lib/cfdi/catalogs";
+import { REGIMENES_FISCALES } from "@/features/facturacion/catalogs";
 
 interface Emisor {
   rfc: string;

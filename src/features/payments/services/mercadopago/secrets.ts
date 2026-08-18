@@ -1,20 +1,17 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
-import { getFiscalSecretKey } from "@/lib/cfdi/fiscal-secrets";
+import { getFiscalSecretKey } from "@/lib/fiscal-secrets";
+import type {
+  MercadoPagoPointConfig,
+  ResolvedMercadoPagoSecrets,
+} from "@/features/payments/types/payments.types";
+
+export type {
+  MercadoPagoPointConfig,
+  ResolvedMercadoPagoSecrets,
+} from "@/features/payments/types/payments.types";
 
 export const MP_ACCESS_TOKEN_SECRET = "mercado_pago_access_token";
 export const MP_WEBHOOK_SECRET = "mercado_pago_webhook_secret";
-
-export interface MercadoPagoPointConfig {
-  habilitado: boolean;
-  terminal_id: string;
-  access_token_id: string;
-  webhook_secret_id: string;
-}
-
-export interface ResolvedMercadoPagoSecrets {
-  accessToken: string;
-  webhookSecret: string;
-}
 
 const DEFAULT_CONFIG: MercadoPagoPointConfig = {
   habilitado: false,

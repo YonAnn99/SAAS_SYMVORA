@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import {
+  FacturacionError,
+  listFacturas,
+} from "@/features/facturacion/services/factura-service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,38 +29,23 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseServiceRoleClient();
 
-    let query = supabase
-      .from("facturas")
-      .select("*, clientes(nombre, rfc)", { count: "exact" })
-      .eq("tenant_id", tenantId)
-      .order("created_at", { ascending: false });
-
-    if (estado) {
-      query = query.eq("estado", estado);
-    }
-
-    const offset = (page - 1) * limit;
-    query = query.range(offset, offset + limit - 1);
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      console.error("Error listing facturas:", error);
-      return NextResponse.json(
-        { error: "Error al listar facturas" },
-        { status: 500 }
-      );
-    }
+    const data = await listFacturas(supabase, { tenant_id: tenantId, estado: estado ?? undefined, page, limit });
 
     return NextResponse.json({
-      facturas: data || [],
-      total: count || 0,
+      facturas: data.facturas,
+      total: data.total,
       page,
       limit,
-      totalPages: Math.ceil((count || 0) / limit),
+      totalPages: data.totalPages,
     });
   } catch (error) {
     console.error("List facturas error:", error);
+    if (error instanceof FacturacionError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { completeSale } from "@/lib/supabase/sales";
+import { completeSale } from "@/features/pos/services/pos-service";
 
 const rpcMock = vi.fn();
 

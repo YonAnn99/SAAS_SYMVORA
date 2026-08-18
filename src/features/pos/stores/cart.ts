@@ -1,13 +1,7 @@
 import { create } from "zustand";
+import type { CartItem } from "../types/pos.types";
 
-export interface CartItem {
-  productId: string;
-  nombre: string;
-  cantidad: number;
-  precioUnitario: number;
-  descuento: number;
-  unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
-}
+export type { CartItem } from "../types/pos.types";
 
 interface CartStore {
   items: CartItem[];

@@ -5,11 +5,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Certificate } from "@cfdi/csd";
 import {
+  createPACClient,
   generateCFDIXML,
   generateSealedCFDIXML,
+  isPACTestsEnabled,
   parseCFDIXML,
-} from "@/lib/cfdi/xml-generator";
-import { createPACClient, isPACTestsEnabled } from "@/lib/cfdi/pac-client";
+} from "@/features/facturacion";
 import type { Factura, FacturaDetalle, TenantConfiguracionFiscal } from "@/lib/types/database";
 
 const baseFactura: Factura = {

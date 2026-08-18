@@ -1,0 +1,112 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type {
+  Proveedor,
+  PurchaseWithRelations,
+} from "../types/inventory.types";
+import {
+  createPurchase,
+  createSupplier,
+  fetchPurchases,
+  fetchSuppliers,
+  fetchTenantIdForUser,
+  type PurchaseInput,
+  type SupplierInput,
+} from "../services/purchase-service";
+
+export function usePurchases() {
+  const [purchases, setPurchases] = useState<PurchaseWithRelations[]>([]);
+  const [suppliers, setSuppliers] = useState<Proveedor[]>([]);
+  const [tenantId, setTenantId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
+  const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
+
+  const refetch = useCallback(async () => {
+    const resolvedTenantId = await fetchTenantIdForUser();
+    if (!resolvedTenantId) {
+      setLoading(false);
+      return;
+    }
+    setTenantId(resolvedTenantId);
+    const [purchasesData, suppliersData] = await Promise.all([
+      fetchPurchases(resolvedTenantId),
+      fetchSuppliers(resolvedTenantId),
+    ]);
+    setPurchases(purchasesData);
+    setSuppliers(suppliersData);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => void refetch(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [refetch]);
+
+  const handleCreatePurchase = useCallback(
+    async (input: PurchaseInput) => {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || !input.proveedorId || !tenantId) {
+        toast.error("Faltan datos requeridos");
+        return;
+      }
+
+      try {
+        await createPurchase(tenantId, user.id, input);
+        toast.success("Compra creada correctamente");
+        setShowNewPurchaseDialog(false);
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? `Error al crear la compra: ${error.message}`
+            : "Error al crear la compra"
+        );
+      }
+    },
+    [tenantId, refetch]
+  );
+
+  const handleCreateSupplier = useCallback(
+    async (input: SupplierInput) => {
+      if (!tenantId) {
+        toast.error("No se pudo identificar el tenant");
+        return;
+      }
+
+      try {
+        await createSupplier(tenantId, input);
+        toast.success("Proveedor creado correctamente");
+        setShowNewSupplierDialog(false);
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? `Error al crear el proveedor: ${error.message}`
+            : "Error al crear el proveedor"
+        );
+      }
+    },
+    [tenantId, refetch]
+  );
+
+  return {
+    purchases,
+    suppliers,
+    loading,
+    showNewPurchaseDialog,
+    setShowNewPurchaseDialog,
+    showNewSupplierDialog,
+    setShowNewSupplierDialog,
+    handleCreatePurchase,
+    handleCreateSupplier,
+    refetch,
+  };
+}

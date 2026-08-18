@@ -7,8 +7,8 @@ import {
   MP_ACCESS_TOKEN_SECRET,
   MP_WEBHOOK_SECRET,
   type MercadoPagoPointConfig,
-} from "@/lib/mercadopago/secrets";
-import { saveFiscalSecret } from "@/lib/cfdi/fiscal-secrets";
+} from "@/features/payments/services/mercadopago/secrets";
+import { saveFiscalSecret } from "@/lib/fiscal-secrets";
 
 export const dynamic = "force-dynamic";
 

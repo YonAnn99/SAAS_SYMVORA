@@ -1,6 +1,12 @@
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
-import type { ResolvedFiscalSecrets } from "@/lib/cfdi/pac-client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+export interface ResolvedFiscalSecrets {
+  pac_password: string;
+  certificado_cer: string;
+  certificado_key: string;
+  certificado_password: string;
+}
 
 type DbClient = Pick<SupabaseClient, "rpc">;
 

@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     let customerId = subscription.conekta_customer_id;
     if (!customerId) {
       try {
-        const { createCustomer } = await import("@/lib/conekta/customers");
+        const { createCustomer } = await import("@/features/payments/services/conekta/customers");
         customerId = await createCustomer({
           name: tenant.nombre_comercial || "SYMVORA User",
           email: tenant.email || "user@symvora.com",
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     // Create hosted checkout order
     let order;
     try {
-      const { createHostedCheckoutOrder } = await import("@/lib/conekta/orders");
+      const { createHostedCheckoutOrder } = await import("@/features/payments/services/conekta/orders");
       order = await createHostedCheckoutOrder({
         customerId: customerId!,
         amount: 40000,

@@ -1,259 +1,120 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useCartStore } from "@/stores/cart";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Trash2, Plus, Minus, ShoppingCart, Search, User, CreditCard, Banknote, ArrowRightLeft, AlertTriangle, Check, UserPlus, Smartphone, Loader2 } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { completeSale, calculateSaleTotals } from "@/lib/supabase/sales";
-import { createTerminalOrder, getTerminalOrderStatus, cancelTerminalOrder } from "@/lib/mercadopago/browser";
+  AlertTriangle,
+  ArrowRightLeft,
+  Banknote,
+  CreditCard,
+  Smartphone,
+} from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
-import type { Producto, Cliente } from "@/lib/types/database";
-import { USOS_CFDI } from "@/lib/cfdi/catalogs";
+import { completeSale } from "@/features/pos/services/pos-service";
+import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
+import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
+import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
+import { usePosCatalog } from "@/features/pos/hooks/use-pos-catalog";
+import { ConfirmSaleDialog } from "@/features/pos/components/confirm-sale-dialog";
+import { PaymentMethodPicker } from "@/features/pos/components/payment-method-picker";
+import { PosCart } from "@/features/pos/components/pos-cart";
+import { PosSearchBar } from "@/features/pos/components/pos-search-bar";
+import { ProductGrid } from "@/features/pos/components/product-grid";
+import { TerminalPaymentDialog } from "@/features/pos/components/terminal-payment-dialog";
+import { TicketReceipt } from "@/features/pos/components/ticket-receipt";
+import { CustomerSelector } from "@/features/customers/components/customer-selector";
+import { NewCustomerDialog } from "@/features/customers/components/new-customer-dialog";
+import type { MetodoPagoDirecto, Producto, SaleReceipt } from "@/features/pos/types/pos.types";
 
 export default function POSPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const {
-    items,
-    addItem,
-    removeItem,
-    updateQuantity,
-    clearCart,
-    getSubtotal,
-    getDiscount,
-    getTotal,
-    getItemCount,
-  } = useCartStore();
-
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [products, setProducts] = useState<Producto[]>([]);
-  const [customers, setCustomers] = useState<Cliente[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
-  const [selectedPayment, setSelectedPayment] = useState<string>("");
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [processingSale, setProcessingSale] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [userId, setUserId] = useState<string>("");
-
-  const [mpReady, setMpReady] = useState<boolean | null>(null);
-  const [terminalOrder, setTerminalOrder] = useState<{
-    mpOrderId: string;
-    monto: number;
-  } | null>(null);
-  const [terminalStatus, setTerminalStatus] = useState<
-    "waiting" | "error" | "pagado" | "rechazada" | "cancelada" | "timeout" | null
-  >(null);
-  const [cancellingTerminal, setCancellingTerminal] = useState(false);
-  const pollIntervalRef = useRef<number | null>(null);
-  const cancelPendingRef = useRef<() => void | Promise<unknown>>(() => {});
-
-  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
-  const [savingCustomer, setSavingCustomer] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({
-    nombre: "",
-    telefono: "",
-    email: "",
-    rfc: "",
-    razon_social: "",
-    regimen_fiscal_receptor: "",
-    uso_cfdi: "",
-    codigo_postal: "",
-  });
-
-  const fetchProductsAndUser = useCallback(async () => {
-    if (!tenantId) return;
-    const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    setUserId(user.id);
-
-    const [productsResult, customersResult] = await Promise.all([
-      supabase
-        .from("productos")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .gt("stock_actual", 0)
-        .order("nombre"),
-      supabase
-        .from("clientes")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .order("nombre"),
-    ]);
-
-    if (productsResult.data) setProducts(productsResult.data);
-    if (customersResult.data) setCustomers(customersResult.data);
-    setLoadingProducts(false);
-  }, [tenantId]);
-
-  useEffect(() => {
-    if (!tenantLoading) {
-      fetchProductsAndUser();
-    }
-  }, [tenantLoading, fetchProductsAndUser]);
-
-  useEffect(() => {
-    if (tenantLoading) return;
-    let cancelled = false;
-    fetch("/api/mercadopago/config", { method: "GET" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        const cfg = data?.config;
-        setMpReady(
-          Boolean(
-            cfg?.habilitado &&
-              cfg?.access_token_set &&
-              cfg?.webhook_secret_set &&
-              cfg?.terminal_id
-          )
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setMpReady(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantLoading]);
-
-  useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) {
-        window.clearInterval(pollIntervalRef.current);
-      }
-      // Al desmontar con una orden pendiente de pago, se cancela la orden
-      // en Mercado Pago para que un pago tardio no cree una venta fantasma.
-      void cancelPendingRef.current();
-    };
-  }, []);
-
-  const handleCreateCustomer = async () => {
-    if (!tenantId) return;
-    if (!newCustomer.nombre.trim()) {
-      toast.error("El nombre del cliente es requerido");
-      return;
-    }
-    setSavingCustomer(true);
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase
-        .from("clientes")
-        .insert({
-          tenant_id: tenantId,
-          nombre: newCustomer.nombre.trim(),
-          telefono: newCustomer.telefono || null,
-          email: newCustomer.email || null,
-          rfc: newCustomer.rfc?.trim() || null,
-          razon_social: newCustomer.razon_social?.trim() || null,
-          regimen_fiscal_receptor: newCustomer.regimen_fiscal_receptor || null,
-          uso_cfdi: newCustomer.uso_cfdi || null,
-          codigo_postal: newCustomer.codigo_postal || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success(`Cliente ${data.nombre} creado`);
-      setSelectedCustomer(data.id);
-      setShowNewCustomerDialog(false);
-      setNewCustomer({
-        nombre: "",
-        telefono: "",
-        email: "",
-        rfc: "",
-        razon_social: "",
-        regimen_fiscal_receptor: "",
-        uso_cfdi: "",
-        codigo_postal: "",
-      });
-      fetchProductsAndUser();
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Error al crear el cliente");
-    } finally {
-      setSavingCustomer(false);
-    }
-  };
-
-  const filteredProducts = products.filter(
-    (p) =>
-      (selectedCategory === "all" || p.categoria === selectedCategory) &&
-      (p.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      p.codigo_barras?.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(search.toLowerCase()))
+  const { items, totals, itemCount, addItem, removeItem, updateQuantity, clearCart } =
+    usePosCart();
+  const { products, customers, userId, loadingProducts, refetch } = usePosCatalog(
+    tenantId,
+    tenantLoading
   );
 
-  const categories = Array.from(new Set(products.map((p) => p.categoria).filter(Boolean))) as string[];
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
+  const [selectedPayment, setSelectedPayment] = useState<string>("");
+  const [processingSale, setProcessingSale] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
 
-  const handleAddProduct = (product: Producto) => {
-    if (product.stock_actual <= 0) {
-      toast.error("Sin stock disponible");
-      return;
-    }
-    addItem({
-      productId: product.id,
-      nombre: product.nombre,
-      cantidad: 1,
-      precioUnitario: product.precio_venta,
-      unidad_medida: product.unidad_medida,
-    });
-  };
+  const handleAddProduct = useCallback(
+    (product: Producto) => {
+      if (product.stock_actual <= 0) {
+        toast.error("Sin stock disponible");
+        return;
+      }
+      addItem({
+        productId: product.id,
+        nombre: product.nombre,
+        cantidad: 1,
+        precioUnitario: product.precio_venta,
+        unidad_medida: product.unidad_medida,
+      });
+    },
+    [addItem]
+  );
 
-  const handleBarcodeSearch = async () => {
-    if (!search.trim()) return;
+  const { search, setSearch, handleSearch, handleKeyDown } = useBarcodeScanner(
+    products,
+    handleAddProduct
+  );
 
-    const match = products.find(
-      (p) => p.codigo_barras?.toLowerCase() === search.trim().toLowerCase()
-    );
+  const finalizeSale = useCallback(() => {
+    clearCart();
+    setSelectedCustomer("none");
+    setSelectedPayment("");
+    setShowConfirmDialog(false);
+    void refetch();
+  }, [clearCart, refetch]);
 
-    if (match) {
-      handleAddProduct(match);
-      setSearch("");
-      toast.success(`${match.nombre} agregado`);
-    } else {
-      toast.error("Producto no encontrado");
-    }
-  };
+  const {
+    mpReady,
+    terminalOrder,
+    terminalStatus,
+    cancellingTerminal,
+    startTerminalSale,
+    handleCancelTerminal,
+    closeTerminalDialog,
+  } = useCashDrawer({
+    tenantId,
+    tenantReady: !tenantLoading,
+    onSaleCompleted: finalizeSale,
+    onTerminalStarted: () => setShowConfirmDialog(false),
+  });
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleBarcodeSearch();
-    }
-  };
+  const filteredProducts = useMemo(
+    () =>
+      products.filter(
+        (p) =>
+          (selectedCategory === "all" || p.categoria === selectedCategory) &&
+          (p.nombre.toLowerCase().includes(search.toLowerCase()) ||
+            p.codigo_barras?.toLowerCase().includes(search.toLowerCase()) ||
+            p.sku?.toLowerCase().includes(search.toLowerCase()))
+      ),
+    [products, selectedCategory, search]
+  );
 
-  const totals = calculateSaleTotals(items);
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(products.map((p) => p.categoria).filter(Boolean))
+      ) as string[],
+    [products]
+  );
+
+  const customerName =
+    selectedCustomer === "none"
+      ? null
+      : customers.find((c) => c.id === selectedCustomer)?.nombre ?? null;
 
   const handleCompleteSale = async () => {
     if (items.length === 0) return;
@@ -268,7 +129,10 @@ export default function POSPage() {
     }
 
     if (selectedPayment === "TARJETA_TERMINAL") {
-      await handleTerminalSale();
+      await startTerminalSale(
+        selectedCustomer === "none" ? null : selectedCustomer,
+        items
+      );
       return;
     }
 
@@ -278,173 +142,27 @@ export default function POSPage() {
         tenantId,
         userId,
         clienteId: selectedCustomer === "none" ? null : selectedCustomer,
-        metodoPago: selectedPayment as "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO",
+        metodoPago: selectedPayment as MetodoPagoDirecto,
         items,
       });
 
+      setSaleReceipt({
+        items: [...items],
+        total: totals.total,
+        paymentMethod: selectedPayment,
+        customerName,
+      });
       toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
       clearCart();
       setSelectedCustomer("none");
       setSelectedPayment("");
       setShowConfirmDialog(false);
-      fetchProductsAndUser();
+      void refetch();
     } catch (error: any) {
       toast.error(error.message || "Error al procesar la venta");
     } finally {
       setProcessingSale(false);
     }
-  };
-
-  const stopPolling = () => {
-    if (pollIntervalRef.current) {
-      window.clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-  };
-
-  // Cancela la orden de terminal si sigue pendiente (waiting/timeout).
-  // Devuelve true si el pago se proceso mientras tanto (el webhook creo
-  // la venta): en ese caso NO se puede cancelar y hay que notificar.
-  const cancelTerminalOrderIfPending = useCallback(async () => {
-    if (!tenantId || !terminalOrder) return false;
-    if (terminalStatus !== "waiting" && terminalStatus !== "timeout") {
-      return false;
-    }
-    stopPolling();
-    try {
-      const result = await cancelTerminalOrder(tenantId, terminalOrder.mpOrderId);
-      return Boolean(result.pagado);
-    } catch {
-      // La orden expirara sola en Mercado Pago (120s); no bloquear la UI.
-      return false;
-    }
-  }, [tenantId, terminalOrder, terminalStatus]);
-
-  useEffect(() => {
-    cancelPendingRef.current = cancelTerminalOrderIfPending;
-  }, [cancelTerminalOrderIfPending]);
-
-  const startTerminalPolling = (mpOrderId: string, monto: number) => {
-    let pollsElapsed = 0;
-    stopPolling();
-    pollIntervalRef.current = window.setInterval(async () => {
-      if (!tenantId) return;
-      pollsElapsed += 1;
-      if (pollsElapsed > 48) {
-        stopPolling();
-        setTerminalStatus("timeout");
-        // Cancelar la orden en MP: un pago tardio no debe crear una venta fantasma.
-        const pagado = await cancelTerminalOrderIfPending();
-        if (pagado) {
-          setTerminalStatus("pagado");
-          toast.success("El pago ya fue procesado en la terminal");
-          clearCart();
-          setSelectedCustomer("none");
-          setSelectedPayment("");
-          fetchProductsAndUser();
-        }
-        return;
-      }
-      try {
-        const status = await getTerminalOrderStatus(tenantId, mpOrderId);
-        if (status.estado === "PAGADA") {
-          stopPolling();
-          setTerminalStatus("pagado");
-          toast.success(`Pago recibido en terminal: $${monto.toFixed(2)}`);
-          clearCart();
-          setSelectedCustomer("none");
-          setSelectedPayment("");
-          fetchProductsAndUser();
-        } else if (status.estado === "RECHAZADA") {
-          stopPolling();
-          setTerminalStatus("rechazada");
-        } else if (status.estado === "CANCELADA") {
-          stopPolling();
-          setTerminalStatus("cancelada");
-        }
-      } catch {
-        // Errores transitorios de red se ignoran durante el polling
-      }
-    }, 2500);
-  };
-
-  const handleTerminalSale = async () => {
-    if (!tenantId) return;
-    setProcessingSale(true);
-    try {
-      // Si queda una orden previa pendiente/timeout, se cancela antes de
-      // crear otra: evita que un pago tardio cree venta + stock fantasma.
-      if (terminalOrder && (terminalStatus === "waiting" || terminalStatus === "timeout")) {
-        await cancelTerminalOrderIfPending();
-      }
-      const order = await createTerminalOrder({
-        tenantId,
-        clienteId: selectedCustomer === "none" ? null : selectedCustomer,
-        items: items.map((item) => ({
-          productId: item.productId,
-          cantidad: item.cantidad,
-          descuento: item.descuento,
-        })),
-      });
-      setShowConfirmDialog(false);
-      setTerminalOrder({ mpOrderId: order.mp_order_id, monto: order.monto });
-      setTerminalStatus("waiting");
-      startTerminalPolling(order.mp_order_id, order.monto);
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Error al iniciar el cobro con terminal"
-      );
-    } finally {
-      setProcessingSale(false);
-    }
-  };
-
-  const handleCancelTerminal = async () => {
-    if (!tenantId || !terminalOrder) return;
-    setCancellingTerminal(true);
-    try {
-      const result = await cancelTerminalOrder(
-        tenantId,
-        terminalOrder.mpOrderId
-      );
-      stopPolling();
-      if (result.pagado) {
-        setTerminalStatus("pagado");
-        toast.success("El pago ya fue procesado en la terminal");
-        clearCart();
-        setSelectedCustomer("none");
-        setSelectedPayment("");
-        fetchProductsAndUser();
-      } else {
-        setTerminalStatus("cancelada");
-        toast.info("Cobro cancelado");
-      }
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Error al cancelar el cobro"
-      );
-    } finally {
-      setCancellingTerminal(false);
-    }
-  };
-
-  const closeTerminalDialog = async () => {
-    if (terminalStatus === "waiting") return;
-    stopPolling();
-    if (terminalStatus === "timeout") {
-      const pagado = await cancelTerminalOrderIfPending();
-      if (pagado) {
-        toast.success("El pago ya fue procesado en la terminal");
-        clearCart();
-        setSelectedCustomer("none");
-        setSelectedPayment("");
-        fetchProductsAndUser();
-      }
-    }
-    setTerminalOrder(null);
-    setTerminalStatus(null);
   };
 
   const paymentMethods = [
@@ -459,226 +177,47 @@ export default function POSPage() {
     <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5">
       {/* Left: Products grid / search */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 animate-fade-in-up stagger-1">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t("pos.barcodePlaceholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="pl-8 h-9"
-            />
-          </div>
-          {categories.length > 0 && (
-            <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v ?? "all")}>
-              <SelectTrigger className="w-full sm:w-40 h-9">
-                <SelectValue placeholder="Categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Button className="h-9" size="sm" onClick={handleBarcodeSearch}>
-            {t("pos.addItem")}
-          </Button>
-        </div>
+        <PosSearchBar
+          search={search}
+          onSearchChange={setSearch}
+          onKeyDown={handleKeyDown}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          onSearchSubmit={handleSearch}
+        />
 
-        {/* Product grid */}
-        <div className="flex-1 rounded-lg border border-border bg-card p-4 overflow-y-auto animate-fade-in-up stagger-2">
-          {loadingProducts ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 h-full">
-              <ShoppingCart className="h-10 w-10 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                {search ? "No se encontraron productos" : "No hay productos disponibles"}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {filteredProducts.map((product, index) => (
-                <button
-                  key={product.id}
-                  onClick={() => handleAddProduct(product)}
-                  className="flex flex-col items-start p-3 rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up"
-                  style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
-                >
-                  <span className="text-sm font-medium truncate w-full">{product.nombre}</span>
-                  <span className="text-xs text-muted-foreground font-mono mt-1">
-                    ${product.precio_venta.toFixed(2)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground mt-0.5">
-                    Stock: {product.stock_actual}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductGrid
+          products={filteredProducts}
+          loading={loadingProducts}
+          hasSearch={Boolean(search)}
+          onAddProduct={handleAddProduct}
+        />
       </div>
 
       {/* Right: Cart */}
       <div className="w-full lg:w-80 flex flex-col animate-fade-in-up stagger-2">
-        {/* Customer selector */}
-        <div className="mb-3">
-          <Label className="text-xs text-muted-foreground mb-1 block">
-            <User className="inline h-3 w-3 mr-1" />
-            Cliente (opcional)
-          </Label>
-          <div className="flex gap-1.5">
-            <Select value={selectedCustomer} onValueChange={(v) => setSelectedCustomer(v ?? "none")}>
-              <SelectTrigger className="h-8 text-sm flex-1">
-                <SelectValue placeholder="Cliente general" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Cliente general</SelectItem>
-                {customers.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    {customer.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 flex-shrink-0"
-              onClick={() => setShowNewCustomerDialog(true)}
-              title="Nuevo cliente"
-            >
-              <UserPlus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <CustomerSelector
+          customers={customers}
+          selectedCustomer={selectedCustomer}
+          onSelectCustomer={setSelectedCustomer}
+          onNewCustomer={() => setShowNewCustomerDialog(true)}
+        />
 
-        <Card className="flex-1 flex flex-col">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-sm font-medium">
-              <span>{t("pos.cart")}</span>
-              <span className="text-xs font-normal text-muted-foreground font-mono">
-                {getItemCount()}
-              </span>
-            </CardTitle>
-          </CardHeader>
+        <PosCart
+          items={items}
+          totals={totals}
+          itemCount={itemCount}
+          onUpdateQuantity={updateQuantity}
+          onRemove={removeItem}
+        />
 
-          <CardContent className="flex-1 flex flex-col overflow-hidden pt-0">
-            {items.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">{t("pos.emptyCart")}</p>
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto space-y-3">
-                {items.map((item) => (
-                  <div
-                    key={item.productId}
-                    className="flex items-center justify-between gap-2 py-1 animate-fade-in-up"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.nombre}</p>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        ${item.precioUnitario.toFixed(2)} x {item.cantidad}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          updateQuantity(item.productId, item.cantidad - 1)
-                        }
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-6 text-center text-xs font-mono">
-                        {item.cantidad}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          updateQuantity(item.productId, item.cantidad + 1)
-                        }
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeItem(item.productId)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Totals */}
-            {items.length > 0 && (
-              <div className="mt-3 space-y-1.5">
-                <Separator />
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">{t("pos.subtotal")}</span>
-                  <span className="font-mono">${totals.subtotal.toFixed(2)}</span>
-                </div>
-                {totals.descuento > 0 && (
-                  <div className="flex justify-between text-xs text-destructive">
-                    <span>{t("common.discount")}</span>
-                    <span className="font-mono">-${totals.descuento.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">IVA (16%)</span>
-                  <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-sm font-semibold">
-                  <span>{t("pos.total")}</span>
-                  <span className="font-mono">${totals.total.toFixed(2)}</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Payment method buttons */}
-        <div className="mt-3 grid grid-cols-2 gap-1.5">
-          {paymentMethods.map((method) => {
-            const terminalDisabled =
-              method.key === "TARJETA_TERMINAL" && mpReady !== true;
-            return (
-              <Button
-                key={method.key}
-                variant={selectedPayment === method.key ? "default" : "outline"}
-                className="w-full h-8 text-xs"
-                size="sm"
-                disabled={terminalDisabled}
-                title={
-                  terminalDisabled
-                    ? "Configura Mercado Pago Point en Métodos de pago"
-                    : undefined
-                }
-                onClick={() => setSelectedPayment(method.key)}
-              >
-                <method.icon className="h-3 w-3 mr-1" />
-                {method.label}
-              </Button>
-            );
-          })}
-        </div>
+        <PaymentMethodPicker
+          methods={paymentMethods}
+          selectedPayment={selectedPayment}
+          onSelect={setSelectedPayment}
+          mpReady={mpReady}
+        />
 
         <Button
           className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
@@ -700,348 +239,42 @@ export default function POSPage() {
         </Button>
       </div>
 
-      {/* Confirm Sale Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-base">Confirmar venta</DialogTitle>
-            <DialogDescription className="text-xs">
-              Revisa los detalles antes de completar la venta
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-lg bg-muted p-3 space-y-2">
-              {items.map((item) => (
-                <div key={item.productId} className="flex justify-between text-sm">
-                  <span>{item.nombre} x{item.cantidad}</span>
-                  <span className="font-mono">
-                    ${(item.precioUnitario * item.cantidad).toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Separator />
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-mono">${totals.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">IVA (16%)</span>
-              <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm font-semibold">
-              <span>Total</span>
-              <span className="font-mono">${totals.total.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Método de pago</span>
-              <span>{selectedPayment}</span>
-            </div>
-            {selectedCustomer !== "none" && (
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Cliente</span>
-                <span>{customers.find((c) => c.id === selectedCustomer)?.nombre}</span>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setShowConfirmDialog(false)}
-              disabled={processingSale}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              size="sm"
-              className="h-8 active:scale-[0.98] transition-transform"
-              onClick={handleCompleteSale}
-              disabled={processingSale}
-            >
-              {processingSale ? (
-                t("common.loading")
-              ) : (
-                <>
-                  <Check className="h-3.5 w-3.5 mr-1" />
-                  Completar venta
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmSaleDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        items={items}
+        totals={totals}
+        selectedPayment={selectedPayment}
+        customerName={customerName}
+        processing={processingSale}
+        onConfirm={handleCompleteSale}
+      />
 
-      {/* Terminal Payment Dialog */}
-      <Dialog
-        open={terminalStatus !== null}
-        onOpenChange={(open) => {
-          if (!open) closeTerminalDialog();
+      <TerminalPaymentDialog
+        status={terminalStatus}
+        order={terminalOrder}
+        cancelling={cancellingTerminal}
+        onCancel={() => void handleCancelTerminal()}
+        onClose={() => void closeTerminalDialog()}
+      />
+
+      <NewCustomerDialog
+        open={showNewCustomerDialog}
+        onOpenChange={setShowNewCustomerDialog}
+        tenantId={tenantId}
+        onCreated={(customer) => {
+          setSelectedCustomer(customer.id);
+          void refetch();
         }}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Cobro con terminal</DialogTitle>
-            <DialogDescription className="text-xs">
-              Pago por tarjeta con terminal Mercado Pago Point
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-4">
-            {terminalStatus === "waiting" && (
-              <>
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <div className="text-center">
-                  <p className="text-sm font-medium">
-                    Esperando pago en la terminal…
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Solicita al cliente que acerque su tarjeta o dispositivo
-                  </p>
-                </div>
-                <p className="font-mono text-xl font-semibold">
-                  ${terminalOrder?.monto.toFixed(2)}
-                </p>
-              </>
-            )}
-            {terminalStatus === "pagado" && (
-              <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
-                  <Check className="h-6 w-6 text-emerald-500" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium">Pago recibido</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    La venta se registró correctamente
-                  </p>
-                </div>
-                <p className="font-mono text-xl font-semibold">
-                  ${terminalOrder?.monto.toFixed(2)}
-                </p>
-              </>
-            )}
-            {terminalStatus === "rechazada" && (
-              <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                  <AlertTriangle className="h-6 w-6 text-destructive" />
-                </div>
-                <p className="text-sm text-center">
-                  El pago fue rechazado en la terminal. Puedes intentar de nuevo.
-                </p>
-              </>
-            )}
-            {terminalStatus === "cancelada" && (
-              <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                  <Banknote className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-center">Cobro cancelado.</p>
-              </>
-            )}
-            {terminalStatus === "timeout" && (
-              <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                  <AlertTriangle className="h-6 w-6 text-destructive" />
-                </div>
-                <p className="text-sm text-center">
-                  La terminal no respondió. Puedes cancelar el cobro o cerrar.
-                </p>
-              </>
-            )}
-            {terminalStatus === "error" && (
-              <p className="text-sm text-center">Ocurrió un error con el cobro.</p>
-            )}
-          </div>
-          <DialogFooter>
-            {terminalStatus === "waiting" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-full"
-                onClick={handleCancelTerminal}
-                disabled={cancellingTerminal}
-              >
-                {cancellingTerminal ? "Cancelando..." : "Cancelar cobro"}
-              </Button>
-            )}
-            {(terminalStatus === "timeout" ||
-              terminalStatus === "rechazada" ||
-              terminalStatus === "error") && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={closeTerminalDialog}
-                >
-                  Cerrar
-                </Button>
-                {terminalStatus === "timeout" && (
-                  <Button
-                    size="sm"
-                    className="h-8"
-                    onClick={handleCancelTerminal}
-                    disabled={cancellingTerminal}
-                  >
-                    {cancellingTerminal ? "Cancelando..." : "Cancelar cobro"}
-                  </Button>
-                )}
-              </>
-            )}
-            {(terminalStatus === "pagado" ||
-              terminalStatus === "cancelada") && (
-              <Button
-                size="sm"
-                className="h-8"
-                onClick={closeTerminalDialog}
-              >
-                Aceptar
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      />
 
-      {/* New customer dialog */}
-      <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Nuevo cliente</DialogTitle>
-            <DialogDescription>
-              Crea un cliente y registra sus datos fiscales para facturar (opcional).
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-nombre">Nombre*</Label>
-                <Input
-                  id="nc-nombre"
-                  value={newCustomer.nombre}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, nombre: e.target.value })
-                  }
-                  placeholder="Nombre o razón de la persona"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-rfc">RFC</Label>
-                <Input
-                  id="nc-rfc"
-                  value={newCustomer.rfc}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, rfc: e.target.value.toUpperCase() })
-                  }
-                  placeholder="XAXX010101000"
-                  className="uppercase"
-                  maxLength={13}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-razon">Razón social</Label>
-                <Input
-                  id="nc-razon"
-                  value={newCustomer.razon_social}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, razon_social: e.target.value })
-                  }
-                  placeholder="Empresa S.A. de C.V."
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-regimen">Régimen fiscal</Label>
-                <Input
-                  id="nc-regimen"
-                  value={newCustomer.regimen_fiscal_receptor}
-                  onChange={(e) =>
-                    setNewCustomer({
-                      ...newCustomer,
-                      regimen_fiscal_receptor: e.target.value,
-                    })
-                  }
-                  placeholder="612"
-                  maxLength={3}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-uso">Uso CFDI</Label>
-                <Select
-                  value={newCustomer.uso_cfdi}
-                  onValueChange={(v) =>
-                    setNewCustomer({ ...newCustomer, uso_cfdi: v ?? "" })
-                  }
-                >
-                  <SelectTrigger id="nc-uso" className="w-full">
-                    <SelectValue placeholder="Selecciona un uso" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(USOS_CFDI).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        {key} — {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-cp">Código postal</Label>
-                <Input
-                  id="nc-cp"
-                  value={newCustomer.codigo_postal}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, codigo_postal: e.target.value })
-                  }
-                  placeholder="06600"
-                  maxLength={5}
-                  inputMode="numeric"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-tel">Teléfono</Label>
-                <Input
-                  id="nc-tel"
-                  value={newCustomer.telefono}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, telefono: e.target.value })
-                  }
-                  placeholder="55 0000 0000"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nc-email">Email</Label>
-                <Input
-                  id="nc-email"
-                  type="email"
-                  value={newCustomer.email}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, email: e.target.value })
-                  }
-                  placeholder="cliente@correo.com"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setShowNewCustomerDialog(false)}
-              disabled={savingCustomer}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              size="sm"
-              className="h-8 active:scale-[0.98] transition-transform"
-              onClick={handleCreateCustomer}
-              disabled={savingCustomer}
-            >
-              {savingCustomer ? "Guardando..." : "Crear cliente"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TicketReceipt
+        open={saleReceipt !== null}
+        onOpenChange={(open) => {
+          if (!open) setSaleReceipt(null);
+        }}
+        receipt={saleReceipt}
+      />
     </div>
   );
 }

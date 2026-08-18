@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // Cancel in Conekta first (only if a customer exists there)
     if (subscription.conekta_customer_id) {
       try {
-        const { cancelSubscription } = await import("@/lib/conekta/subscriptions");
+        const { cancelSubscription } = await import("@/features/payments/services/conekta/subscriptions");
         await cancelSubscription(subscription.conekta_customer_id);
       } catch (conektaError: unknown) {
         const errObj = conektaError as {

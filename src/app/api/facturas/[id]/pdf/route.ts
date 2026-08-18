@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
-import { generateFacturaPDF } from "@/lib/cfdi/pdf-generator";
+import {
+  FacturacionError,
+  getFacturaPdf,
+} from "@/features/facturacion/services/factura-service";
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +16,7 @@ export async function GET(
 
     const { data: factura, error: facturaError } = await supabase
       .from("facturas")
-      .select("*")
+      .select("tenant_id")
       .eq("id", id)
       .single();
 
@@ -30,30 +33,23 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
 
-    const { data: detalle, error: detalleError } = await supabase
-      .from("factura_detalle")
-      .select("*")
-      .eq("factura_id", id)
-      .order("orden");
+    const result = await getFacturaPdf(supabase, id);
 
-    if (detalleError || !detalle) {
-      return NextResponse.json(
-        { error: "No se encontraron los conceptos de la factura" },
-        { status: 404 }
-      );
-    }
-
-    const pdf = generateFacturaPDF(factura, detalle);
-
-    return new NextResponse(Buffer.from(pdf), {
+    return new NextResponse(Buffer.from(result.pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="factura-${factura.serie}-${factura.folio}.pdf"`,
+        "Content-Disposition": `attachment; filename="factura-${result.factura.serie}-${result.factura.folio}.pdf"`,
       },
     });
   } catch (error) {
     console.error("Download factura PDF error:", error);
+    if (error instanceof FacturacionError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

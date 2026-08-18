@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
-import { cancelOrder, getOrder } from "@/lib/mercadopago/orders";
+import { cancelOrder, getOrder } from "@/features/payments/services/mercadopago/orders";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
-} from "@/lib/mercadopago/secrets";
+} from "@/features/payments/services/mercadopago/secrets";
 
 export const dynamic = "force-dynamic";
 
