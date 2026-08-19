@@ -1,208 +1,165 @@
-# Guiones de Reels — 5 videos listos para producir con IA
+# Guion de Reel — SYMVORA "Todo en Uno" (Directo/Educativo · Grabación Real · 25-30s)
 
-> Cada reel es de **15–30s**, formato **9:16**, y se arma con clips de 3–6s generados en **Higgsfield** + voz de **ElevenLabs** + edición en **CapCut** (subtítulos, música y texto en pantalla). Los prompts de video piden **sin texto** — el texto se superpone en edición (las IA escriben mal).
-
-**Convenciones:**
-- **TEXTO EN PANTALLA** = overlay, máx 2 líneas, 3–5 palabras/línea, sans-serif bold con contorno, palabra clave en azul `#2563eb`.
-- VO en **es-MX**: MAYÚSCULAS = énfasis, `...` = pausa.
-- CTA siempre igual: "Prueba gratis → bio" (bio con link a app.symvora.com.mx).
+> **Formato:** 9:16 vertical (1080×1920) · **Plataformas:** TikTok + Reels + Shorts · **Audio:** VO es-MX neutro + música sin copyright · **Subtítulos:** siempre visibles, máx 2 líneas, 3-5 palabras/línea, keyword en **azul `#2563eb`** con contorno blanco.
 
 ---
 
-## Reel 1 — "Vende en 10 segundos" (Demo · Problem-Solution · 20s)
+## Estructura Rápida (Timecodes)
 
+| Bloque | Tiempo | Enfoque |
+|--------|--------|---------|
+| Hook | 0–3s | Dolor relatable |
+| Problema 1: Caja lenta | 3–7s | Filas, clientes molestos |
+| Problema 2: Cuentas a mano | 7–11s | Errores, caja no cuadra |
+| Problema 3: Facturas/SAT | 11–15s | Dolores de cabeza, multas |
+| **Solución: Todo en uno** | **15–22s** | **Caja + Inventario + Facturas = 1 app · Sin comisiones** |
+| Beneficio final | 22–26s | Tranquilidad, ganancia real, SAT contento |
+| CTA | 26–30s | Prueba 7 días gratis, sin tarjeta |
+
+---
+
+## Guion Completo (Voz + Texto en Pantalla + Visual)
+
+### Hook (0–3s)
 | | |
 |---|---|
-| **Plataforma** | TikTok + Reels |
-| **Duración** | 20s |
-| **Formato** | B-roll de tienda + pantalla de tablet POS |
-
-**Hook (0–3s)**
-- **Texto:** "¿Tu sistema tarda en cobrar?"
-- **VO:** "Si tu caja tarda más de 10 SEGUNDOS en cobrar..."
-- **Visual:** Tablet POS con interfaz limpia; dedo toca "Cobrar".
-
-**Cuerpo (3–17s)**
-- **3–9s — VO:** "...tus clientes se IMPACIENTAN. Y en hora pico, eso cuesta ventas."
-  - **Visual (clip):** cliente esperando en mostrador, mirada al teléfono.
-- **9–17s — VO:** "Con SYMVORA: escanea... cobra... ticket. LISTO. Así de rápido se vende."
-  - **Visual (clip):** escáner pasando sobre código de barras → pantalla de cobro → ticket saliendo de impresora térmica. Cortes rápidos (1s por acción).
-
-**CTA (17–20s)**
-- **VO:** "Prueba gratis 7 días, SIN tarjeta."
-- **Texto:** "Prueba gratis → bio".
-- **Visual:** logo SYMVORA + botón azul.
-
-**Prompts Higgsfield (por clip)**
-1. `Tablet tipo POS con interfaz limpia (header oscuro #1a1a1a, botón azul #2563eb), dedo tocando pantalla, cámara fija, luz natural de tienda, fondo desenfocado, 4s, sin texto`
-2. `Cliente esperando en mostrador de tienda de abarrotes, mira su teléfono impaciente, luz cálida, cámara fija, 3s`
-3. `Escáner de código de barras pasando sobre empaque de producto, primer plano, luz natural, cámara fija, 2s`
-4. `Impresora térmica imprimiendo ticket de venta, papel saliendo, cámara fija con zoom suave, 3s`
-
-**ElevenLabs (VO):**
-```
-Si tu caja tarda más de diez SEGUNDOS en cobrar... tus clientes se IMPACIENTAN. Y en hora pico, eso cuesta ventas. Con SYMVORA: escanea, cobra, ticket. LISTO. Así de rápido se vende. Prueba gratis siete días, SIN tarjeta.
-```
-**Notas:** música upbeat sin copyright (ducking bajo VO), subtítulos sincronizados, cortes al ritmo de la voz.
+| **VO** | "¿Pierdes tiempo cobrando? ¿No sabes si ganas o pierdes?" |
+| **Texto L1** | Pierdes tiempo cobrando |
+| **Texto L2** | No sabes si **ganas** |
+| **Visual** | Dueño en mostrador con cara de estrés, cliente esperando, reloj marcando. Cámara fija, ángulo lateral. Luz fría. |
 
 ---
 
-## Reel 2 — "Mi caja nunca cuadraba" (Antes/Después · Story Arc · 25s)
-
+### Problema 1: Caja Lenta (3–7s)
 | | |
 |---|---|
-| **Plataforma** | Reels + TikTok |
-| **Duración** | 25s |
-| **Formato** | Historia narrada con b-roll antes/después |
-
-**Hook (0–3s)**
-- **Texto:** "Mi caja NUNCA cuadraba…"
-- **VO:** "Siete años con libreta... y la caja NUNCA cuadraba."
-- **Visual:** libreta arrugada + calculadora vieja, luz fría.
-
-**Cuerpo (3–21s)**
-- **3–12s — VO:** "No sabía cuánto había vendido, no sabía qué tenía en bodega, y cada fin de mes era un SUSTO."
-  - **Visual (clip):** manos pasando hojas de libreta, papeles desordenados, luz fría.
-- **12–21s — VO:** "Hoy todo está en SYMVORA. La caja me avisa si algo no cuadra, y sé cuánto GANO de verdad."
-  - **Visual (clip):** transición a tablet con dashboard de ventas brillante, luz cálida, persona tranquila.
-
-**CTA (21–25s)**
-- **VO:** "Tu tienda merece algo mejor. Prueba gratis."
-- **Texto:** "Prueba gratis → bio".
-- **Visual:** logo + botón azul.
-
-**Prompts Higgsfield (por clip)**
-1. `Libreta de notas arrugada y calculadora vieja en mostrador de tienda, luz fría grisácea, cámara fija, 3s, sin texto`
-2. `Manos pasando hojas de una libreta de cuentas, papeles desordenados, ambiente nocturno cansado, luz fría, cámara fija, 4s`
-3. `Transición: tablet con dashboard de ventas colorido (verde/azul) en primer plano, dueño de tienda sonriendo, luz cálida, cámara fija con zooms, 5s`
-
-**ElevenLabs (VO):**
-```
-Siete años con libreta... y la caja NUNCA cuadraba. No sabía cuánto había vendido, no sabía qué tenía en bodega, y cada fin de mes era un SUSTO. Hoy todo está en SYMVORA. La caja me avisa si algo no cuadra, y sé cuánto GANO de verdad. Tu tienda merece algo mejor. Prueba gratis.
-```
-**Notas:** tono emotivo al inicio, esperanzador al final; música emotiva→optimista con corte en la transición.
+| **VO** | "Caja lenta = filas, clientes molestos, ventas que se escapan." |
+| **Texto L1** | Caja lenta = |
+| **Texto L2** | **clientes perdidos** |
+| **Visual** | Primer plano: dedos tamborileando mostrador, cliente mira celular y se va. Dueño apurado. 4s. |
 
 ---
 
-## Reel 3 — "Unpopular opinion: cobrar comisión" (Rant · 18s)
-
+### Problema 2: Cuentas a Mano (7–11s)
 | | |
 |---|---|
-| **Plataforma** | TikTok + Reels |
-| **Duración** | 18s |
-| **Formato** | POV/talking-head con IA + overlay de texto |
-
-**Hook (0–3s)**
-- **Texto:** "Unpopular opinion: 👇"
-- **VO:** "Unpopular opinion: cobrar COMISIÓN por cada venta es una trampa."
-- **Visual:** persona de tienda mirando a cámara (avatar IA) o b-roll de monedas cayendo.
-
-**Cuerpo (3–14s)**
-- **3–14s — VO:** "Tu negocio crece... y el sistema también, DE TU BOLSILLO. Ya te cobran mensualidad. ¿Por qué además un pedazo de cada venta?"
-  - **Visual (clip):** monedas saliendo de una caja registradora hacia una mano invisible; después signo de STOP.
-- **14–16s — fairness pivot — VO:** "No estoy contra el software. Estoy contra el MODELO."
-
-**CTA (16–18s)**
-- **VO:** "SYMVORA: sin comisiones. Prueba gratis."
-- **Texto:** "Sin comisiones · prueba gratis → bio".
-- **Visual:** logo + botón azul.
-
-**Prompts Higgsfield (por clip)**
-1. `Persona dueña de tienda (adulta mexicana) mirando a cámara con expresión seria de punto de vista, fondo de tienda desenfocado, luz natural, 3s`
-2. `Monedas mexicanas cayendo de una caja registradora hacia una mano, metáfora, luz dura, cámara fija, 4s`
-3. `Cartel de STOP o palma de mano en alto, fondo oscuro, cámara fija, 2s`
-
-**ElevenLabs (VO):**
-```
-Unpopular opinion: cobrar COMISIÓN por cada venta es una trampa. Tu negocio crece... y el sistema también, DE TU BOLSILLO. Ya te cobran mensualidad. ¿Por qué además un pedazo de cada venta? No estoy contra el software. Estoy contra el MODELO. SYMVORA: sin comisiones. Prueba gratis.
-```
-**Notas:** tono firme pero sin gritar; subtítulos grandes y punchy; este formato dispara comentarios.
+| **VO** | "Libreta o Excel: errores, la caja nunca cuadra, fin de mes = susto." |
+| **Texto L1** | Libreta/Excel = |
+| **Texto L2** | **errores** |
+| **Visual** | Picado cenital: libreta tachada, calculadora, papeles revueltos. Mano tacha número, gesto de frustración. 4s. |
 
 ---
 
-## Reel 4 — "CFDI 4.0 en 30 segundos" (Educativo · List · 30s)
-
+### Problema 3: Facturas / SAT (11–15s)
 | | |
 |---|---|
-| **Plataforma** | YouTube Shorts + TikTok |
-| **Duración** | 30s |
-| **Formato** | Explicador con b-roll + iconos |
-
-**Hook (0–3s)**
-- **Texto:** "CFDI 4.0 NO es un monstruo"
-- **VO:** "¿No sabes qué es el CFDI 4.0? Tranquilo. Te lo explico en 30 SEGUNDOS."
-- **Visual:** documento XML con sello, fondo oscuro #1a1a1a.
-
-**Cuerpo (3–26s)**
-- **3–11s — VO:** "El CFDI 4.0 es la factura electrónica que el SAT pide desde 2022. Si vendes, debes emitirla."
-  - **Visual (clip):** iconos de SAT + documento.
-- **11–20s — VO:** "Necesita tus datos, los del cliente y el sello digital. Un error y el SAT la RECHAZA."
-  - **Visual (clip):** formulario con campos, sello digital estampándose.
-- **20–26s — VO:** "Con SYMVORA, emitir un CFDI 4.0 es tan fácil como cobrar. Guárdalo para cuando lo necesites."
-  - **Visual (clip):** tablet POS → factura generada con check verde.
-
-**CTA (26–30s)**
-- **VO:** "Guarda esto. Prueba gratis en bio."
-- **Texto:** "Guárdalo · prueba gratis → bio".
-- **Visual:** logo + botón azul.
-
-**Prompts Higgsfield (por clip)**
-1. `Documento XML de factura con sello digital animándose sobre fondo oscuro #1a1a1a con acentos azules #2563eb, estilo limpio, cámara en movimiento suave, 3s, sin texto`
-2. `Formulario fiscal con campos y un sello digital estampándose, estilo flat moderno, fondo oscuro, cámara en movimiento, 4s`
-3. `Tablet POS cobrando y generando factura con check verde de confirmación, luz de tienda, cámara fija, 4s`
-
-**ElevenLabs (VO):**
-```
-¿No sabes qué es el CFDI 4.0? Tranquilo. Te lo explico en treinta SEGUNDOS. El CFDI 4.0 es la factura electrónica que el SAT pide desde 2022. Si vendes, debes emitirla. Necesita tus datos, los del cliente y el sello digital. Un error y el SAT la RECHAZA. Con SYMVORA, emitir un CFDI 4.0 es tan fácil como cobrar. Guárdalo para cuando lo necesites.
-```
-**Notas:** tono profesor tranquilo; números y palabras clave en pantalla; es contenido **searchable** (guárdalo para YouTube).
+| **VO** | "Facturar es un dolor: datos, sellos, el SAT rechaza, multas." |
+| **Texto L1** | Facturas = |
+| **Texto L2** | **dolores de cabeza** |
+| **Visual** | Over-the-shoulder: pantalla portal SAT con error rojo. Dueño confundido, papeles oficiales en mano. 4s. |
 
 ---
 
-## Reel 5 — "El susto del domingo" (Story · Story Arc · 30s)
-
+### Solución: TODO EN UNO (15–22s) ⭐ **MOMENTO CLAVE**
 | | |
 |---|---|
-| **Plataforma** | Reels + TikTok |
-| **Duración** | 30s |
-| **Formato** | Historia narrada |
-
-**Hook (0–3s)**
-- **Texto:** "El domingo que me di cuenta que PERDÍA dinero"
-- **VO:** "Un domingo, sumé mi libreta... y me llevé el SUSTO."
-- **Visual:** calculadora + papeles, luz fría.
-
-**Cuerpo (3–26s)**
-- **3–12s — VO:** "Vendía MUCHO... y ganaba POCO. Productos malvendidos, merma, regalos que nunca cobré."
-  - **Visual (clip):** productos en anaqueles, etiquetas de precio, notas de "regalo".
-- **12–20s — VO:** "En SYMVORA vi el reporte real: qué vendía de verdad, a cuánto, y qué me dejaba GANANCIA."
-  - **Visual (clip):** tablet con reporte de top productos y gráficas, luz cálida.
-- **20–26s — VO:** "Desde entonces decido con DATOS, no con corazonadas."
-  - **Visual (clip):** dueño(a) revisando tablet en mostrador, tranquilo.
-
-**CTA (26–30s)**
-- **VO:** "Conoce tus números reales. Prueba gratis."
-- **Texto:** "Conoce tus números → bio".
-- **Visual:** logo + botón azul.
-
-**Prompts Higgsfield (por clip)**
-1. `Calculadora y papeles de cuentas sobre mesa, luz fría, expresion de susto implícita, cámara fija, 3s, sin texto`
-2. `Anaqueles de tienda de abarrotes con productos y etiquetas, luz natural, cámara en paneo lento, 4s`
-3. `Tablet mostrando reporte de ventas con gráficas y lista de top productos, luz cálida, cámara fija con zoom, 5s`
-4. `Dueño de tienda revisando tablet en mostrador con expresión tranquila, luz cálida, cámara fija, 4s`
-
-**ElevenLabs (VO):**
-```
-Un domingo, sumé mi libreta... y me llevé el SUSTO. Vendía MUCHO... y ganaba POCO. Productos malvendidos, merma, regalos que nunca cobré. En SYMVORA vi el reporte real: qué vendía de verdad, a cuánto, y qué me dejaba GANANCIA. Desde entonces decido con DATOS, no con corazonadas. Conoce tus números reales. Prueba gratis.
-```
-**Notas:** tono íntimo y conversacional; énfasis en "susto", "mucho", "poco", "ganancia".
+| **VO** | "SYMVORA: **caja + inventario + facturas en UNA app** en tu celular o tablet. Escaneas, cobras, facturas, listo. **Sin comisiones por venta**." |
+| **Texto L1** | Caja + Inventario + Facturas = **1 app** |
+| **Texto L2** | **Sin comisiones** por venta |
+| **Visual** | **Secuencia rápida (cortes 1-2s cada acción):**<br>1. Mano toma celular → abre app SYMVORA<br>2. Escanea código de barras (beep visual)<br>3. Pantalla cobro → botón "Cobrar"<br>4. Factura se genera automática (check verde)<br>5. Impresora térmica saca ticket<br>6. Dueño sonríe, entrega ticket.<br>**Transición luz: fría → cálida.** |
 
 ---
 
-## Check de calidad antes de publicar
-- [ ] Hook con los 3 elementos (visual + voz + texto) en el 1er segundo.
-- [ ] Subtítulos ≤2 líneas, 3–5 palabras/línea, palabra clave en azul.
-- [ ] Corte de transición antes/después con cambio de luz (fría→cálida).
-- [ ] Música sin copyright, con ducking bajo la voz.
-- [ ] CTA visible los últimos 3–5s + enlace en bio.
-- [ ] Comentarios respondidos la primera hora.
+### Beneficio Final (22–26s)
+| | |
+|---|---|
+| **VO** | "Duermes tranquilo: sabes cuánto vendiste, qué te queda de ganancia, y el SAT contento." |
+| **Texto L1** | Ventas claras · **Ganancia real** |
+| **Texto L2** | SAT en orden |
+| **Visual** | Dueño revisa dashboard en tablet (gráficas verdes), cierra los ojos aliviado, ambiente cálido, luz dorada. 4s. |
+
+---
+
+### CTA (26–30s)
+| | |
+|---|---|
+| **VO** | "Prueba 7 días gratis, sin tarjeta. Link en bio." |
+| **Texto L1** | Prueba 7 días **gratis** → bio |
+| **Texto L2** | Sin tarjeta |
+| **Visual** | Logo SYMVORA animado + botón azul "Prueba gratis" + flecha apuntando a bio. 3s. Gráfica post-producción. |
+
+---
+
+## Voice-Over Completo (para locutor o ElevenLabs)
+
+```
+¿Pierdes tiempo cobrando? ¿No sabes si ganas o pierdes?
+Caja lenta igual a filas, clientes molestos, ventas que se escapan.
+Libreta o Excel: errores, la caja nunca cuadra, fin de mes igual a susto.
+Facturar es un dolor: datos, sellos, el SAT rechaza, multas.
+SYMVORA: caja, inventario y facturas en UNA app en tu celular o tablet.
+Escaneas, cobras, facturas, listo. Sin comisiones por venta.
+Duermes tranquilo: sabes cuánto vendiste, qué te queda de ganancia, y el SAT contento.
+Prueba siete días gratis, sin tarjeta. Link en bio.
+```
+
+---
+
+## Shot List para Grabación Real
+
+| # | Escena | Acción | Duración | Ángulo / Notas |
+|---|--------|--------|----------|----------------|
+| 1 | Hook | Dueño mira reloj, cliente espera | 3s | Fija, lateral mostrador, luz fría |
+| 2 | Caja lenta | Dedos tamborilean, cliente se va | 4s | Primer plano manos + reacción cliente |
+| 3 | Libreta/Excel | Tacha números, frustración | 4s | Picado cenital sobre libreta |
+| 4 | SAT error | Pantalla portal SAT, dueño confundido | 4s | Over-the-shoulder a laptop |
+| 5 | App SYMVORA | Abre app → escanea → cobra → factura → ticket | 7s | **Cortes 1-2s c/u**, mano estable, pantalla visible |
+| 6 | Dashboard | Dueño ve ventas/ganancia, sonríe | 4s | Primer plano tablet + rostro, luz cálida |
+| 7 | CTA | Logo + botón | 3s | Gráfica post-producción |
+
+---
+
+## Hoja de Estilo: Texto en Pantalla (Overlays)
+
+| Momento | Línea 1 | Línea 2 | Keyword (azul `#2563eb`) |
+|---------|---------|---------|--------------------------|
+| 0-3s | Pierdes tiempo cobrando | No sabes si **ganas** | **ganas** |
+| 3-7s | Caja lenta = | **clientes perdidos** | **clientes perdidos** |
+| 7-11s | Libreta/Excel = | **errores** | **errores** |
+| 11-15s | Facturas = | **dolores de cabeza** | **dolores de cabeza** |
+| 15-22s | Caja + Inventario + Facturas = **1 app** | | **1 app** |
+| 15-22s | **Sin comisiones** por venta | | **Sin comisiones** |
+| 22-26s | Ventas claras · **Ganancia real** | SAT en orden | **Ganancia real** |
+| 26-30s | Prueba 7 días **gratis** → bio | Sin tarjeta | **gratis** |
+
+---
+
+## Entregables Requeridos
+
+- [ ] Video final 9:16 (25-30s exactos)
+- [ ] Archivo SRT con subtítulos sincronizados
+- [ ] Thumbnail 9:16 (logo + "Prueba gratis 7 días")
+- [ ] App demo funcional en dispositivo de grabación
+- [ ] Link en bio apuntando a `app.symvora.com.mx` (o landing con registro)
+
+---
+
+## Checklist Pre-Publicación
+
+- [ ] Hook visual + voz + texto en primer segundo
+- [ ] Subtítulos ≤2 líneas, 3-5 palabras, keyword azul `#2563eb`
+- [ ] Transición luz fría → cálida en "Solución" (15s)
+- [ ] Música sin copyright, ducking -18dB bajo VO
+- [ ] CTA visible últimos 4s + link en bio funcionando
+- [ ] Duración 25-30s exactos
+- [ ] Comentarios respondidos primera hora
+
+---
+
+## Instalación Skill Hyperframes (para futuros proyectos IA)
+
+```bash
+npx skills add heygen-com/hyperframes -y
+```
+
+*Nota: Este reel usa **grabación real**, no generación IA. La skill queda instalada para próximos contenidos sintéticos.*
