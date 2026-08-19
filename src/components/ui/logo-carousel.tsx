@@ -43,7 +43,7 @@ export default function LogoCarousel() {
                   alt={logo.alt}
                   width={140}
                   height={40}
-                  className="object-contain h-7 sm:h-9 w-auto brightness-0 dark:invert opacity-40 hover:opacity-100 transition-opacity duration-300"
+                  className="object-contain h-12 sm:h-16 w-auto brightness-0 dark:invert opacity-40 hover:opacity-100 transition-opacity duration-300"
                 />
               </div>
             ))}
