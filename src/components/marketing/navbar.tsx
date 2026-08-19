@@ -156,18 +156,18 @@ export function Navbar() {
           )}
         >
           <div className="h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 sm:gap-3">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0">
               <Image
                 alt="SYMVORA Logo"
-                className="h-7 sm:h-8 w-auto object-contain dark:invert"
+                className="h-7 sm:h-8 w-auto object-contain shrink-0 dark:invert"
                 src="/symvora-logo.webp"
                 width={32}
                 height={32}
                 priority
               />
               <span
-                className={cn(
-                  "text-lg sm:text-xl font-bold tracking-tight font-[var(--font-montserrat)] dark:text-white",
+className={cn(
+                  "text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap font-[var(--font-montserrat)]",
                   mobileOpen ? "text-white" : "text-black"
                 )}
               >
