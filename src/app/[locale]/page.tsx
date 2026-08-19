@@ -9,7 +9,7 @@ import { getTranslations } from "next-intl/server";
 import { AppFrame } from "@/components/ui/app-frame";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
-import { LogoCarousel } from "@/components/ui/logo-carousel";
+import LogoCarousel from "@/components/ui/logo-carousel";
 import { Features } from "@/components/marketing/features";
 import { BusinessTypes } from "@/components/marketing/business-types";
 import { CFDISection } from "@/components/marketing/cfdi-section";
