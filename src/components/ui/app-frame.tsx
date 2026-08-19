@@ -68,7 +68,6 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
             <Link href="#features" className="hover:text-white transition-colors">Productos</Link>
             <Link href="#pricing" className="hover:text-white transition-colors">Precios</Link>
-            <Link href="#resources" className="hover:text-white transition-colors">Recursos</Link>
             <Link href="#footer-contacto" className="hover:text-white transition-colors">Contáctanos</Link>
           </nav>
 
@@ -76,7 +75,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
               Iniciar sesión
             </Link>
-            <Link href="/register" className="text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full hover:bg-zinc-200 transition-colors">
+            <Link href="/signup" className="text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full hover:bg-zinc-200 transition-colors">
               Prueba gratis
             </Link>
           </div>

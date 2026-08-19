@@ -6,9 +6,9 @@ import { gsap } from 'gsap';
 const DEFAULT_ITEMS = [
   { label: 'Productos', href: '#features', rotation: -8 },
   { label: 'Precios', href: '#pricing', rotation: 8 },
-  { label: 'Recursos', href: '#resources', rotation: -8 },
+  { label: 'Contáctanos', href: '#footer-contacto', rotation: -8 },
   { label: 'Iniciar sesión', href: '/login', rotation: 8 },
-  { label: 'Prueba gratis', href: '/register', rotation: -8 }
+  { label: 'Prueba gratis', href: '/signup', rotation: -8 }
 ];
 
 export default function BubbleMenu({
