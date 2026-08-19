@@ -21,7 +21,7 @@ import { Setup } from "@/components/marketing/setup";
 import { FAQ } from "@/components/marketing/faq";
 import { CTA } from "@/components/marketing/cta";
 import { AboutUs } from "@/components/marketing/about-us";
-import { Footer } from "@/components/marketing/footer";
+import Footer from "@/components/ui/footer";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
 import {
