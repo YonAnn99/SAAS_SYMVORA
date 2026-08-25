@@ -43,7 +43,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 │       ├── robots.ts           # robots.txt (disallow /api/, /es/demo, /en/demo; sitemap)
 │       ├── sitemap.ts          # sitemap.xml (www.symvora.com.mx: /es + /en + legales, hreflang)
 │       └── layout.tsx          # metadataBase = getSiteUrl() (www.symvora.com.mx)
-├── supabase/migrations/        # 001-027 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo)
+├── supabase/migrations/        # 001-028 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening)
 ├── e2e/                        # Playwright (app.spec, demo-isolation.spec)
 └── docs/                       # demo-isolation.md, login-background.md
 ```
@@ -60,7 +60,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 
 ## Autenticación
 
-1. **Signup** (3 acordeones: Datos personales → Empresa → Seguridad) → `signUp` (email sin confirmación) → upload logo → [si hay código promo: validar con `validar_codigo_promo` antes de crear tenant] → `complete_onboarding` RPC (crea tenant) → subscription trial → [si hay código promo válido: `/api/promo/apply` → entra directo al dashboard, sin checkout] → `/api/conekta/create-checkout` → redirect Conekta. Fallback `/es/billing`. Checkbox obligatorio de Términos (se registra en `legal_acceptances`).
+1. **Signup** (3 acordeones: Datos personales → Empresa → Seguridad) → `signUp` (email sin confirmación) → upload logo → [si hay código promo: validar con `validar_codigo_promo` antes de crear tenant] → `complete_onboarding` RPC (crea tenant + **suscripción trial server-side**, migración 028) → [si hay código promo válido: `/api/promo/apply` → entra directo al dashboard, sin checkout] → `/api/conekta/create-checkout` → redirect Conekta. Fallback `/es/billing`. Checkbox obligatorio de Términos (se registra en `legal_acceptances`). **El cliente ya NO inserta subscriptions** — políticas INSERT/UPDATE de authenticated eliminadas (anti bypass de pago).
 2. **Login** → `signInWithPassword` + CAPTCHA Turnstile (gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) + throttle (5 intentos, backoff 30s→15min, countdown en vivo).
 3. **Middleware** refresca JWT por request; `custom_access_token_hook` inyecta `user_role` + `tenant_id` en el JWT.
 4. **Hardening**: `requireTenantAccess()` autentica por cookie (nunca JWT claims) y valida el permiso contra `role_permissions`.
@@ -227,6 +227,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - Env pendientes: `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
 - **Conekta producción (2026-08-24)**: claves productivas configuradas en Vercel (`CONEKTA_PRIVATE_KEY`, `CONEKTA_PUBLIC_KEY`, `CONEKTA_WEBHOOK_PUBLIC_KEY`) y `CONEKTA_WEBHOOK_SECRET` legacy eliminado. Webhook fail-closed verificado (401 sin firma). Pendiente: registrar la URL del webhook en el dashboard de Conekta y prueba de pago real end-to-end.
 - `role_permissions` con RLS deshabilitado (decidir si habilitar).
+- **Auditoría BD pendiente (2026-08-24, no crítico)**: doble sistema de trials (`trial_codes` + `codigos_promocionales` — deprecar uno); `tenants_insert` con `with_check=true` (cualquier autenticado crea tenants vía API); `activity_logs_insert` no valida `user_id` (spoofing de auditoría); facturas/pagos_terminal sin RBAC por rol (solo tenant isolation); `auth_rls_initplan` en 4 tablas (usar `(select auth.uid())`); 16 FKs sin índice; ~15 índices sin uso; leaked password protection deshabilitado en Auth.
 - **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
 
 ---
@@ -242,6 +243,8 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 7. **Onboarding huérfano**: página duplicada de `complete_onboarding` eliminada (invitados van a `/dashboard`).
 8. **`.single()` truena con multi-tenancy**: hook `use-current-tenant` con `.limit(1)`.
 9. **Billing redirect loop**: `/billing` en `isPublicRoute`.
+10. **Bypass de pago en `subscriptions`** (migración 028): políticas INSERT (sin restricción de status) y UPDATE (ORG_ADMIN podía `SET status='active'` — PoC verificado) permitían activarse sin pagar por Conekta. Fix: trial se crea en `complete_onboarding` (server-side) y se eliminaron ambas políticas; el estado lo gestionan webhook/APIs (service_role BYPASSRLS). No reintroducir políticas de escritura de subscriptions para authenticated.
+11. **Estandarización (migración 028)**: `productos.proveedor_id` sin FK (añadida, ON DELETE SET NULL); `facturas_folios.tenant_id` era la única FK a tenants sin CASCADE; faltaban UNIQUE de negocio `productos(tenant_id, codigo_barras)` y `clientes(tenant_id, rfc)` (índices únicos parciales); `TRUNCATE` otorgado a anon/authenticated (RLS no lo cubre — revocado); funciones trigger ejecutables por anon (revocado).
 
 ---
 

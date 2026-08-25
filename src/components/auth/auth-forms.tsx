@@ -487,22 +487,8 @@ export function AuthForms({
       return;
     }
 
-    // Create subscription with trial status
-    const { error: subError } = await supabase
-      .from("subscriptions")
-      .insert({
-        tenant_id: tenant.id,
-        status: "trial",
-        payment_method: "card",
-        trial_start: new Date().toISOString(),
-        trial_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      })
-      .select()
-      .single();
-
-    if (subError) {
-      console.error("Error creating subscription:", subError);
-    }
+    // La suscripción trial (7 días) se crea server-side dentro de
+    // complete_onboarding (migración 028) — no insertar aquí.
 
     // Aplicar código promocional: consume el código y extiende el trial.
     // Si aplica, entra directo al sistema sin pasar por el checkout de Conekta.
