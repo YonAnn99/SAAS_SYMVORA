@@ -5,12 +5,12 @@ import Image from "next/image";
 
 const logos = [
   { src: "/enterprises/ghost-logo.webp", alt: "Ghost" },
-  { src: "/enterprises/logo_acrylitec.webp", alt: "Acrylitec" },
-  { src: "/enterprises/logo.webp", alt: "SYMVORA" },
+  { src: "/enterprises/logo_acrylitec.webp", alt: "Acrylitec Acrílicos" },
+  { src: "/enterprises/logo.webp", alt: "Gecotay Mobiliario e Insumos" },
 ];
 
 export default function LogoCarousel() {
-  const extendedLogos = [...logos, ...logos, ...logos, ...logos, ...logos, ...logos];
+  const extendedLogos = [...logos, ...logos, ...logos, ...logos];
 
   return (
     <section className="py-8 sm:py-12 border-y border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-950/50 overflow-hidden relative">
@@ -35,7 +35,7 @@ export default function LogoCarousel() {
         </p>
         
         <div className="relative flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
-          <div className="flex animate-infinite-scroll items-center gap-12 sm:gap-24 pr-12 sm:pr-24">
+          <div className="flex animate-infinite-scroll items-center gap-8 sm:gap-10">
             {extendedLogos.map((logo, index) => (
               <div key={index} className="flex items-center justify-center shrink-0">
                 <Image
@@ -43,7 +43,7 @@ export default function LogoCarousel() {
                   alt={logo.alt}
                   width={140}
                   height={40}
-                  className="object-contain h-12 sm:h-16 w-auto brightness-0 dark:invert opacity-40 hover:opacity-100 transition-opacity duration-300"
+                  className="object-contain h-6 sm:h-8 w-auto brightness-0 dark:invert opacity-40 hover:opacity-100 transition-opacity duration-300"
                 />
               </div>
             ))}
