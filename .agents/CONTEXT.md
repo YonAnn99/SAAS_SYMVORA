@@ -43,7 +43,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 │       ├── robots.ts           # robots.txt (disallow /api/, /es/demo, /en/demo; sitemap)
 │       ├── sitemap.ts          # sitemap.xml (www.symvora.com.mx: /es + /en + legales, hreflang)
 │       └── layout.tsx          # metadataBase = getSiteUrl() (www.symvora.com.mx)
-├── supabase/migrations/        # 001-025 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods)
+├── supabase/migrations/        # 001-027 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo)
 ├── e2e/                        # Playwright (app.spec, demo-isolation.spec)
 └── docs/                       # demo-isolation.md, login-background.md
 ```
@@ -60,7 +60,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 
 ## Autenticación
 
-1. **Signup** (3 acordeones: Datos personales → Empresa → Seguridad) → `signUp` (email sin confirmación) → upload logo → `complete_onboarding` RPC (crea tenant) → subscription trial → `/api/conekta/create-checkout` → redirect Conekta. Fallback `/es/billing`. Checkbox obligatorio de Términos (se registra en `legal_acceptances`).
+1. **Signup** (3 acordeones: Datos personales → Empresa → Seguridad) → `signUp` (email sin confirmación) → upload logo → [si hay código promo: validar con `validar_codigo_promo` antes de crear tenant] → `complete_onboarding` RPC (crea tenant) → subscription trial → [si hay código promo válido: `/api/promo/apply` → entra directo al dashboard, sin checkout] → `/api/conekta/create-checkout` → redirect Conekta. Fallback `/es/billing`. Checkbox obligatorio de Términos (se registra en `legal_acceptances`).
 2. **Login** → `signInWithPassword` + CAPTCHA Turnstile (gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) + throttle (5 intentos, backoff 30s→15min, countdown en vivo).
 3. **Middleware** refresca JWT por request; `custom_access_token_hook` inyecta `user_role` + `tenant_id` en el JWT.
 4. **Hardening**: `requireTenantAccess()` autentica por cookie (nunca JWT claims) y valida el permiso contra `role_permissions`.
@@ -87,9 +87,9 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 ## Base de Datos (Supabase)
 
 - **Enums (9)**: app_role, unidad_medida, metodo_pago, estado_venta, estado_compra, estado_caja, tipo_movimiento, subscription_status, billing_period.
-- **Tablas (19)**: tenants, tenant_settings, user_roles, tenant_memberships, productos, clientes, proveedores, ventas, detalle_ventas, compras, detalle_compras, cajas, movimientos_caja, activity_logs, subscriptions, payment_history, trial_codes, legal_acceptances, facturas/factura_detalle.
-- **Funciones SQL clave**: `user_tenant_ids()`, `authorize()`, `custom_access_token_hook()`, `log_activity()`, `complete_onboarding()` (SECURITY DEFINER, valida `auth.uid()`), `complete_sale()` (SECURITY DEFINER atómico), `reset_demo_tenant()`, `is_demo_user()` / `current_user_is_demo()` (solo service_role).
-- **Migraciones**: 001-025. Aplicar en Supabase SQL Editor con "Without RLS".
+- **Tablas (20)**: tenants, tenant_settings, user_roles, tenant_memberships, productos, clientes, proveedores, ventas, detalle_ventas, compras, detalle_compras, cajas, movimientos_caja, activity_logs, subscriptions, payment_history, trial_codes, legal_acceptances, facturas/factura_detalle, codigos_promocionales.
+- **Funciones SQL clave**: `user_tenant_ids()`, `authorize()`, `custom_access_token_hook()`, `log_activity()`, `complete_onboarding()` (SECURITY DEFINER, valida `auth.uid()`), `complete_sale()` (SECURITY DEFINER atómico), `reset_demo_tenant()`, `is_demo_user()` / `current_user_is_demo()` (solo service_role), `validar_codigo_promo()` / `aplicar_codigo_promo()` (SECURITY DEFINER, migración 027).
+- **Migraciones**: 001-027. Aplicar en Supabase SQL Editor con "Without RLS".
 
 ---
 
@@ -109,6 +109,49 @@ next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zu
 6. CFDI 4.0 con PAC Finkok/SWSapien, sello digital real (`@cfdi/xml` + timbrado SOAP), credenciales cifradas.
 7. MercadoPago Point para cobro por terminal en el POS.
 8. Demo pública con aislamiento total (`assertNotDemo()` en 12 endpoints → `403 DEMO_MODE_RESTRICTED`).
+
+---
+
+## Códigos Promocionales (migración 027)
+
+Otorgan días de trial extra **sin pasar por Conekta**. Un código válido extiende `subscriptions.trial_end` y el usuario entra directo al sistema.
+
+> ⚠️ **No confundir** con la tabla/API `trial_codes` (preexistente, migraciones anteriores) — sistema distinto. Los códigos promocionales viven en `codigos_promocionales` y usan `/api/promo/apply`.
+
+- **Tabla `codigos_promocionales`**: `codigo` (unique, normalizado a uppercase), `trial_days` (1-90, default 7), `activo`, `expira_en`, `usado_por_tenant_id` + `usado_en` (**un solo uso global**). RLS habilitado **sin políticas** — nadie lee la tabla vía PostgREST; acceso solo vía RPCs SECURITY DEFINER o service role.
+- **RPCs**: `validar_codigo_promo(codigo)` → `{valido, razon|trial_days}` (feedback en vivo, no consume); `aplicar_codigo_promo(codigo, tenant_id)` → atómico (`FOR UPDATE` anti-carrera), valida `auth.uid()` + membresía, idempotente para el mismo tenant, rechaza suscripciones `active` (nunca regresa a trial una cuenta que paga).
+- **API**: `POST /api/promo/apply` (`requireTenantAccess` + `assertNotDemo`); ejecuta el RPC con el cliente autenticado del usuario (cookies), no con service role (el RPC valida `auth.uid()`).
+- **UI**: signup (`auth-forms.tsx`, campo colapsable — valida **antes** de crear el tenant para retry limpio) y `/billing` (aplicable si la suscripción no está `active`).
+
+### Cómo generar/gestionar códigos (Supabase Dashboard)
+
+Los códigos los crea el dueño del negocio manualmente — no hay panel automático ni integración con Conekta.
+
+**SQL Editor** (o Table Editor → tabla `codigos_promocionales` → Insert row):
+
+```sql
+-- Básico: 7 días de trial, sin expiración
+INSERT INTO codigos_promocionales (codigo) VALUES ('LANZAMIENTO');
+
+-- Con fecha de expiración
+INSERT INTO codigos_promocionales (codigo, expira_en)
+VALUES ('BIENVENIDA', '2026-12-31 23:59:59-06');
+
+-- Con más días de prueba
+INSERT INTO codigos_promocionales (codigo, trial_days)
+VALUES ('PROMO15', 15);
+```
+
+```sql
+-- Ver códigos y quién usó cuál
+SELECT codigo, trial_days, activo, expira_en, usado_en, usado_por_tenant_id
+FROM codigos_promocionales ORDER BY created_at DESC;
+
+-- Desactivar (deja de funcionar sin borrarlo)
+UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
+```
+
+**Reglas activas**: uppercase (`lanzamiento` = `LANZAMIENTO`), trim automático, un solo uso global (queda registrado quién/cuándo), rechazados si expirados/inactivos/usados, nunca aplicables a cuentas que ya pagan. **Sugerencia**: usar códigos no adivinables (ej. `SYM-7X4K9`) porque cualquiera que los conozca puede consumirlos.
 
 ---
 
@@ -164,6 +207,7 @@ next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zu
 ### Completado
 - **Core**: dashboard (KPIs + 3 gráficas Recharts), productos CRUD, POS, compras/proveedores, caja, users/roles, activity logs, reports, settings, lots/variants/inventory-adjustments/purchase-orders.
 - **Billing**: Conekta (checkout, webhook firmado, trial codes, subscriptions, payment_history), métodos actuales v2.3 (tarjeta/billeteras/SPEI/BBVA/efectivo en tiendas), historial de pagos en `/billing` + cancelar suscripción con diálogo de confirmación.
+- **Códigos promocionales** (2026-08-24): migración 027, RPCs validar/aplicar, API `/api/promo/apply`, campo en signup (salta checkout de Conekta) y sección en `/billing`. Verificado en BD (7 tests SQL: válido, reuso, idempotencia, tenant ajeno, anon). Generación manual vía Supabase (ver sección "Códigos Promocionales").
 - **Refactor FDD (Fases 0-7)**: lógica extraída de páginas/lib hacia `src/features/` (pos, cash-register, customers, inventory, payments, facturacion) con barrels, services, hooks y componentes; `lib/{cfdi,conekta,mercadopago}` reubicados; `lib/fiscal-secrets.ts` conserva credenciales PAC; rutas API delgadas sobre `factura-service`; nuevo Combobox (Base UI, 0 deps) con `customer-selector` buscable + hook `use-customers`. Verificado: tsc limpio, 104 tests, lint baseline 188, build webpack (el build Turbopack tiene panic preexistente de sourcemaps → usar `next build --webpack`).
 - **Facturación CFDI 4.0**: schema, catálogos SAT, XML, PAC, APIs create/stamp/cancel/list, UI `/facturas`.
 - **Landing**: hero con PosMockup, features, FAQ (8 preguntas), CTA anual/mensual, WhatsApp, CompatibilityBar, footer legal.
