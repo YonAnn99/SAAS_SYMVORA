@@ -43,7 +43,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 │       ├── robots.ts           # robots.txt (disallow /api/, /es/demo, /en/demo; sitemap)
 │       ├── sitemap.ts          # sitemap.xml (www.symvora.com.mx: /es + /en + legales, hreflang)
 │       └── layout.tsx          # metadataBase = getSiteUrl() (www.symvora.com.mx)
-├── supabase/migrations/        # 001-028 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening)
+├── supabase/migrations/        # 001-030 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría)
 ├── e2e/                        # Playwright (app.spec, demo-isolation.spec)
 └── docs/                       # demo-isolation.md, login-background.md
 ```
@@ -87,7 +87,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 ## Base de Datos (Supabase)
 
 - **Enums (9)**: app_role, unidad_medida, metodo_pago, estado_venta, estado_compra, estado_caja, tipo_movimiento, subscription_status, billing_period.
-- **Tablas (20)**: tenants, tenant_settings, user_roles, tenant_memberships, productos, clientes, proveedores, ventas, detalle_ventas, compras, detalle_compras, cajas, movimientos_caja, activity_logs, subscriptions, payment_history, trial_codes, legal_acceptances, facturas/factura_detalle, codigos_promocionales.
+- **Tablas (19)**: tenants, tenant_settings, user_roles, tenant_memberships, productos, clientes, proveedores, ventas, detalle_ventas, compras, detalle_compras, cajas, movimientos_caja, activity_logs, subscriptions, payment_history, legal_acceptances, facturas/factura_detalle, codigos_promocionales. (`trial_codes` eliminada en migración 029 — sistema muerto, reemplazado por códigos promocionales.)
 - **Funciones SQL clave**: `user_tenant_ids()`, `authorize()`, `custom_access_token_hook()`, `log_activity()`, `complete_onboarding()` (SECURITY DEFINER, valida `auth.uid()`), `complete_sale()` (SECURITY DEFINER atómico), `reset_demo_tenant()`, `is_demo_user()` / `current_user_is_demo()` (solo service_role), `validar_codigo_promo()` / `aplicar_codigo_promo()` (SECURITY DEFINER, migración 027).
 - **Migraciones**: 001-027. Aplicar en Supabase SQL Editor con "Without RLS".
 
@@ -227,7 +227,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - Env pendientes: `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
 - **Conekta producción (2026-08-24)**: claves productivas configuradas en Vercel (`CONEKTA_PRIVATE_KEY`, `CONEKTA_PUBLIC_KEY`, `CONEKTA_WEBHOOK_PUBLIC_KEY`) y `CONEKTA_WEBHOOK_SECRET` legacy eliminado. Webhook fail-closed verificado (401 sin firma). Pendiente: registrar la URL del webhook en el dashboard de Conekta y prueba de pago real end-to-end.
 - `role_permissions` con RLS deshabilitado (decidir si habilitar).
-- **Auditoría BD pendiente (2026-08-24, no crítico)**: doble sistema de trials (`trial_codes` + `codigos_promocionales` — deprecar uno); `tenants_insert` con `with_check=true` (cualquier autenticado crea tenants vía API); `activity_logs_insert` no valida `user_id` (spoofing de auditoría); facturas/pagos_terminal sin RBAC por rol (solo tenant isolation); `auth_rls_initplan` en 4 tablas (usar `(select auth.uid())`); 16 FKs sin índice; ~15 índices sin uso; leaked password protection deshabilitado en Auth.
+- **Auditoría BD (2026-08-24, migraciones 028-030)**: ✅ cerrado bypass de pago en subscriptions; ✅ FK productos.proveedor_id; ✅ facturas_folios CASCADE; ✅ UNIQUE codigo_barras/RFC; ✅ REVOKE TRUNCATE/EXECUTE; ✅ `trial_codes` eliminada (0 filas, sin UI) junto con sus 3 APIs; ✅ `tenants_insert` arbitraria bloqueada; ✅ activity_logs exige `user_id = auth.uid()`; ✅ RBAC facturación (`authorize('billing.create')` para escrituras — CAJERO solo lectura; pagos_terminal solo lectura); ✅ initplan `(select auth.uid())`; ✅ 16 índices FK. Linters Supabase limpios (solo avisos intencionales). Pendiente menor: activar leaked password protection en Auth (dashboard, no SQL); revisar índices sin uso con tráfico real antes de eliminar.
 - **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
 
 ---
