@@ -448,7 +448,7 @@ export function AuthForms({
         p_giro_comercial: giroComercial,
         p_configuracion_json: configuracionJson,
         p_logo_url: logoUrl,
-        p_referral_code: referralCode || undefined,
+        p_referral_code: referralCode || null,
       }
     );
 

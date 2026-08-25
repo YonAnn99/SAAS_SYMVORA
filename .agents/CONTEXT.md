@@ -180,7 +180,8 @@ next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zu
 - Locales hardcodeados en redirects (`auth-forms.tsx`, `billing/success`).
 - Descarga XML/PDF de facturas + vista de detalle.
 - Legal stubs en aviso de privacidad (`[Domicilio del responsable]`, `[privacidad@symvora.com]`).
-- Env pendientes: `CONEKTA_WEBHOOK_PUBLIC_KEY`, `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
+- Env pendientes: `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
+- **Conekta producción (2026-08-24)**: claves productivas configuradas en Vercel (`CONEKTA_PRIVATE_KEY`, `CONEKTA_PUBLIC_KEY`, `CONEKTA_WEBHOOK_PUBLIC_KEY`) y `CONEKTA_WEBHOOK_SECRET` legacy eliminado. Webhook fail-closed verificado (401 sin firma). Pendiente: registrar la URL del webhook en el dashboard de Conekta y prueba de pago real end-to-end.
 - `role_permissions` con RLS deshabilitado (decidir si habilitar).
 - **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
 
