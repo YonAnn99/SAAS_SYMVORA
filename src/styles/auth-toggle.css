@@ -637,9 +637,9 @@
     align-items: center;
     gap: 8px;
     background: #fff;
-    padding: 28px 0 40px;
+    padding: 28px 0 44px;
     border-radius: 32px 32px 50% 50% / 32px 32px 24px 24px;
-    margin-bottom: -24px;
+    margin-bottom: -12px;
     position: relative;
     z-index: 2;
   }
@@ -657,12 +657,14 @@
     color: #111;
   }
 
-  /* Pill toggle replacing the desktop sliding panel */
+  /* Pill toggle replacing the desktop sliding panel.
+     margin-top 20px: con el cap en -12px, el pill empieza 8px por debajo
+     del punto más bajo de la curva — sin solapamiento en centro ni bordes. */
   .auth-mobile-pill-toggle {
     display: flex;
     position: relative;
     z-index: 1;
-    margin: 0 24px 20px;
+    margin: 20px 24px 20px;
     padding: 4px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);
