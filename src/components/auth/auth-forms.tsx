@@ -130,6 +130,8 @@ export function AuthForms({
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupLoading, setSignupLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [showPromoInput, setShowPromoInput] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -377,6 +379,27 @@ export function AuthForms({
       return;
     }
 
+    // Validar el código promocional ANTES de crear el tenant: si es inválido
+    // el usuario puede corregirlo y reintentar sin dejar registros huérfanos.
+    const promoTrimmed = promoCode.trim();
+    if (promoTrimmed) {
+      const { data: promoCheck } = await supabase.rpc("validar_codigo_promo", {
+        p_codigo: promoTrimmed,
+      });
+      const check = promoCheck as { valido: boolean; razon?: string } | null;
+      if (!check?.valido) {
+        setSignupError(
+          check?.razon === "usado"
+            ? t("auth.promoUsed")
+            : check?.razon === "expirado"
+              ? t("auth.promoExpired")
+              : t("auth.promoInvalid")
+        );
+        setSignupLoading(false);
+        return;
+      }
+    }
+
     // Registrar la aceptación de documentos legales como evidencia de auditoría.
     // Si falla, no bloqueamos el signup — el consentimiento ya quedó registrado en el click
     // del checkbox y la existencia de la cuenta; el registro en BD es solo evidencia adicional.
@@ -479,6 +502,27 @@ export function AuthForms({
 
     if (subError) {
       console.error("Error creating subscription:", subError);
+    }
+
+    // Aplicar código promocional: consume el código y extiende el trial.
+    // Si aplica, entra directo al sistema sin pasar por el checkout de Conekta.
+    if (promoTrimmed) {
+      try {
+        const promoRes = await fetch("/api/promo/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant_id: tenant.id, codigo: promoTrimmed }),
+        });
+        const promoData = await promoRes.json();
+        if (promoRes.ok && promoData.ok) {
+          router.push(`/${locale}/dashboard`);
+          router.refresh();
+          return;
+        }
+        console.error("Promo apply failed:", promoData.error);
+      } catch (err) {
+        console.error("Error applying promo:", err);
+      }
     }
 
     // Create Conekta checkout
@@ -685,6 +729,35 @@ export function AuthForms({
                 </div>
               </AccordionItem>
             </Accordion>
+
+            <div style={{ marginTop: "20px", textAlign: "left" }}>
+              {!showPromoInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPromoInput(true)}
+                  className="auth-inline-link"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    fontSize: "13px",
+                  }}
+                >
+                  {t("auth.promoHaveCode")}
+                </button>
+              ) : (
+                <input
+                  type="text"
+                  placeholder={t("auth.promoPlaceholder")}
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  maxLength={40}
+                  autoComplete="off"
+                  style={{ ...inputStyle, marginBottom: 0 }}
+                />
+              )}
+            </div>
 
             <label
               htmlFor="acceptTerms"

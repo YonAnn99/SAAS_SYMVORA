@@ -94,6 +94,8 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [referralCode, setReferralCode] = useState<string>("");
   const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
   const [copied, setCopied] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoApplying, setPromoApplying] = useState(false);
 
   const fetchSubscription = async () => {
     if (!tenantId) {
@@ -236,6 +238,40 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
     } catch {
       toast.error(t("common.error"));
       setProcessing(false);
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    if (!tenantId || !promoCode.trim()) return;
+    setPromoApplying(true);
+    try {
+      const response = await fetch("/api/promo/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: tenantId, codigo: promoCode }),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.ok) {
+        toast.success(t("billing.promoApplied", { days: data.trial_days }));
+        setPromoCode("");
+        fetchSubscription();
+      } else {
+        const razon = data.error;
+        toast.error(
+          razon === "usado"
+            ? t("billing.promoUsed")
+            : razon === "expirado"
+              ? t("billing.promoExpired")
+              : razon === "suscripcion_activa"
+                ? t("billing.promoActiveSub")
+                : t("billing.promoInvalid")
+        );
+      }
+    } catch {
+      toast.error(t("common.error"));
+    } finally {
+      setPromoApplying(false);
     }
   };
 
@@ -467,6 +503,29 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 <ExternalLink className="mr-2 h-4 w-4" />
                 {t("billing.payCash")}
               </Button>
+
+              {subscription?.status !== "active" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder={t("billing.promoPlaceholder")}
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    maxLength={40}
+                    autoComplete="off"
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                  <Button
+                    onClick={handleApplyPromo}
+                    disabled={promoApplying || !promoCode.trim()}
+                    className="shrink-0"
+                    variant="outline"
+                    size="sm"
+                  >
+                    {promoApplying ? t("common.loading") : t("billing.promoApply")}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {subscription?.status !== "canceled" && (
