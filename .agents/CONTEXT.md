@@ -219,6 +219,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 ### Pendiente
 - **Google Search Console (verificar mañana)**: comprobar estado del sitemap `https://www.symvora.com.mx/sitemap.xml` (debe estar "Success"), usar URL Inspection → Request indexing en `https://www.symvora.com.mx/es`, y confirmar que `app.symvora.com.mx/*` aparece como "Excluded/noindex". Verificar antes que `/robots.txt` y `/sitemap.xml` responden en producción.
 - Envío de correo con `@symvora.com.mx` (Resend Sending Domain + fusión SPF con `include:_spf.mx.cloudflare.net include:amazonses.com`) — solo si se quiere.
+- **Emails de bienvenida (2026-08-24)**: ✅ dominio `symvora.com.mx` verificado en Resend (DNS en Cloudflare); `RESEND_FROM_EMAIL=SYMVORA <no-reply@symvora.com.mx>` en Vercel (Production+Preview). Plantilla rediseñada con identidad de marca (negro/hueso `#F0EFED`) en `src/lib/email.ts` con 2 variantes (`type: "signup" | "first_payment"`). Trigger signup: `POST /api/email/welcome` (fire-and-forget desde `auth-forms.tsx`); trigger primer pago: webhook Conekta (`sendWelcomeEmailToOwner`). Envío real verificado a Hotmail (2/2 ok). Script de prueba: `scripts/test-email.ts` (requiere `TEST_EMAIL_TO` + `.env.local`).
 - Config fiscal de producción (RFC, PAC, certificados) — prerequisito para timbrar.
 - Fix `pac-client.ts` `getEndpoint()` (retorna demo URL en producción).
 - Locales hardcodeados en redirects (`auth-forms.tsx`, `billing/success`).

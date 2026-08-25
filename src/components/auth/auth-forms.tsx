@@ -487,6 +487,14 @@ export function AuthForms({
       return;
     }
 
+    // Email de bienvenida (fire-and-forget): nunca bloquea ni rompe el signup.
+    fetch("/api/email/welcome", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenant_id: tenant.id }),
+      keepalive: true,
+    }).catch((err) => console.error("Welcome email failed:", err));
+
     // La suscripción trial (7 días) se crea server-side dentro de
     // complete_onboarding (migración 028) — no insertar aquí.
 

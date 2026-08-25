@@ -231,6 +231,7 @@ async function sendWelcomeEmailToOwner(
       to: email,
       businessName: tenant.nombre_comercial || "tu negocio",
       referralCode: tenant.codigo_referido,
+      type: "first_payment",
     });
   } catch (emailError) {
     console.error("[conekta-webhook] Failed to send welcome email:", emailError);
