@@ -29,14 +29,14 @@ export function Hero() {
       >
         {/* Headline */}
         <motion.h1
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-neutral-50 max-w-3xl leading-[1.05] tracking-tighter"
+          className="text-4xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-neutral-50 max-w-3xl leading-[1.05] tracking-tighter"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ delay: 0.3, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
           {t("landing.hero.title")}{" "}
-          <span className="relative text-primary whitespace-nowrap">
+          <span className="relative text-primary">
             {t("landing.hero.highlight")}
             <svg
               className="absolute -bottom-1.5 left-0 w-full h-3 text-primary/30"

@@ -277,3 +277,19 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 7. **Tests** de CFDI y APIs de facturación.
 
 Orden sugerido: 1 → 2 → 3 → 4 → 5 → 6 → 7.
+
+---
+
+## Cambios Frontend/Landing (2026-08-26)
+
+### Hero — limpieza visual y centrado (`src/components/marketing/hero.tsx`)
+- **Eliminado eyebrow span** (franja superior sobre el título): el `motion.span` que mostraba `landing.hero.eyebrow` ("POS · Inventario · Facturación CFDI") fue removido. El span estaba vacío tras quitar el texto pero seguía ocupando espacio como franja visible.
+- **Eliminado trial notice box** (franja debajo del subtitle): el `motion.div` con icono de reloj que mostraba `landing.hero.trialTitle` + `landing.hero.trialDesc` ("Prueba 7 días gratis / Sin tarjeta de crédito...") fue removido. El bloque estaba vacío tras quitar los textos pero seguía renderizando el recuadro `bg-primary/5` con borde.
+- **Centrado del hero**: padding superior reducido de `pt-24 lg:pt-32` a `pt-8 lg:pt-12`. El AppFrame ya aporta `pt-20 md:pt-28` por la navbar fija (`h-[88px]`), por lo que el padding extra del hero empujaba el contenido demasiado hacia abajo. Ahora queda mejor centrado verticalmente.
+- El hero ahora contiene: Headline (título + highlight) → Subtitle → CTAs (botones "Prueba 7 días gratis" + "Ver demo") → columna derecha con PosMockup + badge "+24.5%".
+
+### Claves i18n (`src/messages/es.json` + `en.json`)
+- Las claves `landing.hero.eyebrow`, `landing.hero.trialTitle`, `landing.hero.trialDesc` ya no se consumen desde el componente pero **se mantienen en los JSON** (no eliminadas) para no romper traducciones si se reactivan. El error `MISSING_MESSAGE` reportado en consola era caché del dev server; tras reiniciar Turbopack se resolvió (log limpio, "✓ Compiled" sin errores).
+
+### Nota
+- `LogoCarousel` ("Equipos que construyen el futuro con SYMVORA") y `CompatibilityBar` (Celular/Tablet/Computadora/En la nube) siguen renderizándose después del Hero en `page.tsx` — no fueron eliminados. Si se quieren quitar, editar `src/app/[locale]/page.tsx` líneas 102-103.
