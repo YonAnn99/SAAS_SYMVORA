@@ -10,22 +10,29 @@ const logos = [
 ];
 
 export default function LogoCarousel() {
-  const extendedLogos = [...logos, ...logos, ...logos, ...logos];
+  // 8 copias: cada mitad (4 copias) supera el ancho del viewport, así el
+  // loop translateX(-50%) nunca deja espacio vacío y el reinicio es invisible.
+  const extendedLogos = [...logos, ...logos, ...logos, ...logos, ...logos, ...logos, ...logos, ...logos];
 
   return (
-    <section className="py-8 sm:py-12 border-y border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-950/50 overflow-hidden relative">
-      
+    <section className="py-10 sm:py-14 overflow-hidden relative">
+
       <style>{`
         @keyframes infinite-scroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-infinite-scroll {
-          animation: infinite-scroll 25s linear infinite;
+          animation: infinite-scroll 40s linear infinite;
           width: max-content;
         }
         .animate-infinite-scroll:hover {
           animation-play-state: paused;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-infinite-scroll {
+            animation: none;
+          }
         }
       `}</style>
 
@@ -33,7 +40,7 @@ export default function LogoCarousel() {
         <p className="text-center text-xs sm:text-sm font-semibold tracking-wider text-zinc-500 dark:text-zinc-500 uppercase mb-6 sm:mb-8">
           Equipos que construyen el futuro con SYMVORA
         </p>
-        
+
         <div className="relative flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
           <div className="flex animate-infinite-scroll items-center gap-8 sm:gap-10">
             {extendedLogos.map((logo, index) => (

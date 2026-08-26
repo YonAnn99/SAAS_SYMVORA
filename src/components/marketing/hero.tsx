@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Play, Star } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import {
   easeOutShort,
   staggerContainer,
   fadeInUpSmall,
   fadeInUp,
-  springIcon,
 } from "./animations";
 import { PosMockup } from "./pos-mockup";
 
@@ -20,7 +19,7 @@ export function Hero() {
 
   return (
     <motion.section
-      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 lg:pt-36 pb-20 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-12"
+      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 lg:pt-12 pb-16 lg:pb-24 overflow-hidden flex flex-col lg:flex-row items-center gap-12"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
@@ -98,54 +97,6 @@ export function Hero() {
               <Play className="w-4 h-4" aria-hidden="true" />
               {t("landing.hero.ctaSecondary")}
             </Link>
-          </motion.div>
-        </motion.div>
-
-        <motion.div
-          className="flex items-center gap-3 mt-4"
-          variants={fadeInUpSmall}
-          transition={easeOutShort}
-        >
-          <motion.div
-            className="flex -space-x-3"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={easeOutShort}
-          >
-            {[1, 2, 3].map((i) => (
-              <motion.span
-                key={i}
-                className="w-10 h-10 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-700 shadow-sm inline-block"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: i * 0.1, ...springIcon }}
-                aria-hidden="true"
-              />
-            ))}
-          </motion.div>
-          <motion.div
-            className="flex flex-col"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={easeOutShort}
-          >
-            <div className="flex text-amber-400" aria-label="5 star rating">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <motion.span
-                  key={i}
-                  className="w-4 h-4 inline-block"
-                  initial={{ scale: 0, rotate: -90 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: i * 0.06, ...springIcon }}
-                  aria-hidden="true"
-                >
-                  <Star className="w-4 h-4 fill-current" />
-                </motion.span>
-              ))}
-            </div>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              {t("landing.hero.socialProof")}
-            </span>
           </motion.div>
         </motion.div>
       </motion.div>
