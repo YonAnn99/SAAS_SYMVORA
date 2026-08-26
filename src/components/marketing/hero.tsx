@@ -14,7 +14,7 @@ export function Hero() {
 
   return (
     <motion.section
-      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-32 pb-24 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-12 lg:gap-16"
+      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 lg:pt-12 pb-24 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-12 lg:gap-16"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -27,17 +27,6 @@ export function Hero() {
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Eyebrow */}
-        <motion.span
-          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] bg-primary/10 text-primary dark:bg-primary/20"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ delay: 0.2, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          
-        </motion.span>
-
         {/* Headline */}
         <motion.h1
           className="text-5xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-neutral-50 max-w-3xl leading-[1.05] tracking-tighter"
@@ -75,26 +64,6 @@ export function Hero() {
         >
           {t("landing.hero.subtitle")}
         </motion.p>
-
-        {/* Trial notice box */}
-        <motion.div
-          className="bg-primary/5 dark:bg-primary/10 border border-primary/10 rounded-2xl p-4 md:p-5"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ delay: 0.5, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-
-            </div>
-          </div>
-        </motion.div>
 
         {/* CTAs */}
         <motion.div
