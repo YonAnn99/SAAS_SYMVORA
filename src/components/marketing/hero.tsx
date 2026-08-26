@@ -35,7 +35,7 @@ export function Hero() {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ delay: 0.2, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         >
-          {t("landing.hero.eyebrow")}
+          
         </motion.span>
 
         {/* Headline */}
@@ -91,12 +91,7 @@ export function Hero() {
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-sm text-primary dark:text-primary">
-                {t("landing.hero.trialTitle")}
-              </p>
-              <p className="text-sm text-primary/80 dark:text-primary/70 mt-1">
-                {t("landing.hero.trialDesc")}
-              </p>
+
             </div>
           </div>
         </motion.div>
@@ -149,23 +144,6 @@ export function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* Trust indicators */}
-        <motion.div
-          className="flex items-center gap-6 pt-4"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ delay: 0.7, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-            {t("landing.hero.trustedBy")}
-          </span>
-          <div className="flex items-center gap-4 opacity-40 hover:opacity-100 transition-opacity">
-            <svg className="h-5 w-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-            <svg className="h-5 w-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-            <svg className="h-5 w-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-          </div>
-        </motion.div>
       </motion.div>
 
       {/* Right Column - POS Mockup (40%) */}
