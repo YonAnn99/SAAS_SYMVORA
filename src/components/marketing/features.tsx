@@ -28,14 +28,14 @@ export function Features() {
       className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 flex flex-col gap-12"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.1 }}
       transition={easeOutLong}
     >
       <motion.div
         className="flex flex-col lg:flex-row justify-between items-end gap-6"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.1 }}
         transition={easeOutShort}
       >
         <div className="max-w-2xl">
@@ -43,7 +43,7 @@ export function Features() {
             className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50 mb-3"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={easeOutShort}
           >
             {t("landing.features.title")}
@@ -52,7 +52,7 @@ export function Features() {
             className="text-lg text-neutral-500 dark:text-neutral-400"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ ...easeOutShort, delay: 0.1 }}
           >
             {t("landing.features.subtitle")}
@@ -63,7 +63,7 @@ export function Features() {
           className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:text-blue-700 transition-colors pb-1 border-b border-transparent hover:border-blue-700"
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ ...easeOutShort, delay: 0.2 }}
           whileHover={{ x: 4 }}
         >
@@ -76,7 +76,7 @@ export function Features() {
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.1 }}
       >
         <motion.div
           className="lg:col-span-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col gap-6 group hover:shadow-lg transition-shadow relative overflow-hidden"
