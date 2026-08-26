@@ -231,6 +231,13 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - `role_permissions` con RLS deshabilitado (decidir si habilitar).
 - **Auditoría BD (2026-08-24, migraciones 028-030)**: ✅ cerrado bypass de pago en subscriptions; ✅ FK productos.proveedor_id; ✅ facturas_folios CASCADE; ✅ UNIQUE codigo_barras/RFC; ✅ REVOKE TRUNCATE/EXECUTE; ✅ `trial_codes` eliminada (0 filas, sin UI) junto con sus 3 APIs; ✅ `tenants_insert` arbitraria bloqueada; ✅ activity_logs exige `user_id = auth.uid()`; ✅ RBAC facturación (`authorize('billing.create')` para escrituras — CAJERO solo lectura; pagos_terminal solo lectura); ✅ initplan `(select auth.uid())`; ✅ 16 índices FK. Linters Supabase limpios (solo avisos intencionales). Pendiente menor: leaked password protection requiere plan Pro (no disponible en Free) — mitigado con política de contraseñas fuertes en Auth (min length + caracteres requeridos, gratis) + Turnstile + throttle de login; activar al pasar a Pro. Revisar índices sin uso con tráfico real antes de eliminar.
 - **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
+- **Exportación de datos (CSV/Excel/PDF)**: funcionalidad de exportar datos de inventario, ventas, compras, ajustes, etc.
+  - **Fase 1 - Infraestructura (Semana 1)**: API routes `/api/export/[entidad]` (products, variants, lots, sales, purchases, adjustments), streaming CSV para datasets grandes, Service Role para acceso completo tenant, validación tenant_id via JWT.
+  - **Fase 2 - UI (Semana 1-2)**: Dropdown "Exportar" en tablas (ProductsTable, VariantsTable, LotsTable, SalesTable, PurchasesTable, AdjustmentsTable), formatos CSV/Excel/PDF, filtros de fecha/columnas, selección de columnas.
+  - **Fase 3 - Avanzado (Semana 2-3)**: Exports programados (diario/semanal) vía email/S3, plantillas/preajustes, cola de trabajos para exports grandes (>10k filas), logs de auditoría de exportaciones.
+  - Entidades a exportar: Productos (con variantes y lotes), Variantes, Lotes, Ventas (con detalle), Compras/Órdenes, Ajustes inventario, Movimientos caja, Clientes/Proveedores.
+  - Formatos: CSV (streaming, UTF-8 BOM), Excel (xlsx via lib `xlsx`), PDF (jsPDF + autoTable).
+  - Seguridad: Service Role para export, validación tenant_id via JWT, rate limiting por tenant, logs de auditoría.
 
 ---
 

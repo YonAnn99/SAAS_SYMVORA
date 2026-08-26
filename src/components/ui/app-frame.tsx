@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import BubbleMenu from "./bubble-menu";
-import { CookieBanner } from "./cookie-banner";
+import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -83,9 +83,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
         <main ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden pt-20 md:pt-28 pb-0 scrollbar-hide relative scroll-smooth">
           {children}
-          
-          <CookieBanner />
         </main>
+
+        <ThemeToggleFab />
       </div>
     </div>
   );
