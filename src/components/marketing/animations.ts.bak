@@ -90,6 +90,7 @@ export const scaleIn: Variants = {
   visible: { opacity: 1, scale: 1 },
 };
 
+// Spring configurations
 export const springTransition: Transition = {
   type: "spring",
   stiffness: 300,
@@ -108,6 +109,7 @@ export const springIcon: Transition = {
   damping: 20,
 };
 
+// Custom cubic-bezier for premium feel
 export const cubicBezierPremium: Transition = {
   ease: [0.32, 0.72, 0, 1],
 };
@@ -116,6 +118,10 @@ export const cubicBezierSnappy: Transition = {
   ease: [0.16, 1, 0.3, 1],
 };
 
+/**
+ * GSAP ScrollTrigger helpers - lazy loaded
+ * These are type-only exports for type safety; actual GSAP is lazy-loaded at runtime
+ */
 export interface GSAPStickyStackConfig {
   cards: React.ReactNode[];
   containerRef: React.RefObject<HTMLDivElement>;
@@ -129,7 +135,10 @@ export interface GSAPHorizontalPanConfig {
   reduceMotion: boolean;
 }
 
-export const scrollRevealStagger: Variants = {
+/**
+ * Motion scroll reveal stagger - canonical skeleton (lighter alternative to GSAP)
+ */
+export const scrollRevealStagger = {
   hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
@@ -141,6 +150,9 @@ export const scrollRevealStagger: Variants = {
   },
 };
 
+/**
+ * Scroll reveal stagger with custom delay
+ */
 export const createScrollRevealStagger = (delay: number = 0.06): Variants => ({
   hidden: { opacity: 0, y: 24 },
   visible: {
@@ -152,8 +164,11 @@ export const createScrollRevealStagger = (delay: number = 0.06): Variants => ({
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
-});
+};
 
+/**
+ * Magnetic button hover physics variants
+ */
 export const magneticButton: Variants = {
   initial: { scale: 1 },
   hover: {
@@ -166,6 +181,9 @@ export const magneticButton: Variants = {
   },
 };
 
+/**
+ * Magnetic icon wrapper physics
+ */
 export const magneticIcon: Variants = {
   initial: { x: 0, y: 0, scale: 1 },
   hover: {
@@ -176,6 +194,9 @@ export const magneticIcon: Variants = {
   },
 };
 
+/**
+ * Scroll reveal with blur-to-sharp transition
+ */
 export const blurToSharp: Variants = {
   hidden: { opacity: 0, y: 16, filter: "blur(8px)" },
   visible: {
@@ -189,6 +210,9 @@ export const blurToSharp: Variants = {
   },
 };
 
+/**
+ * Scale + fade with spring
+ */
 export const scaleFadeSpring: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: {
@@ -202,6 +226,9 @@ export const scaleFadeSpring: Variants = {
   },
 };
 
+/**
+ * Page transition variants
+ */
 export const pageTransition: Variants = {
   initial: { opacity: 0, y: 20 },
   enter: {

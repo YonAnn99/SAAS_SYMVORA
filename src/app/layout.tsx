@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Outfit, Geist_Mono } from "next/font/google";
 import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import { JsonLd } from "@/components/marketing/json-ld";
@@ -8,14 +8,17 @@ import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import "./globals.css";
 import "sonner/dist/styles.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfitSans = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -53,7 +56,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0C0C0C",
+  themeColor: "#0A0A0A",
 };
 
 export default async function RootLayout({
@@ -72,11 +75,21 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
+        className={`${outfitSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >
+        {/* Noise overlay - fixed, pointer-events-none */}
+        <div className="noise-overlay" aria-hidden="true" />
         <Providers>{children}</Providers>
-        <JsonLd id="ld-organization" data={org} />
-        <JsonLd id="ld-website" data={site} />
+        <script
+          type="application/ld+json"
+          id="ld-organization"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(org) }}
+        />
+        <script
+          type="application/ld+json"
+          id="ld-website"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(site) }}
+        />
       </body>
     </html>
   );

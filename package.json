@@ -18,6 +18,7 @@
     "@cfdi/xml": "^4.0.20",
     "@gsap/react": "^2.1.2",
     "@marsidev/react-turnstile": "^1.6.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-scroll-area": "^1.2.18",
     "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.12.4",

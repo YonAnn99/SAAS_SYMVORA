@@ -28,14 +28,14 @@ export function Features() {
       className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 flex flex-col gap-12"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
+      viewport={{ once: true, amount: 0.3 }}
       transition={easeOutLong}
     >
       <motion.div
         className="flex flex-col lg:flex-row justify-between items-end gap-6"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
+        viewport={{ once: true, amount: 0.3 }}
         transition={easeOutShort}
       >
         <div className="max-w-2xl">
@@ -43,7 +43,7 @@ export function Features() {
             className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50 mb-3"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={easeOutShort}
           >
             {t("landing.features.title")}
@@ -52,7 +52,7 @@ export function Features() {
             className="text-lg text-neutral-500 dark:text-neutral-400"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={{ ...easeOutShort, delay: 0.1 }}
           >
             {t("landing.features.subtitle")}
@@ -60,10 +60,10 @@ export function Features() {
         </div>
         <motion.a
           href="#"
-          className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:text-blue-700 transition-colors pb-1 border-b border-transparent hover:border-blue-700"
+          className="text-primary text-sm font-medium flex items-center gap-1 hover:text-primary/80 transition-colors pb-1 border-b border-transparent hover:border-primary"
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
+          viewport={{ once: true, amount: 0.3 }}
           transition={{ ...easeOutShort, delay: 0.2 }}
           whileHover={{ x: 4 }}
         >
@@ -76,30 +76,34 @@ export function Features() {
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }}
+        viewport={{ once: true, amount: 0.2 }}
       >
+        {/* Feature 1 - POS (Large - 8 cols) */}
         <motion.div
-          className="lg:col-span-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col gap-6 group hover:shadow-lg transition-shadow relative overflow-hidden"
+          className="lg:col-span-8 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 lg:p-8 flex flex-col gap-6 group hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] transition-shadow relative overflow-hidden"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
         >
+          {/* Ambient glow */}
           <motion.div
-            className="absolute top-0 right-0 w-64 h-64 bg-blue-50 dark:bg-blue-950 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-700"
+            className="absolute top-0 right-0 w-64 h-64 bg-primary/5 dark:bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-700"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 1, ease: "easeOut" }}
             style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
             aria-hidden="true"
           />
+          {/* Icon */}
           <motion.div
-            className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 rounded-lg flex items-center justify-center mb-2 z-10"
+            className="w-12 h-12 bg-primary/10 dark:bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2 z-10"
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.2, ...springIcon }}
           >
             <ShoppingCart className="w-6 h-6" aria-hidden="true" />
           </motion.div>
+          {/* Content */}
           <motion.div
             className="z-10 max-w-md"
             initial={{ opacity: 0, y: 16 }}
@@ -112,10 +116,11 @@ export function Features() {
             <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
               {t("landing.features.pos.description")}
             </p>
-            <span className="text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full">
+            <span className="text-xs font-medium text-primary bg-primary/10 dark:bg-primary/10 px-3 py-1 rounded-full">
               {t("landing.features.pos.stats")}
             </span>
           </motion.div>
+          {/* Bar chart visual */}
           <motion.div
             className="mt-auto pt-6 border-t border-neutral-100 dark:border-neutral-800 flex items-end gap-2 h-32 w-full max-w-sm z-10"
             initial={{ opacity: 0, y: 16 }}
@@ -127,8 +132,8 @@ export function Features() {
                 key={i}
                 className={`w-1/6 rounded-t-sm transition-colors ${
                   i === 5
-                    ? "bg-blue-600 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                    : "bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800"
+                    ? "bg-primary group-hover:shadow-[0_0_15px_rgba(15,23,42,0.5)]"
+                    : "bg-primary/10 dark:bg-primary/5 hover:bg-primary/20 dark:hover:bg-primary/10"
                 }`}
                 style={{ height: `${h}%` }}
                 initial={{ height: 0 }}
@@ -139,8 +144,9 @@ export function Features() {
           </motion.div>
         </motion.div>
 
+        {/* Feature 2 - Inventory (Small - 4 cols) */}
         <motion.div
-          className="lg:col-span-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
+          className="lg:col-span-4 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
@@ -193,8 +199,9 @@ export function Features() {
           </motion.div>
         </motion.div>
 
+        {/* Feature 3 - Purchases (Small - 4 cols) */}
         <motion.div
-          className="lg:col-span-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
+          className="lg:col-span-4 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
@@ -250,8 +257,9 @@ export function Features() {
           </motion.svg>
         </motion.div>
 
+        {/* Feature 4 - Finances (Large - 8 cols) */}
         <motion.div
-          className="lg:col-span-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-shadow"
+          className="lg:col-span-8 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-shadow"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
@@ -295,7 +303,7 @@ export function Features() {
           >
             <div className="w-48 h-48 rounded-full border-[16px] border-neutral-100 dark:border-neutral-800 relative">
               <motion.div
-                className="absolute inset-[-16px] rounded-full border-[16px] border-transparent border-t-blue-600 border-r-blue-600 rotate-45 transition-transform duration-1000 hover:scale-105 cursor-pointer"
+                className="absolute inset-[-16px] rounded-full border-[16px] border-transparent border-t-primary border-r-primary rotate-45 transition-transform duration-1000 hover:scale-105 cursor-pointer"
                 animate={{ rotate: 405 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
