@@ -287,8 +287,8 @@
     "movements": "Movimientos",
     "addMovement": "Agregar movimiento",
     "movementTypes": {
-      "ENTRY": "Entrada",
-      "EXIT": "Salida"
+      "ENTRADA": "Entrada",
+      "SALIDA": "Salida"
     },
     "credit": "Crédito / Fiado",
     "customers": "Clientes",
