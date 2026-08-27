@@ -58,6 +58,14 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
         setShowDialog(false);
         void refetch();
       } catch (error: unknown) {
+        const err = error as { code?: string; details?: string; hint?: string; message?: string } | Error;
+        console.error("[createProduct] Supabase error:", {
+          code: 'code' in err ? err.code : undefined,
+          details: 'details' in err ? err.details : undefined,
+          hint: 'hint' in err ? err.hint : undefined,
+          message: err.message,
+          fullError: err,
+        });
         toast.error(
           error instanceof Error
             ? error.message

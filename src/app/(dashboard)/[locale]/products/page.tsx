@@ -105,6 +105,7 @@ export default function ProductsPage() {
         editingProduct={editingProduct}
         saving={saving}
         onSave={handleSave}
+        tenantId={tenantId ?? ""}
       />
 
       {/* Delete Confirmation Dialog */}

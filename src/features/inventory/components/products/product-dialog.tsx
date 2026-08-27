@@ -30,6 +30,7 @@ import {
   type ProductFormData,
 } from "../../types/inventory.types";
 import type { ProductInput } from "../../services/product-service";
+import { generateNextBarcode, generateNextSku } from "../../services/product-service";
 
 interface ProductDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ interface ProductDialogProps {
   editingProduct: Producto | null;
   saving: boolean;
   onSave: (input: ProductInput) => void;
+  tenantId: string;
 }
 
 export function ProductDialog({
@@ -45,11 +47,13 @@ export function ProductDialog({
   editingProduct,
   saving,
   onSave,
+  tenantId,
 }: ProductDialogProps) {
   const t = useTranslations();
   const [formData, setFormData] = useState<ProductFormData>(
     defaultProductFormData
   );
+  const [generating, setGenerating] = useState(false);
 
   const syncFromEditing = (product: Producto | null) => {
     if (product) {
@@ -71,6 +75,22 @@ export function ProductDialog({
     }
   };
 
+  const generateCodes = async () => {
+    if (editingProduct) return;
+    setGenerating(true);
+    try {
+      const [barcode, sku] = await Promise.all([
+        generateNextBarcode(tenantId),
+        generateNextSku(tenantId),
+      ]);
+      setFormData((prev) => ({ ...prev, codigo_barras: barcode, sku }));
+    } catch (error) {
+      console.error("Error generating codes:", error);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleOpenChange = (next: boolean) => {
     if (!next) setFormData(defaultProductFormData);
     onOpenChange(next);
@@ -78,9 +98,14 @@ export function ProductDialog({
 
   useEffect(() => {
     if (!open) return;
-    const timeout = window.setTimeout(() => syncFromEditing(editingProduct), 0);
+    const timeout = window.setTimeout(() => {
+      syncFromEditing(editingProduct);
+      if (!editingProduct) {
+        generateCodes();
+      }
+    }, 0);
     return () => window.clearTimeout(timeout);
-  }, [open, editingProduct]);
+  }, [open, editingProduct, tenantId]);
 
   const updateField = (field: keyof ProductFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -149,21 +174,23 @@ export function ProductDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Código de barras</Label>
+              <Label className="text-xs">Código de barras {(!editingProduct && formData.codigo_barras) && <span className="text-emerald-500 ml-1 text-[10px]">(auto)</span>}</Label>
               <Input
                 placeholder="EAN-13"
                 value={formData.codigo_barras}
                 onChange={(e) => updateField("codigo_barras", e.target.value)}
                 className="h-8 text-sm font-mono"
+                readOnly={!editingProduct && !!formData.codigo_barras}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">SKU</Label>
+              <Label className="text-xs">SKU {(!editingProduct && formData.sku) && <span className="text-emerald-500 ml-1 text-[10px]">(auto)</span>}</Label>
               <Input
                 placeholder="SKU-001"
                 value={formData.sku}
                 onChange={(e) => updateField("sku", e.target.value)}
                 className="h-8 text-sm font-mono"
+                readOnly={!editingProduct && !!formData.sku}
               />
             </div>
           </div>

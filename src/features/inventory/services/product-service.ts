@@ -15,6 +15,52 @@ export interface ProductInput {
   categoria: string | null;
 }
 
+export async function generateNextBarcode(tenantId: string): Promise<string> {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase
+    .from("productos")
+    .select("codigo_barras")
+    .eq("tenant_id", tenantId)
+    .not("codigo_barras", "is", null)
+    .like("codigo_barras", "750%")
+    .order("codigo_barras", { ascending: false })
+    .limit(1);
+
+  let nextNumber = 1;
+  if (data && data.length > 0 && data[0].codigo_barras) {
+    const lastCode = data[0].codigo_barras;
+    const lastNumber = parseInt(lastCode.slice(-5), 10);
+    if (!isNaN(lastNumber)) {
+      nextNumber = lastNumber + 1;
+    }
+  }
+
+  return `750${nextNumber.toString().padStart(10, "0")}`;
+}
+
+export async function generateNextSku(tenantId: string): Promise<string> {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase
+    .from("productos")
+    .select("sku")
+    .eq("tenant_id", tenantId)
+    .not("sku", "is", null)
+    .like("sku", "PROD-%")
+    .order("sku", { ascending: false })
+    .limit(1);
+
+  let nextNumber = 1;
+  if (data && data.length > 0 && data[0].sku) {
+    const lastSku = data[0].sku;
+    const lastNumber = parseInt(lastSku.split("-")[1], 10);
+    if (!isNaN(lastNumber)) {
+      nextNumber = lastNumber + 1;
+    }
+  }
+
+  return `PROD-${nextNumber.toString().padStart(4, "0")}`;
+}
+
 export async function fetchProducts(tenantId: string): Promise<Producto[]> {
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
