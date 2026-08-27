@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useCashRegister } from "@/features/cash-register/hooks/use-cash-register";
 import { CloseRegisterDialog } from "@/features/cash-register/components/close-register-dialog";
 import { MovementDialog } from "@/features/cash-register/components/movement-dialog";
@@ -12,9 +13,10 @@ import { RegisterSummaryCards } from "@/features/cash-register/components/regist
 
 export default function FinancesPage() {
   const t = useTranslations();
-  const cash = useCashRegister();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const cash = useCashRegister(tenantId);
 
-  if (cash.loading) {
+  if (cash.loading || tenantLoading) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
         {t("common.loading")}

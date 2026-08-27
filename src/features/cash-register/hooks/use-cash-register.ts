@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import type { Caja, MovimientoCaja } from "../types/cash-register.types";
 import {
   addMovement,
@@ -37,7 +38,7 @@ export interface CashRegisterHookState {
   handleCloseRegister: (saldoReal: number, notasCierre: string) => Promise<void>;
 }
 
-export function useCashRegister(): CashRegisterHookState {
+export function useCashRegister(tenantId: string | null): CashRegisterHookState {
   const [activeRegister, setActiveRegister] = useState<Caja | null>(null);
   const [movements, setMovements] = useState<MovimientoCaja[]>([]);
   const [totalVentas, setTotalVentas] = useState(0);
@@ -77,17 +78,29 @@ export function useCashRegister(): CashRegisterHookState {
 
   const handleOpenRegister = useCallback(
     async (fondoInicial: number) => {
-      const userId = await getCurrentUserId();
-      if (!userId) return;
+      if (!tenantId) {
+        toast.error("No se pudo identificar el tenant");
+        return;
+      }
+      try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+          toast.error("No se pudo identificar el usuario");
+          return;
+        }
 
-      const register = await openRegister(userId, fondoInicial);
-      if (register) {
+        const register = await openRegister(userId, tenantId, fondoInicial);
         setActiveRegister(register);
         setShowOpenDialog(false);
+        toast.success("Caja abierta correctamente");
         void refetch();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Error al abrir la caja"
+        );
       }
     },
-    [refetch]
+    [tenantId, refetch]
   );
 
   const handleAddMovement = useCallback(

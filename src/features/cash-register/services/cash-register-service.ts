@@ -53,18 +53,21 @@ export async function fetchVentasTotal(
 
 export async function openRegister(
   userId: string,
+  tenantId: string,
   fondoInicial: number
-): Promise<Caja | null> {
+): Promise<Caja> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("cajas")
     .insert({
       usuario_id: userId,
+      tenant_id: tenantId,
       fondo_inicial: fondoInicial,
     })
     .select()
     .single();
-  return data ?? null;
+  if (error) throw error;
+  return data;
 }
 
 export async function addMovement(
