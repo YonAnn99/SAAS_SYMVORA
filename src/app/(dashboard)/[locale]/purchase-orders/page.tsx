@@ -107,6 +107,7 @@ export default function PurchaseOrdersPage() {
         initialDetails={editingDetails}
         suppliers={suppliers}
         products={products}
+        existingOrders={orders}
         saving={saving}
         onSave={handleSave}
       />

@@ -38,11 +38,23 @@ interface PurchaseOrderDialogProps {
   initialDetails: DetalleOrdenCompra[];
   suppliers: ProductOption[];
   products: { id: string; nombre: string; costo_compra: number }[];
+  existingOrders?: OrdenCompra[];
   saving: boolean;
   onSave: (input: OrdenSaveInput) => void;
 }
 
 const TAX_RATE = 0.16;
+
+function getNextOrderNumber(existingOrders: OrdenCompra[]): string {
+  const prefix = "OC-";
+  const numbers = existingOrders
+    .map((o) => o.numero_orden)
+    .filter((n) => n.startsWith(prefix))
+    .map((n) => parseInt(n.slice(prefix.length), 10))
+    .filter((n) => !isNaN(n));
+  const max = numbers.length > 0 ? Math.max(...numbers) : 0;
+  return `${prefix}${String(max + 1).padStart(3, "0")}`;
+}
 
 export function PurchaseOrderDialog({
   open,
@@ -51,6 +63,7 @@ export function PurchaseOrderDialog({
   initialDetails,
   suppliers,
   products,
+  existingOrders = [],
   saving,
   onSave,
 }: PurchaseOrderDialogProps) {
@@ -73,11 +86,14 @@ export function PurchaseOrderDialog({
           })),
         });
       } else {
-        setFormData(defaultOrdenFormData);
+        setFormData({
+          ...defaultOrdenFormData,
+          numero_orden: getNextOrderNumber(existingOrders),
+        });
       }
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [open, editingOrder, initialDetails]);
+  }, [open, editingOrder, initialDetails, existingOrders]);
 
   const updateField = (field: keyof OrdenFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
