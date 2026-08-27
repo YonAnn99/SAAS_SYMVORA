@@ -10,11 +10,13 @@ import type {
 import {
   createPurchase,
   createSupplier,
+  deletePurchase,
   fetchPurchases,
   fetchSuppliers,
   fetchTenantIdForUser,
   type PurchaseInput,
   type SupplierInput,
+  updatePurchaseStatus,
 } from "../services/purchase-service";
 
 export function usePurchases() {
@@ -97,6 +99,43 @@ export function usePurchases() {
     [tenantId, refetch]
   );
 
+  const handleUpdatePurchaseStatus = useCallback(
+    async (
+      purchaseId: string,
+      estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA"
+    ) => {
+      try {
+        await updatePurchaseStatus(purchaseId, estado);
+        toast.success(`Compra marcada como ${estado.toLowerCase()}`);
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? `Error al actualizar estado: ${error.message}`
+            : "Error al actualizar estado"
+        );
+      }
+    },
+    [refetch]
+  );
+
+  const handleDeletePurchase = useCallback(
+    async (purchaseId: string) => {
+      try {
+        await deletePurchase(purchaseId);
+        toast.success("Compra eliminada correctamente");
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? `Error al eliminar la compra: ${error.message}`
+            : "Error al eliminar la compra"
+        );
+      }
+    },
+    [refetch]
+  );
+
   return {
     purchases,
     suppliers,
@@ -107,6 +146,8 @@ export function usePurchases() {
     setShowNewSupplierDialog,
     handleCreatePurchase,
     handleCreateSupplier,
+    handleUpdatePurchaseStatus,
+    handleDeletePurchase,
     refetch,
   };
 }

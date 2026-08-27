@@ -276,6 +276,8 @@
       "RECIBIDA": "Received",
       "CANCELADA": "Cancelled"
     },
+    "markAsReceived": "Mark as received",
+    "deletePurchase": "Delete purchase",
     "noPurchases": "No purchases recorded"
   },
   "finances": {

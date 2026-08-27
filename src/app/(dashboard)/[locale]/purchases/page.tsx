@@ -21,6 +21,8 @@ export default function PurchasesPage() {
     setShowNewSupplierDialog,
     handleCreatePurchase,
     handleCreateSupplier,
+    handleUpdatePurchaseStatus,
+    handleDeletePurchase,
   } = usePurchases();
 
   if (loading) {
@@ -58,6 +60,8 @@ export default function PurchasesPage() {
           <PurchasesTable
             purchases={purchases}
             onAdd={() => setShowNewPurchaseDialog(true)}
+            onUpdateStatus={handleUpdatePurchaseStatus}
+            onDelete={handleDeletePurchase}
           />
         </TabsContent>
 

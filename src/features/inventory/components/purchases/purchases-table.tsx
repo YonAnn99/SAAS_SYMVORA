@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, ShoppingCart } from "lucide-react";
+import { Plus, ShoppingCart, CheckCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,10 +24,20 @@ import { purchaseStatusColors } from "../../services/purchase-service";
 interface PurchasesTableProps {
   purchases: PurchaseWithRelations[];
   onAdd: () => void;
+  onUpdateStatus: (id: string, estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA") => void;
+  onDelete: (id: string) => void;
 }
 
-export function PurchasesTable({ purchases, onAdd }: PurchasesTableProps) {
+export function PurchasesTable({
+  purchases,
+  onAdd,
+  onUpdateStatus,
+  onDelete,
+}: PurchasesTableProps) {
   const t = useTranslations();
+
+  const canMarkAsReceived = (estado: string) => estado === "PENDIENTE";
+  const canCancel = (estado: string) => estado !== "CANCELADA";
 
   return (
     <Card>
@@ -72,6 +82,9 @@ export function PurchasesTable({ purchases, onAdd }: PurchasesTableProps) {
                   <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("purchases.total")}
                   </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">
+                    Acciones
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -95,6 +108,32 @@ export function PurchasesTable({ purchases, onAdd }: PurchasesTableProps) {
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
                       ${purchase.total.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {canMarkAsReceived(purchase.estado) && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => onUpdateStatus(purchase.id, "RECIBIDA")}
+                            title={t("purchases.markAsReceived")}
+                          >
+                            <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                          </Button>
+                        )}
+                        {canCancel(purchase.estado) && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => onDelete(purchase.id)}
+                            title={t("purchases.deletePurchase")}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

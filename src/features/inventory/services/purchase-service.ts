@@ -93,3 +93,25 @@ export async function createSupplier(
   });
   if (error) throw error;
 }
+
+export async function updatePurchaseStatus(
+  purchaseId: string,
+  estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA"
+): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const updates: { estado: string; fecha_recepcion?: string } = { estado };
+  if (estado === "RECIBIDA") {
+    updates.fecha_recepcion = new Date().toISOString();
+  }
+  const { error } = await supabase
+    .from("compras")
+    .update(updates)
+    .eq("id", purchaseId);
+  if (error) throw error;
+}
+
+export async function deletePurchase(purchaseId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.from("compras").delete().eq("id", purchaseId);
+  if (error) throw error;
+}
