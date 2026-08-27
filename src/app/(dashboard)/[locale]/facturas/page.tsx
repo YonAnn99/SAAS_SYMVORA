@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -133,8 +133,11 @@ export default function FacturasPage() {
 
   useEffect(() => {
     if (!tenantLoading) {
-      fetchFacturas();
-      fetchProductos();
+      const loadData = async () => {
+        await fetchFacturas();
+        await fetchProductos();
+      };
+      loadData();
     }
   }, [tenantLoading, fetchFacturas, fetchProductos]);
 
@@ -632,7 +635,9 @@ export default function FacturasPage() {
                         onValueChange={(v) => updateLinea(index, "producto_id", v || "")}
                       >
                         <SelectTrigger className="h-7 text-xs">
-                          <SelectValue placeholder="Seleccionar" />
+                          <SelectValue placeholder="Seleccionar">
+                            {productos.find((p) => p.id === linea.producto_id)?.nombre ?? linea.producto_id}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {productos.map((p) => (

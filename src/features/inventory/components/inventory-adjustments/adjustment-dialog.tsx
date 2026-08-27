@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +57,28 @@ export function AdjustmentDialog({
   const [formData, setFormData] = useState<AjusteFormData>(
     defaultAjusteFormData
   );
+
+  const selectedProductName = useMemo(
+    () => products.find((p) => p.id === formData.producto_id)?.nombre ?? formData.producto_id,
+    [products, formData.producto_id]
+  );
+
+  const selectedVariantName = useMemo(() => {
+    if (!formData.variante_id) return "";
+    const variant = variants.find((v) => v.id === formData.variante_id);
+    return variant ? `${variant.talla} - ${variant.color} (${variant.sku || "N/A"})` : formData.variante_id;
+  }, [variants, formData.variante_id]);
+
+  const selectedLotName = useMemo(() => {
+    if (!formData.lote_id) return "";
+    const lot = lots.find((l) => l.id === formData.lote_id);
+    if (!lot) return formData.lote_id;
+    let display = `${lot.numero_lote} - ${lot.cantidad} unidades`;
+    if (lot.fecha_caducidad) {
+      display += ` (Exp: ${new Date(lot.fecha_caducidad).toLocaleDateString("es-MX")})`;
+    }
+    return display;
+  }, [lots, formData.lote_id]);
 
   const updateField = (field: keyof AjusteFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -119,7 +141,9 @@ export function AdjustmentDialog({
               onValueChange={(v) => handleProductChange(v ?? "")}
             >
               <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Seleccionar producto" />
+                <SelectValue placeholder="Seleccionar producto">
+                  {selectedProductName}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {products.map((product) => (
@@ -139,7 +163,9 @@ export function AdjustmentDialog({
                 onValueChange={(v) => updateField("variante_id", v ?? "")}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Sin variante" />
+                  <SelectValue placeholder="Sin variante">
+                    {selectedVariantName || "Sin variante"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Sin variante</SelectItem>
@@ -161,7 +187,9 @@ export function AdjustmentDialog({
                 onValueChange={(v) => updateField("lote_id", v ?? "")}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Sin lote" />
+                  <SelectValue placeholder="Sin lote">
+                    {selectedLotName || "Sin lote"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Sin lote</SelectItem>

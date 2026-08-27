@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +113,11 @@ export function PurchaseOrderDialog({
     }));
   };
 
+  const selectedProveedorName = useMemo(
+    () => suppliers.find((s) => s.id === formData.proveedor_id)?.nombre ?? formData.proveedor_id,
+    [suppliers, formData.proveedor_id]
+  );
+
   const getProductCost = (productId: string): number => {
     const product = products.find((p) => p.id === productId);
     return product?.costo_compra ?? 0;
@@ -192,7 +197,9 @@ export function PurchaseOrderDialog({
                 onValueChange={(v) => updateField("proveedor_id", v ?? "")}
               >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Seleccionar proveedor" />
+                  <SelectValue placeholder="Seleccionar proveedor">
+                    {selectedProveedorName}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.map((supplier) => (
@@ -249,7 +256,9 @@ export function PurchaseOrderDialog({
                         }
                       >
                         <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Seleccionar" />
+                          <SelectValue placeholder="Seleccionar">
+                            {products.find((p) => p.id === item.producto_id)?.nombre ?? item.producto_id}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {products.map((product) => (

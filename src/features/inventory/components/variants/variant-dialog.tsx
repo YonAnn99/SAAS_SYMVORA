@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +82,11 @@ export function VariantDialog({
     return () => window.clearTimeout(timeout);
   }, [open, editingVariant]);
 
+  const selectedProductName = useMemo(
+    () => products.find((p) => p.id === formData.producto_id)?.nombre ?? formData.producto_id,
+    [products, formData.producto_id]
+  );
+
   const updateField = (field: keyof VarianteFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -131,7 +136,9 @@ export function VariantDialog({
               disabled={Boolean(editingVariant)}
             >
               <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Seleccionar producto" />
+                <SelectValue placeholder="Seleccionar producto">
+                  {selectedProductName}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {products.map((product) => (

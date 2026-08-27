@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +88,13 @@ export default function PaymentsPage() {
   const [connectionOk, setConnectionOk] = useState(false);
   const [accessTokenSet, setAccessTokenSet] = useState(false);
   const [webhookSecretSet, setWebhookSecretSet] = useState(false);
+
+  const selectedTerminalName = useMemo(() => {
+    if (!terminalId) return "";
+    const terminal = terminalOptions.find((t) => t.id === terminalId);
+    if (!terminal) return terminalId;
+    return `${terminal.description || terminal.id}${terminal.operating_mode === "PDV" ? " (PDV)" : " (no-PDV)"}`;
+  }, [terminalId, terminalOptions]);
 
   useEffect(() => {
     if (tenantLoading) return;
@@ -283,7 +290,9 @@ export default function PaymentsPage() {
                     disabled={!terminalOptions.length}
                   >
                     <SelectTrigger className="h-8 text-sm w-full">
-                      <SelectValue placeholder="Conecta tus terminales primero" />
+                      <SelectValue placeholder="Conecta tus terminales primero">
+                        {selectedTerminalName || "Selecciona una terminal"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Selecciona una terminal</SelectItem>
