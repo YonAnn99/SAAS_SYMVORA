@@ -79,6 +79,33 @@ const ACTION_COLORS: Record<string, string> = {
   DELETE: "bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400",
 };
 
+const ACTION_KEYS: Record<string, string> = {
+  CREATE: "common.create",
+  UPDATE: "common.update",
+  DELETE: "common.delete",
+};
+
+const ENTITY_KEYS: Record<string, string> = {
+  producto: "common.product",
+  productos: "common.product",
+  venta: "common.sale",
+  ventas: "common.sale",
+  compra: "common.purchase",
+  compras: "common.purchase",
+  cliente: "common.customer",
+  clientes: "common.customer",
+  proveedor: "common.supplier",
+  proveedores: "common.supplier",
+  usuario: "common.user",
+  usuarios: "common.user",
+  caja: "common.cashRegister",
+  cajas: "common.cashRegister",
+  config: "common.settings",
+  orden_compra: "common.ordenCompra",
+  movimientos_caja: "common.movimientoCaja",
+  movimiento_caja: "common.movimientoCaja",
+};
+
 const PAGE_SIZE = 50;
 
 export default function ActivityPage() {
@@ -125,7 +152,20 @@ export default function ActivityPage() {
 
   const filteredLogs = entityFilter === "all"
     ? logs
-    : logs.filter((log) => log.entity === entityFilter);
+    : logs.filter((log) => {
+        const filterMap: Record<string, string[]> = {
+          producto: ["producto", "productos"],
+          venta: ["venta", "ventas"],
+          compra: ["compra", "compras"],
+          cliente: ["cliente", "clientes"],
+          proveedor: ["proveedor", "proveedores"],
+          usuario: ["usuario", "usuarios"],
+          caja: ["caja", "cajas"],
+          orden_compra: ["orden_compra", "ordenes_compra"],
+          movimiento_caja: ["movimiento_caja", "movimientos_caja"],
+        };
+        return filterMap[entityFilter]?.includes(log.entity) || log.entity === entityFilter;
+      });
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -252,13 +292,13 @@ export default function ActivityPage() {
                             className={`text-[10px] px-1.5 py-0 gap-1 ${ACTION_COLORS[log.action] || ""}`}
                           >
                             <ActionIcon className="h-3 w-3" />
-                            {t(`common.${log.action.toLowerCase()}`)}
+                            {t(ACTION_KEYS[log.action] || "common.action")}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm">
                             <EntityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span>{t(`common.${log.entity}`) || log.entity}</span>
+                            <span>{t(ENTITY_KEYS[log.entity] || log.entity)}</span>
                             {log.entity_name && (
                               <span className="text-muted-foreground">
                                 — {log.entity_name}
