@@ -949,12 +949,12 @@ export function AuthForms({
           <form onSubmit={handleKeyLogin} style={{ justifyContent: "center" }}>
             <div className="auth-form-center">
               <h1 className="auth-form-title-text">
-                {t("auth.keyLoginTitle") || "Acceso con clave"}
+                {t("auth.keyLoginTitle")}
               </h1>
             </div>
 
             <span className="auth-form-subtitle-text">
-              {t("auth.keyLoginSubtitle") || "Ingresa tu correo y la clave que recibiste por correo"}
+              {t("auth.keyLoginSubtitle")}
             </span>
 
             {keyError && (
@@ -972,7 +972,7 @@ export function AuthForms({
             />
             <input
               type="text"
-              placeholder={t("auth.inviteKeyPlaceholder") || "Clave de invitación (ej. ABC123XY)"}
+              placeholder={t("auth.inviteKeyPlaceholder")}
               value={keyValue}
               onChange={(e) => setKeyValue(e.target.value.toUpperCase())}
               maxLength={8}
@@ -982,7 +982,7 @@ export function AuthForms({
             />
 
             <button type="submit" className="auth-btn" disabled={keyLoading} style={{ width: "100%", marginTop: "12px" }}>
-              {keyLoading ? t("common.loading") : t("auth.enterWithKey") || "Ingresar"}
+              {keyLoading ? t("common.loading") : t("auth.enterWithKey")}
             </button>
 
             <div className="auth-form-link">
@@ -1086,12 +1086,12 @@ export function AuthForms({
           </div>
 
           <div className="auth-divider" style={{ marginTop: "16px" }}>
-            <span>{t("auth.or") || "o"}</span>
+            <span>{t("auth.or")}</span>
           </div>
 
           <div className="auth-form-link">
             <button type="button" onClick={() => setMode("key")} className="auth-key-login-link">
-              {t("auth.employeeLogin") || "¿Eres empleado o colaborador? Ingresa tu clave"}
+              {t("auth.employeeLogin")}
             </button>
           </div>
         </form>
