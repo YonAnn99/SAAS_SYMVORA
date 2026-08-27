@@ -269,6 +269,7 @@ export function AuthForms({
       });
 
       const data = await res.json();
+      console.log("[key-login] API response:", res.status, JSON.stringify(data).substring(0, 200));
 
       if (!res.ok) {
         setKeyError(data.error || "Error al iniciar sesión");
@@ -284,14 +285,16 @@ export function AuthForms({
       });
 
       if (authError) {
-        setKeyError("Error al iniciar sesión");
+        console.error("[key-login] signInWithPassword error:", authError.message, authError.status);
+        setKeyError(`Error al iniciar sesión: ${authError.message}`);
         setKeyLoading(false);
         return;
       }
 
       router.push(`/${locale}/dashboard`);
       router.refresh();
-    } catch {
+    } catch (err) {
+      console.error("[key-login] Connection error:", err);
       setKeyError("Error de conexión");
       setKeyLoading(false);
     }
