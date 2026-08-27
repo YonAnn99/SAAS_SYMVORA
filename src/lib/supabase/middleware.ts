@@ -24,10 +24,14 @@ const ADMIN_ONLY_PATHS = [
   "/purchases",
   "/purchase-orders",
   "/facturas",
-  "/billing",
   "/inventory-adjustments",
   "/variants",
   "/lots",
+];
+
+// Routes that require SUPER_ADMIN only
+const SUPER_ADMIN_ONLY_PATHS = [
+  "/billing",
 ];
 
 const ROLE_HIERARCHY: Record<string, number> = {
@@ -190,11 +194,14 @@ export async function updateSession(request: NextRequest) {
   // Role-based route protection for authenticated users
   if (user && !isAuthRoute && !isPublicRoute) {
     const cleanPath = stripLocale(request.nextUrl.pathname);
-    const requiresAdmin = ADMIN_ONLY_PATHS.some(
+    const requiresSuperAdmin = SUPER_ADMIN_ONLY_PATHS.some(
+      (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
+    );
+    const requiresOrgAdmin = ADMIN_ONLY_PATHS.some(
       (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
     );
 
-    if (requiresAdmin) {
+    if (requiresSuperAdmin || requiresOrgAdmin) {
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (serviceRoleKey) {
         const supabaseAdmin = createClient(url, serviceRoleKey, {
@@ -209,7 +216,9 @@ export async function updateSession(request: NextRequest) {
           .single();
 
         const userRole = membership?.role || "CAJERO";
-        if ((ROLE_HIERARCHY[userRole] || 0) < ROLE_HIERARCHY["ORG_ADMIN"]) {
+        const requiredRole = requiresSuperAdmin ? "SUPER_ADMIN" : "ORG_ADMIN";
+
+        if ((ROLE_HIERARCHY[userRole] || 0) < ROLE_HIERARCHY[requiredRole]) {
           const locale = request.nextUrl.pathname.split("/")[1] || "es";
           const dashboardUrl = request.nextUrl.clone();
           dashboardUrl.pathname = `/${locale}/dashboard`;

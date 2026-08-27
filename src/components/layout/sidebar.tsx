@@ -54,12 +54,12 @@ const navigation: NavItem[] = [
   { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText, minRole: "ORG_ADMIN" },
   { name: "layout.finances", href: "/finances", icon: Wallet, minRole: "ORG_ADMIN" },
   { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true, minRole: "ORG_ADMIN" },
-  { name: "layout.users", href: "/users", icon: Users, minRole: "ORG_ADMIN" },
+  { name: "layout.users", href: "/users", icon: Users, minRole: "SUPER_ADMIN" },
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings, minRole: "ORG_ADMIN" },
   { name: "layout.payments", href: "/settings/payments", icon: Smartphone, minRole: "ORG_ADMIN" },
   { name: "layout.reports", href: "/reports", icon: TrendingUp },
-  { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "ORG_ADMIN" },
+  { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "SUPER_ADMIN" },
 ];
 
 const inventoryNavigation: NavItem[] = [

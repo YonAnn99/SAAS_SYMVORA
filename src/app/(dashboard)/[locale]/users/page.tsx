@@ -70,7 +70,7 @@ export default function UsersPage() {
   const locale = useLocale();
   const isDemo = useIsDemo();
   const { tenantId, role: myRole } = useCurrentTenant();
-  const canManage = myRole === "SUPER_ADMIN" || myRole === "ORG_ADMIN";
+  const canManage = myRole === "SUPER_ADMIN";
 
   const [memberships, setMemberships] = useState<Member[]>([]);
   const [inviteKeys, setInviteKeys] = useState<InviteKey[]>([]);
