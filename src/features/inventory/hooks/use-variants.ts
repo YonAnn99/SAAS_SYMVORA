@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type {
   ProductoOption,
   VarianteProducto,
@@ -63,9 +64,20 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
       try {
         if (editingVariant) {
           await updateVariant(editingVariant.id, input);
+          await logActivity({
+            action: "UPDATE",
+            entity: "producto",
+            entityId: editingVariant.id,
+            entityName: `${input.talla || ""} ${input.color || ""}`.trim() || "Variante",
+          });
           toast.success("Variante actualizada");
         } else {
           await createVariant(tenantId, input);
+          await logActivity({
+            action: "CREATE",
+            entity: "producto",
+            entityName: `${input.talla || ""} ${input.color || ""}`.trim() || "Variante",
+          });
           toast.success("Variante creada");
         }
         setShowDialog(false);
@@ -90,6 +102,12 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
     async (variant: VarianteProducto) => {
       try {
         await deleteVariant(variant.id);
+        await logActivity({
+          action: "DELETE",
+          entity: "producto",
+          entityId: variant.id,
+          entityName: `${variant.talla || ""} ${variant.color || ""}`.trim() || "Variante",
+        });
         toast.success("Variante eliminada");
         setDeleteConfirm(null);
         void refetch();

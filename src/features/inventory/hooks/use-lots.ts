@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type {
   Lote,
   ProductoOption,
@@ -59,9 +60,20 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
       try {
         if (editingLot) {
           await updateLot(editingLot.id, input);
+          await logActivity({
+            action: "UPDATE",
+            entity: "producto",
+            entityId: editingLot.id,
+            entityName: input.numero_lote || "Lote",
+          });
           toast.success("Lote actualizado");
         } else {
           await createLot(tenantId, input);
+          await logActivity({
+            action: "CREATE",
+            entity: "producto",
+            entityName: input.numero_lote || "Lote",
+          });
           toast.success("Lote creado");
         }
         setShowDialog(false);
@@ -84,6 +96,12 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
     async (lot: Lote) => {
       try {
         await deleteLot(lot.id);
+        await logActivity({
+          action: "DELETE",
+          entity: "producto",
+          entityId: lot.id,
+          entityName: lot.numero_lote || "Lote",
+        });
         toast.success("Lote eliminado");
         setDeleteConfirm(null);
         void refetch();

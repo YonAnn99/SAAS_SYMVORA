@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Producto } from "../types/inventory.types";
 import {
   createProduct,
@@ -50,9 +51,20 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
       try {
         if (editingProduct) {
           await updateProduct(editingProduct.id, input);
+          await logActivity({
+            action: "UPDATE",
+            entity: "producto",
+            entityId: editingProduct.id,
+            entityName: input.nombre,
+          });
           toast.success("Producto actualizado");
         } else {
           await createProduct(tenantId, input);
+          await logActivity({
+            action: "CREATE",
+            entity: "producto",
+            entityName: input.nombre,
+          });
           toast.success("Producto creado");
         }
         setShowDialog(false);
@@ -74,6 +86,12 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     async (product: Producto) => {
       try {
         await deleteProduct(product.id);
+        await logActivity({
+          action: "DELETE",
+          entity: "producto",
+          entityId: product.id,
+          entityName: product.nombre,
+        });
         toast.success("Producto eliminado");
         setDeleteConfirm(null);
         void refetch();

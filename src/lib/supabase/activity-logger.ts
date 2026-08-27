@@ -18,21 +18,29 @@ export async function logActivity({
   entityName,
   details,
 }: LogActivityParams) {
-  const supabase = createSupabaseBrowserClient();
+  try {
+    const supabase = createSupabaseBrowserClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) return;
+    if (!user) return;
 
-  await supabase.rpc("log_activity", {
-    p_user_id: user.id,
-    p_user_email: user.email || "",
-    p_action: action,
-    p_entity: entity,
-    p_entity_id: entityId || null,
-    p_entity_name: entityName || null,
-    p_details: details ? JSON.stringify(details) : null,
-  });
+    const { error } = await supabase.rpc("log_activity", {
+      p_user_id: user.id,
+      p_user_email: user.email || "",
+      p_action: action,
+      p_entity: entity,
+      p_entity_id: entityId || null,
+      p_entity_name: entityName || null,
+      p_details: details ? JSON.stringify(details) : null,
+    });
+
+    if (error) {
+      console.error("[activity-logger] RPC error:", error);
+    }
+  } catch (err) {
+    console.error("[activity-logger] unexpected error:", err);
+  }
 }
