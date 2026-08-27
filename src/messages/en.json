@@ -348,7 +348,13 @@
     "role": "Role",
     "status": "Status",
     "lastAccess": "Last access",
-    "noUsers": "No users registered"
+    "noUsers": "No users registered",
+    "inviteKeys": "Access keys",
+    "createdAt": "Created",
+    "confirmDelete": "Remove member",
+    "confirmDeleteDesc": "Are you sure you want to remove {email}? This action cannot be undone.",
+    "confirmRoleChange": "Change role",
+    "confirmRoleChangeDesc": "Change {email}'s role to {role}?"
   },
   "billing": {
     "title": "Subscription",

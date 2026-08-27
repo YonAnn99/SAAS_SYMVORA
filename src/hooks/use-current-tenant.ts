@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { UserRole } from "@/lib/types/database";
 
 interface TenantInfo {
   tenantId: string;
   tenantName: string;
   tenantLogo: string | null;
+  role: UserRole | null;
   loading: boolean;
   error: string | null;
 }
@@ -16,6 +18,7 @@ export function useCurrentTenant(): TenantInfo {
     tenantId: "",
     tenantName: "",
     tenantLogo: null,
+    role: null,
     loading: true,
     error: null,
   });
@@ -32,6 +35,7 @@ export function useCurrentTenant(): TenantInfo {
           tenantId: "",
           tenantName: "",
           tenantLogo: null,
+          role: null,
           loading: false,
           error: "No autenticado",
         });
@@ -41,7 +45,7 @@ export function useCurrentTenant(): TenantInfo {
       const { data: membership, error } = await supabase
         .from("tenant_memberships")
         .select(
-          `tenant_id, 
+          `tenant_id, role,
            tenants!inner(nombre_comercial, logo_url)`
         )
         .eq("user_id", user.id)
@@ -53,6 +57,7 @@ export function useCurrentTenant(): TenantInfo {
           tenantId: "",
           tenantName: "",
           tenantLogo: null,
+          role: null,
           loading: false,
           error: "No se encontró tenant",
         });
@@ -68,6 +73,7 @@ export function useCurrentTenant(): TenantInfo {
         tenantId: membership.tenant_id,
         tenantName: tenantData?.nombre_comercial || "Negocio",
         tenantLogo: tenantData?.logo_url || null,
+        role: membership.role as UserRole,
         loading: false,
         error: null,
       });
@@ -76,6 +82,7 @@ export function useCurrentTenant(): TenantInfo {
         tenantId: "",
         tenantName: "",
         tenantLogo: null,
+        role: null,
         loading: false,
         error: "Error al obtener tenant",
       });

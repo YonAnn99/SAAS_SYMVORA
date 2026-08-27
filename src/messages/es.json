@@ -348,7 +348,13 @@
     "role": "Rol",
     "status": "Estado",
     "lastAccess": "Último acceso",
-    "noUsers": "No hay usuarios registrados"
+    "noUsers": "No hay usuarios registrados",
+    "inviteKeys": "Claves de acceso",
+    "createdAt": "Creada",
+    "confirmDelete": "Eliminar miembro",
+    "confirmDeleteDesc": "¿Estás seguro de eliminar a {email}? Esta acción no se puede deshacer.",
+    "confirmRoleChange": "Cambiar rol",
+    "confirmRoleChangeDesc": "¿Cambiar el rol de {email} a {role}?"
   },
   "billing": {
     "title": "Suscripción",

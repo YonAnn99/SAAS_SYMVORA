@@ -33,36 +33,39 @@ import {
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { hasRole } from "@/lib/rbac";
 import type { User } from "@supabase/supabase-js";
 import type { LucideIcon } from "lucide-react";
+import type { UserRole } from "@/lib/types/database";
 
 interface NavItem {
   name: string;
   href: string;
   icon: LucideIcon;
   beta?: boolean;
+  minRole?: UserRole;
 }
 
 const navigation: NavItem[] = [
   { name: "layout.dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "layout.pos", href: "/pos", icon: ShoppingCart },
   { name: "layout.products", href: "/products", icon: Package },
-  { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon },
-  { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText },
-  { name: "layout.finances", href: "/finances", icon: Wallet },
-  { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true },
-  { name: "layout.users", href: "/users", icon: Users },
+  { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon, minRole: "ORG_ADMIN" },
+  { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText, minRole: "ORG_ADMIN" },
+  { name: "layout.finances", href: "/finances", icon: Wallet, minRole: "ORG_ADMIN" },
+  { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true, minRole: "ORG_ADMIN" },
+  { name: "layout.users", href: "/users", icon: Users, minRole: "ORG_ADMIN" },
   { name: "common.activityLog", href: "/activity", icon: FileText },
-  { name: "layout.settings", href: "/settings", icon: Settings },
-  { name: "layout.payments", href: "/settings/payments", icon: Smartphone },
+  { name: "layout.settings", href: "/settings", icon: Settings, minRole: "ORG_ADMIN" },
+  { name: "layout.payments", href: "/settings/payments", icon: Smartphone, minRole: "ORG_ADMIN" },
   { name: "layout.reports", href: "/reports", icon: TrendingUp },
-  { name: "layout.billing", href: "/billing", icon: CreditCard },
+  { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "ORG_ADMIN" },
 ];
 
-const inventoryNavigation = [
-  { name: "layout.variants", href: "/variants", icon: Palette },
-  { name: "layout.lots", href: "/lots", icon: Calendar },
-  { name: "layout.adjustments", href: "/inventory-adjustments", icon: Wrench },
+const inventoryNavigation: NavItem[] = [
+  { name: "layout.variants", href: "/variants", icon: Palette, minRole: "ORG_ADMIN" },
+  { name: "layout.lots", href: "/lots", icon: Calendar, minRole: "ORG_ADMIN" },
+  { name: "layout.adjustments", href: "/inventory-adjustments", icon: Wrench, minRole: "ORG_ADMIN" },
 ];
 
 interface SidebarProps {
@@ -81,7 +84,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
   const t = useTranslations();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
-  const { tenantName, tenantLogo } = useCurrentTenant();
+  const { tenantName, tenantLogo, role } = useCurrentTenant();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -93,6 +96,14 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
   const isActive = (href: string) => {
     return pathname.includes(href);
   };
+
+  const visibleNav = navigation.filter(
+    (item) => !item.minRole || hasRole(role, item.minRole)
+  );
+
+  const visibleInventory = inventoryNavigation.filter(
+    (item) => !item.minRole || hasRole(role, item.minRole)
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -130,7 +141,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-3">
         <nav className="flex flex-col gap-0.5">
-          {navigation.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -160,13 +171,13 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
         </nav>
 
         {/* Inventory section */}
-        {!collapsed && (
+        {!collapsed && visibleInventory.length > 0 && (
           <div className="mt-4 pt-4 border-t border-border/50">
             <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
               📦 Inventario
             </p>
             <nav className="flex flex-col gap-0.5">
-              {inventoryNavigation.map((item) => {
+              {visibleInventory.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
                 return (

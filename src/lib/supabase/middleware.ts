@@ -16,6 +16,26 @@ const MARKETING_SEGMENTS = [
   "/politica-cookies",
 ];
 
+// Routes that require ORG_ADMIN or higher
+const ADMIN_ONLY_PATHS = [
+  "/users",
+  "/settings",
+  "/finances",
+  "/purchases",
+  "/purchase-orders",
+  "/facturas",
+  "/billing",
+  "/inventory-adjustments",
+  "/variants",
+  "/lots",
+];
+
+const ROLE_HIERARCHY: Record<string, number> = {
+  CAJERO: 1,
+  ORG_ADMIN: 2,
+  SUPER_ADMIN: 3,
+};
+
 function stripLocale(path: string): string {
   const match = path.match(/^\/(es|en)(?=\/|$)/);
   return match ? path.slice(match[0].length) || "/" : path;
@@ -162,6 +182,38 @@ export async function updateSession(request: NextRequest) {
             billingUrl.pathname = `/${locale}/billing`;
             return NextResponse.redirect(billingUrl);
           }
+        }
+      }
+    }
+  }
+
+  // Role-based route protection for authenticated users
+  if (user && !isAuthRoute && !isPublicRoute) {
+    const cleanPath = stripLocale(request.nextUrl.pathname);
+    const requiresAdmin = ADMIN_ONLY_PATHS.some(
+      (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
+    );
+
+    if (requiresAdmin) {
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceRoleKey) {
+        const supabaseAdmin = createClient(url, serviceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+
+        const { data: membership } = await supabaseAdmin
+          .from("tenant_memberships")
+          .select("role")
+          .eq("user_id", user.id)
+          .limit(1)
+          .single();
+
+        const userRole = membership?.role || "CAJERO";
+        if ((ROLE_HIERARCHY[userRole] || 0) < ROLE_HIERARCHY["ORG_ADMIN"]) {
+          const locale = request.nextUrl.pathname.split("/")[1] || "es";
+          const dashboardUrl = request.nextUrl.clone();
+          dashboardUrl.pathname = `/${locale}/dashboard`;
+          return NextResponse.redirect(dashboardUrl);
         }
       }
     }
