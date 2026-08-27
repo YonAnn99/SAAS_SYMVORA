@@ -272,9 +272,9 @@
     "total": "Total",
     "status": "Estado",
     "statuses": {
-      "PENDING": "Pendiente",
-      "RECEIVED": "Recibida",
-      "CANCELLED": "Cancelada"
+      "PENDIENTE": "Pendiente",
+      "RECIBIDA": "Recibida",
+      "CANCELADA": "Cancelada"
     },
     "noPurchases": "No hay compras registradas"
   },
