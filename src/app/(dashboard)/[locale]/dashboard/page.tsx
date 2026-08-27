@@ -249,53 +249,51 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Charts - only show when there's data */}
-      {!loading && stats.ventasMes > 0 && (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="col-span-4 animate-fade-in-up stagger-5">
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle>{t("dashboard.recentSales")}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <SalesChart
-                    data={stats.ventasDiarias}
-                    title=""
-                  />
-                </CardContent>
-              </Card>
-            </div>
-            <div className="col-span-3 animate-fade-in-up stagger-6">
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle>{t("dashboard.topProducts")}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <TopProductsChart
-                    data={stats.topProductos}
-                    title=""
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          <div className="animate-fade-in-up stagger-7">
-            <Card>
+      {/* Charts - always in DOM but invisible when loading to prevent scrollbar glitch */}
+      <div className={`${loading || stats.ventasMes === 0 ? 'invisible h-0 overflow-hidden' : ''}`}>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="col-span-4 animate-fade-in-up stagger-5">
+            <Card className="h-full">
               <CardHeader>
-                <CardTitle>Métodos de pago</CardTitle>
+                <CardTitle>{t("dashboard.recentSales")}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <PaymentMethodsChart
-                  data={stats.metodosPago}
+                <SalesChart
+                  data={stats.ventasDiarias}
                   title=""
                 />
               </CardContent>
             </Card>
           </div>
-        </>
-      )}
+          <div className="col-span-3 animate-fade-in-up stagger-6">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>{t("dashboard.topProducts")}</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <TopProductsChart
+                  data={stats.topProductos}
+                  title=""
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="animate-fade-in-up stagger-7">
+          <Card>
+            <CardHeader>
+              <CardTitle>Métodos de pago</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <PaymentMethodsChart
+                data={stats.metodosPago}
+                title=""
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

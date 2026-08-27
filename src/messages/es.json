@@ -155,7 +155,13 @@
     "resetSubtitle": "Elige una nueva contraseña para tu cuenta de SYMVORA.",
     "resetSuccess": "Contraseña actualizada. Ya puedes iniciar sesión.",
     "resetInvalidLink": "El enlace es inválido o expiró. Solicita uno nuevo.",
-    "resetGoToLogin": "Ir a iniciar sesión"
+    "resetGoToLogin": "Ir a iniciar sesión",
+    "keyLoginTitle": "Acceso con clave",
+    "keyLoginSubtitle": "Ingresa tu correo y la clave que recibiste por correo",
+    "inviteKeyPlaceholder": "Clave de invitación (ej. ABC123XY)",
+    "enterWithKey": "Ingresar",
+    "employeeLogin": "¿Eres empleado o colaborador? Ingresa tu clave",
+    "or": "o"
   },
   "referrals": {
     "title": "Programa de Referidos",

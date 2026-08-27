@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
+import { sendInviteKeyEmail } from "@/lib/email";
 import type { UserRole } from "@/lib/types/database";
 
 const INVITABLE_ROLES: UserRole[] = ["ORG_ADMIN", "CAJERO"];
+
+function generateKey(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let key = "";
+  for (let i = 0; i < 8; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
+}
 
 export async function POST(request: Request) {
   try {
@@ -48,7 +58,6 @@ export async function POST(request: Request) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json(
@@ -57,47 +66,51 @@ export async function POST(request: Request) {
       );
     }
 
-    // Use service role for admin operations
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Invite user via Supabase Auth
-    const { data, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-      email,
-      {
-        data: {
-          tenant_id: tenantId,
-          role: roleToAssign,
-        },
-        redirectTo: `${appUrl}/api/auth/callback?next=/${locale}/dashboard`,
-      }
-    );
+    // Generate invite key
+    const inviteKey = generateKey();
 
-    if (inviteError) {
+    // Store key in DB
+    const { error: insertError } = await supabase
+      .from("user_invite_keys")
+      .insert({
+        tenant_id: tenantId,
+        email: email.toLowerCase(),
+        key: inviteKey,
+        role: roleToAssign,
+      });
+
+    if (insertError) {
+      console.error("Failed to store invite key:", insertError);
       return NextResponse.json(
-        { error: inviteError.message },
-        { status: 400 }
+        { error: "Error al generar la clave de invitación" },
+        { status: 500 }
       );
     }
 
-    // Create membership record
-    if (data?.user) {
-      const { error: membershipError } = await supabase
-        .from("tenant_memberships")
-        .insert({
-          user_id: data.user.id,
-          tenant_id: tenantId,
-          role: roleToAssign,
-        });
+    // Send email with key
+    const emailResult = await sendInviteKeyEmail({
+      to: email,
+      key: inviteKey,
+      role: roleToAssign,
+      locale,
+    });
 
-      if (membershipError) {
-        console.error("Failed to create membership:", membershipError);
-        // User was invited but membership failed - they can be added manually
-      }
+    if (!emailResult.ok) {
+      console.error("Failed to send invite email:", emailResult.error);
+      // Key was created but email failed - still return success with warning
+      return NextResponse.json({
+        success: true,
+        message: `Clave generada para ${email}: ${inviteKey}`,
+        warning: "No se pudo enviar el correo. Comparte la clave manualmente.",
+        key: inviteKey,
+      });
     }
 
     return NextResponse.json({
       success: true,
-      message: `Invitation sent to ${email}`,
+      message: `Invitación enviada a ${email}`,
     });
   } catch (error) {
     console.error("Invite error:", error);

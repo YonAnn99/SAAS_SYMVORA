@@ -155,7 +155,13 @@
     "resetSubtitle": "Choose a new password for your SYMVORA account.",
     "resetSuccess": "Password updated. You can now log in.",
     "resetInvalidLink": "This link is invalid or expired. Please request a new one.",
-    "resetGoToLogin": "Go to login"
+    "resetGoToLogin": "Go to login",
+    "keyLoginTitle": "Key Login",
+    "keyLoginSubtitle": "Enter your email and the key you received by email",
+    "inviteKeyPlaceholder": "Invite key (e.g. ABC123XY)",
+    "enterWithKey": "Enter",
+    "employeeLogin": "Are you an employee or collaborator? Enter your key",
+    "or": "or"
   },
   "referrals": {
     "title": "Referral Program",

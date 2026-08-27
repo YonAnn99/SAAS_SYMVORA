@@ -83,7 +83,7 @@ function convertToWebP(file: File): Promise<File> {
   });
 }
 
-type AuthMode = "login" | "signup" | "forgot";
+type AuthMode = "login" | "signup" | "forgot" | "key";
 
 export function AuthForms({
   initialMode = "login",
@@ -114,6 +114,12 @@ export function AuthForms({
   const [rememberMe, setRememberMe] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+
+  // Key login state
+  const [keyEmail, setKeyEmail] = useState("");
+  const [keyValue, setKeyValue] = useState("");
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const [keyLoading, setKeyLoading] = useState(false);
 
   // Signup state
   const [nombre, setNombre] = useState("");
@@ -248,6 +254,47 @@ export function AuthForms({
     turnstileLoginRef.current?.reset();
     router.push(`/${locale}/dashboard`);
     router.refresh();
+  };
+
+  const handleKeyLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setKeyError(null);
+    setKeyLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/key-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: keyEmail, key: keyValue.toUpperCase() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setKeyError(data.error || "Error al iniciar sesión");
+        setKeyLoading(false);
+        return;
+      }
+
+      // Sign in with the temporary password the server generated
+      const supabase = createSupabaseBrowserClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (authError) {
+        setKeyError("Error al iniciar sesión");
+        setKeyLoading(false);
+        return;
+      }
+
+      router.push(`/${locale}/dashboard`);
+      router.refresh();
+    } catch {
+      setKeyError("Error de conexión");
+      setKeyLoading(false);
+    }
   };
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -898,6 +945,52 @@ export function AuthForms({
               </button>
             </div>
           </form>
+        ) : mode === "key" ? (
+          <form onSubmit={handleKeyLogin} style={{ justifyContent: "center" }}>
+            <div className="auth-form-center">
+              <h1 className="auth-form-title-text">
+                {t("auth.keyLoginTitle") || "Acceso con clave"}
+              </h1>
+            </div>
+
+            <span className="auth-form-subtitle-text">
+              {t("auth.keyLoginSubtitle") || "Ingresa tu correo y la clave que recibiste por correo"}
+            </span>
+
+            {keyError && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive text-center">
+                {keyError}
+              </div>
+            )}
+
+            <input
+              type="email"
+              placeholder={t("auth.emailPlaceholder")}
+              value={keyEmail}
+              onChange={(e) => setKeyEmail(e.target.value)}
+              required
+            />
+            <input
+              type="text"
+              placeholder={t("auth.inviteKeyPlaceholder") || "Clave de invitación (ej. ABC123XY)"}
+              value={keyValue}
+              onChange={(e) => setKeyValue(e.target.value.toUpperCase())}
+              maxLength={8}
+              autoComplete="off"
+              required
+              style={{ letterSpacing: "2px", textTransform: "uppercase" }}
+            />
+
+            <button type="submit" className="auth-btn" disabled={keyLoading} style={{ width: "100%", marginTop: "12px" }}>
+              {keyLoading ? t("common.loading") : t("auth.enterWithKey") || "Ingresar"}
+            </button>
+
+            <div className="auth-form-link">
+              <button type="button" onClick={() => setMode("login")}>
+                {t("auth.backToLogin")}
+              </button>
+            </div>
+          </form>
         ) : (
           <form onSubmit={handleLogin} style={{ justifyContent: "center" }}>
           <div className="auth-form-center">
@@ -989,6 +1082,16 @@ export function AuthForms({
             {t("auth.noAccount")}{" "}
             <button type="button" onClick={() => setMode("signup")}>
               {t("auth.signup")}
+            </button>
+          </div>
+
+          <div className="auth-divider" style={{ marginTop: "16px" }}>
+            <span>{t("auth.or") || "o"}</span>
+          </div>
+
+          <div className="auth-form-link">
+            <button type="button" onClick={() => setMode("key")} className="auth-key-login-link">
+              {t("auth.employeeLogin") || "¿Eres empleado o colaborador? Ingresa tu clave"}
             </button>
           </div>
         </form>
