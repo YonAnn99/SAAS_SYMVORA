@@ -14,7 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  createSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/client";
 import { getAppUrl } from "@/lib/site";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
