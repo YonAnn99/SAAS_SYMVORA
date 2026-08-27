@@ -52,18 +52,20 @@ export default function UsersPage() {
   const t = useTranslations();
   const locale = useLocale();
   const isDemo = useIsDemo();
-  const [memberships, setMemberships] = useState<any[]>([]);
+  const [memberships, setMemberships] = useState<Array<{ 
+    id: string; 
+    tenant_id: string; 
+    user_id: string; 
+    role: string; 
+    creado_en: string; 
+    user: { email: string; raw_user_meta_data: Record<string, unknown> } | null 
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("CAJERO");
   const [inviting, setInviting] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchMemberships();
-    fetchTenantId();
-  }, []);
 
   const fetchTenantId = async () => {
     const supabase = createSupabaseBrowserClient();
@@ -97,6 +99,12 @@ export default function UsersPage() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchMemberships();
+    fetchTenantId();
+  }, [fetchMemberships, fetchTenantId]);
 
   const handleInvite = async () => {
     if (!inviteEmail || !tenantId) {

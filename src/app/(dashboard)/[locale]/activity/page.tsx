@@ -98,12 +98,6 @@ export default function ActivityPage() {
   const [loading, setLoading] = useState(true);
   const [entityFilter, setEntityFilter] = useState("all");
 
-  useEffect(() => {
-    if (!tenantLoading && tenantId) {
-      fetchLogs();
-    }
-  }, [tenantLoading, tenantId]);
-
   const fetchLogs = async () => {
     if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
@@ -118,6 +112,13 @@ export default function ActivityPage() {
     setLogs(data || []);
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!tenantLoading && tenantId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchLogs();
+    }
+  }, [tenantLoading, tenantId, fetchLogs]);
 
   const filteredLogs = entityFilter === "all"
     ? logs

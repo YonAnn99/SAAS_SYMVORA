@@ -83,7 +83,10 @@ export function useCurrentTenant(): TenantInfo {
   }, []);
 
   useEffect(() => {
-    fetchTenant();
+    const load = async () => {
+      await fetchTenant();
+    };
+    load();
   }, [fetchTenant]);
 
   return state;

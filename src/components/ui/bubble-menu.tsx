@@ -24,13 +24,26 @@ export default function BubbleMenu({
   animationEase = 'back.out(1.5)',
   animationDuration = 0.5,
   staggerDelay = 0.12
-}: any) {
+}: {
+  logo?: React.ReactNode;
+  onMenuClick?: (open: boolean) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  menuAriaLabel?: string;
+  menuBg?: string;
+  menuContentColor?: string;
+  useFixedPosition?: boolean;
+  items?: Array<{ label: string; href: string; rotation: number }>;
+  animationEase?: string;
+  animationDuration?: number;
+  staggerDelay?: number;
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
 
   const overlayRef = useRef(null);
-  const bubblesRef = useRef<any[]>([]);
-  const labelRefs = useRef<any[]>([]);
+  const bubblesRef = useRef<Array<HTMLElement | null>>([]);
+  const labelRefs = useRef<Array<HTMLElement | null>>([]);
 
   const menuItems = items?.length ? items : DEFAULT_ITEMS;
 
@@ -136,7 +149,7 @@ export default function BubbleMenu({
       {showOverlay && (
         <div ref={overlayRef} className={`bubble-menu-items ${useFixedPosition ? 'fixed' : 'absolute'} inset-0 flex items-center justify-center pointer-events-none z-[1000]`} aria-hidden={!isMenuOpen}>
           <ul className="pill-list list-none m-0 px-6 w-full max-w-[1600px] mx-auto flex flex-wrap gap-x-0 gap-y-1 pointer-events-auto" role="menu" aria-label="Menu links">
-            {menuItems.map((item: any, idx: number) => (
+            {menuItems.map((item: { label: string; href: string; rotation?: number; ariaLabel?: string; hoverStyles?: { bgColor?: string; textColor?: string } }, idx: number) => (
               <li key={idx} role="none" className="pill-col flex justify-center items-stretch box-border">
                 <a
                   role="menuitem"

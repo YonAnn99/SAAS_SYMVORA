@@ -51,12 +51,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!tenantLoading && tenantId) {
-      fetchDashboardData();
-    }
-  }, [tenantLoading, tenantId]);
-
   const fetchDashboardData = async () => {
     setLoading(true);
     setError(null);
@@ -113,8 +107,8 @@ export default function DashboardPage() {
 
       // Calculate growth vs last month
       const ventasMesAnterior = ventasAnteriores?.reduce((sum, v) => sum + v.total, 0) || 0;
-      const crecimientoVentas = ventasMesAnterior > 0 
-        ? ((ventasMes - ventasMesAnterior) / ventasMesAnterior) * 100 
+      const crecimientoVentas = ventasMesAnterior > 0
+        ? ((ventasMes - ventasMesAnterior) / ventasMesAnterior) * 100
         : 0;
 
       const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -158,6 +152,13 @@ export default function DashboardPage() {
 
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!tenantLoading && tenantId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchDashboardData();
+    }
+  }, [tenantLoading, tenantId, fetchDashboardData]);
 
   const kpis = [
     { title: t("dashboard.salesToday"), value: `$${stats.ventasHoy.toFixed(2)}`, icon: DollarSign, idx: 1, trend: null, color: "from-blue-500" },

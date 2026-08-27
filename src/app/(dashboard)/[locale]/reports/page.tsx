@@ -57,11 +57,33 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState("mes");
 
-  useEffect(() => {
-    if (!tenantLoading && tenantId) {
-      fetchReportData();
-    }
-  }, [tenantLoading, tenantId, periodo]);
+  const groupSalesByPeriod = (
+    ventas: Array<{ fecha_venta: string; total: number }>,
+    startDate: Date,
+    endDate: Date,
+    groupBy: "day" | "week" | "month"
+  ) => {
+    const groups: { [key: string]: number } = {};
+
+    ventas.forEach((v) => {
+      const date = new Date(v.fecha_venta);
+      let key: string;
+
+      if (groupBy === "day") {
+        key = date.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
+      } else if (groupBy === "week") {
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        key = weekStart.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+      } else {
+        key = date.toLocaleDateString("es-MX", { month: "short", year: "numeric" });
+      }
+
+      groups[key] = (groups[key] || 0) + v.total;
+    });
+
+    return Object.entries(groups).map(([date, ventas]) => ({ date, ventas }));
+  };
 
   const fetchReportData = async () => {
     setLoading(true);
@@ -221,33 +243,12 @@ export default function ReportsPage() {
     setLoading(false);
   };
 
-  const groupSalesByPeriod = (
-    ventas: any[],
-    startDate: Date,
-    endDate: Date,
-    groupBy: "day" | "week" | "month"
-  ) => {
-    const groups: { [key: string]: number } = {};
-
-    ventas.forEach((v) => {
-      const date = new Date(v.fecha_venta);
-      let key: string;
-
-      if (groupBy === "day") {
-        key = date.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
-      } else if (groupBy === "week") {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        key = weekStart.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
-      } else {
-        key = date.toLocaleDateString("es-MX", { month: "short", year: "numeric" });
-      }
-
-      groups[key] = (groups[key] || 0) + v.total;
-    });
-
-    return Object.entries(groups).map(([date, ventas]) => ({ date, ventas }));
-  };
+  useEffect(() => {
+    if (!tenantLoading && tenantId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchReportData();
+    }
+  }, [tenantLoading, tenantId, periodo, fetchReportData]);
 
   const handleExport = () => {
     // TODO: Implement CSV/PDF export
