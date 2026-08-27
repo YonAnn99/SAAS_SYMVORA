@@ -37,8 +37,21 @@
     "exportCsv": "Exportar CSV",
     "exportPdf": "Exportar PDF",
     "activityLog": "Bitácora",
+    "activityDescription": "Registro de todas las acciones realizadas",
     "filter": "Filtrar",
-    "all": "Todos"
+    "all": "Todos",
+    "user": "Usuario",
+    "action": "Acción",
+    "entity": "Entidad",
+    "details": "Detalles",
+    "records": "registros",
+    "noActivity": "No hay registros de actividad",
+    "loadMore": "Cargar más",
+    "create": "Crear",
+    "update": "Actualizar",
+    "delete": "Eliminar",
+    "ordenCompra": "Orden de compra",
+    "movimientoCaja": "Movimiento de caja"
   },
   "search": {
     "placeholder": "Buscar productos, clientes, rutas...",

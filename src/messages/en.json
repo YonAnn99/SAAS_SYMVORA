@@ -37,8 +37,21 @@
     "exportCsv": "Export CSV",
     "exportPdf": "Export PDF",
     "activityLog": "Activity Log",
+    "activityDescription": "Record of all actions performed",
     "filter": "Filter",
-    "all": "All"
+    "all": "All",
+    "user": "User",
+    "action": "Action",
+    "entity": "Entity",
+    "details": "Details",
+    "records": "records",
+    "noActivity": "No activity records",
+    "loadMore": "Load more",
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "ordenCompra": "Purchase order",
+    "movimientoCaja": "Cash movement"
   },
   "search": {
     "placeholder": "Search products, customers, routes...",

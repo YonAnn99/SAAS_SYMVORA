@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Caja, MovimientoCaja } from "../types/cash-register.types";
 import {
   addMovement,
@@ -90,6 +91,12 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
         }
 
         const register = await openRegister(userId, tenantId, fondoInicial);
+        await logActivity({
+          action: "CREATE",
+          entity: "caja",
+          entityId: register.id,
+          details: { fondo_inicial: fondoInicial },
+        });
         setActiveRegister(register);
         setShowOpenDialog(false);
         toast.success("Caja abierta correctamente");
@@ -107,6 +114,12 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
     async (tipo: "ENTRADA" | "SALIDA", monto: number, descripcion: string) => {
       if (!activeRegister) return;
       await addMovement(activeRegister.id, tipo, monto, descripcion);
+      await logActivity({
+        action: "CREATE",
+        entity: "movimiento_caja",
+        entityName: descripcion,
+        details: { tipo, monto, caja_id: activeRegister.id },
+      });
       setShowMovementDialog(false);
       void refetch();
     },
@@ -135,6 +148,12 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
         saldoEsperado,
         saldoReal,
         notasCierre: notasCierre || null,
+      });
+      await logActivity({
+        action: "UPDATE",
+        entity: "caja",
+        entityId: activeRegister.id,
+        details: { saldo_real: saldoReal, saldo_esperado: saldoEsperado, diferencia: saldoReal - saldoEsperado },
       });
 
       setActiveRegister(null);

@@ -158,8 +158,8 @@ export default function POSPage() {
       setSelectedPayment("");
       setShowConfirmDialog(false);
       void refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Error al procesar la venta");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al procesar la venta");
     } finally {
       setProcessingSale(false);
     }

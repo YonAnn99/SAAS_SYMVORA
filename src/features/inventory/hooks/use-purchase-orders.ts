@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type {
   OrdenCompra,
   ProductOption,
@@ -116,9 +117,22 @@ export function usePurchaseOrders(
 
         if (editingOrder) {
           await updateOrder(editingOrder.id, orderData, details);
+          await logActivity({
+            action: "UPDATE",
+            entity: "orden_compra",
+            entityId: editingOrder.id,
+            entityName: input.numero_orden,
+            details: { total, items: details.length },
+          });
           toast.success("Orden actualizada");
         } else {
           await createOrder(tenantId, user.id, orderData, details);
+          await logActivity({
+            action: "CREATE",
+            entity: "orden_compra",
+            entityName: input.numero_orden,
+            details: { proveedor_id: input.proveedor_id, total, items: details.length },
+          });
           toast.success("Orden creada");
         }
         setShowDialog(false);
@@ -136,6 +150,13 @@ export function usePurchaseOrders(
     async (order: OrdenCompra, newStatus: OrdenCompra["estado"]) => {
       try {
         await updateOrderStatus(order.id, newStatus);
+        await logActivity({
+          action: "UPDATE",
+          entity: "orden_compra",
+          entityId: order.id,
+          entityName: order.numero_orden,
+          details: { nuevo_estado: newStatus },
+        });
         toast.success(`Orden marcada como ${orderEstadoLabels[newStatus]}`);
         void refetch();
       } catch {
@@ -149,6 +170,12 @@ export function usePurchaseOrders(
     async (order: OrdenCompra) => {
       try {
         await deleteOrder(order.id);
+        await logActivity({
+          action: "DELETE",
+          entity: "orden_compra",
+          entityId: order.id,
+          entityName: order.numero_orden,
+        });
         toast.success("Orden eliminada");
         setDeleteConfirm(null);
         void refetch();

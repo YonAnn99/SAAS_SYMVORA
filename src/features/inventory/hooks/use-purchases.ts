@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type {
   Proveedor,
   PurchaseWithRelations,
@@ -62,6 +63,12 @@ export function usePurchases() {
 
       try {
         await createPurchase(tenantId, user.id, input);
+        await logActivity({
+          action: "CREATE",
+          entity: "compra",
+          entityName: `Compra ${input.numeroFactura || ""}`,
+          details: { proveedor_id: input.proveedorId, total: input.total },
+        });
         toast.success("Compra creada correctamente");
         setShowNewPurchaseDialog(false);
         void refetch();
@@ -85,6 +92,12 @@ export function usePurchases() {
 
       try {
         await createSupplier(tenantId, input);
+        await logActivity({
+          action: "CREATE",
+          entity: "proveedor",
+          entityName: input.nombre,
+          details: { email: input.email, telefono: input.phone },
+        });
         toast.success("Proveedor creado correctamente");
         setShowNewSupplierDialog(false);
         void refetch();
@@ -106,6 +119,12 @@ export function usePurchases() {
     ) => {
       try {
         await updatePurchaseStatus(purchaseId, estado);
+        await logActivity({
+          action: "UPDATE",
+          entity: "compra",
+          entityId: purchaseId,
+          details: { nuevo_estado: estado },
+        });
         toast.success(`Compra marcada como ${estado.toLowerCase()}`);
         void refetch();
       } catch (error: unknown) {
@@ -123,6 +142,11 @@ export function usePurchases() {
     async (purchaseId: string) => {
       try {
         await deletePurchase(purchaseId);
+        await logActivity({
+          action: "DELETE",
+          entity: "compra",
+          entityId: purchaseId,
+        });
         toast.success("Compra eliminada correctamente");
         void refetch();
       } catch (error: unknown) {

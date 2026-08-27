@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,12 @@ export function NewCustomerDialog({
     setSaving(true);
     try {
       const customer = await createCustomer(tenantId, form);
+      await logActivity({
+        action: "CREATE",
+        entity: "cliente",
+        entityName: customer.nombre,
+        details: { email: form.email, telefono: form.telefono },
+      });
       toast.success(`Cliente ${customer.nombre} creado`);
       onCreated(customer);
       onOpenChange(false);

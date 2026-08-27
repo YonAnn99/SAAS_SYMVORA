@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
   Card,
@@ -37,6 +37,8 @@ import {
   Plus,
   Pencil,
   Trash2,
+  ClipboardList,
+  Banknote,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -47,6 +49,7 @@ interface ActivityLog {
   action: string;
   entity: string;
   entity_name: string | null;
+  entity_id: string | null;
   details: Record<string, unknown> | null;
   created_at: string;
 }
@@ -60,6 +63,8 @@ const ENTITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   usuario: User,
   caja: Wallet,
   config: Settings,
+  orden_compra: ClipboardList,
+  movimiento_caja: Banknote,
 };
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -74,22 +79,7 @@ const ACTION_COLORS: Record<string, string> = {
   DELETE: "bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400",
 };
 
-const ACTION_LABELS: Record<string, string> = {
-  CREATE: "Crear",
-  UPDATE: "Actualizar",
-  DELETE: "Eliminar",
-};
-
-const ENTITY_LABELS: Record<string, string> = {
-  producto: "Producto",
-  venta: "Venta",
-  compra: "Compra",
-  cliente: "Cliente",
-  proveedor: "Proveedor",
-  usuario: "Usuario",
-  caja: "Caja",
-  config: "Configuración",
-};
+const PAGE_SIZE = 50;
 
 export default function ActivityPage() {
   const t = useTranslations();
@@ -97,8 +87,10 @@ export default function ActivityPage() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [entityFilter, setEntityFilter] = useState("all");
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async (offset = 0) => {
     if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
 
@@ -107,18 +99,29 @@ export default function ActivityPage() {
       .select("*")
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .range(offset, offset + PAGE_SIZE - 1);
 
-    setLogs(data || []);
+    if (offset === 0) {
+      setLogs(data || []);
+    } else {
+      setLogs((prev) => [...prev, ...(data || [])]);
+    }
+    setHasMore((data?.length || 0) === PAGE_SIZE);
     setLoading(false);
-  };
+    setLoadingMore(false);
+  }, [tenantId]);
 
   useEffect(() => {
     if (!tenantLoading && tenantId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchLogs();
+      setLoading(true);
+      void fetchLogs(0);
     }
   }, [tenantLoading, tenantId, fetchLogs]);
+
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    void fetchLogs(logs.length);
+  }, [logs.length, fetchLogs]);
 
   const filteredLogs = entityFilter === "all"
     ? logs
@@ -135,6 +138,25 @@ export default function ActivityPage() {
     });
   };
 
+  const formatDetails = (details: Record<string, unknown> | null) => {
+    if (!details) return "-";
+    const entries = Object.entries(details).filter(([key]) => key !== "operation" && key !== "table");
+    if (entries.length === 0) return "-";
+
+    return entries.map(([key, value]) => {
+      const label = key
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      const displayValue = typeof value === "boolean" ? (value ? "Sí" : "No") : String(value);
+      return (
+        <span key={key} className="inline-flex items-center gap-1 mr-2">
+          <span className="text-muted-foreground">{label}:</span>
+          <span className="font-medium">{displayValue}</span>
+        </span>
+      );
+    });
+  };
+
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
@@ -143,7 +165,7 @@ export default function ActivityPage() {
             {t("common.activityLog")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Registro de todas las acciones realizadas
+            {t("common.activityDescription")}
           </p>
         </div>
         <Select value={entityFilter} onValueChange={(v) => setEntityFilter(v || "all")}>
@@ -152,11 +174,15 @@ export default function ActivityPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("common.all")}</SelectItem>
-            {Object.entries(ENTITY_LABELS).map(([key, label]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
-            ))}
+            <SelectItem value="producto">{t("common.product")}</SelectItem>
+            <SelectItem value="venta">{t("common.sale")}</SelectItem>
+            <SelectItem value="compra">{t("common.purchase")}</SelectItem>
+            <SelectItem value="cliente">{t("common.customer")}</SelectItem>
+            <SelectItem value="proveedor">{t("common.supplier")}</SelectItem>
+            <SelectItem value="usuario">{t("common.user")}</SelectItem>
+            <SelectItem value="caja">{t("common.cashRegister")}</SelectItem>
+            <SelectItem value="orden_compra">{t("common.ordenCompra")}</SelectItem>
+            <SelectItem value="movimiento_caja">{t("common.movimientoCaja")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -169,7 +195,7 @@ export default function ActivityPage() {
               {t("common.activityLog")}
             </CardTitle>
             <span className="text-xs text-muted-foreground font-mono">
-              {filteredLogs.length} registros
+              {filteredLogs.length} {t("common.records")}
             </span>
           </div>
         </CardHeader>
@@ -182,71 +208,87 @@ export default function ActivityPage() {
             <div className="flex flex-col items-center justify-center gap-3 py-16">
               <FileText className="h-8 w-8 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">
-                No hay registros de actividad
+                {t("common.noActivity")}
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs uppercase tracking-wider w-[160px]">
-                    {t("common.date")}
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">
-                    Usuario
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">
-                    Acción
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">
-                    Entidad
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">
-                    Detalles
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLogs.map((log) => {
-                  const EntityIcon = ENTITY_ICONS[log.entity] || Package;
-                  const ActionIcon = ACTION_ICONS[log.action] || Plus;
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs uppercase tracking-wider w-[160px]">
+                      {t("common.date")}
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">
+                      {t("common.user")}
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">
+                      {t("common.action")}
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">
+                      {t("common.entity")}
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">
+                      {t("common.details")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log) => {
+                    const EntityIcon = ENTITY_ICONS[log.entity] || Package;
+                    const ActionIcon = ACTION_ICONS[log.action] || Plus;
 
-                  return (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-xs font-mono text-muted-foreground">
-                        {formatDate(log.created_at)}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {log.user_email}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="secondary"
-                          className={`text-[10px] px-1.5 py-0 gap-1 ${ACTION_COLORS[log.action] || ""}`}
-                        >
-                          <ActionIcon className="h-3 w-3" />
-                          {ACTION_LABELS[log.action] || log.action}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm">
-                          <EntityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{ENTITY_LABELS[log.entity] || log.entity}</span>
-                          {log.entity_name && (
-                            <span className="text-muted-foreground">
-                              — {log.entity_name}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {log.details ? JSON.stringify(log.details) : "-"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                    return (
+                      <TableRow key={log.id}>
+                        <TableCell className="text-xs font-mono text-muted-foreground">
+                          {formatDate(log.created_at)}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {log.user_email}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] px-1.5 py-0 gap-1 ${ACTION_COLORS[log.action] || ""}`}
+                          >
+                            <ActionIcon className="h-3 w-3" />
+                            {t(`common.${log.action.toLowerCase()}`)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm">
+                            <EntityIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{t(`common.${log.entity}`) || log.entity}</span>
+                            {log.entity_name && (
+                              <span className="text-muted-foreground">
+                                — {log.entity_name}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[250px]">
+                          <div className="flex flex-wrap">
+                            {formatDetails(log.details)}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {hasMore && entityFilter === "all" && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? t("common.loading") : t("common.loadMore")}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type ActivityAction = "CREATE" | "UPDATE" | "DELETE";
-type ActivityEntity = "producto" | "venta" | "compra" | "cliente" | "proveedor" | "usuario" | "caja" | "config";
+type ActivityEntity = "producto" | "venta" | "compra" | "cliente" | "proveedor" | "usuario" | "caja" | "config" | "orden_compra" | "movimiento_caja";
 
 interface LogActivityParams {
   action: ActivityAction;
