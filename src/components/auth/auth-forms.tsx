@@ -144,8 +144,10 @@ export function AuthForms({
 
   const turnstileLoginRef = useRef<TurnstileInstance>(null);
   const turnstileSignupRef = useRef<TurnstileInstance>(null);
+  const turnstileKeyRef = useRef<TurnstileInstance>(null);
   const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
   const [signupCaptchaToken, setSignupCaptchaToken] = useState<string | null>(null);
+  const [keyCaptchaToken, setKeyCaptchaToken] = useState<string | null>(null);
 
   const loginMaxAttempts = 5;
   const [failedLoginAttempts, setFailedLoginAttempts] = useState(0);
@@ -261,6 +263,12 @@ export function AuthForms({
     setKeyError(null);
     setKeyLoading(true);
 
+    if (turnstileSiteKey && !keyCaptchaToken) {
+      setKeyError(t("auth.captchaRequired") || "Resuelve el captcha para continuar");
+      setKeyLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/auth/key-login", {
         method: "POST",
@@ -282,15 +290,20 @@ export function AuthForms({
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
+        options: { captchaToken: keyCaptchaToken ?? undefined },
       });
 
       if (authError) {
         console.error("[key-login] signInWithPassword error:", authError.message, authError.status);
         setKeyError(`Error al iniciar sesión: ${authError.message}`);
         setKeyLoading(false);
+        setKeyCaptchaToken(null);
+        turnstileKeyRef.current?.reset();
         return;
       }
 
+      setKeyCaptchaToken(null);
+      turnstileKeyRef.current?.reset();
       router.push(`/${locale}/dashboard`);
       router.refresh();
     } catch (err) {
@@ -983,6 +996,19 @@ export function AuthForms({
               required
               style={{ letterSpacing: "2px", textTransform: "uppercase" }}
             />
+
+            {turnstileSiteKey && (
+              <div style={{ width: "100%", marginBottom: "12px" }}>
+                <Turnstile
+                  id="cf-turnstile-key"
+                  siteKey={turnstileSiteKey}
+                  onSuccess={setKeyCaptchaToken}
+                  onError={() => setKeyCaptchaToken(null)}
+                  onExpire={() => setKeyCaptchaToken(null)}
+                  ref={turnstileKeyRef}
+                />
+              </div>
+            )}
 
             <button type="submit" className="auth-btn" disabled={keyLoading} style={{ width: "100%", marginTop: "12px" }}>
               {keyLoading ? t("common.loading") : t("auth.enterWithKey")}
