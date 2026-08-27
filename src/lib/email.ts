@@ -275,7 +275,7 @@ export async function sendInviteKeyEmail(params: {
                     </tr>
                   </table>
                   <p style="font-size:13px;color:${BRAND.muted};margin:0;line-height:1.6;">
-                    Esta clave es válida por 7 días. Si necesitas ayuda, contacta a tu administrador.
+                    Tu clave es permanente. Úsala cada vez que inicies sesión. Si necesitas ayuda, contacta a tu administrador.
                   </p>
                 </td>
               </tr>
