@@ -66,10 +66,10 @@ export function MovementDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ENTRADA">
-                  {t("finances.movementTypes.ENTRY")}
+                  {t("finances.movementTypes.ENTRADA")}
                 </SelectItem>
                 <SelectItem value="SALIDA">
-                  {t("finances.movementTypes.EXIT")}
+                  {t("finances.movementTypes.SALIDA")}
                 </SelectItem>
               </SelectContent>
             </Select>

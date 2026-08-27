@@ -44,13 +44,13 @@ export function RegisterSummaryCards({
       color: "text-blue-600 dark:text-blue-400",
     },
     {
-      title: t("finances.movementTypes.ENTRY"),
+      title: t("finances.movementTypes.ENTRADA"),
       value: `+$${totalEntradas.toFixed(2)}`,
       icon: ArrowUpCircle,
       color: "text-[#346538] dark:text-[#7BC67E]",
     },
     {
-      title: t("finances.movementTypes.EXIT"),
+      title: t("finances.movementTypes.SALIDA"),
       value: `-$${totalSalidas.toFixed(2)}`,
       icon: ArrowDownCircle,
       color: "text-[#9F2F2D] dark:text-[#F2A5A4]",
