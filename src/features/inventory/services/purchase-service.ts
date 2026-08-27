@@ -46,8 +46,7 @@ export async function fetchPurchases(tenantId: string): Promise<PurchaseWithRela
     .from("compras")
     .select(`
       *,
-      proveedor:proveedor_id(nombre),
-      usuario:usuario_id(email)
+      proveedor:proveedores!proveedor_id(nombre)
     `)
     .eq("tenant_id", tenantId)
     .order("fecha_compra", { ascending: false });

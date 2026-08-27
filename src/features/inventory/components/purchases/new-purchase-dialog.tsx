@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,12 @@ export function NewPurchaseDialog({
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [purchaseTotal, setPurchaseTotal] = useState("");
 
+  // Get supplier name for display in SelectValue
+  const selectedSupplierName = useMemo(() => {
+    const supplier = suppliers.find((s) => s.id === selectedSupplier);
+    return supplier?.nombre ?? "";
+  }, [selectedSupplier, suppliers]);
+
   const handleConfirm = () => {
     onConfirm({
       proveedorId: selectedSupplier,
@@ -68,7 +74,9 @@ export function NewPurchaseDialog({
               onValueChange={(v) => setSelectedSupplier(v || "")}
             >
               <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Seleccionar proveedor" />
+                <SelectValue placeholder="Seleccionar proveedor">
+                  {selectedSupplierName}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {suppliers.map((supplier) => (
