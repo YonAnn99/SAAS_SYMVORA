@@ -51,7 +51,13 @@
     "update": "Actualizar",
     "delete": "Eliminar",
     "ordenCompra": "Orden de compra",
-    "movimientoCaja": "Movimiento de caja"
+    "movimientoCaja": "Movimiento de caja",
+    "product": "Producto",
+    "sale": "Venta",
+    "purchase": "Compra",
+    "customer": "Cliente",
+    "supplier": "Proveedor",
+    "cashRegister": "Caja"
   },
   "search": {
     "placeholder": "Buscar productos, clientes, rutas...",

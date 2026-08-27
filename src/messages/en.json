@@ -51,7 +51,13 @@
     "update": "Update",
     "delete": "Delete",
     "ordenCompra": "Purchase order",
-    "movimientoCaja": "Cash movement"
+    "movimientoCaja": "Cash movement",
+    "product": "Product",
+    "sale": "Sale",
+    "purchase": "Purchase",
+    "customer": "Customer",
+    "supplier": "Supplier",
+    "cashRegister": "Cash register"
   },
   "search": {
     "placeholder": "Search products, customers, routes...",
