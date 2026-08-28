@@ -54,7 +54,7 @@ interface Member {
   user_id: string;
   role: string;
   creado_en: string;
-  user: { email: string; raw_user_meta_data: Record<string, unknown> } | null;
+  user_email: string;
 }
 
 interface InviteKey {
@@ -87,14 +87,13 @@ export default function UsersPage() {
   const fetchMemberships = useCallback(async () => {
     if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
-    const { data } = await supabase
-      .from("tenant_memberships")
-      .select(`
-        *,
-        user:user_id(email, raw_user_meta_data)
-      `)
-      .eq("tenant_id", tenantId)
-      .order("creado_en", { ascending: false });
+    const { data, error } = await supabase.rpc("get_tenant_members", {
+      p_tenant_id: tenantId,
+    });
+
+    if (error) {
+      console.error("Error fetching members:", error);
+    }
 
     if (data) {
       setMemberships(data as Member[]);
@@ -329,7 +328,7 @@ export default function UsersPage() {
                 {memberships.map((membership) => (
                   <TableRow key={membership.id}>
                     <TableCell className="font-medium text-sm">
-                      {membership.user?.email || "N/A"}
+                      {membership.user_email || "N/A"}
                     </TableCell>
                     <TableCell>
                       {canManage && membership.user_id !== undefined ? (
@@ -493,7 +492,7 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle className="text-base">{t("users.confirmDelete") || "Eliminar miembro"}</DialogTitle>
             <DialogDescription className="text-xs">
-              {t("users.confirmDeleteDesc", { email: confirmDelete?.user?.email || "" })}
+              {t("users.confirmDeleteDesc", { email: confirmDelete?.user_email || "" })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -519,7 +518,7 @@ export default function UsersPage() {
             <DialogTitle className="text-base">{t("users.confirmRoleChange") || "Cambiar rol"}</DialogTitle>
             <DialogDescription className="text-xs">
               {t("users.confirmRoleChangeDesc", {
-                email: confirmRoleChange?.member?.user?.email || "",
+                email: confirmRoleChange?.member?.user_email || "",
                 role: confirmRoleChange?.newRole === "ORG_ADMIN" ? "Administrador" : "Cajero",
               })}
             </DialogDescription>
