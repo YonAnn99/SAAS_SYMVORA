@@ -19,17 +19,18 @@ export interface CompleteSaleParams {
   clienteId: string | null;
   metodoPago: MetodoPago;
   items: SaleItem[];
+  includeIva: boolean;
   notas?: string;
 }
 
-export function calculateSaleTotals(items: SaleItem[]): SaleTotals {
+export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleTotals {
   const subtotal = items.reduce(
     (sum, item) => sum + item.precioUnitario * item.cantidad,
     0
   );
   const descuento = items.reduce((sum, item) => sum + item.descuento, 0);
   const subtotalConDescuento = subtotal - descuento;
-  const impuesto = subtotalConDescuento * IVA_RATE;
+  const impuesto = includeIva ? subtotalConDescuento * IVA_RATE : 0;
   const total = subtotalConDescuento + impuesto;
 
   return {
@@ -42,7 +43,7 @@ export function calculateSaleTotals(items: SaleItem[]): SaleTotals {
 
 export async function completeSale(params: CompleteSaleParams) {
   const supabase = createSupabaseBrowserClient();
-  const { tenantId, userId, clienteId, metodoPago, items, notas } = params;
+  const { tenantId, userId, clienteId, metodoPago, items, includeIva, notas } = params;
 
   const { data: venta, error } = await supabase.rpc("complete_sale", {
     p_tenant_id: tenantId,
@@ -54,6 +55,7 @@ export async function completeSale(params: CompleteSaleParams) {
       cantidad: item.cantidad,
       descuento: item.descuento,
     })),
+    p_include_iva: includeIva,
     p_notas: notas || null,
   });
 

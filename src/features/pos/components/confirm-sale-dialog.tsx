@@ -22,6 +22,7 @@ interface ConfirmSaleDialogProps {
   selectedPayment: string;
   customerName: string | null;
   processing: boolean;
+  includeIva: boolean;
   onConfirm: () => void;
 }
 
@@ -33,6 +34,7 @@ export function ConfirmSaleDialog({
   selectedPayment,
   customerName,
   processing,
+  includeIva,
   onConfirm,
 }: ConfirmSaleDialogProps) {
   const t = useTranslations();
@@ -64,10 +66,12 @@ export function ConfirmSaleDialog({
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-mono">${totals.subtotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">IVA (16%)</span>
-            <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
-          </div>
+          {includeIva && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">IVA (16%)</span>
+              <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm font-semibold">
             <span>Total</span>
             <span className="font-mono">${totals.total.toFixed(2)}</span>

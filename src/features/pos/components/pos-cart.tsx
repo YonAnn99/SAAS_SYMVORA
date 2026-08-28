@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -16,16 +17,20 @@ interface PosCartProps {
   items: CartItem[];
   totals: SaleTotals;
   itemCount: number;
+  includeIva: boolean;
   onUpdateQuantity: (productId: string, cantidad: number) => void;
   onRemove: (productId: string) => void;
+  onToggleIva: (checked: boolean) => void;
 }
 
 export function PosCart({
   items,
   totals,
   itemCount,
+  includeIva,
   onUpdateQuantity,
   onRemove,
+  onToggleIva,
 }: PosCartProps) {
   const t = useTranslations();
 
@@ -113,9 +118,17 @@ export function PosCart({
                 </span>
               </div>
             )}
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">IVA (16%)</span>
-              <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
+            <div className="flex items-center justify-between text-xs">
+              <label className="flex items-center gap-1.5 text-muted-foreground cursor-pointer select-none">
+                <Checkbox
+                  checked={includeIva}
+                  onCheckedChange={(checked) => onToggleIva(checked === true)}
+                />
+                {t("pos.includeIva")}
+              </label>
+              {includeIva && (
+                <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
+              )}
             </div>
             <Separator />
             <div className="flex justify-between text-sm font-semibold">

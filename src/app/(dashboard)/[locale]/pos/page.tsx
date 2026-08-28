@@ -31,7 +31,7 @@ import type { MetodoPagoDirecto, Producto, SaleReceipt } from "@/features/pos/ty
 export default function POSPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const { items, totals, itemCount, addItem, removeItem, updateQuantity, clearCart } =
+  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
     usePosCart();
   const { products, customers, userId, loadingProducts, refetch } = usePosCatalog(
     tenantId,
@@ -144,6 +144,7 @@ export default function POSPage() {
         clienteId: selectedCustomer === "none" ? null : selectedCustomer,
         metodoPago: selectedPayment as MetodoPagoDirecto,
         items,
+        includeIva,
       });
 
       setSaleReceipt({
@@ -208,8 +209,10 @@ export default function POSPage() {
           items={items}
           totals={totals}
           itemCount={itemCount}
+          includeIva={includeIva}
           onUpdateQuantity={updateQuantity}
           onRemove={removeItem}
+          onToggleIva={setIncludeIva}
         />
 
         <PaymentMethodPicker
@@ -247,6 +250,7 @@ export default function POSPage() {
         selectedPayment={selectedPayment}
         customerName={customerName}
         processing={processingSale}
+        includeIva={includeIva}
         onConfirm={handleCompleteSale}
       />
 

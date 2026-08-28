@@ -5,10 +5,12 @@ export type { CartItem } from "../types/pos.types";
 
 interface CartStore {
   items: CartItem[];
+  includeIva: boolean;
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, cantidad: number) => void;
   updateDiscount: (productId: string, descuento: number) => void;
+  setIncludeIva: (value: boolean) => void;
   clearCart: () => void;
   getSubtotal: () => number;
   getDiscount: () => number;
@@ -18,6 +20,7 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  includeIva: true,
 
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => {
     set((state) => {
@@ -71,7 +74,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }));
   },
 
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], includeIva: true }),
+
+  setIncludeIva: (value) => set({ includeIva: value }),
 
   getSubtotal: () => {
     return get().items.reduce(

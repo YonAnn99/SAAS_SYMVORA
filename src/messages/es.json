@@ -267,6 +267,7 @@
     "removeItem": "Eliminar artículo",
     "clearCart": "Vaciar carrito",
     "subtotal": "Subtotal",
+    "includeIva": "Incluir IVA",
     "total": "Total",
     "payment": "Pago",
     "paymentMethods": {

@@ -18,6 +18,7 @@ describe("completeSale", () => {
     clienteId: null,
     metodoPago: "EFECTIVO" as const,
     notas: "venta de prueba",
+    includeIva: true,
     items: [
       {
         productId: "00000000-0000-0000-0000-000000000003",
@@ -49,6 +50,7 @@ describe("completeSale", () => {
       p_usuario_id: params.userId,
       p_cliente_id: null,
       p_metodo_pago: "EFECTIVO",
+      p_include_iva: true,
       p_notas: "venta de prueba",
       p_items: [
         {
