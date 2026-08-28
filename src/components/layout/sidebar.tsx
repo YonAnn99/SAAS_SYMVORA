@@ -93,8 +93,9 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
     });
   }, []);
 
+  const stripLocale = (p: string) => p.replace(/^\/(es|en)/, "") || "/";
   const isActive = (href: string) => {
-    return pathname.includes(href);
+    return stripLocale(pathname) === href;
   };
 
   const visibleNav = navigation.filter(

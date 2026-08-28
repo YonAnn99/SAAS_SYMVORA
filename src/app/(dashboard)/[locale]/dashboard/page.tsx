@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
     const supabase = createSupabaseBrowserClient();
@@ -151,7 +151,7 @@ export default function DashboardPage() {
     }
 
     setLoading(false);
-  };
+  }, [tenantId]);
 
   useEffect(() => {
     if (!tenantLoading && tenantId) {
