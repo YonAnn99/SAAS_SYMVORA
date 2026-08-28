@@ -293,3 +293,104 @@ Orden sugerido: 1 → 2 → 3 → 4 → 5 → 6 → 7.
 
 ### Nota
 - `LogoCarousel` ("Equipos que construyen el futuro con SYMVORA") y `CompatibilityBar` (Celular/Tablet/Computadora/En la nube) siguen renderizándose después del Hero en `page.tsx` — no fueron eliminados. Si se quieren quitar, editar `src/app/[locale]/page.tsx` líneas 102-103.
+
+---
+
+## Autenticación por Clave (invite keys) + RBAC + Gestión de Usuarios (2026-08-27)
+
+### Resumen del sistema
+
+Sistema completo de autenticación por clave para empleados (CAJERO/ORG_ADMIN), gestión de usuarios (invitar/eliminar/cambiar rol), y control de acceso basado en roles (RBAC) a nivel sidebar + middleware.
+
+### Arquitectura de la solución
+
+**Flujo de invite key:**
+1. SUPER_ADMIN invita desde `/users` → API genera clave de 8 caracteres (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`) → almacena en `user_invite_keys` → envía email branded via Resend
+2. Invitado usa mismo email+clave cada vez que inicia sesión (la clave es **permanente**, no single-use)
+3. `validate_invite_key()` RPC valida email+clave → retorna `tenant_id`
+4. API crea/actualiza usuario en Supabase Auth con contraseña temporal (`Symvora{Date.now()}!`) → retorna credenciales al cliente
+5. Cliente llama `signInWithPassword()` con token Turnstile → sesión creada
+
+**Tablas DB:**
+- `user_invite_keys`: `id`, `tenant_id`, `email`, `key` (8 chars, unique), `created_at`. Sin `used`/`used_at`/`expires_at` (eliminados en migración 037)
+- RPC `validate_invite_key(email, key)`: matchea email+key → retorna `tenant_id`. Sin validación de uso/expiración.
+- RPC `log_activity()`: triggers DB leen JWT via `current_setting('request.jwt.claims')` porque `auth.uid()` retorna NULL en contexto SECURITY DEFINER
+
+**Supabase JS API (limitaciones conocidas):**
+- `getUserByEmail` NO existe; usar `listUsers()` + `find()`
+- `signInWithPassword` requiere token Turnstile (gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`)
+
+### RBAC — Niveles de acceso
+
+| Módulo | SUPER_ADMIN | ORG_ADMIN | CAJERO |
+|---|:---:|:---:|:---:|
+| Dashboard | ✅ | ✅ | ✅ |
+| POS | ✅ | ✅ | ✅ |
+| Products | ✅ | ✅ | ✅ |
+| Activity Log | ✅ | ✅ | ✅ |
+| Reports | ✅ | ✅ | ✅ |
+| Purchases | ✅ | ✅ | ❌ redirige |
+| Purchase Orders | ✅ | ✅ | ❌ redirige |
+| Finances | ✅ | ✅ | ❌ redirige |
+| Facturas | ✅ | ✅ | ❌ redirige |
+| Settings | ✅ | ✅ | ❌ redirige |
+| Payments | ✅ | ✅ | ❌ redirige |
+| Variants/Lots/Adjustments | ✅ | ✅ | ❌ redirige |
+| **Users (crear/eliminar/cambiar rol)** | ✅ full | ✅ solo lectura | ❌ redirige |
+| **Billing/Suscripción** | ✅ | ❌ redirige | ❌ redirige |
+
+**Implementación:**
+- `sidebar.tsx`: `minRole` por módulo. CAJERO solo ve 5 módulos; ORG_ADMIN ve todo excepto Users y Billing; SUPER_ADMIN ve todo
+- `middleware.ts`: dos tiers de protección — `ADMIN_ONLY_PATHS` (ORG_ADMIN+) y `SUPER_ADMIN_ONLY_PATHS` (solo /billing). Redirige a `/dashboard` si el rol es insuficiente
+- `users/page.tsx`: `canManage = myRole === "SUPER_ADMIN"` controla botón invitar, eliminar miembro, cambiar rol, revocar claves. ORG_ADMIN ve tabla en solo lectura
+- `useCurrentTenant()` extiende con campo `role` desde `tenant_memberships`
+- `src/lib/rbac.ts`: helper `hasRole()` con jerarquía CAJERO(1) < ORG_ADMIN(2) < SUPER_ADMIN(3)
+
+### Archivos creados/modificados
+
+**Nuevos:**
+- `src/lib/rbac.ts` — helper `hasRole()` con jerarquía de roles
+- `src/app/api/users/invite/route.ts` — API de invitación (genera clave + envía email)
+- `src/app/api/users/[userId]/route.ts` — PATCH (cambiar rol) + DELETE (remover miembro)
+- `src/app/api/users/keys/[keyId]/route.ts` — DELETE (revocar clave)
+- `src/app/api/auth/key-login/route.ts` — API login por clave (valida RPC, crea auth user, retorna credenciales)
+- `src/lib/email.ts` — `sendInviteKeyEmail()` plantilla HTML branded
+- `supabase/migrations/036_user_invite_keys.sql` — tabla + `validate_invite_key()` RPC
+- `supabase/migrations/037_permanent_invite_keys.sql` — claves permanentes (sin expiración/single-use)
+
+**Modificados:**
+- `src/hooks/use-current-tenant.ts` — extiende con `role` desde `tenant_memberships`
+- `src/components/layout/sidebar.tsx` — `minRole` por módulo, Users + Billing → SUPER_ADMIN
+- `src/lib/supabase/middleware.ts` — dos tiers: `ADMIN_ONLY_PATHS` + `SUPER_ADMIN_ONLY_PATHS` para /billing
+- `src/components/auth/auth-forms.tsx` — sección UI login por clave (email + 8-char key + Turnstile)
+- `src/app/(dashboard)/[locale]/users/page.tsx` — gestión completa: invitar, eliminar, cambiar rol, revocar claves. `canManage` para SUPER_ADMIN
+- `src/app/(dashboard)/[locale]/dashboard/page.tsx` — fix scrollbar: charts siempre en DOM, ocultos con `invisible h-0 overflow-hidden`
+- `src/messages/es.json` + `en.json` — traducciones para auth por clave, users, activity
+
+### Commits realizados (este chat)
+
+1. `eccb03c` — Fix lint (7→0 errors)
+2. `ce4fe68` — Fix Select UUID display bug
+3. `87c1ca3` — Auto-generación número de orden `OC-001`
+4. `199913a` — Fix cash register "Abrir caja" (missing tenant_id)
+5. `66a99ab` — Fix MovementTypes translation keys `ENTRY`/`EXIT` → `ENTRADA`/`SALIDA`
+6. `fe91700` — Fix DropdownMenuTrigger `nativeButton` conflict
+7. `7766554` — Activity log system (DB triggers)
+8. `1229802` — Activity log frontend
+9. `2de4611` — Activity page UI + pagination
+10. `a9b2999` — Activity i18n (ES/EN)
+11. `2753420` — Migration 037: permanent invite keys
+12. `472b6b7` — Key-login API + dashboard scrollbar fix + auth UI + dashboard chart layout
+13. `0a32fb4` — Key-login: removed `getUserByEmail` (not in Supabase JS API)
+14. `a9c0600` — Key-login: proper `signInWithPassword` flow with Turnstile captcha
+15. `8dc3d5b` — Auth page: key-login UI with email + 8-char key inputs
+16. `19bc4a7` — Users page: delete members, change role, revoke keys, invite dialog
+17. `781e3e2` — Restrict Users + Billing to SUPER_ADMIN only (sidebar, middleware, users page)
+
+### Bugs conocidos / notas
+
+- `next build` por Turbopack timeout (>120s). Usar `next build --webpack` o `npx tsc --noEmit` para verificar
+- `supabase` CLI no instalado globalmente (solo via npx)
+- Base UI `DropdownMenuTrigger` en `src/components/ui/dropdown-menu.tsx:18` defaulta `nativeButton={true}` — el padre NO debe pasar `nativeButton={false}`
+- RLS requiere `tenant_id` en todos los INSERTs; falta causa fallos silenciosos
+- `role_permissions` con RLS deshabilitado — decidir si habilitar
