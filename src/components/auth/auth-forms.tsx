@@ -620,7 +620,7 @@ export function AuthForms({
       </div>
 
       {/* ── MOBILE-ONLY: pill toggle (replaces the desktop toggle panel on small screens) ── */}
-      <div className="auth-mobile-pill-toggle" role="tablist" aria-label={`${t("auth.login")} / ${t("auth.signup")}`}>
+      <div className="auth-mobile-pill-toggle" role="tablist" aria-label={`${t("auth.login")} / ${t("auth.signup")} / ${t("auth.keyLogin")}`}>
         <button
           type="button"
           role="tab"
@@ -638,6 +638,15 @@ export function AuthForms({
           onClick={() => setMode("signup")}
         >
           {t("auth.signup")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "key"}
+          className={mode === "key" ? "active" : ""}
+          onClick={() => setMode("key")}
+        >
+          {t("auth.keyLogin")}
         </button>
       </div>
 

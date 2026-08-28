@@ -156,6 +156,7 @@
     "resetSuccess": "Password updated. You can now log in.",
     "resetInvalidLink": "This link is invalid or expired. Please request a new one.",
     "resetGoToLogin": "Go to login",
+    "keyLogin": "Employee key",
     "keyLoginTitle": "Key Login",
     "keyLoginSubtitle": "Enter your email and the key you received by email",
     "inviteKeyPlaceholder": "Invite key (e.g. ABC123XY)",

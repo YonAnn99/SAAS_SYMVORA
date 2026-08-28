@@ -156,6 +156,7 @@
     "resetSuccess": "Contraseña actualizada. Ya puedes iniciar sesión.",
     "resetInvalidLink": "El enlace es inválido o expiró. Solicita uno nuevo.",
     "resetGoToLogin": "Ir a iniciar sesión",
+    "keyLogin": "Clave de empleado",
     "keyLoginTitle": "Acceso con clave",
     "keyLoginSubtitle": "Ingresa tu correo y la clave que recibiste por correo",
     "inviteKeyPlaceholder": "Clave de invitación (ej. ABC123XY)",
