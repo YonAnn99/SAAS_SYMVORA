@@ -6,10 +6,12 @@ import { useLocale } from "next-intl";
 export function LegalFooter() {
   const locale = useLocale();
 
+  const MARKETING = "https://www.symvora.com.mx";
+
   const links = [
-    { href: `/${locale}/terminos` as const, label: "Términos" },
-    { href: `/${locale}/aviso-privacidad` as const, label: "Privacidad" },
-    { href: `/${locale}/politica-cookies` as const, label: "Cookies" },
+    { href: `${MARKETING}/${locale}/terminos` as const, label: "Términos" },
+    { href: `${MARKETING}/${locale}/aviso-privacidad` as const, label: "Privacidad" },
+    { href: `${MARKETING}/${locale}/politica-cookies` as const, label: "Cookies" },
   ];
 
   return (
