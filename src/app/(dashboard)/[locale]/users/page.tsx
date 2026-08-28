@@ -85,6 +85,7 @@ export default function UsersPage() {
   const [changingRole, setChangingRole] = useState(false);
 
   const fetchMemberships = useCallback(async () => {
+    if (!tenantId) return;
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase
       .from("tenant_memberships")
@@ -92,13 +93,14 @@ export default function UsersPage() {
         *,
         user:user_id(email, raw_user_meta_data)
       `)
+      .eq("tenant_id", tenantId)
       .order("creado_en", { ascending: false });
 
     if (data) {
       setMemberships(data as Member[]);
     }
     setLoading(false);
-  }, []);
+  }, [tenantId]);
 
   const fetchInviteKeys = useCallback(async () => {
     if (!tenantId) return;
@@ -491,7 +493,7 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle className="text-base">{t("users.confirmDelete") || "Eliminar miembro"}</DialogTitle>
             <DialogDescription className="text-xs">
-              {t("users.confirmDeleteDesc") || `¿Estás seguro de eliminar a ${confirmDelete?.user?.email}? Esta acción no se puede deshacer.`}
+              {t("users.confirmDeleteDesc", { email: confirmDelete?.user?.email || "" })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -516,7 +518,10 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle className="text-base">{t("users.confirmRoleChange") || "Cambiar rol"}</DialogTitle>
             <DialogDescription className="text-xs">
-              {t("users.confirmRoleChangeDesc") || `¿Cambiar el rol de ${confirmRoleChange?.member?.user?.email} a ${confirmRoleChange?.newRole === "ORG_ADMIN" ? "Administrador" : "Cajero"}?`}
+              {t("users.confirmRoleChangeDesc", {
+                email: confirmRoleChange?.member?.user?.email || "",
+                role: confirmRoleChange?.newRole === "ORG_ADMIN" ? "Administrador" : "Cajero",
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
