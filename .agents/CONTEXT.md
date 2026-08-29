@@ -12,7 +12,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 ├── src/
 │   ├── hooks/                  # use-current-tenant, use-is-demo
 │   ├── __tests__/              # Tests unitarios Vitest (104)
-│   ├── middleware.ts            # i18n + sesión Supabase + subscription access control + host routing (www/app) + X-Robots-Tag noindex
+│   ├── proxy.ts                  # i18n + sesión Supabase + subscription access control + host routing (www/app) + X-Robots-Tag noindex (antes middleware.ts — renombrado en Next.js 16)
 │   ├── i18n/                   # routing/request/navigation (locales es+en activos, default es)
 │   ├── messages/               # es.json + en.json (631/591 keys)
 │   ├── lib/
