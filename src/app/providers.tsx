@@ -9,7 +9,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       attribute="class"
       enableSystem
       disableTransitionOnChange
-      scriptProps={{ type: "application/json" }}
     >
       {children}
       <Toaster richColors position="top-right" />
