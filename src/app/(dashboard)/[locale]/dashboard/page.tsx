@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/card";
 import { DollarSign, ShoppingCart, TrendingUp, Users, AlertCircle, RefreshCw, Package, TrendingDown, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SalesChart } from "@/components/charts/sales-chart";
-import { TopProductsChart } from "@/components/charts/top-products-chart";
-import { PaymentMethodsChart } from "@/components/charts/payment-methods-chart";
+import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/charts/dynamic-charts";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { toast } from "sonner";
@@ -61,28 +59,37 @@ export default function DashboardPage() {
     const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
 
-    // Fetch current month sales
-    const { data: ventas, error: queryError } = await supabase
-      .from("ventas")
-      .select("total, metodo_pago, fecha_venta, estado, cliente_id")
-      .eq("tenant_id", tenantId)
-      .gte("fecha_venta", firstDayOfMonth.toISOString())
-      .eq("estado", "COMPLETADA");
+    // Fetch current month sales + last month sales (comparison) in parallel —
+    // independent queries, no reason to await them sequentially.
+    const [
+      { data: ventas, error: queryError },
+      { data: ventasAnteriores },
+    ] = await Promise.all([
+      supabase
+        .from("ventas")
+        .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
+        .eq("tenant_id", tenantId)
+        .gte("fecha_venta", firstDayOfMonth.toISOString())
+        .eq("estado", "COMPLETADA"),
+      supabase
+        .from("ventas")
+        .select("total")
+        .eq("tenant_id", tenantId)
+        .gte("fecha_venta", firstDayOfLastMonth.toISOString())
+        .lte("fecha_venta", lastDayOfLastMonth.toISOString())
+        .eq("estado", "COMPLETADA"),
+    ]);
 
-    // Fetch last month sales for comparison
-    const { data: ventasAnteriores } = await supabase
-      .from("ventas")
-      .select("total")
-      .eq("tenant_id", tenantId)
-      .gte("fecha_venta", firstDayOfLastMonth.toISOString())
-      .lte("fecha_venta", lastDayOfLastMonth.toISOString())
-      .eq("estado", "COMPLETADA");
-
-    // Fetch products sold count
-    const { data: detalleVentas } = await supabase
-      .from("detalle_ventas")
-      .select("cantidad")
-      .eq("tenant_id", tenantId);
+    // Products sold count, scoped to this month's completed sales via their
+    // venta_id — detalle_ventas has no tenant_id/fecha_venta column of its
+    // own, RLS scopes it through ventas.
+    const ventaIds = (ventas ?? []).map((v) => v.id);
+    const { data: detalleVentas } = ventaIds.length
+      ? await supabase
+          .from("detalle_ventas")
+          .select("cantidad")
+          .in("venta_id", ventaIds)
+      : { data: [] as { cantidad: number }[] };
 
     if (queryError) {
       setError("Error al cargar datos del dashboard");

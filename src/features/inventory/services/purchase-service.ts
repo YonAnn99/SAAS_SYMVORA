@@ -23,23 +23,6 @@ export interface SupplierInput {
   phone: string;
 }
 
-export async function fetchTenantIdForUser(): Promise<string | null> {
-  const supabase = createSupabaseBrowserClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: membership } = await supabase
-    .from("tenant_memberships")
-    .select("tenant_id")
-    .eq("user_id", user.id)
-    .limit(1)
-    .single();
-
-  return membership?.tenant_id ?? null;
-}
-
 export async function fetchPurchases(tenantId: string): Promise<PurchaseWithRelations[]> {
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase

@@ -10,9 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Download, TrendingUp, Package, Users, CreditCard } from "lucide-react";
-import { SalesChart } from "@/components/charts/sales-chart";
-import { TopProductsChart } from "@/components/charts/top-products-chart";
-import { PaymentMethodsChart } from "@/components/charts/payment-methods-chart";
+import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/charts/dynamic-charts";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { toast } from "sonner";
@@ -109,31 +107,44 @@ export default function ReportsPage() {
         startDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
-    // Fetch sales data
-    const { data: ventas, error: ventasError } = await supabase
-      .from("ventas")
-      .select("total, metodo_pago, fecha_venta, estado, cliente_id")
-      .eq("tenant_id", tenantId)
-      .gte("fecha_venta", startDate.toISOString())
-      .eq("estado", "COMPLETADA");
+    // Fetch sales, products and customers in parallel — independent queries.
+    const [
+      { data: ventas, error: ventasError },
+      { data: productos },
+      { data: clientes },
+    ] = await Promise.all([
+      supabase
+        .from("ventas")
+        .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
+        .eq("tenant_id", tenantId)
+        .gte("fecha_venta", startDate.toISOString())
+        .eq("estado", "COMPLETADA"),
+      supabase
+        .from("productos")
+        .select("id, nombre, categoria")
+        .eq("tenant_id", tenantId),
+      supabase
+        .from("clientes")
+        .select("id, nombre")
+        .eq("tenant_id", tenantId),
+    ]);
 
-    // Fetch detail sales for product data
-    const { data: detalleVentas } = await supabase
-      .from("detalle_ventas")
-      .select("cantidad, precio_unitario, producto_id, venta_id")
-      .eq("tenant_id", tenantId);
-
-    // Fetch products for names
-    const { data: productos } = await supabase
-      .from("productos")
-      .select("id, nombre, categoria")
-      .eq("tenant_id", tenantId);
-
-    // Fetch customers
-    const { data: clientes } = await supabase
-      .from("clientes")
-      .select("id, nombre")
-      .eq("tenant_id", tenantId);
+    // Detail sales for the selected period, scoped via venta_id — detalle_ventas
+    // has no tenant_id/fecha_venta column of its own, RLS scopes it through ventas.
+    const ventaIds = (ventas ?? []).map((v) => v.id);
+    const { data: detalleVentas } = ventaIds.length
+      ? await supabase
+          .from("detalle_ventas")
+          .select("cantidad, precio_unitario, producto_id, venta_id")
+          .in("venta_id", ventaIds)
+      : {
+          data: [] as {
+            cantidad: number;
+            precio_unitario: number;
+            producto_id: string;
+            venta_id: string;
+          }[],
+        };
 
     if (ventasError) {
       toast.error("Error al cargar reportes");

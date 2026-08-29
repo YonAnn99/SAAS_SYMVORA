@@ -8,9 +8,11 @@ import { PurchasesTable } from "@/features/inventory";
 import { SuppliersTable } from "@/features/inventory";
 import { NewPurchaseDialog } from "@/features/inventory";
 import { NewSupplierDialog } from "@/features/inventory";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
 
 export default function PurchasesPage() {
   const t = useTranslations();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const {
     purchases,
     suppliers,
@@ -23,7 +25,7 @@ export default function PurchasesPage() {
     handleCreateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
-  } = usePurchases();
+  } = usePurchases(tenantId, tenantLoading);
 
   if (loading) {
     return (

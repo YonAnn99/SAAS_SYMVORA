@@ -135,7 +135,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Subscription access control for authenticated users on dashboard
+  // Subscription + role access control for authenticated users on dashboard.
+  // Single membership fetch (tenant_id + role) reused by both checks below —
+  // avoids two redundant round trips to the same tenant_memberships row.
   if (user && !isAuthRoute && !isPublicRoute) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (serviceRoleKey) {
@@ -145,11 +147,12 @@ export async function updateSession(request: NextRequest) {
 
       const { data: membership } = await supabaseAdmin
         .from("tenant_memberships")
-        .select("tenant_id")
+        .select("tenant_id, role")
         .eq("user_id", user.id)
         .limit(1)
         .single();
 
+      // --- Subscription check ---
       if (membership) {
         const { data: tenant } = await supabaseAdmin
           .from("tenants")
@@ -188,33 +191,17 @@ export async function updateSession(request: NextRequest) {
           }
         }
       }
-    }
-  }
 
-  // Role-based route protection for authenticated users
-  if (user && !isAuthRoute && !isPublicRoute) {
-    const cleanPath = stripLocale(request.nextUrl.pathname);
-    const requiresSuperAdmin = SUPER_ADMIN_ONLY_PATHS.some(
-      (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
-    );
-    const requiresOrgAdmin = ADMIN_ONLY_PATHS.some(
-      (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
-    );
+      // --- Role-based route protection ---
+      const cleanPath = stripLocale(request.nextUrl.pathname);
+      const requiresSuperAdmin = SUPER_ADMIN_ONLY_PATHS.some(
+        (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
+      );
+      const requiresOrgAdmin = ADMIN_ONLY_PATHS.some(
+        (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
+      );
 
-    if (requiresSuperAdmin || requiresOrgAdmin) {
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (serviceRoleKey) {
-        const supabaseAdmin = createClient(url, serviceRoleKey, {
-          auth: { autoRefreshToken: false, persistSession: false },
-        });
-
-        const { data: membership } = await supabaseAdmin
-          .from("tenant_memberships")
-          .select("role")
-          .eq("user_id", user.id)
-          .limit(1)
-          .single();
-
+      if (requiresSuperAdmin || requiresOrgAdmin) {
         const userRole = membership?.role || "CAJERO";
         const requiredRole = requiresSuperAdmin ? "SUPER_ADMIN" : "ORG_ADMIN";
 

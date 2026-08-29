@@ -14,40 +14,38 @@ import {
   deletePurchase,
   fetchPurchases,
   fetchSuppliers,
-  fetchTenantIdForUser,
   type PurchaseInput,
   type SupplierInput,
   updatePurchaseStatus,
 } from "../services/purchase-service";
 
-export function usePurchases() {
+export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const [purchases, setPurchases] = useState<PurchaseWithRelations[]>([]);
   const [suppliers, setSuppliers] = useState<Proveedor[]>([]);
-  const [tenantId, setTenantId] = useState("");
   const [loading, setLoading] = useState(true);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
 
   const refetch = useCallback(async () => {
-    const resolvedTenantId = await fetchTenantIdForUser();
-    if (!resolvedTenantId) {
+    if (!tenantId) {
       setLoading(false);
       return;
     }
-    setTenantId(resolvedTenantId);
+    setLoading(true);
     const [purchasesData, suppliersData] = await Promise.all([
-      fetchPurchases(resolvedTenantId),
-      fetchSuppliers(resolvedTenantId),
+      fetchPurchases(tenantId),
+      fetchSuppliers(tenantId),
     ]);
     setPurchases(purchasesData);
     setSuppliers(suppliersData);
     setLoading(false);
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
+    if (tenantLoading) return;
     const timeout = window.setTimeout(() => void refetch(), 0);
     return () => window.clearTimeout(timeout);
-  }, [refetch]);
+  }, [tenantLoading, refetch]);
 
   const handleCreatePurchase = useCallback(
     async (input: PurchaseInput) => {
