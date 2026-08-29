@@ -67,10 +67,30 @@ export async function POST(request: Request) {
     let customerId = subscription.conekta_customer_id;
     if (!customerId) {
       try {
+        // Usar el correo de login del superadmin (dueño del tenant) para
+        // que las notificaciones de Conekta (referencia de pago, etc.)
+        // lleguen a la cuenta con la que inicia sesión, no al email de
+        // contacto de negocio (tenants.email) que es texto libre/opcional.
+        const { data: ownerMembership } = await supabase
+          .from("tenant_memberships")
+          .select("user_id")
+          .eq("tenant_id", tenant_id)
+          .eq("role", "SUPER_ADMIN")
+          .limit(1)
+          .maybeSingle();
+
+        let ownerEmail: string | null = null;
+        if (ownerMembership) {
+          const { data: ownerUser } = await supabase.auth.admin.getUserById(
+            ownerMembership.user_id
+          );
+          ownerEmail = ownerUser?.user?.email ?? null;
+        }
+
         const { createCustomer } = await import("@/features/payments/services/conekta/customers");
         customerId = await createCustomer({
           name: tenant.nombre_comercial || "SYMVORA User",
-          email: tenant.email || "user@symvora.com",
+          email: ownerEmail || tenant.email || "user@symvora.com",
           // Conekta requires `phone` (it's not marked optional in their
           // schema) — sending "" is what caused the 422. `telefono` isn't
           // captured anywhere in signup yet, so fall back to a

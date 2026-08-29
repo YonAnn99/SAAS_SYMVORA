@@ -55,6 +55,7 @@ export async function createHostedCheckoutOrder(params: {
         | "google"
       >,
       name: params.description,
+      redirection_time: 20,
     },
   };
 

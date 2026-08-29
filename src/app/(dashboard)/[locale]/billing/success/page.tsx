@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,13 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, Clock, ArrowRight } from "lucide-react";
 
-export default function BillingSuccessPage() {
+function BillingSuccessContent() {
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const billingPath = `/${locale}/billing`;
+  const isPaid = searchParams.get("payment_status") === "paid";
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -40,32 +42,46 @@ export default function BillingSuccessPage() {
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <div className="flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
+            {isPaid ? (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/10">
+                <Clock className="h-8 w-8 text-yellow-500" />
+              </div>
+            )}
           </div>
           <CardTitle className="text-xl mt-4">
-            {t("billing.paymentSuccess") || "Pago exitoso"}
+            {isPaid ? t("billing.paymentSuccess") : t("billing.paymentPending")}
           </CardTitle>
           <CardDescription>
-            {t("billing.paymentSuccessDescription") || 
-              "Tu pago ha sido procesado correctamente. Tu suscripción está activa."}
+            {isPaid
+              ? t("billing.paymentSuccessDescription")
+              : t("billing.paymentPendingDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {t("billing.redirectingIn", { seconds: countdown }) || 
-              `Redirigiendo en ${countdown} segundos...`}
+            {t("billing.redirectingIn", { seconds: countdown })}
           </p>
           <Button
             onClick={() => router.push(billingPath)}
             className="w-full"
           >
-            {t("billing.goToBilling") || "Ir a Suscripción"}
+            {t("billing.goToBilling")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function BillingSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <BillingSuccessContent />
+    </Suspense>
   );
 }

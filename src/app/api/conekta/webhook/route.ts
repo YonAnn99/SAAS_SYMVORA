@@ -208,7 +208,7 @@ async function sendWelcomeEmailToOwner(
       .from("tenant_memberships")
       .select("user_id")
       .eq("tenant_id", tenantId)
-      .eq("role", "ORG_ADMIN")
+      .eq("role", "SUPER_ADMIN")
       .limit(1)
       .maybeSingle();
 
@@ -450,10 +450,13 @@ export async function POST(request: Request) {
           .single();
 
         if (subData) {
+          const paidMethod =
+            data.charges?.data?.[0]?.payment_method?.type || "card";
+
           await supabase.from("payment_history").insert({
             subscription_id: subData.id,
             amount: (data.amount || 0) / 100,
-            payment_method: "card",
+            payment_method: paidMethod,
             status: "completed",
             conekta_order_id: data.id,
             paid_at: new Date().toISOString(),
