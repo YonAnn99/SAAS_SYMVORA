@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Save, Building2, Puzzle } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useTenantContext } from "@/contexts/tenant-context";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
 import { convertToWebP } from "@/lib/image";
@@ -25,6 +26,7 @@ import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 export default function SettingsPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { refetch: refetchTenantContext } = useTenantContext();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [settings, setSettings] = useState<TenantSettingsJSON | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,6 +143,7 @@ export default function SettingsPage() {
       }
 
       setTenant({ ...tenant, logo_url: urlData.publicUrl });
+      void refetchTenantContext();
       toast.success("Logo actualizado");
     } finally {
       setLogoUploading(false);
@@ -161,6 +164,7 @@ export default function SettingsPage() {
       toast.error("Error al quitar el logo: " + error.message);
     } else {
       setTenant({ ...tenant, logo_url: null });
+      void refetchTenantContext();
       toast.success("Logo eliminado");
     }
     setLogoUploading(false);
