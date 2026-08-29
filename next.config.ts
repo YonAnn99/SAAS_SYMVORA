@@ -47,6 +47,7 @@ function securityHeaders() {
 }
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   poweredByHeader: false,
   allowedDevOrigins: ["192.168.1.75:3000"],
   outputFileTracingIncludes: {

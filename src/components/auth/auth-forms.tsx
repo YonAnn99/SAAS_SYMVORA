@@ -18,6 +18,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getAppUrl } from "@/lib/site";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
+import { convertToWebP } from "@/lib/image";
+import { toast } from "sonner";
 import "@/styles/auth-toggle.css";
 
 function GoogleIcon() {
@@ -52,35 +54,6 @@ function MicrosoftIcon() {
       <rect x="10" y="10" width="8" height="8" fill="#FFB900" />
     </svg>
   );
-}
-
-function convertToWebP(file: File): Promise<File> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-
-      canvas.toBlob(
-        (blob) => {
-          const webpFile = new File([blob!], "logo.webp", {
-            type: "image/webp",
-          });
-          resolve(webpFile);
-        },
-        "image/webp",
-        0.9
-      );
-    };
-
-    img.src = url;
-  });
 }
 
 type AuthMode = "login" | "signup" | "forgot" | "key";
@@ -489,7 +462,12 @@ export function AuthForms({
         .from("logos")
         .upload(filePath, webpFile, { contentType: "image/webp" });
 
-      if (!uploadError) {
+      if (uploadError) {
+        console.error("Logo upload failed:", uploadError);
+        toast.warning(
+          "No se pudo subir el logo. Podrás agregarlo después desde Configuración."
+        );
+      } else {
         const { data: urlData } = supabase.storage
           .from("logos")
           .getPublicUrl(filePath);

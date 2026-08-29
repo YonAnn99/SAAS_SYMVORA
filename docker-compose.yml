@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    container_name: symvora
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    restart: unless-stopped

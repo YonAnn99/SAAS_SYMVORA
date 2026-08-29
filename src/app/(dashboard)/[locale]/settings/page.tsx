@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,20 +14,22 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Save, Building2, Palette, Puzzle, Sun, Moon } from "lucide-react";
+import { Save, Building2, Puzzle } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { toast } from "sonner";
+import { FileUpload } from "@/components/ui/file-upload";
+import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 
 export default function SettingsPage() {
   const t = useTranslations();
-  const { theme, setTheme } = useTheme();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [settings, setSettings] = useState<TenantSettingsJSON | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
@@ -94,6 +95,77 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
+  const handleLogoUpload = async (file: File) => {
+    if (!tenant) return;
+    setLogoUploading(true);
+
+    const supabase = createSupabaseBrowserClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("No se pudo identificar al usuario actual");
+      setLogoUploading(false);
+      return;
+    }
+
+    try {
+      const webpFile = await convertToWebP(file);
+      const filePath = `${user.id}/logo.webp`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("logos")
+        .upload(filePath, webpFile, {
+          contentType: "image/webp",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        toast.error("Error al subir el logo: " + uploadError.message);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("logos")
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from("tenants")
+        .update({ logo_url: urlData.publicUrl })
+        .eq("id", tenant.id);
+
+      if (updateError) {
+        toast.error("Error al guardar el logo: " + updateError.message);
+        return;
+      }
+
+      setTenant({ ...tenant, logo_url: urlData.publicUrl });
+      toast.success("Logo actualizado");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    if (!tenant) return;
+    setLogoUploading(true);
+
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase
+      .from("tenants")
+      .update({ logo_url: null })
+      .eq("id", tenant.id);
+
+    if (error) {
+      toast.error("Error al quitar el logo: " + error.message);
+    } else {
+      setTenant({ ...tenant, logo_url: null });
+      toast.success("Logo eliminado");
+    }
+    setLogoUploading(false);
+  };
+
   const handleToggleModule = async (module: string, value: boolean) => {
     if (!tenant || !settings) return;
 
@@ -151,10 +223,6 @@ export default function SettingsPage() {
             <Building2 className="h-3.5 w-3.5" />
             {t("settings.general")}
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="gap-1.5 text-xs">
-            <Palette className="h-3.5 w-3.5" />
-            {t("settings.appearance")}
-          </TabsTrigger>
           <TabsTrigger value="modules" className="gap-1.5 text-xs">
             <Puzzle className="h-3.5 w-3.5" />
             {t("settings.modules")}
@@ -163,100 +231,82 @@ export default function SettingsPage() {
 
         {/* General settings */}
         <TabsContent value="general">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t("settings.company")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="companyName" className="text-xs">
-                    {t("settings.companyName")}
-                  </Label>
-                  <Input
-                    id="companyName"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="h-8 text-sm"
-                  />
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">{t("settings.company")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="companyName" className="text-xs">
+                      {t("settings.companyName")}
+                    </Label>
+                    <Input
+                      id="companyName"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-xs">{t("common.email")}</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-xs">{t("common.phone")}</Label>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="address" className="text-xs">{t("common.address")}</Label>
+                    <Input
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs">{t("common.email")}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-8 text-sm"
-                  />
+                <div className="flex justify-end pt-2">
+                  <Button onClick={handleSaveCompany} disabled={saving} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+                    <Save className="mr-1.5 h-3.5 w-3.5" />
+                    {saving ? t("common.loading") : t("common.save")}
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-xs">{t("common.phone")}</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="address" className="text-xs">{t("common.address")}</Label>
-                  <Input
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button onClick={handleSaveCompany} disabled={saving} size="sm" className="h-8 active:scale-[0.98] transition-transform">
-                  <Save className="mr-1.5 h-3.5 w-3.5" />
-                  {saving ? t("common.loading") : t("common.save")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
 
-        {/* Appearance settings */}
-        <TabsContent value="appearance">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t("settings.appearance")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-xs">{t("settings.darkMode")}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Activa el modo oscuro para la interfaz
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">{t("settings.logo")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FileUpload
+                  preview={tenant?.logo_url ?? null}
+                  onFileSelect={handleLogoUpload}
+                  onFileRemove={handleLogoRemove}
+                  dragDropText={t("auth.logoDragDrop")}
+                  maxSizeText={t("auth.logoMaxSize")}
+                />
+                {logoUploading && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {t("common.loading")}
                   </p>
-                </div>
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                </button>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label className="text-xs">{t("settings.primaryColor")}</Label>
-                <div className="flex gap-2">
-                  {["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"].map(
-                    (color) => (
-                      <button
-                        key={color}
-                        className="h-7 w-7 rounded-full border-2 border-transparent transition-all hover:scale-110 hover:border-foreground/20"
-                        style={{ backgroundColor: color }}
-                      />
-                    )
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Modules settings */}
