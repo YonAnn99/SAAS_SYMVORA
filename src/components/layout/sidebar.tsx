@@ -112,11 +112,11 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
       <div className="flex h-14 items-center justify-between border-b border-border px-4 bg-gradient-to-r from-primary/5 to-transparent">
         <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0" onClick={onLinkClick}>
           <Image
-            src={tenantLogo || "/symvora-logo.webp"}
+            src="/symvora-logo.webp"
             alt="SYMVORA"
             width={120}
             height={28}
-            className={cn("h-6 w-auto object-contain flex-shrink-0 transition-all duration-200", collapsed && "mx-auto")}
+            className={cn("h-6 w-auto object-contain flex-shrink-0 transition-all duration-200 dark:invert", collapsed && "mx-auto")}
             priority
           />
           {!collapsed && (
