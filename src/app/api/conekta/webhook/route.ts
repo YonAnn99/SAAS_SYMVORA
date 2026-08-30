@@ -453,14 +453,31 @@ export async function POST(request: Request) {
           const paidMethod =
             data.charges?.data?.[0]?.payment_method?.type || "card";
 
-          await supabase.from("payment_history").insert({
-            subscription_id: subData.id,
-            amount: (data.amount || 0) / 100,
-            payment_method: paidMethod,
-            status: "completed",
-            conekta_order_id: data.id,
-            paid_at: new Date().toISOString(),
-          });
+          // create-checkout ya insertó una fila "pending" con este mismo
+          // conekta_order_id al generar la orden; se actualiza en vez de
+          // duplicar. Si no existe (p.ej. suscripción recurrente sin paso
+          // por create-checkout), se inserta.
+          const { data: updatedPayment } = await supabase
+            .from("payment_history")
+            .update({
+              status: "completed",
+              payment_method: paidMethod,
+              amount: (data.amount || 0) / 100,
+              paid_at: new Date().toISOString(),
+            })
+            .eq("conekta_order_id", data.id)
+            .select("id");
+
+          if (!updatedPayment || updatedPayment.length === 0) {
+            await supabase.from("payment_history").insert({
+              subscription_id: subData.id,
+              amount: (data.amount || 0) / 100,
+              payment_method: paidMethod,
+              status: "completed",
+              conekta_order_id: data.id,
+              paid_at: new Date().toISOString(),
+            });
+          }
 
           await supabase
             .from("subscriptions")

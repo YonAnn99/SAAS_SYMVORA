@@ -464,6 +464,20 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 </span>
               </div>
             )}
+
+            {payments[0]?.status === "pending" && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <div>
+                  <p className="font-medium text-amber-600">
+                    {t("billing.paymentPending")}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t("billing.paymentPendingDescription")}
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

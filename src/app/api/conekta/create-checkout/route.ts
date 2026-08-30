@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     // Get subscription
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("conekta_customer_id, status")
+      .select("id, conekta_customer_id, status")
       .eq("tenant_id", tenant_id)
       .single();
 
@@ -174,6 +174,19 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // Registrar el intento como "pendiente" para que /billing pueda
+    // mostrarlo mientras se espera la confirmación del webhook (Conekta
+    // no confirma el pago en efectivo al crear la orden, solo genera la
+    // referencia; la fila se actualiza a "completed" cuando llega order.paid).
+    await supabase.from("payment_history").insert({
+      subscription_id: subscription.id,
+      amount: 400,
+      currency: "MXN",
+      payment_method: type || "card",
+      status: "pending",
+      conekta_order_id: (orderData.id as string) || null,
+    });
 
     return NextResponse.json({ checkout_url: checkoutUrl });
   } catch (error: unknown) {
