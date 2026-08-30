@@ -121,7 +121,10 @@ export function calculateRegisterTotals(
   return movements.reduce(
     (acc, m) => {
       if (m.tipo === "ENTRADA") acc.totalEntradas += m.monto;
-      else acc.totalSalidas += m.monto;
+      else if (m.tipo === "SALIDA") acc.totalSalidas += m.monto;
+      // "VENTA" se excluye a propósito: el ingreso por ventas ya se
+      // contabiliza por separado (fetchVentasTotal / tarjeta "Ventas" y
+      // saldoEsperado), sumarlo aquí también lo duplicaría.
       return acc;
     },
     { totalEntradas: 0, totalSalidas: 0 }

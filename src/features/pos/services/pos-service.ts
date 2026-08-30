@@ -21,6 +21,7 @@ export interface CompleteSaleParams {
   items: SaleItem[];
   includeIva: boolean;
   notas?: string;
+  montoRecibido?: number | null;
 }
 
 export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleTotals {
@@ -43,7 +44,7 @@ export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleT
 
 export async function completeSale(params: CompleteSaleParams) {
   const supabase = createSupabaseBrowserClient();
-  const { tenantId, userId, clienteId, metodoPago, items, includeIva, notas } = params;
+  const { tenantId, userId, clienteId, metodoPago, items, includeIva, notas, montoRecibido } = params;
 
   const { data: venta, error } = await supabase.rpc("complete_sale", {
     p_tenant_id: tenantId,
@@ -57,6 +58,7 @@ export async function completeSale(params: CompleteSaleParams) {
     })),
     p_include_iva: includeIva,
     p_notas: notas || null,
+    p_monto_recibido: montoRecibido ?? null,
   });
 
   if (error) throw error;

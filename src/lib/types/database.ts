@@ -288,6 +288,8 @@ export type Database = {
           notas: string | null;
           fecha_venta: string;
           factura_id: string | null;
+          monto_recibido: number | null;
+          cambio: number | null;
         };
         Insert: {
           id?: string;
@@ -303,6 +305,8 @@ export type Database = {
           notas?: string | null;
           fecha_venta?: string;
           factura_id?: string | null;
+          monto_recibido?: number | null;
+          cambio?: number | null;
         };
         Update: {
           id?: string;
@@ -318,6 +322,8 @@ export type Database = {
           notas?: string | null;
           fecha_venta?: string;
           factura_id?: string | null;
+          monto_recibido?: number | null;
+          cambio?: number | null;
         };
       };
       detalle_ventas: {
@@ -470,7 +476,7 @@ export type Database = {
         Row: {
           id: string;
           caja_id: string;
-          tipo: "ENTRADA" | "SALIDA";
+          tipo: "ENTRADA" | "SALIDA" | "VENTA";
           monto: number;
           descripcion: string;
           fecha: string;
@@ -478,7 +484,7 @@ export type Database = {
         Insert: {
           id?: string;
           caja_id: string;
-          tipo: "ENTRADA" | "SALIDA";
+          tipo: "ENTRADA" | "SALIDA" | "VENTA";
           monto: number;
           descripcion: string;
           fecha?: string;
@@ -486,7 +492,7 @@ export type Database = {
         Update: {
           id?: string;
           caja_id?: string;
-          tipo?: "ENTRADA" | "SALIDA";
+          tipo?: "ENTRADA" | "SALIDA" | "VENTA";
           monto?: number;
           descripcion?: string;
           fecha?: string;
@@ -1001,7 +1007,7 @@ export type Database = {
       estado_venta: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
       estado_compra: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
       estado_caja: "ABIERTA" | "CERRADA";
-      tipo_movimiento: "ENTRADA" | "SALIDA";
+      tipo_movimiento: "ENTRADA" | "SALIDA" | "VENTA";
       estado_orden_compra: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
       motivo_ajuste: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
       estado_factura: "BORRADOR" | "TIMBRADA" | "CANCELADA";

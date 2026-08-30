@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ export function TicketReceipt({
   onOpenChange,
   receipt,
 }: TicketReceiptProps) {
+  const t = useTranslations();
   if (!receipt) return null;
   const date = new Date().toLocaleString();
 
@@ -57,6 +59,18 @@ export function TicketReceipt({
             <span>Método de pago</span>
             <span>{receipt.paymentMethod}</span>
           </div>
+          {receipt.montoRecibido != null && (
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{t("pos.amountReceived")}</span>
+              <span className="font-mono">${receipt.montoRecibido.toFixed(2)}</span>
+            </div>
+          )}
+          {receipt.cambio != null && (
+            <div className="flex justify-between text-xs font-medium">
+              <span>{t("pos.change")}</span>
+              <span className="font-mono">${receipt.cambio.toFixed(2)}</span>
+            </div>
+          )}
           {receipt.customerName && (
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Cliente</span>

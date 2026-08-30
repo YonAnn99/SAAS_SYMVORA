@@ -75,40 +75,42 @@ export function MovementsTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {movements.map((movement) => (
-                  <TableRow key={movement.id}>
-                    <TableCell className="text-sm">
-                      {new Date(movement.fecha).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {movement.descripcion}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          movement.tipo === "ENTRADA"
-                            ? "default"
-                            : "destructive"
-                        }
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        {t(`finances.movementTypes.${movement.tipo}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-mono">
-                      <span
-                        className={
-                          movement.tipo === "ENTRADA"
-                            ? "text-[#346538] dark:text-[#7BC67E]"
-                            : "text-[#9F2F2D] dark:text-[#F2A5A4]"
-                        }
-                      >
-                        {movement.tipo === "ENTRADA" ? "+" : "-"}$
-                        {movement.monto.toFixed(2)}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {movements.map((movement) => {
+                  // VENTA es una entrada de dinero igual que ENTRADA (solo
+                  // se contabiliza aparte para no duplicar la tarjeta "Ventas"),
+                  // así que visualmente se trata como positiva, no como salida.
+                  const esPositivo = movement.tipo !== "SALIDA";
+                  return (
+                    <TableRow key={movement.id}>
+                      <TableCell className="text-sm">
+                        {new Date(movement.fecha).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {movement.descripcion}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={esPositivo ? "default" : "destructive"}
+                          className="text-[10px] px-1.5 py-0"
+                        >
+                          {t(`finances.movementTypes.${movement.tipo}`)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-mono">
+                        <span
+                          className={
+                            esPositivo
+                              ? "text-[#346538] dark:text-[#7BC67E]"
+                              : "text-[#9F2F2D] dark:text-[#F2A5A4]"
+                          }
+                        >
+                          {esPositivo ? "+" : "-"}$
+                          {movement.monto.toFixed(2)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

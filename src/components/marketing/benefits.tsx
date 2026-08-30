@@ -19,6 +19,7 @@ export function Benefits() {
 
   return (
     <motion.section
+      id="benefits"
       className="w-full bg-white dark:bg-[#0C0C0C] py-24 border-t border-neutral-100 dark:border-neutral-800"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}

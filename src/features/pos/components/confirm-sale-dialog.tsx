@@ -23,6 +23,8 @@ interface ConfirmSaleDialogProps {
   customerName: string | null;
   processing: boolean;
   includeIva: boolean;
+  montoRecibido?: number | null;
+  cambio?: number | null;
   onConfirm: () => void;
 }
 
@@ -35,6 +37,8 @@ export function ConfirmSaleDialog({
   customerName,
   processing,
   includeIva,
+  montoRecibido,
+  cambio,
   onConfirm,
 }: ConfirmSaleDialogProps) {
   const t = useTranslations();
@@ -80,6 +84,18 @@ export function ConfirmSaleDialog({
             <span>Método de pago</span>
             <span>{selectedPayment}</span>
           </div>
+          {montoRecibido != null && (
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{t("pos.amountReceived")}</span>
+              <span className="font-mono">${montoRecibido.toFixed(2)}</span>
+            </div>
+          )}
+          {cambio != null && (
+            <div className="flex justify-between text-xs font-medium">
+              <span>{t("pos.change")}</span>
+              <span className="font-mono">${cambio.toFixed(2)}</span>
+            </div>
+          )}
           {customerName && (
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Cliente</span>

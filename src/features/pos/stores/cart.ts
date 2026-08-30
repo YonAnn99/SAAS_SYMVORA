@@ -20,7 +20,7 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
-  includeIva: true,
+  includeIva: false,
 
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => {
     set((state) => {
@@ -74,7 +74,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }));
   },
 
-  clearCart: () => set({ items: [], includeIva: true }),
+  clearCart: () => set({ items: [], includeIva: false }),
 
   setIncludeIva: (value) => set({ includeIva: value }),
 

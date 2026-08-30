@@ -315,7 +315,8 @@
     "addMovement": "Agregar movimiento",
     "movementTypes": {
       "ENTRADA": "Entrada",
-      "SALIDA": "Salida"
+      "SALIDA": "Salida",
+      "VENTA": "Venta"
     },
     "credit": "Crédito / Fiado",
     "customers": "Clientes",
@@ -661,18 +662,6 @@
         "passwords": { "title": "Contraseñas seguras", "description": "Requisitos de seguridad: 8+ caracteres, mayúscula, minúscula, número y carácter especial." }
       }
     },
-    "integrations": {
-      "badge": "Integraciones",
-      "title": "Conectado con los mejores proveedores",
-      "subtitle": "Pagos con Conekta, facturación con PAC, backend en Supabase — todo probado y confiable.",
-      "conektaBadge": "Acepta tarjetas, SPEI, billeteras digitales y efectivo en tiendas",
-      "items": {
-        "conekta": { "name": "Conekta", "description": "Gateway de pagos mexicano. Acepta tarjetas, SPEI, billeteras digitales y efectivo en BBVA, 7Eleven, Farmacia del Ahorro, Waldo's y más." },
-        "pac": { "name": "PAC", "description": "Proveedor Autorizado de Certificación para timbrado CFDI." },
-        "supabase": { "name": "Supabase", "description": "Backend con PostgreSQL, autenticación y storage." },
-        "vercel": { "name": "Vercel", "description": "Hosting y despliegue con edge functions." }
-      }
-    },
     "benefits": {
       "badge": "Nuestra Filosofía",
       "title": "Diseñado para quien tiene prisa",
@@ -803,7 +792,7 @@
       "subtitle": "SYMVORA nació para apoyar a los negocios mexicanos con herramientas modernas, sin comisiones por venta y con soporte en español.",
       "foundedBy": "Fundado por",
       "founders": "Egresados del TecNM Ecatepec",
-      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos en efectivo en tiendas de conveniencia y un POS que funciona sin internet.",
+      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos en efectivo en tiendas de conveniencia y un POS moderno y confiable.",
       "values": {
         "mission": "Misión",
         "missionDesc": "Democratizar la tecnología para el comercio mexicano",

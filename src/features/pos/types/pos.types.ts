@@ -48,4 +48,6 @@ export interface SaleReceipt {
   total: number;
   paymentMethod: string;
   customerName: string | null;
+  montoRecibido?: number | null;
+  cambio?: number | null;
 }

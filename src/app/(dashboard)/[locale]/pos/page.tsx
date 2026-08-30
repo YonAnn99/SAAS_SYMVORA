@@ -41,6 +41,7 @@ export default function POSPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
   const [selectedPayment, setSelectedPayment] = useState<string>("");
+  const [montoRecibido, setMontoRecibido] = useState<string>("");
   const [processingSale, setProcessingSale] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
@@ -116,6 +117,17 @@ export default function POSPage() {
       ? null
       : customers.find((c) => c.id === selectedCustomer)?.nombre ?? null;
 
+  const isEfectivo = selectedPayment === "EFECTIVO";
+  const montoRecibidoNum = montoRecibido === "" ? null : Number(montoRecibido);
+  const cambio =
+    isEfectivo && montoRecibidoNum != null && !Number.isNaN(montoRecibidoNum)
+      ? Math.round((montoRecibidoNum - totals.total) * 100) / 100
+      : null;
+  const montoRecibidoInsuficiente =
+    isEfectivo &&
+    items.length > 0 &&
+    (montoRecibidoNum == null || Number.isNaN(montoRecibidoNum) || montoRecibidoNum < totals.total);
+
   const handleCompleteSale = async () => {
     if (items.length === 0) return;
     if (!selectedPayment) {
@@ -125,6 +137,11 @@ export default function POSPage() {
 
     if (selectedPayment === "CREDITO" && selectedCustomer === "none") {
       toast.error("Selecciona un cliente para la venta a crédito");
+      return;
+    }
+
+    if (isEfectivo && montoRecibidoInsuficiente) {
+      toast.error("El monto recibido debe ser al menos el total de la venta");
       return;
     }
 
@@ -145,6 +162,7 @@ export default function POSPage() {
         metodoPago: selectedPayment as MetodoPagoDirecto,
         items,
         includeIva,
+        montoRecibido: isEfectivo ? montoRecibidoNum : null,
       });
 
       setSaleReceipt({
@@ -152,11 +170,14 @@ export default function POSPage() {
         total: totals.total,
         paymentMethod: selectedPayment,
         customerName,
+        montoRecibido: isEfectivo ? montoRecibidoNum : null,
+        cambio: isEfectivo ? cambio : null,
       });
       toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
       clearCart();
       setSelectedCustomer("none");
       setSelectedPayment("");
+      setMontoRecibido("");
       setShowConfirmDialog(false);
       void refetch();
     } catch (error) {
@@ -218,14 +239,48 @@ export default function POSPage() {
         <PaymentMethodPicker
           methods={paymentMethods}
           selectedPayment={selectedPayment}
-          onSelect={setSelectedPayment}
+          onSelect={(key) => {
+            setSelectedPayment(key);
+            if (key !== "EFECTIVO") setMontoRecibido("");
+          }}
           mpReady={mpReady}
         />
+
+        {isEfectivo && (
+          <div className="mt-2 space-y-1.5">
+            <label className="text-xs text-muted-foreground">
+              {t("pos.amountReceived")}
+            </label>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="0.01"
+              placeholder="$0.00"
+              value={montoRecibido}
+              onChange={(e) => setMontoRecibido(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            {cambio != null && (
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-muted-foreground">{t("pos.change")}</span>
+                <span className="font-mono">
+                  ${Math.max(0, cambio).toFixed(2)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <Button
           className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
           size="sm"
-          disabled={items.length === 0 || !selectedPayment || processingSale}
+          disabled={
+            items.length === 0 ||
+            !selectedPayment ||
+            processingSale ||
+            montoRecibidoInsuficiente
+          }
           onClick={() => setShowConfirmDialog(true)}
         >
           {processingSale ? t("common.loading") : t("pos.completeSale")}
@@ -251,6 +306,8 @@ export default function POSPage() {
         customerName={customerName}
         processing={processingSale}
         includeIva={includeIva}
+        montoRecibido={isEfectivo ? montoRecibidoNum : null}
+        cambio={isEfectivo ? cambio : null}
         onConfirm={handleCompleteSale}
       />
 
