@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import BubbleMenu from "./bubble-menu";
 import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
+import { VoiceNarrator } from "@/components/marketing/voice-narrator";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -86,6 +87,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         </main>
 
         <ThemeToggleFab />
+        <VoiceNarrator />
       </div>
     </div>
   );

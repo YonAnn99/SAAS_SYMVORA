@@ -114,7 +114,6 @@ export default async function LocalePage() {
       <Footer />
       <JsonLd id="ld-software" data={software} />
       <JsonLd id="ld-faq" data={faqSchema} />
-      <VoiceNarrator />
     </AppFrame>
   );
 }
