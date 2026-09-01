@@ -369,7 +369,7 @@ export default function FacturasPage() {
             className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
             onClick={() => setShowCreateDialog(true)}
           >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+
             Nueva Factura
           </SpecularActionButton>
         </div>
@@ -423,7 +423,7 @@ export default function FacturasPage() {
                 className="h-8 mt-1 active:scale-[0.98] transition-transform"
                 onClick={() => setShowCreateDialog(true)}
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+
                 Nueva Factura
               </SpecularActionButton>
             </div>

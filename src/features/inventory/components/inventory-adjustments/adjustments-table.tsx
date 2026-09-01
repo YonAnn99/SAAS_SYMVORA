@@ -72,7 +72,7 @@ export function AdjustmentsTable({
               className="h-8 mt-1"
               onClick={onAdd}
             >
-              <Wrench className="mr-1.5 h-3.5 w-3.5" />
+
               Nuevo ajuste
             </SpecularActionButton>
           </div>

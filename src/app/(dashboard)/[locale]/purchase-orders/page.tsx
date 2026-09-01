@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import {
   usePurchaseOrders,
@@ -69,7 +69,7 @@ export default function PurchaseOrdersPage() {
           className="h-8 active:scale-[0.98] transition-transform"
           onClick={handleAdd}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+
           Nueva orden
         </SpecularActionButton>
       </div>

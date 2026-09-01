@@ -34,21 +34,7 @@ import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { generateReferralCode, getReferralSignupUrl } from "@/lib/referrals";
 import { toast } from "sonner";
-import {
-  CreditCard,
-  Clock,
-  CheckCircle,
-  ExternalLink,
-  Calendar,
-  History,
-  Gift,
-  Copy,
-  Check,
-  MessageCircle,
-  Users,
-  Info,
-  Link2,
-} from "lucide-react";
+import { Clock, CheckCircle, Calendar, History, Gift, Copy, Check, MessageCircle, Users, Info, Link2 } from "lucide-react";
 
 interface Subscription {
   id: string;
@@ -505,7 +491,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 disabled={processing || !tenantId}
                 className="w-full h-9"
               >
-                <CreditCard className="mr-2 h-4 w-4" />
+
                 {t("billing.addCard")}
               </SpecularActionButton>
 
@@ -515,7 +501,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 disabled={processing || !tenantId}
                 className="w-full h-9"
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
+
                 {t("billing.payCash")}
               </SpecularActionButton>
 

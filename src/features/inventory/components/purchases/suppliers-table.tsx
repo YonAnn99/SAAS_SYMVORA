@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Truck } from "lucide-react";
+import { Pencil, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -36,7 +36,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
           {t("purchases.supplier")}
         </CardTitle>
         <SpecularActionButton tone="add" onClick={onAdd} className="h-8">
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+
           Agregar proveedor
         </SpecularActionButton>
       </CardHeader>

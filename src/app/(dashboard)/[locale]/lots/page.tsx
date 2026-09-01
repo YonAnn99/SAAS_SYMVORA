@@ -2,7 +2,7 @@
 
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useLots } from "@/features/inventory";
 import { LotDialog } from "@/features/inventory";
@@ -47,7 +47,7 @@ export default function LotsPage() {
           className="h-8 active:scale-[0.98] transition-transform"
           onClick={openCreateDialog}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+
           Agregar lote
         </SpecularActionButton>
       </div>

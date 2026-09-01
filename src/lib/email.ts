@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
-import { CONTACT_EMAIL, NO_REPLY_EMAIL } from "@/lib/contact";
+import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL } from "@/lib/contact";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 

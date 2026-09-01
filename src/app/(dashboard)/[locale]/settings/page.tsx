@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Save, Building2, Puzzle } from "lucide-react";
+import { Building2, Puzzle } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex justify-end pt-2">
                   <SpecularActionButton tone="add" onClick={handleSaveCompany} disabled={saving} className="h-8 active:scale-[0.98] transition-transform">
-                    <Save className="mr-1.5 h-3.5 w-3.5" />
+
                     {saving ? t("common.loading") : t("common.save")}
                   </SpecularActionButton>
                 </div>

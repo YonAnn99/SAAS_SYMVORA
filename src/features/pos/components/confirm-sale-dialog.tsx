@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Check } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -124,7 +124,7 @@ export function ConfirmSaleDialog({
               t("common.loading")
             ) : (
               <>
-                <Check className="h-3.5 w-3.5 mr-1" />
+
                 Completar venta
               </>
             )}

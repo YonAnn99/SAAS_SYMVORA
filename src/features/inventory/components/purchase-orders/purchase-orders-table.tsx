@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FileText, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { Check, FileText, Pencil, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -75,7 +75,7 @@ export function PurchaseOrdersTable({
               className="h-8 mt-1"
               onClick={onAdd}
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+
               Nueva orden
             </SpecularActionButton>
           </div>

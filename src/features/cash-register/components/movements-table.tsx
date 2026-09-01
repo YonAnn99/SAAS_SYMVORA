@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus } from "lucide-react";
+
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
@@ -41,7 +41,7 @@ export function MovementsTable({
         </CardTitle>
         {canAdd && (
           <SpecularActionButton tone="add" onClick={onAdd} className="h-8">
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+
             {t("finances.addMovement")}
           </SpecularActionButton>
         )}

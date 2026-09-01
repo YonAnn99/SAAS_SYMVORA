@@ -2,7 +2,7 @@
 
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useInventoryAdjustments } from "@/features/inventory";
 import { AdjustmentDialog } from "@/features/inventory";
@@ -44,7 +44,7 @@ export default function InventoryAdjustmentsPage() {
           className="h-8 active:scale-[0.98] transition-transform"
           onClick={openCreateDialog}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+
           Nuevo ajuste
         </SpecularActionButton>
       </div>

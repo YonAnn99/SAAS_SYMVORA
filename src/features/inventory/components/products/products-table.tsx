@@ -68,7 +68,7 @@ export function ProductsTable({
               className="h-8 mt-1"
               onClick={onAdd}
             >
-              <Package className="mr-1.5 h-3.5 w-3.5" />
+
               {t("products.addProduct")}
             </SpecularActionButton>
           </div>

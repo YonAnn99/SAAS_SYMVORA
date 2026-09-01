@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Users, Shield, UserCog, Trash2, Key, RefreshCw } from "lucide-react";
+import { Users, Shield, UserCog, Trash2, Key, RefreshCw } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
@@ -257,7 +257,7 @@ export default function UsersPage() {
             className="h-8 active:scale-[0.98] transition-transform"
             disabled={isDemo}
           >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+
             {t("users.addUser")}
           </SpecularActionButton>
         )}
@@ -305,7 +305,7 @@ export default function UsersPage() {
               <p className="text-sm text-muted-foreground">{t("users.noUsers")}</p>
               {canManage && (
                 <SpecularActionButton tone="add" onClick={() => setShowInviteDialog(true)} className="h-8 mt-1 active:scale-[0.98] transition-transform">
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+
                   {t("users.addUser")}
                 </SpecularActionButton>
               )}

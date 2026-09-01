@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Building2, Server, ShieldCheck, BadgeCheck } from "lucide-react";
+import { ArrowLeft, Building2, Server, ShieldCheck, BadgeCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -207,7 +207,7 @@ export default function FacturasConfigPage() {
           onClick={handleSave}
           disabled={saving}
         >
-          <Save className="mr-1.5 h-3.5 w-3.5" />
+
           {saving ? "Guardando..." : "Guardar"}
         </SpecularActionButton>
       </div>

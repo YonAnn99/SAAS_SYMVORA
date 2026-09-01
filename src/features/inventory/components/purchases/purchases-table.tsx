@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, ShoppingCart, CheckCircle, Trash2, Pencil } from "lucide-react";
+import { ShoppingCart, CheckCircle, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -50,7 +50,7 @@ export function PurchasesTable({
           {t("purchases.title")}
         </CardTitle>
         <SpecularActionButton tone="add" onClick={onAdd} className="h-8">
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+
           {t("purchases.addPurchase")}
         </SpecularActionButton>
       </CardHeader>

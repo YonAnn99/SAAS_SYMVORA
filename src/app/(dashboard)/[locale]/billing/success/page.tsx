@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle, Clock, ArrowRight } from "lucide-react";
+import { CheckCircle, Clock } from "lucide-react";
 
 function BillingSuccessContent() {
   const t = useTranslations();
@@ -71,7 +71,7 @@ function BillingSuccessContent() {
             className="w-full h-9"
           >
             {t("billing.goToBilling")}
-            <ArrowRight className="ml-2 h-4 w-4" />
+
           </SpecularActionButton>
         </CardContent>
       </Card>

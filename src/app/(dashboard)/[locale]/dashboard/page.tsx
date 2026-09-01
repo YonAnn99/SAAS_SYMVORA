@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DollarSign, ShoppingCart, TrendingUp, Users, AlertCircle, RefreshCw, Package, TrendingDown, CreditCard } from "lucide-react";
+import { DollarSign, ShoppingCart, TrendingUp, Users, AlertCircle, Package, TrendingDown, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/charts/dynamic-charts";
@@ -194,7 +194,7 @@ export default function DashboardPage() {
           disabled={loading}
           className="h-9 gap-2 self-start"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+
           Actualizar
         </SpecularActionButton>
       </div>
@@ -251,7 +251,7 @@ export default function DashboardPage() {
               El dashboard mostrará ventas diarias, mensuales y métodos de pago.
             </p>
             <SpecularActionButton tone="money" className="h-9 gap-2">
-              <ShoppingCart className="h-4 w-4" />
+
               <Link href="/pos">Ir al POS</Link>
             </SpecularActionButton>
           </CardContent>

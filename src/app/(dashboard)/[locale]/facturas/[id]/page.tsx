@@ -21,17 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import {
-  ArrowLeft,
-  Download,
-  FileDown,
-  Stamp,
-  XCircle,
-  Building2,
-  User,
-  Receipt,
-  Hash,
-} from "lucide-react";
+import { ArrowLeft, Download, FileDown, XCircle, Building2, User, Receipt, Hash } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Factura, FacturaDetalle } from "@/lib/types/database";
@@ -167,7 +157,7 @@ export default function FacturaDetailPage() {
               onClick={handleStamp}
               disabled={processing}
             >
-              <Stamp className="mr-1.5 h-3.5 w-3.5" />
+
               {processing ? "Timbrando..." : t("facturas.stamp")}
             </SpecularActionButton>
           )}

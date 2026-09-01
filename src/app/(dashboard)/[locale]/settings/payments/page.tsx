@@ -23,15 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  Save,
-  Smartphone,
-  Key,
-  Loader2,
-  RefreshCw,
-  CheckCircle2,
-  Info,
-} from "lucide-react";
+import { Smartphone, Key, Loader2, RefreshCw, CheckCircle2, Info } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
@@ -341,7 +333,7 @@ export default function PaymentsPage() {
               )}
               <div className="flex-1" />
               <SpecularActionButton tone="add" className="h-8 active:scale-[0.98] transition-transform" onClick={handleSave} disabled={saving}>
-                <Save className="mr-1.5 h-3.5 w-3.5" />
+
                 {saving ? t("common.loading") : t("common.save")}
               </SpecularActionButton>
             </div>
