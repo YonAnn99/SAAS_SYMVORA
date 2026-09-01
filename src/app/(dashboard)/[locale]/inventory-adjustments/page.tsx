@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -39,14 +39,14 @@ export default function InventoryAdjustmentsPage() {
             Registra ajustes de stock con motivo obligatorio
           </p>
         </div>
-        <Button
-          size="sm"
+        <SpecularActionButton
+          tone="add"
           className="h-8 active:scale-[0.98] transition-transform"
           onClick={openCreateDialog}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Nuevo ajuste
-        </Button>
+        </SpecularActionButton>
       </div>
 
       {/* Search */}

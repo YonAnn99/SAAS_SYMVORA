@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -290,9 +291,9 @@ export function ProductDialog({
           >
             {t("common.cancel")}
           </Button>
-          <Button
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
+          <SpecularActionButton
+            tone="add"
+            className="h-8"
             onClick={handleSave}
             disabled={saving}
           >
@@ -301,7 +302,7 @@ export function ProductDialog({
               : editingProduct
                 ? "Guardar cambios"
                 : "Crear producto"}
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

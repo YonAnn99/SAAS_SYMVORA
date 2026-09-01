@@ -7,6 +7,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Dialog,
   DialogContent,
@@ -133,21 +134,21 @@ export function TerminalPaymentDialog({
                 Cerrar
               </Button>
               {status === "timeout" && (
-                <Button
-                  size="sm"
+                <SpecularActionButton
+                  tone="destructive"
                   className="h-8"
                   onClick={onCancel}
                   disabled={cancelling}
                 >
                   {cancelling ? "Cancelando..." : "Cancelar cobro"}
-                </Button>
+                </SpecularActionButton>
               )}
             </>
           )}
           {(status === "pagado" || status === "cancelada") && (
-            <Button size="sm" className="h-8" onClick={onClose}>
+            <SpecularActionButton tone="add" className="h-8" onClick={onClose}>
               Aceptar
-            </Button>
+            </SpecularActionButton>
           )}
         </DialogFooter>
       </DialogContent>

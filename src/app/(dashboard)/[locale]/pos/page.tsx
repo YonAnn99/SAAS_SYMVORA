@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { completeSale } from "@/features/pos/services/pos-service";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
@@ -272,9 +273,9 @@ export default function POSPage() {
           </div>
         )}
 
-        <Button
+        <SpecularActionButton
+          tone="money"
           className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
-          size="sm"
           disabled={
             items.length === 0 ||
             !selectedPayment ||
@@ -284,7 +285,7 @@ export default function POSPage() {
           onClick={() => setShowConfirmDialog(true)}
         >
           {processingSale ? t("common.loading") : t("pos.completeSale")}
-        </Button>
+        </SpecularActionButton>
 
         <Button
           variant="ghost"

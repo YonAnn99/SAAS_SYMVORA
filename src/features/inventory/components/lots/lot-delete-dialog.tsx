@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Dialog,
   DialogContent,
@@ -41,14 +42,13 @@ export function LotDeleteDialog({
           >
             Cancelar
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
+          <SpecularActionButton
+            tone="destructive"
             className="h-8"
             onClick={() => lot && onConfirm(lot)}
           >
             Eliminar
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

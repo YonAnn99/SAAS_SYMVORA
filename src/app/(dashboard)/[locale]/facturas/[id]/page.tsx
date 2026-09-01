@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -126,9 +127,13 @@ export default function FacturaDetailPage() {
       <div className="flex flex-col items-center justify-center gap-3 py-20">
         <Receipt className="h-8 w-8 text-muted-foreground/30" />
         <p className="text-sm text-muted-foreground">Factura no encontrada</p>
-        <Button size="sm" onClick={() => router.push(`/${locale}/facturas`)}>
+        <SpecularActionButton
+          tone="neutral"
+          className="h-8"
+          onClick={() => router.push(`/${locale}/facturas`)}
+        >
           Volver
-        </Button>
+        </SpecularActionButton>
       </div>
     );
   }
@@ -156,15 +161,15 @@ export default function FacturaDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {factura.estado === "BORRADOR" && (
-            <Button
-              size="sm"
+            <SpecularActionButton
+              tone="money"
               className="h-8 active:scale-[0.98] transition-transform"
               onClick={handleStamp}
               disabled={processing}
             >
               <Stamp className="mr-1.5 h-3.5 w-3.5" />
               {processing ? "Timbrando..." : t("facturas.stamp")}
-            </Button>
+            </SpecularActionButton>
           )}
           {factura.estado === "TIMBRADA" && (
             <>

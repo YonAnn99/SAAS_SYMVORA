@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -128,16 +129,15 @@ export function CloseRegisterDialog({
           >
             {t("common.cancel")}
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
+          <SpecularActionButton
+            tone="destructive"
             className="h-8"
             onClick={() =>
               onConfirm(parseFloat(saldoReal) || 0, closingNotes)
             }
           >
             Cerrar caja
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -2,6 +2,7 @@
 
 import { Check, FileText, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -69,14 +70,14 @@ export function PurchaseOrdersTable({
                 ? "No hay órdenes de compra"
                 : "No se encontraron órdenes"}
             </p>
-            <Button
-              size="sm"
-              className="h-8 mt-1 active:scale-[0.98] transition-transform"
+            <SpecularActionButton
+              tone="add"
+              className="h-8 mt-1"
               onClick={onAdd}
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Nueva orden
-            </Button>
+            </SpecularActionButton>
           </div>
         ) : (
           <div className="overflow-x-auto">

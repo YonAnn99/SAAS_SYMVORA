@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -365,9 +366,9 @@ export function PurchaseOrderDialog({
           >
             Cancelar
           </Button>
-          <Button
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
+          <SpecularActionButton
+            tone="add"
+            className="h-8"
             onClick={handleSave}
             disabled={saving}
           >
@@ -376,7 +377,7 @@ export function PurchaseOrderDialog({
               : editingOrder
                 ? "Guardar cambios"
                 : "Crear orden"}
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Plus, ShoppingCart, CheckCircle, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -48,14 +49,10 @@ export function PurchasesTable({
         <CardTitle className="text-sm font-medium">
           {t("purchases.title")}
         </CardTitle>
-        <Button
-          onClick={onAdd}
-          size="sm"
-          className="h-8 active:scale-[0.98] transition-transform"
-        >
+        <SpecularActionButton tone="add" onClick={onAdd} className="h-8">
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           {t("purchases.addPurchase")}
-        </Button>
+        </SpecularActionButton>
       </CardHeader>
       <CardContent>
         {purchases.length === 0 ? (

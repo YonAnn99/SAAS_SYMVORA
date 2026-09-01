@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -40,14 +40,10 @@ export function MovementsTable({
           {t("finances.movements")}
         </CardTitle>
         {canAdd && (
-          <Button
-            onClick={onAdd}
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
-          >
+          <SpecularActionButton tone="add" onClick={onAdd} className="h-8">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t("finances.addMovement")}
-          </Button>
+          </SpecularActionButton>
         )}
       </CardHeader>
       <CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -64,14 +64,14 @@ export default function PurchaseOrdersPage() {
             Gestiona órdenes de compra con flujo de estados
           </p>
         </div>
-        <Button
-          size="sm"
+        <SpecularActionButton
+          tone="add"
           className="h-8 active:scale-[0.98] transition-transform"
           onClick={handleAdd}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Nueva orden
-        </Button>
+        </SpecularActionButton>
       </div>
 
       {/* Search */}

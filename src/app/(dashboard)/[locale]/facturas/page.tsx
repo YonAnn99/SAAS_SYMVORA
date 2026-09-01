@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -363,14 +364,14 @@ export default function FacturasPage() {
             <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             {t("facturas.configFiscal")}
           </Button>
-          <Button
-            size="sm"
+          <SpecularActionButton
+            tone="add"
             className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
             onClick={() => setShowCreateDialog(true)}
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Nueva Factura
-          </Button>
+          </SpecularActionButton>
         </div>
       </div>
 
@@ -417,14 +418,14 @@ export default function FacturasPage() {
             <div className="flex flex-col items-center justify-center gap-3 py-16">
               <FileText className="h-8 w-8 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">No hay facturas registradas</p>
-              <Button
-                size="sm"
+              <SpecularActionButton
+                tone="add"
                 className="h-8 mt-1 active:scale-[0.98] transition-transform"
                 onClick={() => setShowCreateDialog(true)}
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Nueva Factura
-              </Button>
+              </SpecularActionButton>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -733,14 +734,14 @@ export default function FacturasPage() {
             >
               {t("common.cancel")}
             </Button>
-            <Button
-              size="sm"
+            <SpecularActionButton
+              tone="add"
               className="h-8 active:scale-[0.98] transition-transform"
               onClick={handleCreate}
               disabled={saving}
             >
               {saving ? t("common.loading") : "Crear Factura"}
-            </Button>
+            </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -788,15 +789,14 @@ export default function FacturasPage() {
             >
               {t("common.cancel")}
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
+            <SpecularActionButton
+              tone="destructive"
               className="h-8"
               onClick={handleCancel}
               disabled={saving || !cancelMotivo}
             >
               {saving ? t("common.loading") : "Cancelar Factura"}
-            </Button>
+            </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -339,10 +340,10 @@ export default function PaymentsPage() {
                 </p>
               )}
               <div className="flex-1" />
-              <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleSave} disabled={saving}>
+              <SpecularActionButton tone="add" className="h-8 active:scale-[0.98] transition-transform" onClick={handleSave} disabled={saving}>
                 <Save className="mr-1.5 h-3.5 w-3.5" />
                 {saving ? t("common.loading") : t("common.save")}
-              </Button>
+              </SpecularActionButton>
             </div>
           </CardContent>
         </Card>

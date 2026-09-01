@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useCashRegister } from "@/features/cash-register/hooks/use-cash-register";
 import { CloseRegisterDialog } from "@/features/cash-register/components/close-register-dialog";
@@ -36,23 +36,22 @@ export default function FinancesPage() {
           </p>
         </div>
         {!cash.activeRegister ? (
-          <Button
+          <SpecularActionButton
+            tone="money"
             onClick={() => cash.setShowOpenDialog(true)}
-            size="sm"
             className="h-8 active:scale-[0.98] transition-transform"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t("pos.openRegister")}
-          </Button>
+          </SpecularActionButton>
         ) : (
-          <Button
-            variant="destructive"
+          <SpecularActionButton
+            tone="destructive"
             onClick={() => cash.setShowCloseDialog(true)}
-            size="sm"
             className="h-8 active:scale-[0.98] transition-transform"
           >
             {t("pos.closeRegister")}
-          </Button>
+          </SpecularActionButton>
         )}
       </div>
 

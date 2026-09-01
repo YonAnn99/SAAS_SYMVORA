@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
@@ -59,14 +59,14 @@ export default function ProductsPage() {
             Gestiona tu catálogo de productos
           </p>
         </div>
-        <Button
-          size="sm"
+        <SpecularActionButton
+          tone="add"
           className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
           onClick={openCreateDialog}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           {t("products.addProduct")}
-        </Button>
+        </SpecularActionButton>
       </div>
 
       {/* Search + Export */}

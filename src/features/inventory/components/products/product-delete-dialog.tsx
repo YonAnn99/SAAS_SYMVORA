@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Dialog,
   DialogContent,
@@ -44,14 +45,13 @@ export function ProductDeleteDialog({
           >
             {t("common.cancel")}
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
+          <SpecularActionButton
+            tone="destructive"
             className="h-8"
             onClick={() => product && onConfirm(product)}
           >
             Eliminar
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

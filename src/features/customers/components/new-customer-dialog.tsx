@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -125,14 +126,14 @@ export function NewCustomerDialog({
           >
             {t("common.cancel")}
           </Button>
-          <Button
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
+          <SpecularActionButton
+            tone="add"
+            className="h-8"
             onClick={handleCreate}
             disabled={saving}
           >
             {saving ? "Guardando..." : "Crear cliente"}
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

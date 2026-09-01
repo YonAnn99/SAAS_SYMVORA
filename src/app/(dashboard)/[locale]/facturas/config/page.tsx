@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -200,15 +201,15 @@ export default function FacturasConfigPage() {
             </p>
           </div>
         </div>
-        <Button
-          size="sm"
+        <SpecularActionButton
+          tone="add"
           className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
           onClick={handleSave}
           disabled={saving}
         >
           <Save className="mr-1.5 h-3.5 w-3.5" />
           {saving ? "Guardando..." : "Guardar"}
-        </Button>
+        </SpecularActionButton>
       </div>
 
       <Tabs defaultValue="fiscal" className="w-full animate-fade-in-up stagger-2">

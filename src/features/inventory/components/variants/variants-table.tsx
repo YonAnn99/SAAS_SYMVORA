@@ -2,6 +2,7 @@
 
 import { Palette, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -60,14 +61,14 @@ export function VariantsTable({
                 ? "No hay variantes creadas"
                 : "No se encontraron variantes"}
             </p>
-            <Button
-              size="sm"
-              className="h-8 mt-1 active:scale-[0.98] transition-transform"
+            <SpecularActionButton
+              tone="add"
+              className="h-8 mt-1"
               onClick={onAdd}
             >
               <Palette className="mr-1.5 h-3.5 w-3.5" />
               Agregar variante
-            </Button>
+            </SpecularActionButton>
           </div>
         ) : (
           <div className="overflow-x-auto">

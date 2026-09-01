@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Dialog,
   DialogContent,
@@ -82,13 +82,13 @@ export function TicketReceipt({
           </div>
         </div>
         <DialogFooter>
-          <Button
-            size="sm"
+          <SpecularActionButton
+            tone="add"
             className="h-8 w-full"
             onClick={() => onOpenChange(false)}
           >
             Aceptar
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

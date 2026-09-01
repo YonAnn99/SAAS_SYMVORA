@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Package, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -62,14 +63,14 @@ export function ProductsTable({
             <p className="text-sm text-muted-foreground">
               {t("products.noProducts")}
             </p>
-            <Button
-              size="sm"
-              className="h-8 mt-1 active:scale-[0.98] transition-transform"
+            <SpecularActionButton
+              tone="add"
+              className="h-8 mt-1"
               onClick={onAdd}
             >
               <Package className="mr-1.5 h-3.5 w-3.5" />
               {t("products.addProduct")}
-            </Button>
+            </SpecularActionButton>
           </div>
         ) : (
           <div className="overflow-x-auto">

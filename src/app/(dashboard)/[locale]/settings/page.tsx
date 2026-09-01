@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -283,10 +283,10 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="flex justify-end pt-2">
-                  <Button onClick={handleSaveCompany} disabled={saving} size="sm" className="h-8 active:scale-[0.98] transition-transform">
+                  <SpecularActionButton tone="add" onClick={handleSaveCompany} disabled={saving} className="h-8 active:scale-[0.98] transition-transform">
                     <Save className="mr-1.5 h-3.5 w-3.5" />
                     {saving ? t("common.loading") : t("common.save")}
-                  </Button>
+                  </SpecularActionButton>
                 </div>
               </CardContent>
             </Card>

@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -103,9 +104,9 @@ export function MovementDialog({
           >
             {t("common.cancel")}
           </Button>
-          <Button
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
+          <SpecularActionButton
+            tone="add"
+            className="h-8"
             onClick={() =>
               onConfirm(
                 movementType,
@@ -115,7 +116,7 @@ export function MovementDialog({
             }
           >
             {t("common.confirm")}
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

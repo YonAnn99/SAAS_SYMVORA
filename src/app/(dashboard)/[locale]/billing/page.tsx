@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -498,25 +499,25 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             <Separator />
 
             <div className="space-y-3">
-              <Button
+              <SpecularActionButton
+                tone="money"
                 onClick={handleAddCard}
                 disabled={processing || !tenantId}
-                className="w-full"
-                variant="outline"
+                className="w-full h-9"
               >
                 <CreditCard className="mr-2 h-4 w-4" />
                 {t("billing.addCard")}
-              </Button>
+              </SpecularActionButton>
 
-              <Button
+              <SpecularActionButton
+                tone="money"
                 onClick={handlePayCash}
                 disabled={processing || !tenantId}
-                className="w-full"
-                variant="outline"
+                className="w-full h-9"
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 {t("billing.payCash")}
-              </Button>
+              </SpecularActionButton>
 
               {subscription?.status !== "active" && (
                 <div className="flex items-center gap-2">
@@ -545,15 +546,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             {subscription?.status !== "canceled" && (
               <>
                 <Separator />
-                <Button
+                <SpecularActionButton
+                  tone="destructive"
                   onClick={() => setShowCancelDialog(true)}
                   disabled={processing}
-                  variant="destructive"
-                  className="w-full"
-                  size="sm"
+                  className="w-full h-8"
                 >
                   {t("billing.cancelSubscription")}
-                </Button>
+                </SpecularActionButton>
               </>
             )}
           </CardContent>
@@ -743,15 +743,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             >
               {t("common.cancel")}
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
+            <SpecularActionButton
+              tone="destructive"
               className="h-8"
               onClick={handleCancelSubscription}
               disabled={processing}
             >
               {processing ? t("common.loading") : t("billing.cancelSubscription")}
-            </Button>
+            </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

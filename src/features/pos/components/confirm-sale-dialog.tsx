@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Dialog,
   DialogContent,
@@ -113,9 +114,9 @@ export function ConfirmSaleDialog({
           >
             {t("common.cancel")}
           </Button>
-          <Button
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
+          <SpecularActionButton
+            tone="money"
+            className="h-8"
             onClick={onConfirm}
             disabled={processing}
           >
@@ -127,7 +128,7 @@ export function ConfirmSaleDialog({
                 Completar venta
               </>
             )}
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

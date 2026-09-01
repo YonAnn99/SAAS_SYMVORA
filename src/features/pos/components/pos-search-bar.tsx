@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -63,9 +63,9 @@ export function PosSearchBar({
           </SelectContent>
         </Select>
       )}
-      <Button className="h-9" size="sm" onClick={onSearchSubmit}>
+      <SpecularActionButton tone="add" className="h-9" onClick={onSearchSubmit}>
         {t("pos.addItem")}
-      </Button>
+      </SpecularActionButton>
     </div>
   );
 }

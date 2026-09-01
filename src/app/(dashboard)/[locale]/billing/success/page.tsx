@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
   CardContent,
@@ -65,13 +65,14 @@ function BillingSuccessContent() {
           <p className="text-sm text-muted-foreground">
             {t("billing.redirectingIn", { seconds: countdown })}
           </p>
-          <Button
+          <SpecularActionButton
+            tone="money"
             onClick={() => router.push(billingPath)}
-            className="w-full"
+            className="w-full h-9"
           >
             {t("billing.goToBilling")}
             <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          </SpecularActionButton>
         </CardContent>
       </Card>
     </div>

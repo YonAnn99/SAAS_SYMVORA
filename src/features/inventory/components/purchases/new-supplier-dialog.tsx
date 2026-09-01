@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -109,13 +110,9 @@ export function NewSupplierDialog({
           >
             Cancelar
           </Button>
-          <Button
-            size="sm"
-            className="h-8 active:scale-[0.98] transition-transform"
-            onClick={handleConfirm}
-          >
+          <SpecularActionButton tone="add" className="h-8" onClick={handleConfirm}>
             Guardar proveedor
-          </Button>
+          </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

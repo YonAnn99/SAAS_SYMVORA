@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -250,15 +251,15 @@ export default function UsersPage() {
           </p>
         </div>
         {canManage && (
-          <Button
+          <SpecularActionButton
+            tone="add"
             onClick={() => setShowInviteDialog(true)}
-            size="sm"
             className="h-8 active:scale-[0.98] transition-transform"
             disabled={isDemo}
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             {t("users.addUser")}
-          </Button>
+          </SpecularActionButton>
         )}
       </div>
 
@@ -303,10 +304,10 @@ export default function UsersPage() {
               <Users className="h-8 w-8 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">{t("users.noUsers")}</p>
               {canManage && (
-                <Button onClick={() => setShowInviteDialog(true)} size="sm" className="h-8 mt-1 active:scale-[0.98] transition-transform">
+                <SpecularActionButton tone="add" onClick={() => setShowInviteDialog(true)} className="h-8 mt-1 active:scale-[0.98] transition-transform">
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
                   {t("users.addUser")}
-                </Button>
+                </SpecularActionButton>
               )}
             </div>
           ) : (
@@ -479,9 +480,9 @@ export default function UsersPage() {
             <Button variant="outline" size="sm" className="h-8" onClick={() => setShowInviteDialog(false)}>
               {t("common.cancel")}
             </Button>
-            <Button size="sm" className="h-8 active:scale-[0.98] transition-transform" onClick={handleInvite} disabled={inviting}>
+            <SpecularActionButton tone="add" className="h-8 active:scale-[0.98] transition-transform" onClick={handleInvite} disabled={inviting}>
               {inviting ? t("common.loading") : t("common.confirm")}
-            </Button>
+            </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -499,14 +500,14 @@ export default function UsersPage() {
             <Button variant="outline" size="sm" className="h-8" onClick={() => setConfirmDelete(null)}>
               {t("common.cancel")}
             </Button>
-            <Button
-              size="sm"
-              className="h-8 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            <SpecularActionButton
+              tone="destructive"
+              className="h-8"
               onClick={handleDeleteMember}
               disabled={deleting}
             >
               {deleting ? t("common.loading") : t("common.delete")}
-            </Button>
+            </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -527,14 +528,14 @@ export default function UsersPage() {
             <Button variant="outline" size="sm" className="h-8" onClick={() => setConfirmRoleChange(null)}>
               {t("common.cancel")}
             </Button>
-            <Button
-              size="sm"
+            <SpecularActionButton
+              tone="neutral"
               className="h-8 active:scale-[0.98] transition-transform"
               onClick={handleChangeRole}
               disabled={changingRole}
             >
               {changingRole ? t("common.loading") : t("common.confirm")}
-            </Button>
+            </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
