@@ -485,25 +485,25 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             <Separator />
 
             <div className="space-y-3">
-              <SpecularActionButton
-                tone="money"
-                onClick={handleAddCard}
-                disabled={processing || !tenantId}
-                className="w-full h-9"
-              >
+              <div className="flex flex-col gap-4">
+                <SpecularActionButton
+                  tone="money"
+                  onClick={handleAddCard}
+                  disabled={processing || !tenantId}
+                  className="w-full h-9"
+                >
+                  {t("billing.addCard")}
+                </SpecularActionButton>
 
-                {t("billing.addCard")}
-              </SpecularActionButton>
-
-              <SpecularActionButton
-                tone="money"
-                onClick={handlePayCash}
-                disabled={processing || !tenantId}
-                className="w-full h-9"
-              >
-
-                {t("billing.payCash")}
-              </SpecularActionButton>
+                <SpecularActionButton
+                  tone="money"
+                  onClick={handlePayCash}
+                  disabled={processing || !tenantId}
+                  className="w-full h-9"
+                >
+                  {t("billing.payCash")}
+                </SpecularActionButton>
+              </div>
 
               {subscription?.status !== "active" && (
                 <div className="flex items-center gap-2">

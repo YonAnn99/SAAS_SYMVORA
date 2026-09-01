@@ -315,3 +315,118 @@ export async function sendInviteKeyEmail(params: {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+const CATEGORIA_LABELS: Record<string, string> = {
+  general: "General",
+  bug: "Bug",
+  mejora: "Mejora",
+  feature: "Feature",
+};
+
+const PRIORIDAD_LABELS: Record<string, string> = {
+  baja: "Baja",
+  media: "Media",
+  alta: "Alta",
+};
+
+export async function sendSuggestionEmail(params: {
+  tenantName: string;
+  userEmail: string;
+  categoria: string;
+  prioridad: string;
+  titulo: string;
+  descripcion: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY not configured; skipping suggestion email");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const categoriaLabel = CATEGORIA_LABELS[params.categoria] || params.categoria;
+  const prioridadLabel = PRIORIDAD_LABELS[params.prioridad] || params.prioridad;
+  const subject = `[${categoriaLabel}] ${params.titulo}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
+              <tr>
+                <td style="background:${BRAND.surface};padding:28px;text-align:center;">
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:32px;">
+                  <h1 style="font-size:20px;color:${BRAND.ink};margin:0 0 8px;line-height:1.3;">
+                    Nueva sugerencia
+                  </h1>
+                  <p style="font-size:14px;color:${BRAND.body};margin:0 0 24px;line-height:1.6;">
+                    <strong>${params.tenantName}</strong> (${params.userEmail}) envió una sugerencia:
+                  </p>
+                  <!-- Metadata -->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                    <tr>
+                      <td style="background:${BRAND.bone};border-radius:10px;padding:16px 20px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td style="font-size:13px;color:${BRAND.muted};padding:0 0 8px;width:90px;vertical-align:top;">Categoría</td>
+                            <td style="font-size:14px;color:${BRAND.ink};font-weight:600;padding:0 0 8px;">${categoriaLabel}</td>
+                          </tr>
+                          <tr>
+                            <td style="font-size:13px;color:${BRAND.muted};padding:0 0 8px;vertical-align:top;">Prioridad</td>
+                            <td style="font-size:14px;color:${BRAND.ink};font-weight:600;padding:0 0 8px;">${prioridadLabel}</td>
+                          </tr>
+                          <tr>
+                            <td style="font-size:13px;color:${BRAND.muted};padding:0;vertical-align:top;">Título</td>
+                            <td style="font-size:14px;color:${BRAND.ink};font-weight:600;padding:0;">${params.titulo}</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  <!-- Descripción -->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                    <tr>
+                      <td style="padding:0;">
+                        <p style="font-size:13px;color:${BRAND.muted};margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Descripción</p>
+                        <p style="font-size:14px;color:${BRAND.body};margin:0;line-height:1.7;white-space:pre-wrap;">${params.descripcion}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 32px 28px;">
+                  <p style="font-size:13px;color:${BRAND.muted};margin:0;border-top:1px solid ${BRAND.border};padding-top:16px;line-height:1.6;">
+                    © ${new Date().getFullYear()} SYMVORA · Sugerencias
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: HELLO_EMAIL,
+      replyTo: params.userEmail,
+      subject,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Failed to send suggestion email:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { completeSale } from "@/features/pos/services/pos-service";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
@@ -34,10 +35,9 @@ export default function POSPage() {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
     usePosCart();
-  const { products, customers, userId, loadingProducts, refetch } = usePosCatalog(
-    tenantId,
-    tenantLoading
-  );
+  const { products, customers, userId, loadingProducts, isOfflineCatalog, refetch } =
+    usePosCatalog(tenantId, tenantLoading);
+  const isOnline = useOnlineStatus();
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
@@ -131,6 +131,10 @@ export default function POSPage() {
 
   const handleCompleteSale = async () => {
     if (items.length === 0) return;
+    if (!isOnline) {
+      toast.error("Sin conexión: no se puede completar la venta");
+      return;
+    }
     if (!selectedPayment) {
       toast.error("Selecciona un método de pago");
       return;
@@ -200,6 +204,12 @@ export default function POSPage() {
     <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5">
       {/* Left: Products grid / search */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
+        {isOfflineCatalog && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+            Sin conexión: mostrando el catálogo guardado de la última vez que hubo internet.
+          </div>
+        )}
+
         <PosSearchBar
           search={search}
           onSearchChange={setSearch}
@@ -273,6 +283,12 @@ export default function POSPage() {
           </div>
         )}
 
+        {!isOnline && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            Sin conexión: no se pueden completar ventas hasta reconectarte.
+          </p>
+        )}
+
         <SpecularActionButton
           tone="money"
           className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
@@ -280,7 +296,8 @@ export default function POSPage() {
             items.length === 0 ||
             !selectedPayment ||
             processingSale ||
-            montoRecibidoInsuficiente
+            montoRecibidoInsuficiente ||
+            !isOnline
           }
           onClick={() => setShowConfirmDialog(true)}
         >

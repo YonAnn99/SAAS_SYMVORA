@@ -30,6 +30,7 @@ import {
   CreditCard,
   Receipt,
   Smartphone,
+  Lightbulb,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -59,6 +60,7 @@ const navigation: NavItem[] = [
   { name: "layout.settings", href: "/settings", icon: Settings, minRole: "ORG_ADMIN" },
   { name: "layout.payments", href: "/settings/payments", icon: Smartphone, minRole: "ORG_ADMIN" },
   { name: "layout.reports", href: "/reports", icon: TrendingUp },
+  { name: "layout.suggestions", href: "/suggestions", icon: Lightbulb },
   { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "SUPER_ADMIN" },
 ];
 
