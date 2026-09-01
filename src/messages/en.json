@@ -293,6 +293,7 @@
     "title": "Purchases",
     "addPurchase": "New purchase",
     "editPurchase": "Edit purchase",
+    "saveChanges": "Save changes",
     "supplier": "Supplier",
     "date": "Purchase date",
     "invoiceNumber": "Invoice number",

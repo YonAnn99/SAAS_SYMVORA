@@ -16,6 +16,7 @@ import {
   fetchSuppliers,
   type PurchaseInput,
   type SupplierInput,
+  updatePurchase,
   updatePurchaseStatus,
 } from "../services/purchase-service";
 
@@ -25,6 +26,8 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const [loading, setLoading] = useState(true);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
+  const [editingPurchase, setEditingPurchase] =
+    useState<PurchaseWithRelations | null>(null);
 
   const refetch = useCallback(async () => {
     if (!tenantId) {
@@ -79,6 +82,42 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
       }
     },
     [tenantId, refetch]
+  );
+
+  const openEditPurchase = useCallback((purchase: PurchaseWithRelations) => {
+    setEditingPurchase(purchase);
+    setShowNewPurchaseDialog(true);
+  }, []);
+
+  const handleUpdatePurchase = useCallback(
+    async (purchaseId: string, input: PurchaseInput) => {
+      if (!input.proveedorId) {
+        toast.error("Faltan datos requeridos");
+        return;
+      }
+
+      try {
+        await updatePurchase(purchaseId, input);
+        await logActivity({
+          action: "UPDATE",
+          entity: "compra",
+          entityId: purchaseId,
+          entityName: `Compra ${input.numeroFactura || ""}`,
+          details: { proveedor_id: input.proveedorId, total: input.total },
+        });
+        toast.success("Compra actualizada correctamente");
+        setShowNewPurchaseDialog(false);
+        setEditingPurchase(null);
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? `Error al actualizar la compra: ${error.message}`
+            : "Error al actualizar la compra"
+        );
+      }
+    },
+    [refetch]
   );
 
   const handleCreateSupplier = useCallback(
@@ -158,15 +197,23 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     [refetch]
   );
 
+  const handlePurchaseDialogOpenChange = useCallback((open: boolean) => {
+    setShowNewPurchaseDialog(open);
+    if (!open) setEditingPurchase(null);
+  }, []);
+
   return {
     purchases,
     suppliers,
     loading,
     showNewPurchaseDialog,
-    setShowNewPurchaseDialog,
+    setShowNewPurchaseDialog: handlePurchaseDialogOpenChange,
+    editingPurchase,
+    openEditPurchase,
     showNewSupplierDialog,
     setShowNewSupplierDialog,
     handleCreatePurchase,
+    handleUpdatePurchase,
     handleCreateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,

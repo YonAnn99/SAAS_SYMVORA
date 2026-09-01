@@ -293,6 +293,7 @@
     "title": "Compras",
     "addPurchase": "Nueva compra",
     "editPurchase": "Editar compra",
+    "saveChanges": "Guardar cambios",
     "supplier": "Proveedor",
     "date": "Fecha de compra",
     "invoiceNumber": "Número de factura",

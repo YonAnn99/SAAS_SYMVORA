@@ -19,9 +19,12 @@ export default function PurchasesPage() {
     loading,
     showNewPurchaseDialog,
     setShowNewPurchaseDialog,
+    editingPurchase,
+    openEditPurchase,
     showNewSupplierDialog,
     setShowNewSupplierDialog,
     handleCreatePurchase,
+    handleUpdatePurchase,
     handleCreateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
@@ -62,6 +65,7 @@ export default function PurchasesPage() {
           <PurchasesTable
             purchases={purchases}
             onAdd={() => setShowNewPurchaseDialog(true)}
+            onEdit={openEditPurchase}
             onUpdateStatus={handleUpdatePurchaseStatus}
             onDelete={handleDeletePurchase}
           />
@@ -75,12 +79,17 @@ export default function PurchasesPage() {
         </TabsContent>
       </Tabs>
 
-      {/* New purchase dialog */}
+      {/* New / edit purchase dialog */}
       <NewPurchaseDialog
         open={showNewPurchaseDialog}
         onOpenChange={setShowNewPurchaseDialog}
         suppliers={suppliers}
-        onConfirm={handleCreatePurchase}
+        editingPurchase={editingPurchase}
+        onConfirm={(input) =>
+          editingPurchase
+            ? handleUpdatePurchase(editingPurchase.id, input)
+            : handleCreatePurchase(input)
+        }
       />
 
       {/* New supplier dialog */}

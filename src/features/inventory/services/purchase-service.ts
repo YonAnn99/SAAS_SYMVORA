@@ -77,6 +77,22 @@ export async function createSupplier(
   if (error) throw error;
 }
 
+export async function updatePurchase(
+  purchaseId: string,
+  input: PurchaseInput
+): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("compras")
+    .update({
+      proveedor_id: input.proveedorId,
+      numero_factura: input.numeroFactura || null,
+      total: input.total,
+    })
+    .eq("id", purchaseId);
+  if (error) throw error;
+}
+
 export async function updatePurchaseStatus(
   purchaseId: string,
   estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA"

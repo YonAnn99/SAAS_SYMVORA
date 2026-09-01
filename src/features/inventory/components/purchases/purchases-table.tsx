@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, ShoppingCart, CheckCircle, Trash2 } from "lucide-react";
+import { Plus, ShoppingCart, CheckCircle, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +24,7 @@ import { purchaseStatusColors } from "../../services/purchase-service";
 interface PurchasesTableProps {
   purchases: PurchaseWithRelations[];
   onAdd: () => void;
+  onEdit: (purchase: PurchaseWithRelations) => void;
   onUpdateStatus: (id: string, estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA") => void;
   onDelete: (id: string) => void;
 }
@@ -31,11 +32,13 @@ interface PurchasesTableProps {
 export function PurchasesTable({
   purchases,
   onAdd,
+  onEdit,
   onUpdateStatus,
   onDelete,
 }: PurchasesTableProps) {
   const t = useTranslations();
 
+  const canEdit = (estado: string) => estado === "PENDIENTE";
   const canMarkAsReceived = (estado: string) => estado === "PENDIENTE";
   const canCancel = (estado: string) => estado !== "CANCELADA";
 
@@ -111,6 +114,17 @@ export function PurchasesTable({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {canEdit(purchase.estado) && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => onEdit(purchase)}
+                            title={t("purchases.editPurchase")}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         {canMarkAsReceived(purchase.estado) && (
                           <Button
                             variant="outline"

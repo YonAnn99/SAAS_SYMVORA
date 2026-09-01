@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Proveedor } from "../../types/inventory.types";
+import type { Proveedor, PurchaseWithRelations } from "../../types/inventory.types";
 import type { PurchaseInput } from "../../services/purchase-service";
 
 interface NewPurchaseDialogProps {
@@ -28,6 +28,7 @@ interface NewPurchaseDialogProps {
   onOpenChange: (open: boolean) => void;
   suppliers: Proveedor[];
   onConfirm: (input: PurchaseInput) => void;
+  editingPurchase?: PurchaseWithRelations | null;
 }
 
 export function NewPurchaseDialog({
@@ -35,11 +36,28 @@ export function NewPurchaseDialog({
   onOpenChange,
   suppliers,
   onConfirm,
+  editingPurchase = null,
 }: NewPurchaseDialogProps) {
   const t = useTranslations();
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [purchaseTotal, setPurchaseTotal] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    const timeout = window.setTimeout(() => {
+      if (editingPurchase) {
+        setSelectedSupplier(editingPurchase.proveedor_id);
+        setInvoiceNumber(editingPurchase.numero_factura || "");
+        setPurchaseTotal(String(editingPurchase.total));
+      } else {
+        setSelectedSupplier("");
+        setInvoiceNumber("");
+        setPurchaseTotal("");
+      }
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [open, editingPurchase]);
 
   // Get supplier name for display in SelectValue
   const selectedSupplierName = useMemo(() => {
@@ -60,10 +78,14 @@ export function NewPurchaseDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-base">
-            {t("purchases.addPurchase")}
+            {editingPurchase
+              ? t("purchases.editPurchase")
+              : t("purchases.addPurchase")}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Registra una nueva compra con proveedor
+            {editingPurchase
+              ? "Actualiza los datos de la compra"
+              : "Registra una nueva compra con proveedor"}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -121,7 +143,7 @@ export function NewPurchaseDialog({
             className="h-8 active:scale-[0.98] transition-transform"
             onClick={handleConfirm}
           >
-            {t("common.confirm")}
+            {editingPurchase ? t("purchases.saveChanges") : t("common.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>
