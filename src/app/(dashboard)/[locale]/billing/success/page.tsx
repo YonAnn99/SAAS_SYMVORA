@@ -20,6 +20,7 @@ function BillingSuccessContent() {
   const searchParams = useSearchParams();
   const billingPath = `/${locale}/billing`;
   const isPaid = searchParams.get("payment_status") === "paid";
+  const isCash = searchParams.get("type") === "cash";
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -53,12 +54,18 @@ function BillingSuccessContent() {
             )}
           </div>
           <CardTitle className="text-xl mt-4">
-            {isPaid ? t("billing.paymentSuccess") : t("billing.paymentPending")}
+            {isPaid
+              ? t("billing.paymentSuccess")
+              : isCash
+                ? t("billing.paymentPending")
+                : t("billing.paymentPendingCard")}
           </CardTitle>
           <CardDescription>
             {isPaid
               ? t("billing.paymentSuccessDescription")
-              : t("billing.paymentPendingDescription")}
+              : isCash
+                ? t("billing.paymentPendingDescription")
+                : t("billing.paymentPendingCardDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

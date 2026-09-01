@@ -148,7 +148,7 @@ export async function POST(request: Request) {
         customerId: customerId!,
         amount: 40000,
         description: "SYMVORA Basico - Mensual",
-        successUrl: `${APP_URL}/${locale}/billing/success`,
+        successUrl: `${APP_URL}/${locale}/billing/success?type=${encodeURIComponent(type || "card")}`,
         cancelUrl: `${APP_URL}/${locale}/billing`,
         failureUrl: `${APP_URL}/${locale}/billing`,
         allowedPaymentMethods: allowedMethods,

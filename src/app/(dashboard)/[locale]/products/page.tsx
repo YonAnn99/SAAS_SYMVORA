@@ -1,20 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { hasRole } from "@/lib/rbac";
 import { useProducts } from "@/features/inventory";
 import { ProductDialog } from "@/features/inventory";
 import { ProductDeleteDialog } from "@/features/inventory";
 import { ProductsTable } from "@/features/inventory";
+import { ImportProductsDialog } from "@/features/inventory";
 import type { Producto } from "@/features/inventory";
 
 export default function ProductsPage() {
   const t = useTranslations();
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const {
     products,
     filteredProducts,
@@ -27,11 +31,14 @@ export default function ProductsPage() {
     saving,
     deleteConfirm,
     setDeleteConfirm,
+    refetch,
     openCreateDialog,
     openEditDialog,
     handleSave,
     handleDelete,
   } = useProducts(tenantId, tenantLoading);
+
+  const canImport = hasRole(role, "ORG_ADMIN");
 
   const exportColumns = [
     { header: "Nombre", accessor: (p: Producto) => p.nombre },
@@ -59,14 +66,24 @@ export default function ProductsPage() {
             Gestiona tu catálogo de productos
           </p>
         </div>
-        <SpecularActionButton
-          tone="add"
-          className="h-8 active:scale-[0.98] transition-transform w-full sm:w-auto"
-          onClick={openCreateDialog}
-        >
-
-          {t("products.addProduct")}
-        </SpecularActionButton>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {canImport && (
+            <SpecularActionButton
+              tone="neutral"
+              className="h-8 active:scale-[0.98] transition-transform flex-1 sm:flex-none"
+              onClick={() => setShowImportDialog(true)}
+            >
+              {t("products.import.title")}
+            </SpecularActionButton>
+          )}
+          <SpecularActionButton
+            tone="add"
+            className="h-8 active:scale-[0.98] transition-transform flex-1 sm:flex-none"
+            onClick={openCreateDialog}
+          >
+            {t("products.addProduct")}
+          </SpecularActionButton>
+        </div>
       </div>
 
       {/* Search + Export */}
@@ -114,6 +131,16 @@ export default function ProductsPage() {
         onOpenChange={(open) => !open && setDeleteConfirm(null)}
         onConfirm={handleDelete}
       />
+
+      {/* Import Catalog Dialog */}
+      {canImport && (
+        <ImportProductsDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          tenantId={tenantId ?? ""}
+          onImported={refetch}
+        />
+      )}
     </div>
   );
 }

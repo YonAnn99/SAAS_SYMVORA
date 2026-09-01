@@ -95,7 +95,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 
 ## Librerías Principales
 
-next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zustand 5, zod 4.4, @base-ui/react (shadcn base-nova), tailwind v4, recharts, cmdk, jspdf, conekta 9.0.1, @marsidev/react-turnstile 1.6, ogl (fondo login), sonner.
+next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zustand 5, zod 4.4, @base-ui/react (shadcn base-nova), tailwind v4, recharts, cmdk, jspdf, conekta 9.0.1, @marsidev/react-turnstile 1.6, ogl (fondo login + Specular Button de `@react-bits`), sonner, serwist + @serwist/next (PWA, reemplaza a `next-pwa` que nunca se conectó).
 
 ---
 
@@ -216,22 +216,32 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Legal (LFPDPPP)**: aviso de privacidad integral, términos 17 secciones, política de cookies, `legal_acceptances` (IP+UA+versiones), PolicyUpdateBanner post-login.
 - **Calidad**: 104 tests Vitest, Playwright E2E, CI GitHub Actions.
 - **Cuenta de prueba (2026-08-25)**: `pruebas@symvora.com.mx` / `dZsFT8bPvFIhYQcU` — usuario real (no demo) con tenant "Pruebas SYMVORA" (subdominio `pruebas`, código referido `SYMAB77A437`), OR_ADMIN, suscripción trial. Creada vía `scripts/create-test-account.ts` (Admin API, idempotente — re-ejecutar rota la contraseña) + `complete_onboarding` vía SQL. Sin bandeja real (`email_confirm: true`, ningún correo sale a terceros). Aislada por RLS; puede probar Conekta real (cobros reales — montos pequeños). Login por script lo bloquea Turnstile (esperado) — probar en navegador.
+- **Legal**: stub de correo ya resuelto — `PRIVACY_EMAIL = "privacidad@symvora.com.mx"` en `src/lib/contact.ts` (real, no placeholder). Solo queda pendiente el domicilio físico (ver Pendiente).
+- **CFDI**: config fiscal UI+API (`facturas/config`) completa (RFC, razón social, régimen, CP, PAC, certificados); descarga XML/PDF + vista de detalle (`facturas/[id]`) completas; `pac-client.ts` ya resuelve endpoint de producción vs pruebas correctamente (no hardcodea demo). Solo falta cargar credenciales fiscales reales y escribir tests (ver "Plan Pendiente: Módulo CFDI").
+- **`role_permissions`**: RLS habilitado desde la migración `021_qa_role_permissions_rls.sql` (la nota de "decidir si habilitar" en versiones previas de este documento ya no aplica).
+
+### Sesión 2026-08-31
+
+- **PWA**: instalable + más rápida en mobile + catálogo del POS disponible sin conexión (dentro de la misma sesión ya abierta). `src/app/manifest.ts` (nombre, íconos 192/512 "any" + "maskable", `display: standalone`, colores de marca); service worker con **Serwist** (`src/app/sw.ts` + `@serwist/next` en `next.config.ts`, reemplaza a `next-pwa` que estaba instalado pero nunca conectado y es incompatible con Turbopack-dev de este proyecto; deshabilitado en dev, solo corre en el build de producción `--webpack`); `public/offline.html` estático (fuera del enrutado de Next/middleware) como fallback de navegación sin conexión, precacheado y verificado en el `sw.js` generado; `useOnlineStatus()` (`src/hooks/use-online-status.ts`, nuevo) + caché en `localStorage` del último catálogo de productos del POS (`use-pos-catalog.ts`) para seguir viéndolo sin internet; "Completar venta" se bloquea explícitamente sin conexión (nunca se intenta completar una venta offline — decisión explícita para no arriesgar desincronizar stock). Íconos y splash screens (9 tamaños de iPhone/iPad) generados con `sharp` a partir del logo real `symvora-logo.webp`.
+- **Módulo "Suggestions"**: el cliente puede mandar sugerencias que se guardan en BD y llegan por correo. Migración `043_sugerencias.sql` (tabla `sugerencias` + RLS); `src/app/api/suggestions/route.ts` (antes solo enviaba el correo, ahora también inserta el registro; rate limit de 5/hora movido de un `Map` en memoria — no sobrevive a serverless — a un conteo real contra la tabla); `sendSuggestionEmail` en `src/lib/email.ts` (reutiliza el patrón Resend existente); UI en `/suggestions` (`src/features/suggestions/`).
+- **Rediseño de botones (Specular Button, `@react-bits`)**: 57 botones principales/CTA del dashboard (nunca el landing, que no usa el `Button` compartido) convertidos a `src/components/ui/specular-action-button.tsx` — envoltorio sobre el componente WebGL instalado en `src/components/SpecularButton.tsx`, con tono por función (`money`=verde, `add`=azul, `destructive`=rojo, `neutral`=azul marino). Deliberadamente **no** se aplicó a íconos de acción repetidos por fila en tablas (saturaría los contextos WebGL del navegador). Iteraciones de corrección: `shrink-0 whitespace-nowrap` para el bug de layout ícono-arriba-texto-abajo, luego se quitaron los íconos de todos los botones convertidos (persistía en botones anchos como los de `/billing`) dejando solo texto; `autoAnimate: true` para que el brillo se vea también en modo claro (antes solo aparecía al pasar el mouse encima).
+- **Compras**: función de editar un registro existente (proveedor, número de factura, total) — `updatePurchase()` en `purchase-service.ts`, mismo diálogo de crear/editar (patrón `editingPurchase`), solo permitido mientras la compra está en estado `PENDIENTE`.
+- **Finanzas**: corregido bug donde las ventas completadas se contaban como "Salida" (negativas) en vez de no afectar el balance de Entrada/Salida — `calculateRegisterTotals()` ahora distingue `ENTRADA`/`SALIDA`/`VENTA` correctamente (`VENTA` se excluye de esa suma a propósito, para no duplicar contra la tarjeta "Ventas"); corregidos los tipos TS generados de `movimientos_caja`/`ventas` que estaban desactualizados desde la migración 018.
+- **POS**: campo de monto recibido + cambio sugerido en el carrito para pagos en efectivo, persistido en `ventas.monto_recibido`/`cambio` (migración `042_venta_monto_recibido.sql`, valida server-side que el monto recibido cubra el total); checkbox de IVA cambiado a **desactivado por defecto** (`src/features/pos/stores/cart.ts`).
+- **Conekta**: tiempo de espera del checkout de efectivo reducido de 90s a 20s; `/billing/success` ahora distingue pago confirmado vs pendiente (antes mostraba "éxito" para cualquier redirect, incluyendo efectivo pendiente de confirmar); webhook ya no hardcodea `payment_method: "card"` (lee el método real de Conekta); `payment_history` se actualiza correctamente en vez de duplicar filas; el correo con la referencia de pago en efectivo ahora llega al email de login del `SUPER_ADMIN` real del tenant (antes usaba `tenants.email`, un campo de contacto de negocio no siempre igual al de login); corregido el filtro de rol del correo de bienvenida (`ORG_ADMIN` → `SUPER_ADMIN`, el rol real del primer usuario/dueño); banner de "pago pendiente" agregado a `/billing`.
+- **Verificación de todo el sistema (2026-08-31)**: se re-confirmó contra el código real el estado de cada pendiente listado en este archivo (varios ya estaban resueltos y no reflejados aquí, ver arriba); `npx tsc --noEmit` limpio en todo el proyecto.
 
 ### Pendiente
+
+> Re-verificado contra el código real el 2026-08-31 — varios puntos que seguían listados aquí ya estaban resueltos y fueron movidos a "Completado" o eliminados (ver sección "Sesión 2026-08-31" más abajo para el detalle de esa verificación).
+
 - **Google Search Console (2026-08-25)**: ✅ sitemap.xml restaurado (`src/app/sitemap.ts` había sido eliminado en 57b6fd2 — daba 404) y verificado HTTP 200 en producción. Pendiente en GSC: reenviar sitemap (`www.symvora.com.mx/sitemap.xml`), Request indexing en `/es` y `/en`. Los avisos "Página con redirección" (host routing apex→www, marketing→app) y "Excluida por noindex" (app.*) son intencionales — no corregir. "Descubierta sin indexar" se resuelve sola con el sitemap + tiempo.
-- Envío de correo con `@symvora.com.mx` (Resend Sending Domain + fusión SPF con `include:_spf.mx.cloudflare.net include:amazonses.com`) — solo si se quiere.
-- **Emails de bienvenida (2026-08-24)**: ✅ dominio `symvora.com.mx` verificado en Resend (DNS en Cloudflare); `RESEND_FROM_EMAIL=SYMVORA <no-reply@symvora.com.mx>` en Vercel (Production+Preview). Plantilla rediseñada con identidad de marca (negro/hueso `#F0EFED`) en `src/lib/email.ts` con 2 variantes (`type: "signup" | "first_payment"`). Trigger signup: `POST /api/email/welcome` (fire-and-forget desde `auth-forms.tsx`); trigger primer pago: webhook Conekta (`sendWelcomeEmailToOwner`). Envío real verificado a Hotmail (2/2 ok). Script de prueba: `scripts/test-email.ts` (requiere `TEST_EMAIL_TO` + `.env.local`).
-- Config fiscal de producción (RFC, PAC, certificados) — prerequisito para timbrar.
-- Fix `pac-client.ts` `getEndpoint()` (retorna demo URL en producción).
-- Locales hardcodeados en redirects (`auth-forms.tsx`, `billing/success`).
-- Descarga XML/PDF de facturas + vista de detalle.
-- Legal stubs en aviso de privacidad (`[Domicilio del responsable]`, `[privacidad@symvora.com]`).
-- Env pendientes: `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
-- **Conekta producción (2026-08-24)**: claves productivas configuradas en Vercel (`CONEKTA_PRIVATE_KEY`, `CONEKTA_PUBLIC_KEY`, `CONEKTA_WEBHOOK_PUBLIC_KEY`) y `CONEKTA_WEBHOOK_SECRET` legacy eliminado. Webhook fail-closed verificado (401 sin firma). Pendiente: registrar la URL del webhook en el dashboard de Conekta y prueba de pago real end-to-end.
-- `role_permissions` con RLS deshabilitado (decidir si habilitar).
-- **Auditoría BD (2026-08-24, migraciones 028-030)**: ✅ cerrado bypass de pago en subscriptions; ✅ FK productos.proveedor_id; ✅ facturas_folios CASCADE; ✅ UNIQUE codigo_barras/RFC; ✅ REVOKE TRUNCATE/EXECUTE; ✅ `trial_codes` eliminada (0 filas, sin UI) junto con sus 3 APIs; ✅ `tenants_insert` arbitraria bloqueada; ✅ activity_logs exige `user_id = auth.uid()`; ✅ RBAC facturación (`authorize('billing.create')` para escrituras — CAJERO solo lectura; pagos_terminal solo lectura); ✅ initplan `(select auth.uid())`; ✅ 16 índices FK. Linters Supabase limpios (solo avisos intencionales). Pendiente menor: leaked password protection requiere plan Pro (no disponible en Free) — mitigado con política de contraseñas fuertes en Auth (min length + caracteres requeridos, gratis) + Turnstile + throttle de login; activar al pasar a Pro. Revisar índices sin uso con tráfico real antes de eliminar.
+- Config fiscal de **producción** (RFC, PAC, certificados reales cargados en `/facturas/config`) — la UI/API ya existen (ver Completado), falta cargar credenciales reales; prerequisito para timbrar CFDI de verdad.
+- Legal stub en aviso de privacidad: **`[Domicilio del responsable]`** sigue sin reemplazar (el correo `privacidad@symvora.com.mx` ya está resuelto, ver Completado).
+- Env pendiente: `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
+- **Conekta producción**: claves productivas configuradas en Vercel, webhook fail-closed verificado (401 sin firma), flujo de pago en efectivo probado end-to-end en producción (2026-08-31, ver Completado). Pendiente: confirmar que la URL del webhook esté registrada en el dashboard de Conekta y hacer una prueba de pago **con tarjeta** completada end-to-end (solo se ha probado efectivo).
 - **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
-- **Exportación de datos (CSV/Excel/PDF)**: funcionalidad de exportar datos de inventario, ventas, compras, ajustes, etc.
+- **Exportación de datos (CSV/Excel/PDF)**: funcionalidad de exportar datos de inventario, ventas, compras, ajustes, etc. — sin empezar, no existe ningún endpoint `/api/export/*` ni UI de exportar en las tablas todavía.
   - **Fase 1 - Infraestructura (Semana 1)**: API routes `/api/export/[entidad]` (products, variants, lots, sales, purchases, adjustments), streaming CSV para datasets grandes, Service Role para acceso completo tenant, validación tenant_id via JWT.
   - **Fase 2 - UI (Semana 1-2)**: Dropdown "Exportar" en tablas (ProductsTable, VariantsTable, LotsTable, SalesTable, PurchasesTable, AdjustmentsTable), formatos CSV/Excel/PDF, filtros de fecha/columnas, selección de columnas.
   - **Fase 3 - Avanzado (Semana 2-3)**: Exports programados (diario/semanal) vía email/S3, plantillas/preajustes, cola de trabajos para exports grandes (>10k filas), logs de auditoría de exportaciones.
@@ -268,15 +278,15 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 
 ## Plan Pendiente: Módulo CFDI 4.0 — Próximos pasos
 
-1. **Config fiscal UI + API** (`facturas/config`): RFC, razón social, régimen, CP, PAC (finkok/swsapien), certificados, email. Guardar en `tenant_settings.configuracion_fiscal`.
-2. **Fix endpoints PAC de producción** (`pac-client.ts`).
-3. **Descarga XML/PDF**: APIs `facturas/[id]/xml|pdf` + botones en la tabla (solo facturas TIMBRADAS). *(API XML/PDF ya delgadas sobre `factura-service`.)*
+1. **Config fiscal UI + API** (`facturas/config`): RFC, razón social, régimen, CP, PAC (finkok/swsapien), certificados, email. Guardar en `tenant_settings.configuracion_fiscal`. — ✅ hecho (página y campos existen; falta cargar credenciales **reales** de producción, ver sección Pendiente).
+2. **Fix endpoints PAC de producción** (`pac-client.ts`). — ✅ hecho (`finkokEndpoint()` resuelve prod vs test según `PAC_TEST_MODE`, ya no hardcodea demo).
+3. **Descarga XML/PDF**: APIs `facturas/[id]/xml|pdf` + botones en la tabla (solo facturas TIMBRADAS). — ✅ hecho (`src/app/api/facturas/[id]/xml|pdf`, botones en `facturas/[id]/page.tsx`).
 4. **Historial de pagos** real en `/billing` (query a `payment_history`). — ✅ hecho (tabla de pagos en `/billing`).
 5. **Cancelar suscripción** vía API Conekta + Dialog de confirmación. — ✅ hecho (`/api/conekta/cancel-subscription`).
-6. **Vista detalle factura** (`facturas/[id]`).
-7. **Tests** de CFDI y APIs de facturación.
+6. **Vista detalle factura** (`facturas/[id]`). — ✅ hecho.
+7. **Tests** de CFDI y APIs de facturación. — pendiente.
 
-Orden sugerido: 1 → 2 → 3 → 4 → 5 → 6 → 7.
+Solo queda pendiente el paso 7 (tests) y cargar credenciales fiscales reales de producción (paso 1).
 
 ---
 
@@ -393,4 +403,3 @@ Sistema completo de autenticación por clave para empleados (CAJERO/ORG_ADMIN), 
 - `supabase` CLI no instalado globalmente (solo via npx)
 - Base UI `DropdownMenuTrigger` en `src/components/ui/dropdown-menu.tsx:18` defaulta `nativeButton={true}` — el padre NO debe pasar `nativeButton={false}`
 - RLS requiere `tenant_id` en todos los INSERTs; falta causa fallos silenciosos
-- `role_permissions` con RLS deshabilitado — decidir si habilitar

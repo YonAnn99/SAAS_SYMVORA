@@ -79,6 +79,11 @@ export const productSchema = z.object({
   proveedor_id: z.string().uuid().optional(),
 });
 
+export const productImportRowSchema = productSchema.extend({
+  clave_prod_serv: z.string().optional(),
+  clave_unidad: z.string().optional(),
+});
+
 export const customerSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   email: z.string().email("Correo electrónico inválido").optional(),

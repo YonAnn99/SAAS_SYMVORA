@@ -457,10 +457,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                 <div>
                   <p className="font-medium text-amber-600">
-                    {t("billing.paymentPending")}
+                    {payments[0]?.payment_method === "cash"
+                      ? t("billing.paymentPending")
+                      : t("billing.paymentPendingCard")}
                   </p>
                   <p className="text-muted-foreground">
-                    {t("billing.paymentPendingDescription")}
+                    {payments[0]?.payment_method === "cash"
+                      ? t("billing.paymentPendingDescription")
+                      : t("billing.paymentPendingCardDescription")}
                   </p>
                 </div>
               </div>

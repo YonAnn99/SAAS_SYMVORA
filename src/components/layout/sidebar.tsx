@@ -143,8 +143,8 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-3">
-        <nav className="flex flex-col gap-0.5">
-          {visibleNav.map((item) => {
+        <nav className="flex flex-col gap-0.5" key={String(collapsed)}>
+          {visibleNav.map((item, idx) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -153,11 +153,12 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
                 href={item.href}
                 onClick={onLinkClick}
                 className={cn(
-                  "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                  "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
                   active
                     ? "bg-gradient-to-r from-primary/90 to-primary text-primary-foreground shadow-[0_2px_8px_rgba(91,159,237,0.25)]"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 )}
+                style={{ animationDelay: `${idx * 28}ms` }}
               >
                 <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
                 {!collapsed && (
@@ -179,8 +180,8 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
             <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
               📦 Inventario
             </p>
-            <nav className="flex flex-col gap-0.5">
-              {visibleInventory.map((item) => {
+            <nav className="flex flex-col gap-0.5" key={String(collapsed)}>
+              {visibleInventory.map((item, idx) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
                 return (
@@ -189,11 +190,12 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
                     href={item.href}
                     onClick={onLinkClick}
                     className={cn(
-                  "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                  "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
                       active
                         ? "bg-gradient-to-r from-primary/90 to-primary text-primary-foreground shadow-[0_2px_8px_rgba(91,159,237,0.25)]"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                     )}
+                    style={{ animationDelay: `${(visibleNav.length + idx) * 28}ms` }}
                   >
                     <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
                     <span>{t(item.name)}</span>
