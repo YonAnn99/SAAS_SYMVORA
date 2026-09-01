@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -14,19 +14,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import type { SupplierFormData } from "../../types/inventory.types";
+import type { Proveedor, SupplierFormData } from "../../types/inventory.types";
 
 interface NewSupplierDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (formData: SupplierFormData) => void;
+  editingSupplier?: Proveedor | null;
 }
 
 export function NewSupplierDialog({
   open,
   onOpenChange,
   onConfirm,
+  editingSupplier,
 }: NewSupplierDialogProps) {
+  const isEditing = !!editingSupplier;
+
   const [formData, setFormData] = useState<SupplierFormData>({
     nombre: "",
     contact: "",
@@ -34,12 +38,29 @@ export function NewSupplierDialog({
     phone: "",
   });
 
+  useEffect(() => {
+    if (!open) return;
+    const timeout = window.setTimeout(() => {
+      if (editingSupplier) {
+        setFormData({
+          nombre: editingSupplier.nombre,
+          contact: editingSupplier.contact_name || "",
+          email: editingSupplier.email || "",
+          phone: editingSupplier.telefono || "",
+        });
+      } else {
+        setFormData({ nombre: "", contact: "", email: "", phone: "" });
+      }
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [open, editingSupplier]);
+
   const updateField = (field: keyof SupplierFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleOpenChange = (next: boolean) => {
-    if (next) {
+    if (!next) {
       setFormData({ nombre: "", contact: "", email: "", phone: "" });
     }
     onOpenChange(next);
@@ -57,9 +78,13 @@ export function NewSupplierDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-base">Agregar proveedor</DialogTitle>
+          <DialogTitle className="text-base">
+            {isEditing ? "Editar proveedor" : "Agregar proveedor"}
+          </DialogTitle>
           <DialogDescription className="text-xs">
-            Registra un nuevo proveedor en tu catálogo
+            {isEditing
+              ? "Actualiza la información del proveedor"
+              : "Registra un nuevo proveedor en tu catálogo"}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -111,7 +136,7 @@ export function NewSupplierDialog({
             Cancelar
           </Button>
           <SpecularActionButton tone="add" className="h-8" onClick={handleConfirm}>
-            Guardar proveedor
+            {isEditing ? "Guardar cambios" : "Guardar proveedor"}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

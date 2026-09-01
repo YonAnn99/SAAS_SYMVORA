@@ -23,9 +23,12 @@ export default function PurchasesPage() {
     openEditPurchase,
     showNewSupplierDialog,
     setShowNewSupplierDialog,
+    editingSupplier,
+    openEditSupplier,
     handleCreatePurchase,
     handleUpdatePurchase,
     handleCreateSupplier,
+    handleUpdateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
   } = usePurchases(tenantId, tenantLoading);
@@ -75,6 +78,7 @@ export default function PurchasesPage() {
           <SuppliersTable
             suppliers={suppliers}
             onAdd={() => setShowNewSupplierDialog(true)}
+            onEdit={openEditSupplier}
           />
         </TabsContent>
       </Tabs>
@@ -92,11 +96,16 @@ export default function PurchasesPage() {
         }
       />
 
-      {/* New supplier dialog */}
+      {/* New / edit supplier dialog */}
       <NewSupplierDialog
         open={showNewSupplierDialog}
         onOpenChange={setShowNewSupplierDialog}
-        onConfirm={handleCreateSupplier}
+        editingSupplier={editingSupplier}
+        onConfirm={(input) =>
+          editingSupplier
+            ? handleUpdateSupplier(editingSupplier.id, input)
+            : handleCreateSupplier(input)
+        }
       />
     </div>
   );

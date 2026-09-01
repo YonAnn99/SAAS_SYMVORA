@@ -18,6 +18,7 @@ import {
   type SupplierInput,
   updatePurchase,
   updatePurchaseStatus,
+  updateSupplier,
 } from "../services/purchase-service";
 
 export function usePurchases(tenantId: string, tenantLoading: boolean) {
@@ -28,6 +29,7 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
   const [editingPurchase, setEditingPurchase] =
     useState<PurchaseWithRelations | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<Proveedor | null>(null);
 
   const refetch = useCallback(async () => {
     if (!tenantId) {
@@ -149,6 +151,37 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     [tenantId, refetch]
   );
 
+  const openEditSupplier = useCallback((supplier: Proveedor) => {
+    setEditingSupplier(supplier);
+    setShowNewSupplierDialog(true);
+  }, []);
+
+  const handleUpdateSupplier = useCallback(
+    async (supplierId: string, input: SupplierInput) => {
+      try {
+        await updateSupplier(supplierId, input);
+        await logActivity({
+          action: "UPDATE",
+          entity: "proveedor",
+          entityId: supplierId,
+          entityName: input.nombre,
+          details: { email: input.email, telefono: input.phone },
+        });
+        toast.success("Proveedor actualizado correctamente");
+        setShowNewSupplierDialog(false);
+        setEditingSupplier(null);
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? `Error al actualizar el proveedor: ${error.message}`
+            : "Error al actualizar el proveedor"
+        );
+      }
+    },
+    [refetch]
+  );
+
   const handleUpdatePurchaseStatus = useCallback(
     async (
       purchaseId: string,
@@ -202,6 +235,11 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     if (!open) setEditingPurchase(null);
   }, []);
 
+  const handleSupplierDialogOpenChange = useCallback((open: boolean) => {
+    setShowNewSupplierDialog(open);
+    if (!open) setEditingSupplier(null);
+  }, []);
+
   return {
     purchases,
     suppliers,
@@ -211,10 +249,13 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     editingPurchase,
     openEditPurchase,
     showNewSupplierDialog,
-    setShowNewSupplierDialog,
+    setShowNewSupplierDialog: handleSupplierDialogOpenChange,
+    editingSupplier,
+    openEditSupplier,
     handleCreatePurchase,
     handleUpdatePurchase,
     handleCreateSupplier,
+    handleUpdateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
     refetch,

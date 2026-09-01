@@ -77,6 +77,23 @@ export async function createSupplier(
   if (error) throw error;
 }
 
+export async function updateSupplier(
+  supplierId: string,
+  input: SupplierInput
+): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("proveedores")
+    .update({
+      nombre: input.nombre,
+      contact_name: input.contact || null,
+      email: input.email || null,
+      telefono: input.phone || null,
+    })
+    .eq("id", supplierId);
+  if (error) throw error;
+}
+
 export async function updatePurchase(
   purchaseId: string,
   input: PurchaseInput

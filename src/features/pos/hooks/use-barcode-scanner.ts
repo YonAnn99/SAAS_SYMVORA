@@ -18,7 +18,10 @@ export function useBarcodeScanner(
   const [search, setSearch] = useState("");
 
   const handleSearch = () => {
-    if (!search.trim()) return;
+    if (!search.trim()) {
+      toast.error("Escribe o escanea un código de barras");
+      return;
+    }
 
     const match = products.find(
       (p) => p.codigo_barras?.toLowerCase() === search.trim().toLowerCase()

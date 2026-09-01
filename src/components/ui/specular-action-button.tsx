@@ -53,6 +53,7 @@ export function SpecularActionButton({
   tone = "neutral",
   size = "sm",
   className,
+  autoAnimate = true,
   ...props
 }: SpecularActionButtonProps) {
   const colors = TONE_COLORS[tone];
@@ -62,8 +63,9 @@ export function SpecularActionButton({
       size={size}
       radius={10}
       tintOpacity={1}
+      autoAnimate={autoAnimate}
       {...colors}
-      className={cn("text-sm font-medium", className)}
+      className={cn("shrink-0 whitespace-nowrap text-sm font-medium", className)}
       {...props}
     />
   );

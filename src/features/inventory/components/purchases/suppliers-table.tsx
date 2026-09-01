@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, Truck } from "lucide-react";
+import { Plus, Pencil, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -23,9 +23,10 @@ import type { Proveedor } from "../../types/inventory.types";
 interface SuppliersTableProps {
   suppliers: Proveedor[];
   onAdd: () => void;
+  onEdit: (supplier: Proveedor) => void;
 }
 
-export function SuppliersTable({ suppliers, onAdd }: SuppliersTableProps) {
+export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps) {
   const t = useTranslations();
 
   return (
@@ -85,8 +86,13 @@ export function SuppliersTable({ suppliers, onAdd }: SuppliersTableProps) {
                       {supplier.telefono || "-"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs">
-                        {t("common.edit")}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => onEdit(supplier)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </TableCell>
                   </TableRow>
