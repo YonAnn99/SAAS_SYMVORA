@@ -55,9 +55,9 @@ export const metadata: Metadata = {
     siteName: "SYMVORA",
     images: [
       {
-        url: "/og-symvora-v3.jpg",
-        width: 1200,
-        height: 630,
+        url: "/og-symvora.jpeg",
+        width: 2848,
+        height: 1496,
         alt: "SYMVORA — Punto de venta e inventario para PyMEs",
       },
     ],
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     title: "SYMVORA — POS e inventario para PyMEs",
     description:
       "Punto de venta, inventarios y finanzas en una sola plataforma pensada para PyMEs mexicanas.",
-    images: ["/og-symvora-v3.jpg"],
+    images: ["/og-symvora.jpeg"],
   },
 };
 
