@@ -86,7 +86,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
   const t = useTranslations();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
-  const { tenantName, tenantLogo, role } = useCurrentTenant();
+  const { tenantName, tenantLogo, role, loading: tenantLoading } = useCurrentTenant();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -143,45 +143,19 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-3">
-        <nav className="flex flex-col gap-0.5" key={String(collapsed)}>
-          {visibleNav.map((item, idx) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onLinkClick}
-                className={cn(
-                  "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
-                  active
-                    ? "bg-gradient-to-r from-primary/90 to-primary text-primary-foreground shadow-[0_2px_8px_rgba(91,159,237,0.25)]"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                )}
-                style={{ animationDelay: `${idx * 28}ms` }}
-              >
-                <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
-                {!collapsed && (
-                  <span className="flex-1 truncate">{t(item.name)}</span>
-                )}
-                {!collapsed && item.beta && (
-                  <span className="rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400">
-                    Beta
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Inventory section */}
-        {!collapsed && visibleInventory.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-              📦 Inventario
-            </p>
+        {tenantLoading ? (
+          <div className="flex flex-col gap-1.5 px-1">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-8 animate-pulse rounded-lg bg-muted/40"
+              />
+            ))}
+          </div>
+        ) : (
+          <>
             <nav className="flex flex-col gap-0.5" key={String(collapsed)}>
-              {visibleInventory.map((item, idx) => {
+              {visibleNav.map((item, idx) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
                 return (
@@ -190,20 +164,59 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
                     href={item.href}
                     onClick={onLinkClick}
                     className={cn(
-                  "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
+                      "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
                       active
                         ? "bg-gradient-to-r from-primary/90 to-primary text-primary-foreground shadow-[0_2px_8px_rgba(91,159,237,0.25)]"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                     )}
-                    style={{ animationDelay: `${(visibleNav.length + idx) * 28}ms` }}
+                    style={{ animationDelay: `${idx * 28}ms` }}
                   >
                     <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
-                    <span>{t(item.name)}</span>
+                    {!collapsed && (
+                      <span className="flex-1 truncate">{t(item.name)}</span>
+                    )}
+                    {!collapsed && item.beta && (
+                      <span className="rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400">
+                        Beta
+                      </span>
+                    )}
                   </Link>
                 );
               })}
             </nav>
-          </div>
+
+            {/* Inventory section */}
+            {!collapsed && visibleInventory.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  📦 Inventario
+                </p>
+                <nav className="flex flex-col gap-0.5" key={String(collapsed)}>
+                  {visibleInventory.map((item, idx) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onLinkClick}
+                        className={cn(
+                          "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
+                          active
+                            ? "bg-gradient-to-r from-primary/90 to-primary text-primary-foreground shadow-[0_2px_8px_rgba(91,159,237,0.25)]"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        )}
+                        style={{ animationDelay: `${(visibleNav.length + idx) * 28}ms` }}
+                      >
+                        <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
+                        <span>{t(item.name)}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            )}
+          </>
         )}
       </ScrollArea>
 
