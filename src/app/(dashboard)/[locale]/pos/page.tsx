@@ -37,7 +37,7 @@ export default function POSPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
-    usePosCart();
+    usePosCart(tenantId);
   const { products, customers, userId, loadingProducts, isOfflineCatalog, refetch } =
     usePosCatalog(tenantId, tenantLoading);
   const isOnline = useOnlineStatus();

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useCartStore } from "../stores/cart";
 import { calculateSaleTotals } from "../services/pos-service";
 import type { SaleTotals } from "../types/pos.types";
@@ -16,8 +17,17 @@ export interface PosCartState {
   clearCart: ReturnType<typeof useCartStore.getState>["clearCart"];
 }
 
-export function usePosCart(): PosCartState {
+export function usePosCart(tenantId: string | null): PosCartState {
   const store = useCartStore();
+  const previousTenantId = useRef(tenantId);
+
+  useEffect(() => {
+    if (previousTenantId.current !== tenantId) {
+      store.clearCart();
+      previousTenantId.current = tenantId;
+    }
+  }, [tenantId, store]);
+
   const items = store.items;
   const totals = calculateSaleTotals(items, store.includeIva);
   const itemCount = items.reduce((sum, item) => sum + item.cantidad, 0);
