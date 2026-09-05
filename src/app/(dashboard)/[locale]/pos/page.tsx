@@ -10,8 +10,6 @@ import {
   Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { completeSale } from "@/features/pos/services/pos-service";
@@ -19,15 +17,20 @@ import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
 import { usePosCatalog } from "@/features/pos/hooks/use-pos-catalog";
+import { CheckoutPanel } from "@/features/pos/components/checkout-panel";
 import { ConfirmSaleDialog } from "@/features/pos/components/confirm-sale-dialog";
-import { PaymentMethodPicker } from "@/features/pos/components/payment-method-picker";
-import { PosCart } from "@/features/pos/components/pos-cart";
+import { MobileCartBar } from "@/features/pos/components/mobile-cart-bar";
 import { PosSearchBar } from "@/features/pos/components/pos-search-bar";
 import { ProductGrid } from "@/features/pos/components/product-grid";
 import { TerminalPaymentDialog } from "@/features/pos/components/terminal-payment-dialog";
 import { TicketReceipt } from "@/features/pos/components/ticket-receipt";
-import { CustomerSelector } from "@/features/customers/components/customer-selector";
 import { NewCustomerDialog } from "@/features/customers/components/new-customer-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import type { MetodoPagoDirecto, Producto, SaleReceipt } from "@/features/pos/types/pos.types";
 
 export default function POSPage() {
@@ -47,6 +50,7 @@ export default function POSPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   const handleAddProduct = useCallback(
     (product: Producto) => {
@@ -75,6 +79,7 @@ export default function POSPage() {
     setSelectedCustomer("none");
     setSelectedPayment("");
     setShowConfirmDialog(false);
+    setMobileCartOpen(false);
     void refetch();
   }, [clearCart, refetch]);
 
@@ -184,6 +189,7 @@ export default function POSPage() {
       setSelectedPayment("");
       setMontoRecibido("");
       setShowConfirmDialog(false);
+      setMobileCartOpen(false);
       void refetch();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al procesar la venta");
@@ -226,18 +232,21 @@ export default function POSPage() {
           hasSearch={Boolean(search)}
           onAddProduct={handleAddProduct}
         />
+
+        <MobileCartBar
+          itemCount={itemCount}
+          total={totals.total}
+          onOpen={() => setMobileCartOpen(true)}
+        />
       </div>
 
-      {/* Right: Cart */}
-      <div className="w-full lg:w-80 flex flex-col animate-fade-in-up stagger-2">
-        <CustomerSelector
+      {/* Right: Cart (desktop only — on mobile it lives in the bottom sheet below) */}
+      <div className="hidden lg:flex lg:w-80 flex-col animate-fade-in-up stagger-2">
+        <CheckoutPanel
           customers={customers}
           selectedCustomer={selectedCustomer}
           onSelectCustomer={setSelectedCustomer}
           onNewCustomer={() => setShowNewCustomerDialog(true)}
-        />
-
-        <PosCart
           items={items}
           totals={totals}
           itemCount={itemCount}
@@ -245,75 +254,75 @@ export default function POSPage() {
           onUpdateQuantity={updateQuantity}
           onRemove={removeItem}
           onToggleIva={setIncludeIva}
-        />
-
-        <PaymentMethodPicker
-          methods={paymentMethods}
+          paymentMethods={paymentMethods}
           selectedPayment={selectedPayment}
-          onSelect={(key) => {
+          onSelectPayment={(key) => {
             setSelectedPayment(key);
             if (key !== "EFECTIVO") setMontoRecibido("");
           }}
           mpReady={mpReady}
-        />
-
-        {isEfectivo && (
-          <div className="mt-2 space-y-1.5">
-            <label className="text-xs text-muted-foreground">
-              {t("pos.amountReceived")}
-            </label>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="0.01"
-              placeholder="$0.00"
-              value={montoRecibido}
-              onChange={(e) => setMontoRecibido(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-            {cambio != null && (
-              <div className="flex justify-between text-xs font-medium">
-                <span className="text-muted-foreground">{t("pos.change")}</span>
-                <span className="font-mono">
-                  ${Math.max(0, cambio).toFixed(2)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {!isOnline && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            Sin conexión: no se pueden completar ventas hasta reconectarte.
-          </p>
-        )}
-
-        <SpecularActionButton
-          tone="money"
-          className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
-          disabled={
+          isEfectivo={isEfectivo}
+          montoRecibido={montoRecibido}
+          onMontoRecibidoChange={setMontoRecibido}
+          cambio={cambio}
+          isOnline={isOnline}
+          processingSale={processingSale}
+          disabledComplete={
             items.length === 0 ||
             !selectedPayment ||
             processingSale ||
             montoRecibidoInsuficiente ||
             !isOnline
           }
-          onClick={() => setShowConfirmDialog(true)}
-        >
-          {processingSale ? t("common.loading") : t("pos.completeSale")}
-        </SpecularActionButton>
-
-        <Button
-          variant="ghost"
-          className="mt-1.5 w-full h-8 text-xs text-muted-foreground"
-          size="sm"
-          onClick={clearCart}
-          disabled={items.length === 0}
-        >
-          {t("pos.clearCart")}
-        </Button>
+          onCompleteSale={() => setShowConfirmDialog(true)}
+          onClearCart={clearCart}
+        />
       </div>
+
+      <Sheet open={mobileCartOpen} onOpenChange={setMobileCartOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] p-0 lg:hidden">
+          <SheetHeader className="pb-0">
+            <SheetTitle>{t("pos.cart")}</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 min-h-0 px-4 pb-4">
+            <CheckoutPanel
+              customers={customers}
+              selectedCustomer={selectedCustomer}
+              onSelectCustomer={setSelectedCustomer}
+              onNewCustomer={() => setShowNewCustomerDialog(true)}
+              items={items}
+              totals={totals}
+              itemCount={itemCount}
+              includeIva={includeIva}
+              onUpdateQuantity={updateQuantity}
+              onRemove={removeItem}
+              onToggleIva={setIncludeIva}
+              paymentMethods={paymentMethods}
+              selectedPayment={selectedPayment}
+              onSelectPayment={(key) => {
+                setSelectedPayment(key);
+                if (key !== "EFECTIVO") setMontoRecibido("");
+              }}
+              mpReady={mpReady}
+              isEfectivo={isEfectivo}
+              montoRecibido={montoRecibido}
+              onMontoRecibidoChange={setMontoRecibido}
+              cambio={cambio}
+              isOnline={isOnline}
+              processingSale={processingSale}
+              disabledComplete={
+                items.length === 0 ||
+                !selectedPayment ||
+                processingSale ||
+                montoRecibidoInsuficiente ||
+                !isOnline
+              }
+              onCompleteSale={() => setShowConfirmDialog(true)}
+              onClearCart={clearCart}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <ConfirmSaleDialog
         open={showConfirmDialog}
