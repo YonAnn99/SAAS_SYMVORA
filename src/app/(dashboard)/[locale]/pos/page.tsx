@@ -245,6 +245,7 @@ export default function POSPage() {
       {/* Right: Cart (desktop only — on mobile it lives in the bottom sheet below) */}
       <div className="hidden lg:flex lg:w-80 flex-col animate-fade-in-up stagger-2">
         <CheckoutPanel
+          className="h-full"
           customers={customers}
           selectedCustomer={selectedCustomer}
           onSelectCustomer={setSelectedCustomer}
@@ -282,11 +283,11 @@ export default function POSPage() {
       </div>
 
       <Sheet open={mobileCartOpen} onOpenChange={setMobileCartOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] p-0 lg:hidden">
-          <SheetHeader className="pb-0">
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0 lg:hidden">
+          <SheetHeader className="pb-0 sticky top-0 z-10 bg-popover">
             <SheetTitle>{t("pos.cart")}</SheetTitle>
           </SheetHeader>
-          <div className="flex-1 min-h-0 px-4 pb-4">
+          <div className="px-4 pb-4">
             <CheckoutPanel
               customers={customers}
               selectedCustomer={selectedCustomer}

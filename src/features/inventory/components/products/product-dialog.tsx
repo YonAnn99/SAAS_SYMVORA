@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FileUpload } from "@/components/ui/file-upload";
-import { convertToWebP } from "@/lib/image";
+import { cropToSquareWebP } from "@/lib/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   Dialog,
@@ -161,7 +161,7 @@ export function ProductDialog({
       setUploadingImage(true);
       try {
         const supabase = createSupabaseBrowserClient();
-        const webpFile = await convertToWebP(imagenFile);
+        const webpFile = await cropToSquareWebP(imagenFile);
         const filePath = `${tenantId}/${crypto.randomUUID()}.webp`;
 
         const { error: uploadError } = await supabase.storage

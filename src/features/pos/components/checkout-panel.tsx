@@ -6,6 +6,7 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { CustomerSelector } from "@/features/customers/components/customer-selector";
 import { PaymentMethodPicker, type PaymentMethodOption } from "./payment-method-picker";
 import { PosCart } from "./pos-cart";
+import { cn } from "@/lib/utils";
 import type { Cliente } from "@/lib/types/database";
 import type { CartItem, SaleTotals } from "../types/pos.types";
 
@@ -72,7 +73,7 @@ export function CheckoutPanel({
   const t = useTranslations();
 
   return (
-    <div className={`h-full min-h-0 flex flex-col ${className ?? ""}`}>
+    <div className={cn("min-h-0 flex flex-col", className)}>
       <CustomerSelector
         customers={customers}
         selectedCustomer={selectedCustomer}
