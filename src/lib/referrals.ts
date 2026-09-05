@@ -5,6 +5,8 @@ export function generateReferralCode(tenantId: string): string {
 }
 
 export function getReferralSignupUrl(code: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "https://app.symvora.com.mx";
+  const envBase = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const isLocalInProd = process.env.NODE_ENV === "production" && envBase?.includes("localhost");
+  const base = envBase && !isLocalInProd ? envBase : "https://app.symvora.com.mx";
   return `${base}/es/signup?ref=${encodeURIComponent(code)}`;
 }

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
+import { getAppUrl } from "@/lib/site";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.symvora.com.mx";
+const APP_URL = getAppUrl();
 
 export async function POST(request: Request) {
   try {
