@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { FileUpload } from "@/components/ui/file-upload";
+import { convertToWebP } from "@/lib/image";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -55,8 +58,15 @@ export function ProductDialog({
     defaultProductFormData
   );
   const [generating, setGenerating] = useState(false);
+  const [imagenFile, setImagenFile] = useState<File | null>(null);
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null);
+  const [imagenRemoved, setImagenRemoved] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const syncFromEditing = (product: Producto | null) => {
+    setImagenFile(null);
+    setImagenRemoved(false);
+    setImagenPreview(product?.imagen_url ?? null);
     if (product) {
       setFormData({
         nombre: product.nombre,
@@ -95,7 +105,12 @@ export function ProductDialog({
   };
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) setFormData(defaultProductFormData);
+    if (!next) {
+      setFormData(defaultProductFormData);
+      setImagenFile(null);
+      setImagenPreview(null);
+      setImagenRemoved(false);
+    }
     onOpenChange(next);
   };
 
@@ -114,7 +129,19 @@ export function ProductDialog({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleImagenSelect = (file: File) => {
+    setImagenFile(file);
+    setImagenRemoved(false);
+    setImagenPreview(URL.createObjectURL(file));
+  };
+
+  const handleImagenRemove = () => {
+    setImagenFile(null);
+    setImagenPreview(null);
+    setImagenRemoved(true);
+  };
+
+  const handleSave = async () => {
     const parsed = productSchema.safeParse({
       ...formData,
       precio_venta: parseFloat(formData.precio_venta) || 0,
@@ -126,6 +153,38 @@ export function ProductDialog({
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
+    }
+
+    let imagen_url = editingProduct?.imagen_url ?? null;
+
+    if (imagenFile) {
+      setUploadingImage(true);
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const webpFile = await convertToWebP(imagenFile);
+        const filePath = `${tenantId}/${crypto.randomUUID()}.webp`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, webpFile, {
+            contentType: "image/webp",
+          });
+
+        if (uploadError) {
+          toast.error("Error al subir la imagen: " + uploadError.message);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(filePath);
+
+        imagen_url = urlData.publicUrl;
+      } finally {
+        setUploadingImage(false);
+      }
+    } else if (imagenRemoved) {
+      imagen_url = null;
     }
 
     onSave({
@@ -142,6 +201,7 @@ export function ProductDialog({
       categoria: formData.categoria || null,
       permite_lotes: formData.permite_lotes,
       permite_variantes: formData.permite_variantes,
+      imagen_url,
     });
   };
 
@@ -177,6 +237,14 @@ export function ProductDialog({
               className="text-sm min-h-[60px]"
             />
           </div>
+          <FileUpload
+            label="Imagen del producto"
+            preview={imagenPreview}
+            onFileSelect={handleImagenSelect}
+            onFileRemove={handleImagenRemove}
+            dragDropText="Arrastra una foto del producto o haz clic para seleccionar"
+            maxSizeText="Máximo 2MB · JPG, PNG"
+          />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Código de barras {(!editingProduct && formData.codigo_barras) && <span className="text-emerald-500 ml-1 text-[10px]">(auto)</span>}</Label>
@@ -313,13 +381,15 @@ export function ProductDialog({
             tone="add"
             className="h-8"
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || uploadingImage}
           >
-            {saving
-              ? t("common.loading")
-              : editingProduct
-                ? "Guardar cambios"
-                : "Crear producto"}
+            {uploadingImage
+              ? "Subiendo imagen..."
+              : saving
+                ? t("common.loading")
+                : editingProduct
+                  ? "Guardar cambios"
+                  : "Crear producto"}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

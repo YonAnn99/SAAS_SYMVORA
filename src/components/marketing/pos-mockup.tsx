@@ -33,7 +33,7 @@ export function PosMockup() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 p-3 grid grid-cols-2 gap-2 content-start overflow-hidden">
+        <div className="flex-1 p-3 grid grid-cols-2 gap-1.5 content-start overflow-hidden">
           <span className="col-span-2 text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
             {t("landing.hero.mockup.products")}
           </span>
@@ -43,21 +43,21 @@ export function PosMockup() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 + i * 0.08, ...easeOutShort }}
-              className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 hover:border-blue-400 dark:hover:border-blue-900 transition-colors cursor-pointer"
+              className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-1.5 hover:border-blue-400 dark:hover:border-blue-900 transition-colors cursor-pointer"
             >
-              <div className="text-[11px] font-medium text-neutral-900 dark:text-neutral-100 truncate leading-tight">
+              <div className="text-[10px] font-medium text-neutral-900 dark:text-neutral-100 truncate leading-tight">
                 {t(`landing.hero.mockup.items.${item.key}`)}
               </div>
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">${item.price}</span>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-[10px] font-bold text-neutral-900 dark:text-neutral-100">${item.price}</span>
                 <motion.span
-                  className="w-5 h-5 bg-blue-600 text-white rounded flex items-center justify-center"
+                  className="w-4 h-4 bg-blue-600 text-white rounded flex items-center justify-center"
                   whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
                   transition={springIcon}
                   aria-hidden="true"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-2.5 h-2.5" />
                 </motion.span>
               </div>
             </motion.div>

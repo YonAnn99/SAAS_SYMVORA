@@ -58,17 +58,17 @@ function MockupAbarrotes() {
       ].map((p) => (
         <div
           key={p.name}
-          className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 bg-white dark:bg-neutral-900 hover:border-blue-400 transition-colors"
+          className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 bg-white dark:bg-neutral-900 hover:border-blue-400 transition-colors"
         >
-          <div className="font-medium text-neutral-900 dark:text-neutral-100 truncate">{p.name}</div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="font-bold text-neutral-900 dark:text-neutral-100">{p.price}</span>
+          <div className="text-[11px] font-medium text-neutral-900 dark:text-neutral-100 truncate">{p.name}</div>
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[11px] font-bold text-neutral-900 dark:text-neutral-100">{p.price}</span>
             <button
               type="button"
               className="bg-blue-600 text-white rounded p-1 hover:bg-blue-700"
               aria-label="Agregar"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-2.5 h-2.5" />
             </button>
           </div>
         </div>
@@ -212,17 +212,17 @@ function MockupMascotas() {
       ].map((p) => (
         <div
           key={p.name}
-          className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 bg-white dark:bg-neutral-900 hover:border-blue-400 transition-colors"
+          className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 bg-white dark:bg-neutral-900 hover:border-blue-400 transition-colors"
         >
-          <div className="font-medium text-neutral-900 dark:text-neutral-100 truncate">{p.name}</div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="font-bold text-neutral-900 dark:text-neutral-100">{p.price}</span>
+          <div className="text-[11px] font-medium text-neutral-900 dark:text-neutral-100 truncate">{p.name}</div>
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[11px] font-bold text-neutral-900 dark:text-neutral-100">{p.price}</span>
             <button
               type="button"
               className="bg-blue-600 text-white rounded p-1 hover:bg-blue-700"
               aria-label="Agregar"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-2.5 h-2.5" />
             </button>
           </div>
         </div>

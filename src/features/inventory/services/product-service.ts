@@ -15,6 +15,7 @@ export interface ProductInput {
   categoria: string | null;
   permite_lotes: boolean;
   permite_variantes: boolean;
+  imagen_url: string | null;
 }
 
 export async function generateNextBarcode(tenantId: string): Promise<string> {

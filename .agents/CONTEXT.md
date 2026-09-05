@@ -202,7 +202,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **TikTok:** cuenta **TikTok Business**; username `@symvora`; bio (80 chars): *"POS + inventario + CFDI 4.0 para tu tienda 🇲🇽 Sin comisiones. Prueba gratis 👇"*; link → `app.symvora.com.mx`.
 
 ### Estrategia de contenido (skills coreyhaines31/marketingskills)
-- Docs: `docs/social-strategy.md` (pilares, producción con IA, métricas, roadmap 90 días), `docs/social-calendar.md` (30 posts/4 semanas con hooks+copy+prompts IA), `docs/social-reels.md` (5 guiones de reels con VO ElevenLabs), `docs/social-carousels-posts.md` (5 carruseles + 10 posts estáticos).
+- Docs: `docs/social-strategy.md` (pilares, producción con IA, métricas, roadmap 90 días), `docs/social-calendar.md` (30 posts/4 semanas con hooks+copy+prompts IA), `docs/social-reels.md` (5 guiones de reels con VO ElevenLabs), `docs/social-carousels-posts.md` (5 carruseles + 10 posts estáticos). **Actualizado 2026-09-05**: los 5 carruseles y el post SP5/SP8 originales mencionaban CFDI 4.0 (módulo ahora oculto) — se reescribieron los 5 carruseles con ángulos 100% vigentes (señales de necesitar un sistema, importación de catálogo, hábitos de control de dinero, simplicidad del POS, flujo de venta) y se corrigieron SP5/SP8.
 - **Pilares 80/20:** EDU 35% (CFDI/SAT/control), Antes/Después 25%, Demo producto 25%, Promo+Referidos 15%.
 - **Plataformas:** FB+IG base local, TikTok/Reels alcance, Shorts educación, WhatsApp conversión. LinkedIn/X NO prioritarios.
 - **Producción 100% IA:** Higgsfield (video, clips 3-6s), ElevenLabs (VO es-MX), Gemini/ChatGPT (imágenes). Prompts piden **sin texto** (se superpone en CapCut). Para slides de producto usar capturas reales de la demo `app.symvora.com.mx/es/demo`.

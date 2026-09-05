@@ -5,112 +5,110 @@
 
 ---
 
-## Carrusel 1 — Framework A: Value-Stack — "7 números que todo negocio debería conocer"
+## Carrusel 1 — Framework A: Value-Stack — "5 señales de que tu negocio ya necesita un sistema"
 
-**Cover (slide 1):** "7 números que todo negocio debería conocer (y la mayoría ignora)"
-**Formato:** 9 slides · 1080×1350 · Instagram/Facebook.
-
-| Slide | Texto en pantalla |
-|---|---|
-| 1 | 7 números que todo negocio debería conocer (y la mayoría ignora) |
-| 2 | 1 · **Costo de venta** — cuánto te cuesta lo que vendes |
-| 3 | 2 · **Margen** — lo que de verdad ganas por venta |
-| 4 | 3 · **Ticket promedio** — cuánto gasta cada cliente |
-| 5 | 4 · **Rotación de inventario** — qué se vende rápido y qué se queda |
-| 6 | 5 · **Merma** — lo que pierdes por caducar o maltratar |
-| 7 | 6 · **Gastos fijos** — el sueldo, la renta, la luz (siempre salen) |
-| 8 | 7 · **Punto de equilibrio** — cuánto debes vender para no perder |
-| 9 | CTA: "SYMVORA calcula esto por ti → prueba gratis 7 días" |
-
-**Caption:** "¿Sabes cuánto ganas de verdad por cada venta? La mayoría de los negocios solo mira 'lo que entra'. Pero lo que importa es el margen. Desliza para los 7 números que debes conocer. Y si quieres que tu sistema los calcule solo… prueba SYMVORA gratis." + hashtags (#ControlFinanciero #NegocioLocal #PuntoDeVenta #Emprendedor #Finanzas)
-
-**Prompt imagen:** "Carrusel 4:5 limpio tipo infografía financiera, header oscuro #1a1a1a con logo chico, iconos de billete, caja, calendario, paleta #f8fafc con acentos #2563eb, sin texto"
-
----
-
-## Carrusel 2 — Framework B: Problem-Proof — "Cerré mi caja en 5 min (antes tardaba 2 horas)"
-
-**Cover (slide 1):** "Cerré mi caja en 5 minutos. Antes tardaba 2 horas."
-**Formato:** 7 slides · 1080×1350.
+**Cover (slide 1):** "5 señales de que tu negocio ya necesita un sistema (y no una libreta)"
+**Formato:** 7 slides · 1080×1350 · Instagram/Facebook.
 
 | Slide | Texto en pantalla |
 |---|---|
-| 1 | Cerré mi caja en 5 minutos. Antes tardaba 2 horas. |
-| 2 | El problema real: no era lento, era que **nada estaba registrado** |
-| 3 | La solución: cada venta **queda registrada en el momento** |
-| 4 | Paso 1 · Cobras en SYMVORA → se guarda solo |
-| 5 | Paso 2 · Cierras caja → **esperado vs real** al instante |
-| 6 | Paso 3 · Si sobra o falta, **te avisa en segundos** |
-| 7 | Prueba: cierre en 5 minutos. Sí, de verdad. → "Pruébalo gratis" |
+| 1 | 5 señales de que tu negocio ya necesita un sistema (y no una libreta) |
+| 2 | 1 · Cierras la caja y **nunca cuadra igual dos veces** |
+| 3 | 2 · No sabes qué producto se vende más **hasta que ya se te acabó** |
+| 4 | 3 · Le fías a un cliente y **se te olvida cuánto te debe** |
+| 5 | 4 · Tu empleado vendió, pero **no sabes qué ni cuándo** |
+| 6 | 5 · Revisas tus números **"a ojo"** al final del mes |
+| 7 | Si te pasaron 2 o más: es hora de un sistema. → "Prueba SYMVORA gratis 7 días" |
 
-**Caption:** "Antes tardaba 2 horas en cuadrar la caja. El problema no era yo: era que vendía y anotaba 'después'. Nunca hay 'después'. En SYMVORA cada venta queda registrada al momento, y al cerrar me dice cuánto debe haber y cuánto hay. Cierre en 5 minutos. Pruébalo gratis 7 días, sin tarjeta." + hashtags (#Caja #CuadreDeCaja #PuntoDeVenta #NegocioLocal #Finanzas)
+**Caption:** "Si te identificaste con 2 o más de estas señales, no es que seas desordenado: es que le estás pidiendo a una libreta un trabajo que no puede hacer. Un sistema no es un lujo de negocio grande, es lo que evita que el dinero se te escape sin que lo notes. Prueba SYMVORA gratis 7 días, sin tarjeta." + hashtags (#NegocioLocal #Emprendedor #ControlFinanciero #PuntoDeVenta #PymesMexico)
 
-**Prompt imagen:** "Carrusel 4:5 con fotos de caja registradora y tablet POS (pantalla con saldo en verde), paleta #f8fafc/#1a1a1a/#2563eb, sin texto"
-**Nota:** el slide 7 es la 'prueba' — usa una captura real del cierre de caja de la demo si es posible.
+**Prompt imagen:** "Carrusel 4:5 limpio tipo infografía, header oscuro #1a1a1a con logo chico, iconos de libreta tachada, calculadora, signo de interrogación, paleta #f8fafc con acentos #2563eb, sin texto"
 
 ---
 
-## Carrusel 3 — Framework C: Hack List — "5 errores de inventario que te hacen perder dinero"
+## Carrusel 2 — Framework B: Problem-Proof — "Importé mi inventario completo en 10 minutos"
 
-**Cover (slide 1):** "80% de las tiendas pierden dinero por el inventario"
+**Cover (slide 1):** "Subí 200 productos a mi sistema en 10 minutos. Sin capturar uno por uno."
 **Formato:** 8 slides · 1080×1350.
 
 | Slide | Texto en pantalla |
 |---|---|
-| 1 | 80% de las tiendas pierden dinero por el inventario |
-| 2 | El problema: compran de memoria y venden de memoria |
-| 3 | Hack #1 · **La regla de la balanza** — compra lo que rota, no lo que sobra |
-| 4 | Hack #2 · **Escanea al vender** — nunca registres de memoria |
-| 5 | Hack #3 · **Revisa top productos** cada semana |
-| 6 | Hack #4 · **Marca caducidades** antes de que sean merma |
-| 7 | Hack #5 · **Haz conteo parcial** cada mes (no esperes al inventario anual) |
-| 8 | Tesis: "El inventario no se adivina, se mide." → "Guarda esto. SYMVORA lo mide por ti → prueba gratis" |
+| 1 | Subí 200 productos a mi sistema en 10 minutos. Sin capturar uno por uno. |
+| 2 | El problema real: dar de alta un catálogo a mano **te puede tomar días** |
+| 3 | El sistema: sube tu catálogo desde un archivo de Excel o CSV |
+| 4 | Paso 1 · Subes el archivo que ya tienes (el de tu libreta o tu Excel viejo) |
+| 5 | Paso 2 · SYMVORA relaciona las columnas automáticamente |
+| 6 | Paso 3 · Revisas la vista previa antes de confirmar nada |
+| 7 | Paso 4 · Confirmas y listo: catálogo completo, sin errores de dedo |
+| 8 | Resultado: de un Excel a un catálogo funcionando. → "Pruébalo gratis" |
 
-**Caption:** "El inventario no se adivina: se mide. Estos 5 hábitos te ahorran dinero que hoy estás perdiendo sin darte cuenta. El #2 es el que más negocios aplican mal: registran 'de memoria' al final del día. Guarda este carrusel y aplícalo esta semana." + hashtags (#Inventario #Mermas #ControlDeInventario #Abarrotes #NegocioLocal)
+**Caption:** "Pasar tu catálogo de un Excel viejo a un sistema nuevo suena a semanas de trabajo. Con la importación de SYMVORA fueron 10 minutos: subes el archivo, revisas la vista previa, confirmas. Nada de capturar producto por producto. Prueba gratis 7 días, sin tarjeta." + hashtags (#MigracionDeDatos #Inventario #PuntoDeVenta #NegocioLocal #PymesMexico)
 
-**Prompt imagen:** "Carrusel 4:5 de checklist y anaqueles de tienda con cajas, header oscuro, acentos azules, sin texto"
+**Prompt imagen:** "Carrusel 4:5 con laptop mostrando una hoja de cálculo transformándose en una lista de productos ordenada, paleta #f8fafc/#1a1a1a/#2563eb, sin texto"
 
 ---
 
-## Carrusel 4 — Framework D: Rant Callout — "Tu sistema te cobra por cada venta. Eso está mal."
+## Carrusel 3 — Framework C: Hack List — "5 hábitos de los negocios que nunca se quedan sin dinero"
 
-**Cover (slide 1):** "Unpopular opinion: cobrar comisión por venta es una trampa"
+**Cover (slide 1):** "8 de cada 10 negocios no saben cuánto dinero tienen hoy"
+**Formato:** 8 slides · 1080×1350.
+
+| Slide | Texto en pantalla |
+|---|---|
+| 1 | 8 de cada 10 negocios no saben cuánto dinero tienen hoy |
+| 2 | El problema: mezclan el dinero del negocio con el de la casa |
+| 3 | Hábito #1 · **Primero paga el negocio** — separa tu gasto personal |
+| 4 | Hábito #2 · **Cierra caja todos los días**, no "cuando se pueda" |
+| 5 | Hábito #3 · **Registra entradas y salidas**, no solo lo que vendes |
+| 6 | Hábito #4 · **Compara semana contra semana**, no mes contra mes |
+| 7 | Hábito #5 · **Guarda un colchón** antes de retirar ganancias |
+| 8 | Tesis: "El dinero no se pierde de un jalón, se va goteando." → "Guarda esto. SYMVORA lo controla por ti → prueba gratis" |
+
+**Caption:** "El dinero de un negocio no desaparece de golpe: se va goteando en cosas que nunca se registran. Estos 5 hábitos son los que sí aplican los negocios que llegan a fin de mes sabiendo exactamente cuánto tienen. Guarda este carrusel y aplícalos esta semana." + hashtags (#ControlFinanciero #Caja #NegocioLocal #Emprendedor #Finanzas)
+
+**Prompt imagen:** "Carrusel 4:5 con iconos de billetera, calendario semanal, alcancía, checklist, header oscuro #1a1a1a, acentos #2563eb, sin texto"
+
+---
+
+## Carrusel 4 — Framework D: Rant Callout — "Si necesitas un curso para cobrar, el problema no eres tú"
+
+**Cover (slide 1):** "Unpopular opinion: si necesitas un tutorial de 2 horas para usar tu punto de venta, el problema no eres tú"
 **Formato:** 6 slides · 1080×1350.
 
 | Slide | Texto en pantalla |
 |---|---|
-| 1 | Unpopular opinion: cobrar comisión por venta es una trampa |
-| 2 | Ya te cobran mensualidad. ¿Por qué además un % de CADA venta? |
-| 3 | Vendes más → ellos cobran más. **De tu bolsillo.** |
-| 4 | 10k de venta + 3% = se llevan tu ganancia de varios productos |
-| 5 | No estoy contra el software. Estoy contra el **modelo** |
-| 6 | SYMVORA: **sin comisiones por venta**. → "Pruébalo gratis" |
+| 1 | Unpopular opinion: si necesitas un tutorial de 2 horas para usar tu punto de venta, el problema no eres tú |
+| 2 | Los sistemas hechos para "empresas grandes" terminan complicando lo que hace un negocio en crecimiento |
+| 3 | Menús con 40 opciones… para cobrar una venta de $20 |
+| 4 | Y si tu empleado no le entiende, el que pierde tiempo (y clientes) eres tú |
+| 5 | No estoy en contra de los sistemas robustos. Estoy en contra de vendértelos a ti, que solo quieres cobrar rápido |
+| 6 | SYMVORA se aprende en un turno, no en un curso. → "Pruébalo gratis" |
 
-**Caption:** "Unpopular opinion: si tu sistema te cobra comisión por cada venta, estás regalando ganancia. La mensualidad ya cubre el servicio. El porcentaje por venta solo beneficia a quien te vende el software. En SYMVORA pagas una sola vez al mes y el resto es tuyo. Sin comisiones. Prueba gratis 7 días." + hashtags (#SinComisiones #PuntoDeVenta #Software #NegocioLocal #Ventas)
+**Caption:** "Si tu cajero necesita capacitación de días para hacer una venta, no es que le falte experiencia: es que el sistema está mal diseñado para tu negocio. Vender debería ser lo más simple del sistema, no lo más complicado. En SYMVORA, cualquiera cobra desde el primer turno. Prueba gratis 7 días." + hashtags (#PuntoDeVenta #NegocioLocal #Software #PymesMexico #Emprendedor)
 
-**Prompt imagen:** "Carrusel 4:5 editorial, monedas cayendo de caja registradora, header oscuro #1a1a1a, acentos #2563eb, sin texto"
+**Prompt imagen:** "Carrusel 4:5 editorial, pantalla saturada de botones vs pantalla limpia con un solo botón grande, header oscuro #1a1a1a, acentos #2563eb, sin texto"
 
 ---
 
-## Carrusel 5 — Framework E: Demo Walkthrough — "Factura tu primer CFDI 4.0 en 4 pasos"
+## Carrusel 5 — Framework E: Demo Walkthrough — "De escanear a cobrar en 4 pasos"
 
-**Cover (slide 1):** "Factura tu primer CFDI 4.0 en 4 pasos (con SYMVORA)"
+**Cover (slide 1):** "Así se ve una venta completa en SYMVORA: del escaneo al ticket"
 **Formato:** 7 slides · 1080×1350.
-**Nota:** usa **capturas reales** de la sección Facturas de la demo — no mockups.
+**Nota:** usa **capturas reales** del POS de la demo (`https://app.symvora.com.mx/es/demo`) — no mockups.
 
 | Slide | Texto en pantalla |
 |---|---|
-| 1 | Factura tu primer CFDI 4.0 en 4 pasos (con SYMVORA) |
-| 2 | El dolor: sin sistema, facturar toma horas y da miedo |
-| 3 | El camino: 4 pasos, ~2 minutos (así de rápido) |
-| 4 | Paso 1 · Captura los datos del cliente |
-| 5 | Paso 2 · Agrega los conceptos con tus precios |
-| 6 | Paso 3 · Revisa y timbra (PAC incluido) |
-| 7 | Paso 4 · Lista: UUID, XML y PDF. → "Pruébalo gratis" |
+| 1 | Así se ve una venta completa en SYMVORA: del escaneo al ticket |
+| 2 | Antes: buscar el precio a mano, sumar en la calculadora, anotar en la libreta |
+| 3 | Con SYMVORA: 4 pasos, menos de 15 segundos |
+| 4 | Paso 1 · Escanea o busca el producto |
+| 5 | Paso 2 · Se agrega al carrito con el precio real, sin errores |
+| 6 | Paso 3 · Elige cómo te pagan: efectivo, tarjeta, transferencia o crédito |
+| 7 | Paso 4 · Cobra e imprime o comparte el ticket. Así de simple. → "Pruébalo gratis" |
 
-**Caption:** "Facturar con el SAT suena a burocracia… pero con SYMVORA son 4 pasos y en 2 minutos tienes tu CFDI 4.0 timbrado, con UUID y XML. ¿El 4º paso es el mejor: se guarda todo en tu historial. Prueba gratis 7 días, sin tarjeta." + hashtags (#CFDI40 #FacturacionElectronica #SAT #PuntoDeVenta #PymesMexico)
+**Caption:** "Vender no debería tomar más tiempo que hacer la fila. Escanear, agregar, cobrar: 15 segundos y la venta ya quedó registrada sola, sin que tengas que anotar nada después. Así de simple debería ser el punto de venta de tu negocio. Prueba SYMVORA gratis 7 días, sin tarjeta." + hashtags (#PuntoDeVenta #POS #NegocioLocal #VenderMas #PymesMexico)
 
-**Prompt imagen:** "Slides de UI limpia tipo app, header oscuro #1a1a1a, botones azules #2563eb, fondos #f8fafc — reemplazar por capturas reales de la demo"
+**Prompt imagen:** "Capturas reales del POS de SYMVORA mostrando el carrito y el cobro, header oscuro #1a1a1a, acentos #2563eb — usar pantallas reales de la demo, no mockups"
 
 ---
 
@@ -142,11 +140,11 @@
 - **Prompt:** "Escáner de código de barras sobre productos, bodega de abarrotes, luz natural, 1:1, sin texto"
 - **#:** #Inventario #CodigoDeBarras #Abarrotes #ControlDeInventario
 
-### SP5 — Feature: CFDI 4.0
-- **Imagen:** factura con sello. **Copy:** "Facturación CFDI 4.0 con sello real y timbrado SAT. Sin contador, sin dolor. Tú solo cobra."
+### SP5 — Feature: app instalable (PWA)
+- **Imagen:** celular mostrando el ícono de SYMVORA instalado en la pantalla de inicio. **Copy:** "Instala SYMVORA en tu celular como una app — directo desde el navegador, sin bajar nada de una tienda de apps. Revisa tus ventas desde donde estés."
 - **CTA:** Prueba gratis → bio.
-- **Prompt:** "Documento fiscal con sello digital verde, header oscuro, acentos azules, 1:1, sin texto"
-- **#:** #CFDI40 #FacturacionElectronica #SAT #PymesMexico
+- **Prompt:** "Mano sosteniendo un celular con el ícono de SYMVORA en la pantalla de inicio, fondo de mostrador de tienda, 1:1, sin texto"
+- **#:** #AppMóvil #NegocioLocal #PuntoDeVenta #PymesMexico
 
 ### SP6 — Antes/Después visual
 - **Imagen:** split: libreta vs tablet. **Copy:** "Lunes: libreta y calculadora. Domingo: reporte y caja cuadrada. La diferencia es un sistema que se usa desde el día 1."
@@ -161,7 +159,7 @@
 - **#:** #Tips #Consejos #NegocioLocal #PuntoDeVenta
 
 ### SP8 — Promo: prueba gratis
-- **Imagen:** mockup de tablet + texto. **Copy:** "7 días gratis. Sin tarjeta. Sin comisiones por venta. Punto de venta, inventario, finanzas y CFDI 4.0 en español. Si no te gusta, cancelas."
+- **Imagen:** mockup de tablet + texto. **Copy:** "7 días gratis. Sin tarjeta. Sin comisiones por venta. Punto de venta, inventario y finanzas en español. Si no te gusta, cancelas."
 - **CTA:** Enlace en bio → app.symvora.com.mx
 - **Prompt:** "Mockup premium de tablet POS, fondo #f8fafc, header oscuro #1a1a1a, botón azul #2563eb, 1:1, sin texto"
 - **#:** #PruebaGratis #Software #NegocioLocal #Oferta

@@ -1,7 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { Package, Pencil, Trash2 } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -104,7 +106,22 @@ export function ProductsTable({
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium text-sm">
-                      {product.nombre}
+                      <div className="flex items-center gap-2.5">
+                        {product.imagen_url ? (
+                          <Image
+                            src={product.imagen_url}
+                            alt={product.nombre}
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 rounded-md object-cover border border-border shrink-0"
+                          />
+                        ) : (
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-muted-foreground">
+                            {getInitials(product.nombre)}
+                          </div>
+                        )}
+                        <span className="truncate">{product.nombre}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm font-mono text-muted-foreground">
                       {product.codigo_barras || "-"}
