@@ -46,6 +46,7 @@ export async function fetchVentasTotal(
     .eq("tenant_id", tenantId)
     .eq("usuario_id", userId)
     .eq("estado", "COMPLETADA")
+    .neq("metodo_pago", "CREDITO")
     .gte("fecha_venta", desde);
 
   return (data ?? []).reduce((sum, v) => sum + v.total, 0);

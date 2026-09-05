@@ -47,7 +47,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
               width={28}
               height={28}
             />
-            <span className="font-semibold text-lg tracking-tight hidden sm:block font-[var(--font-montserrat)]">
+            <span className="font-semibold text-lg tracking-tight hidden sm:block">
               SYMVORA
             </span>
           </Link>

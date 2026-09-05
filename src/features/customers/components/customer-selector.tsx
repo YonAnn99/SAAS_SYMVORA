@@ -72,6 +72,9 @@ export function CustomerSelector({
             items={options}
             value={selectedCustomer}
             onValueChange={(value) => onSelectCustomer(value ?? "")}
+            itemToStringLabel={(value) =>
+              options.find((o) => o.value === value)?.label ?? ""
+            }
             filter={(item, query) => {
               const option = item as unknown as CustomerOption;
               const haystack = `${option.label} ${option.keywords}`

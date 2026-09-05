@@ -19,3 +19,9 @@ export const EMPTY_NEW_CUSTOMER: NewCustomerForm = {
   uso_cfdi: "",
   codigo_postal: "",
 };
+
+export type CreditMetodoPago =
+  | "EFECTIVO"
+  | "TARJETA"
+  | "TRANSFERENCIA"
+  | "TARJETA_TERMINAL";

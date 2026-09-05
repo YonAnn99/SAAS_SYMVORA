@@ -204,6 +204,7 @@
     "dashboard": "Dashboard",
     "pos": "Point of Sale",
     "products": "Products",
+    "customers": "Customers",
     "purchases": "Purchases",
     "purchaseOrders": "Purchase Orders",
     "finances": "Finances",
@@ -402,6 +403,15 @@
     "balance": "Balance",
     "payments": "Payments",
     "addPayment": "Record payment"
+  },
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Check your customers' outstanding balance and record their payments",
+    "searchPlaceholder": "Search customer...",
+    "name": "Name",
+    "noCustomers": "No customers registered yet",
+    "exceedsBalance": "Amount exceeds the outstanding balance",
+    "paymentMethod": "Payment method"
   },
   "settings": {
     "title": "Settings",

@@ -166,7 +166,7 @@ export function Navbar() {
               />
               <span
 className={cn(
-                  "text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap font-[var(--font-montserrat)]",
+                  "text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap",
                   mobileOpen ? "text-white" : "text-black"
                 )}
               >

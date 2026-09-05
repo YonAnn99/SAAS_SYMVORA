@@ -204,6 +204,7 @@
     "dashboard": "Dashboard",
     "pos": "Punto de Venta",
     "products": "Productos",
+    "customers": "Clientes",
     "purchases": "Compras",
     "purchaseOrders": "Órdenes de Compra",
     "finances": "Finanzas",
@@ -402,6 +403,15 @@
     "balance": "Saldo",
     "payments": "Abonos",
     "addPayment": "Registrar abono"
+  },
+  "customers": {
+    "title": "Clientes",
+    "subtitle": "Consulta el saldo pendiente de tus clientes y registra sus abonos",
+    "searchPlaceholder": "Buscar cliente...",
+    "name": "Nombre",
+    "noCustomers": "No hay clientes registrados",
+    "exceedsBalance": "El monto excede el saldo pendiente",
+    "paymentMethod": "Método de pago"
   },
   "settings": {
     "title": "Configuración",

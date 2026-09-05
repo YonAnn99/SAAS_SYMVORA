@@ -235,6 +235,38 @@ export type Database = {
           creado_en?: string;
         };
       };
+      pagos_credito: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          cliente_id: string;
+          usuario_id: string;
+          monto: number;
+          metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
+          notas: string | null;
+          creado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          cliente_id: string;
+          usuario_id: string;
+          monto: number;
+          metodo_pago?: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
+          notas?: string | null;
+          creado_en?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          cliente_id?: string;
+          usuario_id?: string;
+          monto?: number;
+          metodo_pago?: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
+          notas?: string | null;
+          creado_en?: string;
+        };
+      };
       proveedores: {
         Row: {
           id: string;
@@ -999,6 +1031,17 @@ export type Database = {
         };
         Returns: number;
       };
+      registrar_pago_credito: {
+        Args: {
+          p_tenant_id: string;
+          p_usuario_id: string;
+          p_cliente_id: string;
+          p_monto: number;
+          p_metodo_pago?: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
+          p_notas?: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       app_role: "SUPER_ADMIN" | "ORG_ADMIN" | "CAJERO";
@@ -1024,6 +1067,8 @@ export type TenantMembership =
   Database["public"]["Tables"]["tenant_memberships"]["Row"];
 export type Producto = Database["public"]["Tables"]["productos"]["Row"];
 export type Cliente = Database["public"]["Tables"]["clientes"]["Row"];
+export type PagoCredito =
+  Database["public"]["Tables"]["pagos_credito"]["Row"];
 export type Proveedor = Database["public"]["Tables"]["proveedores"]["Row"];
 export type Venta = Database["public"]["Tables"]["ventas"]["Row"];
 export type DetalleVenta =
