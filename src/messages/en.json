@@ -567,8 +567,7 @@
         "pos": "Point of Sale",
         "inventory": "Inventory",
         "purchases": "Purchases",
-        "finances": "Finance",
-        "invoicing": "CFDI Invoicing"
+        "finances": "Finance"
       },
       "solutions": {
         "byIndustry": "By Industry",
@@ -583,7 +582,6 @@
       }
     },
     "hero": {
-      "eyebrow": "POS · Inventory · CFDI Invoicing",
       "title": "Your all in one system for your store",
       "highlight": "built for your store",
       "subtitle": "Point of sale, inventory and finance — all in one, no per-sale commissions, with Spanish support.",
@@ -668,18 +666,6 @@
         "GENERAL": { "name": "General", "desc": "Flexible configuration for any business type" }
       }
     },
-    "cfdi": {
-      "badge": "Electronic Invoicing",
-      "title": "CFDI 4.0 with real seal and stamping",
-      "subtitle": "Sign every invoice with your digital seal certificate (.cer/.key) and send the XML to the PAC to be stamped with SAT. PAC and CSD credentials are encrypted, never in plain text.",
-      "features": {
-        "stamp": { "title": "Digital seal and direct stamping", "description": "Generate the original string, sign with your CSD and send the seal to the PAC. Get the SAT UUID in seconds. Compatible with Finkok and SWSapien." },
-        "catalogs": { "title": "SAT catalogs included", "description": "100+ payment forms, 80+ unit codes, 20+ fiscal regimes and 17+ product codes — all pre-loaded." },
-        "cancel": { "title": "Cancellation with traceability", "description": "Cancel invoices with registered reason and your CSD. Optional substitution folio. Everything logged in audit trail." },
-        "payment": { "title": "PUE and PPD", "description": "Supports Single Payment and Installment Payment. Payment methods: Cash, Transfer, Credit/Debit card and more." }
-      },
-      "cta": "Configure your PAC and start invoicing"
-    },
     "security": {
       "badge": "Security",
       "title": "Your data is protected",
@@ -710,10 +696,6 @@
       "modular": {
         "title": "Only pay for what you need",
         "description": "6 configurable modules: variants, lots, shrinkage, services, credit and bulk. Activate only what you need. Nothing you won't use."
-      },
-      "cfdi": {
-        "title": "Invoicing without headaches",
-        "description": "Built-in CFDI 4.0. No external software or add-ons needed. Stamp and cancel invoices from the same POS."
       },
       "atomic": {
         "title": "Sync without errors",
@@ -761,10 +743,6 @@
           "question": "Is there a per-sale commission?",
           "answer": "No. SYMVORA charges a flat monthly subscription of $400 MXN regardless of the number of transactions. What you sell is yours — no hidden fees, no per-sale percentage."
         },
-        "6": {
-          "question": "Can I invoice (CFDI 4.0) from the system?",
-          "answer": "Yes. CFDI 4.0 electronic invoicing is built in at no extra cost. You can stamp and cancel invoices directly from the POS or the Invoicing module. Compatible with Finkok and SWSapien PACs."
-        },
         "7": {
           "question": "Is my data secure?",
           "answer": "Yes. Each business operates in its own isolated database (Total Data Isolation). Your information is never mixed or visible to other tenants. Plus, every action is logged in an audit trail."
@@ -792,7 +770,6 @@
       "features": {
         "pos": "Full point of sale",
         "inventory": "Inventory with lots and variants",
-        "cfdi": "CFDI 4.0 invoicing",
         "reports": "Reports and charts",
         "users": "Up to 3 users",
         "support": "Spanish support",

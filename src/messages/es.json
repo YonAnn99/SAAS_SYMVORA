@@ -640,8 +640,7 @@
         "pos": "Punto de Venta",
         "inventory": "Inventario",
         "purchases": "Compras",
-        "finances": "Finanzas",
-        "invoicing": "Facturación CFDI"
+        "finances": "Finanzas"
       },
       "solutions": {
         "byIndustry": "Por Giro",
@@ -656,7 +655,6 @@
       }
     },
     "hero": {
-      "eyebrow": "POS · Inventario · Facturación CFDI",
       "title": "Tu sistema todo en uno para tu tienda",
       "highlight": "hecho para tu comercio",
       "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
@@ -741,18 +739,6 @@
         "GENERAL": { "name": "General", "desc": "Configuración flexible para cualquier tipo de negocio" }
       }
     },
-    "cfdi": {
-      "badge": "Facturación Electrónica",
-      "title": "CFDI 4.0 con sello y timbrado reales",
-      "subtitle": "Firma cada factura con tu certificado de sello digital (.cer/.key) y envía el XML al PAC para timbrarlo ante el SAT. Credenciales del PAC y del CSD cifradas, nunca en texto plano.",
-      "features": {
-        "stamp": { "title": "Sello digital y timbrado directo", "description": "Genera la cadena original, firma con tu CSD y envía el sello al PAC. Recibe el UUID del SAT en segundos. Compatible con Finkok y SWSapien." },
-        "catalogs": { "title": "Catálogos SAT incluidos", "description": "100+ formas de pago, 80+ claves de unidad, 20+ regímenes fiscales y 17+ claves de producto — todo precargado." },
-        "cancel": { "description": "Cancela facturas con motivo registrado y tu CSD. Folio de sustitución opcional. Todo queda en bitácora de auditoría.", "title": "Cancelación con trazabilidad" },
-        "payment": { "title": "PUE y PPD", "description": "Soporta Pago en Una Exhibición y Pago en Parcialidades. Métodos de pago: Efectivo, Transferencia, Tarjeta de crédito/débito y más." }
-      },
-      "cta": "Configura tu PAC y empieza a facturar"
-    },
     "security": {
       "badge": "Seguridad",
       "title": "Tus datos están protegidos",
@@ -783,10 +769,6 @@
       "modular": {
         "title": "Solo pagas por lo que necesitas",
         "description": "6 módulos configurables: variantes, lotes, mermas, servicios, crédito y granel. Activa solo lo que necesitas. Nada de lo que no uses."
-      },
-      "cfdi": {
-        "title": "Facturación sin complicaciones",
-        "description": "CFDI 4.0 integrado. No necesitas software externo ni complementos. Timbra y cancela facturas desde el mismo POS."
       },
       "atomic": {
         "title": "Sincronización sin errores",
@@ -834,10 +816,6 @@
           "question": "¿Cobra comisión por venta?",
           "answer": "No. SYMVORA cobra una suscripción mensual fija de $400 MXN independientemente del número de transacciones. Lo que vendas es tuyo — sin comisiones ocultas, sin porcentaje por venta."
         },
-        "6": {
-          "question": "¿Puedo facturar (CFDI 4.0) desde el sistema?",
-          "answer": "Sí. La facturación electrónica CFDI 4.0 viene integrada sin costo adicional. Puedes timbrar y cancelar facturas directamente desde el POS o el módulo de Facturas. Compatible con los PAC Finkok y SWSapien."
-        },
         "7": {
           "question": "¿Mis datos están seguros?",
           "answer": "Sí. Cada negocio opera en su propia base de datos aislada (Aislamiento Total de Datos). Tu información nunca se mezcla ni es visible para otros tenants. Además, cada movimiento queda registrado en una bitácora de auditoría."
@@ -865,7 +843,6 @@
       "features": {
         "pos": "Punto de venta completo",
         "inventory": "Inventario con lotes y variantes",
-        "cfdi": "Facturación CFDI 4.0",
         "reports": "Reportes y gráficas",
         "users": "Hasta 3 usuarios",
         "support": "Soporte en español",

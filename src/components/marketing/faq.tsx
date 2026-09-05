@@ -16,7 +16,7 @@ import { WhatsAppLogo } from "./whatsapp-logo";
 // El Server Component src/app/[locale]/page.tsx declara su propia copia
 // para evitar el bug "FAQ_KEYS.map is not a function" al cruzar el
 // boundary server→client (Next.js serializa referencias, no valores).
-const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
+const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8"] as const;
 
 const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";

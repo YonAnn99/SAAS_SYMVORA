@@ -12,7 +12,7 @@ export default function Footer() {
             <span className="font-bold text-xl tracking-tight">SYMVORA</span>
           </Link>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-xs">
-            Tu sistema todo-en-uno para administrar, facturar y crecer tu negocio sin complicaciones.
+            Tu sistema todo-en-uno para vender, controlar tu inventario y crecer tu negocio sin complicaciones.
           </p>
           
           <div className="mt-4 flex flex-col gap-2">
