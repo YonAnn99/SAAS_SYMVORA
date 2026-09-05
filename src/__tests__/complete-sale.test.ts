@@ -52,6 +52,7 @@ describe("completeSale", () => {
       p_metodo_pago: "EFECTIVO",
       p_include_iva: true,
       p_notas: "venta de prueba",
+      p_monto_recibido: null,
       p_items: [
         {
           productId: "00000000-0000-0000-0000-000000000003",
@@ -76,6 +77,17 @@ describe("completeSale", () => {
     expect(rpcMock).toHaveBeenCalledWith(
       "complete_sale",
       expect.objectContaining({ p_notas: null })
+    );
+  });
+
+  it("envia monto_recibido cuando se provee", async () => {
+    rpcMock.mockResolvedValueOnce({ data: { id: "venta-1" }, error: null });
+
+    await completeSale({ ...params, montoRecibido: 50 });
+
+    expect(rpcMock).toHaveBeenCalledWith(
+      "complete_sale",
+      expect.objectContaining({ p_monto_recibido: 50 })
     );
   });
 

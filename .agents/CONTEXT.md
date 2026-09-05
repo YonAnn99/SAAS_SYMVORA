@@ -10,40 +10,49 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 
 ```
 ├── src/
-│   ├── hooks/                  # use-current-tenant, use-is-demo
-│   ├── __tests__/              # Tests unitarios Vitest (104)
+│   ├── hooks/                  # use-current-tenant, use-is-demo, use-online-status, use-tutorial, use-pos-catalog
+│   ├── contexts/                # tenant-context.tsx
+│   ├── __tests__/              # Tests unitarios Vitest (117, en 10 archivos)
+│   ├── sentry.{client,server,edge}.config.ts  # @sentry/nextjs (errores + replay), wrapped en next.config.ts
 │   ├── proxy.ts                  # i18n + sesión Supabase + subscription access control + host routing (www/app) + X-Robots-Tag noindex (antes middleware.ts — renombrado en Next.js 16)
 │   ├── i18n/                   # routing/request/navigation (locales es+en activos, default es)
-│   ├── messages/               # es.json + en.json (631/591 keys)
+│   ├── messages/               # es.json + en.json
 │   ├── lib/
 │   │   ├── supabase/           # client, server (service_role), middleware, auth (requireTenantAccess), demo-guard, activity-logger
 │   │   ├── fiscal-secrets.ts   # credenciales PAC cifradas + ResolvedFiscalSecrets (antes lib/cfdi)
-│   │   ├── validations/        # schemas Zod (login, signup, tenant)
-│   │   ├── export/             # csv.ts, pdf.ts (jspdf)
+│   │   ├── validations/        # schemas Zod (login, signup, tenant, import de productos)
+│   │   ├── export/             # csv.ts, pdf.ts (jspdf) — export genérico usado por reportes/facturas, no confundir con el CSV/Excel export de tablas (ver Pendiente)
+│   │   ├── config/env.ts       # helpers de variables de entorno
+│   │   ├── legal/versions.ts   # versiones de términos/privacidad para legal_acceptances
+│   │   ├── seo/structured-data.ts # JSON-LD (schema.org) para landing
 │   │   └── types/database.ts   # tipos TS de todas las tablas DB
 │   ├── features/               # módulos autocontenidos (refactor FDD): components/, hooks/, services/, types/, stores/, index.ts barrel
 │   │   ├── pos/                # stores/cart.ts (Zustand), pos-service, hooks, componentes
 │   │   ├── cash-register/      # caja: service + hooks + dialogs
 │   │   ├── customers/          # customer-service, customer-selector (Combobox Base UI), new-customer-dialog, fiscal-data-form
-│   │   ├── inventory/          # productos/lotes/variants/compras/purchase-orders/ajustes (services + hooks + tables)
+│   │   ├── inventory/          # productos/lotes/variants/compras/purchase-orders/ajustes (services + hooks + tables) + products/import/ (wizard de importación CSV/XLSX)
 │   │   ├── payments/           # conekta/* + mercadopago/* (antes lib/conekta, lib/mercadopago)
-│   │   └── facturacion/        # catalogs (SAT), pac-client (Finkok/SWSapien), xml-generator, pdf-generator, factura-service (antes lib/cfdi)
+│   │   ├── facturacion/        # catalogs (SAT), pac-client (Finkok/SWSapien), xml-generator, pdf-generator, factura-service (antes lib/cfdi)
+│   │   └── suggestions/        # módulo de sugerencias del cliente (BD + correo)
 │   ├── components/
 │   │   ├── layout/             # sidebar, header, legal-footer
+│   │   ├── dashboard/           # dashboard-shell, legal-footer
+│   │   ├── search/              # command-menu.tsx (cmdk, búsqueda global del dashboard)
+│   │   ├── tutorial/             # onboarding guiado del dashboard: tutorial-provider/dialog/arrow/progress/minimized/trigger + steps-data
 │   │   ├── auth/               # auth-forms (login/signup con acordeones), gradient-waves (fondo WebGL)
-│   │   ├── marketing/          # hero, features, navbar, footer, legal-shell, FAQ, PosMockup
-│   │   ├── demo/               # demo-banner, demo-restricted-notice
+│   │   ├── marketing/          # hero, features, navbar, footer, legal-shell, FAQ, PosMockup, voice-narrator.tsx + use-section-audio.ts + audio-config.ts (narración didáctica de módulos)
+│   │   ├── demo/                # demo-banner, demo-restricted-notice
 │   │   ├── compliance/         # cookie-consent, policy-update-banner
 │   │   ├── charts/             # Recharts (ventas, top productos, métodos de pago)
-│   │   └── ui/                 # shadcn/ui v4 base-nova + accordion, password-input, sonner, etc.
+│   │   └── ui/                 # shadcn/ui v4 base-nova + accordion, password-input, sonner, specular-action-button, etc.
 │   └── app/
-│       ├── api/                # conekta/*, mercadopago/*, facturas/*, users/invite, trial-codes/*, legal/*, demo/start
+│       ├── api/                # conekta/*, mercadopago/*, facturas/*, users/invite, trial-codes/*, legal/*, demo/start, suggestions
 │       ├── (auth)/[locale]/    # login, signup
-│       ├── (dashboard)/[locale]/ # dashboard, billing, products, pos, purchases, finances, users, facturas, reports, settings, activity, lots, variants, inventory-adjustments, purchase-orders
+│       ├── (dashboard)/[locale]/ # dashboard, billing, products, pos, purchases, finances, users, facturas, reports, settings, activity, lots, variants, inventory-adjustments, purchase-orders, suggestions
 │       ├── robots.ts           # robots.txt (disallow /api/, /es/demo, /en/demo; sitemap)
 │       ├── sitemap.ts          # sitemap.xml (www.symvora.com.mx: /es + /en + legales, hreflang)
 │       └── layout.tsx          # metadataBase = getSiteUrl() (www.symvora.com.mx)
-├── supabase/migrations/        # 001-030 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría)
+├── supabase/migrations/        # 001-043 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría, invite keys, IVA toggle, monto recibido, sugerencias — sin 034/035, numeración con hueco intencional)
 ├── e2e/                        # Playwright (app.spec, demo-isolation.spec)
 └── docs/                       # demo-isolation.md, login-background.md
 ```
@@ -95,7 +104,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 
 ## Librerías Principales
 
-next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zustand 5, zod 4.4, @base-ui/react (shadcn base-nova), tailwind v4, recharts, cmdk, jspdf, conekta 9.0.1, @marsidev/react-turnstile 1.6, ogl (fondo login + Specular Button de `@react-bits`), sonner, serwist + @serwist/next (PWA, reemplaza a `next-pwa` que nunca se conectó).
+next 16.3, react 19.2, @supabase/ssr 0.12, supabase-js 2.112, next-intl 4.13, zustand 5, zod 4.4, @base-ui/react (shadcn base-nova), tailwind v4, recharts, cmdk, jspdf, conekta 9.0.1, @marsidev/react-turnstile 1.6, ogl (fondo login + Specular Button de `@react-bits`), sonner, serwist + @serwist/next (PWA, reemplaza a `next-pwa` que nunca se conectó), @sentry/nextjs (errores + session replay, configs en `src/sentry.{client,server,edge}.config.ts`), papaparse + xlsx (import de productos CSV/Excel).
 
 ---
 
@@ -214,7 +223,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Demo**: self-serve (`/demo` → magic link), banner `?demo=1`, aislamiento total (12 endpoints + UI restringida + 10 tests).
 - **Seguridad**: `requireTenantAccess` en todas las APIs, webhook firmado, RBAC granular, RLS total, CAPTCHA Turnstile, headers (CSP, HSTS, nosniff, Referrer-Policy), `complete_sale` atómico con precio desde BD.
 - **Legal (LFPDPPP)**: aviso de privacidad integral, términos 17 secciones, política de cookies, `legal_acceptances` (IP+UA+versiones), PolicyUpdateBanner post-login.
-- **Calidad**: 104 tests Vitest, Playwright E2E, CI GitHub Actions.
+- **Calidad**: 117 tests Vitest (10 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
 - **Cuenta de prueba (2026-08-25)**: `pruebas@symvora.com.mx` / `dZsFT8bPvFIhYQcU` — usuario real (no demo) con tenant "Pruebas SYMVORA" (subdominio `pruebas`, código referido `SYMAB77A437`), OR_ADMIN, suscripción trial. Creada vía `scripts/create-test-account.ts` (Admin API, idempotente — re-ejecutar rota la contraseña) + `complete_onboarding` vía SQL. Sin bandeja real (`email_confirm: true`, ningún correo sale a terceros). Aislada por RLS; puede probar Conekta real (cobros reales — montos pequeños). Login por script lo bloquea Turnstile (esperado) — probar en navegador.
 - **Legal**: stub de correo ya resuelto — `PRIVACY_EMAIL = "privacidad@symvora.com.mx"` en `src/lib/contact.ts` (real, no placeholder). Solo queda pendiente el domicilio físico (ver Pendiente).
 - **CFDI**: config fiscal UI+API (`facturas/config`) completa (RFC, razón social, régimen, CP, PAC, certificados); descarga XML/PDF + vista de detalle (`facturas/[id]`) completas; `pac-client.ts` ya resuelve endpoint de producción vs pruebas correctamente (no hardcodea demo). Solo falta cargar credenciales fiscales reales y escribir tests (ver "Plan Pendiente: Módulo CFDI").
@@ -231,6 +240,18 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Conekta**: tiempo de espera del checkout de efectivo reducido de 90s a 20s; `/billing/success` ahora distingue pago confirmado vs pendiente (antes mostraba "éxito" para cualquier redirect, incluyendo efectivo pendiente de confirmar); webhook ya no hardcodea `payment_method: "card"` (lee el método real de Conekta); `payment_history` se actualiza correctamente en vez de duplicar filas; el correo con la referencia de pago en efectivo ahora llega al email de login del `SUPER_ADMIN` real del tenant (antes usaba `tenants.email`, un campo de contacto de negocio no siempre igual al de login); corregido el filtro de rol del correo de bienvenida (`ORG_ADMIN` → `SUPER_ADMIN`, el rol real del primer usuario/dueño); banner de "pago pendiente" agregado a `/billing`.
 - **Verificación de todo el sistema (2026-08-31)**: se re-confirmó contra el código real el estado de cada pendiente listado en este archivo (varios ya estaban resueltos y no reflejados aquí, ver arriba); `npx tsc --noEmit` limpio en todo el proyecto.
 
+### Sesión 2026-09-01
+
+- **Módulo de importación/migración de datos de productos**: wizard de 4 pasos en `src/features/inventory/services/product-import-service.ts` + `src/app/(dashboard)/[locale]/products/import/` (upload → mapeo de columnas → preview/validación → resultados). Acepta CSV (`papaparse`) y Excel (`xlsx`, paquete servido desde CDN de SheetJS). Botón "Importar" agregado a `/products` (`products/page.tsx`) y a la landing (sección nueva en `features.tsx` promocionando la migración de datos, con CTA en `cta.tsx`). Tipos en `features/inventory/types/import.types.ts`, validación Zod agregada a `lib/validations/schemas.ts`. Cubierto por `src/__tests__/product-import.test.ts` (193 líneas). **No confundir** con la "Exportación de datos (CSV/Excel/PDF)" que sigue pendiente más abajo — esto es solo importación de productos, no exportación de ventas/compras/reportes.
+- **Reorganización de landing + fix de modo mobile**: `page.tsx` reordena secciones para incluir las promos de PWA y migración de datos; bug de layout en `features.tsx` al cambiar de modo en mobile corregido en un commit de seguimiento inmediato.
+
+### Sesión 2026-08-30 (no documentada previamente)
+
+- **Narración didáctica en la landing**: `src/components/marketing/voice-narrator.tsx` + `use-section-audio.ts` + `audio-config.ts` — reproduce audio explicativo por sección/módulo al hacer scroll en la landing pública (independiente del tutorial guiado del dashboard).
+- **Tutorial guiado del dashboard**: `src/components/tutorial/` (`tutorial-provider`, `tutorial-dialog`, `tutorial-arrow`, `tutorial-progress`, `tutorial-minimized`, `tutorial-trigger`, `steps-data.tsx`) + hook `use-tutorial` — onboarding paso a paso dentro del dashboard, con estado de progreso, minimizado y navegación a cada módulo.
+- **Sentry**: `@sentry/nextjs` integrado (`src/sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, `withSentryConfig` en `next.config.ts`), incluye `replayIntegration()` y CSP actualizada para permitir `js.sentry-cdn.com` / `*.sentry.io`.
+- **Búsqueda global**: `src/components/search/command-menu.tsx` (cmdk) para navegación rápida entre módulos del dashboard.
+
 ### Pendiente
 
 > Re-verificado contra el código real el 2026-08-31 — varios puntos que seguían listados aquí ya estaban resueltos y fueron movidos a "Completado" o eliminados (ver sección "Sesión 2026-08-31" más abajo para el detalle de esa verificación).
@@ -241,7 +262,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - Env pendiente: `STITCH_API_KEY` (nota: `NEXT_PUBLIC_APP_URL`/`NEXT_PUBLIC_SITE_URL` ya configurados en Vercel Production como app/www).
 - **Conekta producción**: claves productivas configuradas en Vercel, webhook fail-closed verificado (401 sin firma), flujo de pago en efectivo probado end-to-end en producción (2026-08-31, ver Completado). Pendiente: confirmar que la URL del webhook esté registrada en el dashboard de Conekta y hacer una prueba de pago **con tarjeta** completada end-to-end (solo se ha probado efectivo).
 - **OAuth Microsoft (Azure) pendiente**: provider keys aún no funcionales en Supabase. UI preparada (`continueWithMicrosoft` en `es.json`/`en.json`, `MicrosoftIcon` ya exportado en `auth-forms.tsx`). Cuando se resuelvan los problemas de inicio de sesión en Azure, añadir `<button onClick={() => handleOAuth("azure")}>` junto al botón de Google en `auth-forms.tsx`.
-- **Exportación de datos (CSV/Excel/PDF)**: funcionalidad de exportar datos de inventario, ventas, compras, ajustes, etc. — sin empezar, no existe ningún endpoint `/api/export/*` ni UI de exportar en las tablas todavía.
+- **Exportación de datos (CSV/Excel/PDF)**: funcionalidad de exportar datos de inventario, ventas, compras, ajustes, etc. — sin empezar, no existe ningún endpoint `/api/export/*` ni UI de exportar en las tablas todavía. (Distinto de la **importación** de productos, ya implementada — ver Sesión 2026-09-01. `papaparse`/`xlsx` ya están instalados y podrían reutilizarse para esta fase de exportación.)
   - **Fase 1 - Infraestructura (Semana 1)**: API routes `/api/export/[entidad]` (products, variants, lots, sales, purchases, adjustments), streaming CSV para datasets grandes, Service Role para acceso completo tenant, validación tenant_id via JWT.
   - **Fase 2 - UI (Semana 1-2)**: Dropdown "Exportar" en tablas (ProductsTable, VariantsTable, LotsTable, SalesTable, PurchasesTable, AdjustmentsTable), formatos CSV/Excel/PDF, filtros de fecha/columnas, selección de columnas.
   - **Fase 3 - Avanzado (Semana 2-3)**: Exports programados (diario/semanal) vía email/S3, plantillas/preajustes, cola de trabajos para exports grandes (>10k filas), logs de auditoría de exportaciones.
