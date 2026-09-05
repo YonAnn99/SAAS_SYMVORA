@@ -22,7 +22,6 @@ import {
   EMPTY_NEW_CUSTOMER,
   type NewCustomerForm,
 } from "../types/customer.types";
-import { FiscalDataForm } from "./fiscal-data-form";
 
 interface NewCustomerDialogProps {
   open: boolean;
@@ -54,7 +53,7 @@ export function NewCustomerDialog({
         action: "CREATE",
         entity: "cliente",
         entityName: customer.nombre,
-        details: { email: form.email, telefono: form.telefono },
+        details: { telefono: form.telefono },
       });
       toast.success(`Cliente ${customer.nombre} creado`);
       onCreated(customer);
@@ -71,49 +70,31 @@ export function NewCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Nuevo cliente</DialogTitle>
-          <DialogDescription>
-            Crea un cliente y registra sus datos fiscales para facturar
-            (opcional).
-          </DialogDescription>
+          <DialogDescription>Crea un cliente para tus ventas.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="nc-nombre">Nombre*</Label>
-              <Input
-                id="nc-nombre"
-                value={form.nombre}
-                onChange={(e) =>
-                  setForm({ ...form, nombre: e.target.value })
-                }
-                placeholder="Nombre o razón de la persona"
-              />
-            </div>
-            <FiscalDataForm value={form} onChange={setForm} />
-            <div className="space-y-1.5">
-              <Label htmlFor="nc-tel">Teléfono</Label>
-              <Input
-                id="nc-tel"
-                value={form.telefono}
-                onChange={(e) =>
-                  setForm({ ...form, telefono: e.target.value })
-                }
-                placeholder="55 0000 0000"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nc-email">Email</Label>
-              <Input
-                id="nc-email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="cliente@correo.com"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="nc-nombre">Nombre*</Label>
+            <Input
+              id="nc-nombre"
+              value={form.nombre}
+              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+              placeholder="Nombre o razón de la persona"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="nc-tel">Teléfono</Label>
+            <Input
+              id="nc-tel"
+              value={form.telefono}
+              onChange={(e) =>
+                setForm({ ...form, telefono: e.target.value })
+              }
+              placeholder="55 0000 0000"
+            />
           </div>
         </div>
         <DialogFooter>
