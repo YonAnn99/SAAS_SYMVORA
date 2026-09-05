@@ -118,10 +118,11 @@ export default function POSPage() {
     [products]
   );
 
-  const customerName =
+  const selectedCustomerObj =
     selectedCustomer === "none"
       ? null
-      : customers.find((c) => c.id === selectedCustomer)?.nombre ?? null;
+      : customers.find((c) => c.id === selectedCustomer) ?? null;
+  const customerName = selectedCustomerObj?.nombre ?? null;
 
   const isEfectivo = selectedPayment === "EFECTIVO";
   const montoRecibidoNum = montoRecibido === "" ? null : Number(montoRecibido);
@@ -180,6 +181,7 @@ export default function POSPage() {
         total: totals.total,
         paymentMethod: selectedPayment,
         customerName,
+        customerPhone: selectedCustomerObj?.telefono ?? null,
         montoRecibido: isEfectivo ? montoRecibidoNum : null,
         cambio: isEfectivo ? cambio : null,
       });

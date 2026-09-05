@@ -340,7 +340,9 @@
     "openRegister": "Abrir caja",
     "closeRegister": "Cerrar caja",
     "initialFund": "Fondo inicial",
-    "registerSummary": "Resumen de caja"
+    "registerSummary": "Resumen de caja",
+    "sendWhatsapp": "Enviar por WhatsApp",
+    "thanksMessage": "¡Gracias por tu compra!"
   },
   "purchases": {
     "title": "Compras",

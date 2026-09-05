@@ -340,7 +340,9 @@
     "openRegister": "Open register",
     "closeRegister": "Close register",
     "initialFund": "Initial fund",
-    "registerSummary": "Register summary"
+    "registerSummary": "Register summary",
+    "sendWhatsapp": "Send via WhatsApp",
+    "thanksMessage": "Thank you for your purchase!"
   },
   "purchases": {
     "title": "Purchases",
