@@ -64,6 +64,11 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
         return;
       }
 
+      if (!(input.total > 0)) {
+        toast.error("El total debe ser mayor a 0");
+        return;
+      }
+
       try {
         await createPurchase(tenantId, user.id, input);
         await logActivity({
@@ -95,6 +100,11 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     async (purchaseId: string, input: PurchaseInput) => {
       if (!input.proveedorId) {
         toast.error("Faltan datos requeridos");
+        return;
+      }
+
+      if (!(input.total > 0)) {
+        toast.error("El total debe ser mayor a 0");
         return;
       }
 

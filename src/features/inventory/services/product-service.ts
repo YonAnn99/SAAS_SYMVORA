@@ -13,6 +13,8 @@ export interface ProductInput {
   stock_minimo: number;
   es_servicio: boolean;
   categoria: string | null;
+  permite_lotes: boolean;
+  permite_variantes: boolean;
 }
 
 export async function generateNextBarcode(tenantId: string): Promise<string> {

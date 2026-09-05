@@ -56,6 +56,8 @@ export interface ProductFormData {
   stock_minimo: string;
   es_servicio: boolean;
   categoria: string;
+  permite_lotes: boolean;
+  permite_variantes: boolean;
 }
 
 export const defaultProductFormData: ProductFormData = {
@@ -70,6 +72,8 @@ export const defaultProductFormData: ProductFormData = {
   stock_minimo: "5",
   es_servicio: false,
   categoria: "",
+  permite_lotes: false,
+  permite_variantes: false,
 };
 
 export interface VarianteFormData {

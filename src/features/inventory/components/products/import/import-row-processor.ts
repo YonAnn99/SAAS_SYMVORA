@@ -53,6 +53,8 @@ export function buildImportRows({
   existingBarcodes,
   supplierMap,
 }: BuildImportRowsParams): ImportRow[] {
+  const seenInFile = new Map<string, number>();
+
   return rawRows.map((raw, idx) => {
     const rowIndex = idx + HEADER_ROW_OFFSET;
 
@@ -136,6 +138,20 @@ export function buildImportRows({
         supplierWarning,
         data,
       } satisfies ImportRow;
+    }
+
+    if (normalizedBarcode) {
+      const firstRowIndex = seenInFile.get(normalizedBarcode);
+      if (firstRowIndex !== undefined) {
+        return {
+          index: rowIndex,
+          raw,
+          status: "invalid",
+          errorMessage: `Código de barras repetido en el archivo (ya aparece en la fila ${firstRowIndex})`,
+          data: null,
+        } satisfies ImportRow;
+      }
+      seenInFile.set(normalizedBarcode, rowIndex);
     }
 
     return {

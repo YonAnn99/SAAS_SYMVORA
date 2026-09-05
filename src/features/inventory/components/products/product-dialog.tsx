@@ -70,6 +70,8 @@ export function ProductDialog({
         stock_minimo: product.stock_minimo.toString(),
         es_servicio: product.es_servicio,
         categoria: product.categoria || "",
+        permite_lotes: product.permite_lotes,
+        permite_variantes: product.permite_variantes,
       });
     } else {
       setFormData(defaultProductFormData);
@@ -138,6 +140,8 @@ export function ProductDialog({
       stock_minimo: parseFloat(formData.stock_minimo) || 0,
       es_servicio: formData.es_servicio,
       categoria: formData.categoria || null,
+      permite_lotes: formData.permite_lotes,
+      permite_variantes: formData.permite_variantes,
     });
   };
 
@@ -280,6 +284,20 @@ export function ProductDialog({
               onCheckedChange={(v) => updateField("es_servicio", v)}
             />
             <Label className="text-xs">Es servicio (no maneja stock)</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={formData.permite_lotes}
+              onCheckedChange={(v) => updateField("permite_lotes", v)}
+            />
+            <Label className="text-xs">Maneja lotes y fecha de caducidad</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={formData.permite_variantes}
+              onCheckedChange={(v) => updateField("permite_variantes", v)}
+            />
+            <Label className="text-xs">Maneja variantes (talla/color)</Label>
           </div>
         </div>
         <DialogFooter>

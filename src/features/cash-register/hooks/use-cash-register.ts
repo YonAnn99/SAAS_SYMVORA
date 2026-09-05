@@ -83,6 +83,10 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
         toast.error("No se pudo identificar el tenant");
         return;
       }
+      if (!(fondoInicial >= 0)) {
+        toast.error("El fondo inicial no puede ser negativo");
+        return;
+      }
       try {
         const userId = await getCurrentUserId();
         if (!userId) {
@@ -113,6 +117,14 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
   const handleAddMovement = useCallback(
     async (tipo: "ENTRADA" | "SALIDA", monto: number, descripcion: string) => {
       if (!activeRegister) return;
+      if (!(monto > 0)) {
+        toast.error("El monto debe ser mayor a 0");
+        return;
+      }
+      if (!descripcion.trim()) {
+        toast.error("La descripción es requerida");
+        return;
+      }
       await addMovement(activeRegister.id, tipo, monto, descripcion);
       await logActivity({
         action: "CREATE",

@@ -122,7 +122,7 @@ export default function UsersPage() {
   }, [fetchMemberships, fetchInviteKeys]);
 
   const handleInvite = async () => {
-    if (!inviteEmail || !tenantId) {
+    if (!inviteEmail || !tenantId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) {
       toast.error("Por favor ingresa un email válido");
       return;
     }

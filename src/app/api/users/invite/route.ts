@@ -30,6 +30,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: "Email inválido" },
+        { status: 400 }
+      );
+    }
+
     const requestedRole: UserRole = role as UserRole;
     if (!INVITABLE_ROLES.includes(requestedRole) && requestedRole !== "SUPER_ADMIN") {
       return NextResponse.json(

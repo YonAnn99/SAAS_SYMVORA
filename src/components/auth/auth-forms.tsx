@@ -250,7 +250,6 @@ export function AuthForms({
       });
 
       const data = await res.json();
-      console.log("[key-login] API response:", res.status, JSON.stringify(data).substring(0, 200));
 
       if (!res.ok) {
         setKeyError(data.error || "Error al iniciar sesión");

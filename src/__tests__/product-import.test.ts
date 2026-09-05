@@ -150,6 +150,42 @@ describe("buildImportRows", () => {
     expect(rows[0].supplierWarning).toContain("Proveedor Fantasma");
   });
 
+  it("marks a repeated new barcode within the same file as 'invalid' instead of double-'new'", () => {
+    const rows = buildImportRows({
+      rawRows: [
+        {
+          nombre: "Producto A",
+          codigo_barras: "9999999999901",
+          precio_venta: "50",
+          costo_compra: "30",
+          stock_actual: "10",
+        },
+        {
+          nombre: "Producto B",
+          codigo_barras: "9999999999901",
+          precio_venta: "60",
+          costo_compra: "40",
+          stock_actual: "5",
+        },
+        {
+          nombre: "Producto C",
+          codigo_barras: "9999999999902",
+          precio_venta: "70",
+          costo_compra: "50",
+          stock_actual: "8",
+        },
+      ],
+      mapping,
+      existingBarcodes: new Map(),
+      supplierMap: new Map(),
+    });
+
+    expect(rows[0].status).toBe("new");
+    expect(rows[1].status).toBe("invalid");
+    expect(rows[1].errorMessage).toContain("repetido");
+    expect(rows[2].status).toBe("new");
+  });
+
   it("resolves a known supplier name to its id", () => {
     const rows = buildImportRows({
       rawRows: [

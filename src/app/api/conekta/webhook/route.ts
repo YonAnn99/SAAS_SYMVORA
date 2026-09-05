@@ -439,6 +439,20 @@ export async function POST(request: Request) {
         break;
       }
 
+      case "order.expired":
+      case "order.canceled": {
+        // Referencia de pago en efectivo (OXXO/Efectivo Conekta) que venció
+        // o se canceló sin pagarse: la fila "pending" creada en
+        // create-checkout debe dejar de mostrarse como "pago en proceso".
+        await supabase
+          .from("payment_history")
+          .update({ status: "expired" })
+          .eq("conekta_order_id", data.id)
+          .eq("status", "pending");
+
+        break;
+      }
+
       case "order.paid": {
         const customerId = data.customer?.id;
         if (!customerId) break;
