@@ -102,7 +102,11 @@ export function Hero() {
               aria-hidden="true"
             />
             <Link
-              href={`/${locale}/demo`}
+              href={
+                process.env.NODE_ENV === "production"
+                  ? `https://demo.symvora.com.mx/${locale}/demo`
+                  : `/${locale}/demo`
+              }
               className="relative bg-white dark:bg-neutral-900 text-black dark:text-neutral-50 font-medium px-8 py-4 rounded-full border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:ring-offset-[#0C0C0C]"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

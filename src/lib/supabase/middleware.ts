@@ -4,10 +4,17 @@ import { type NextRequest, NextResponse } from "next/server";
 
 const APP_HOST = "https://app.symvora.com.mx";
 const MARKETING_HOST = "https://www.symvora.com.mx";
+// Host dedicado para la demo publica: al vivir en su propio subdominio, el
+// navegador aisla su cookie de sesion de Supabase de la de app.symvora.com.mx
+// (ningun cliente de Supabase en este proyecto fija un `domain` explicito,
+// asi que el alcance de cookie por host ya alcanza para separar ambas
+// sesiones sin tocar nada mas). Ver docs/demo-isolation.md.
+const DEMO_HOST = "demo.symvora.com.mx";
 const PROD_HOSTS = new Set([
   "app.symvora.com.mx",
   "www.symvora.com.mx",
   "symvora.com.mx",
+  DEMO_HOST,
 ]);
 const MARKETING_SEGMENTS = [
   "/marketing",
@@ -65,7 +72,7 @@ export async function updateSession(request: NextRequest) {
   // Host routing: app.symvora.com.mx sirve el sistema, www/apex el marketing.
   // En dev (localhost) y previews de Vercel no se aplica.
   if (PROD_HOSTS.has(host)) {
-    const isAppHost = host === "app.symvora.com.mx";
+    const isAppHost = host === "app.symvora.com.mx" || host === DEMO_HOST;
     const isMarketing = isMarketingPath(request.nextUrl.pathname);
 
     if (isAppHost && isMarketing) {
