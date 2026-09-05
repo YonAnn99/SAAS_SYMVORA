@@ -29,6 +29,10 @@ const ADMIN_ONLY_PATHS = [
   "/lots",
 ];
 
+// Modules temporarily disabled for everyone, regardless of role.
+// Not deleted — just gated off here until re-enabled.
+const DISABLED_PATHS = ["/facturas"];
+
 // Routes that require SUPER_ADMIN only
 const SUPER_ADMIN_ONLY_PATHS = [
   "/billing",
@@ -194,6 +198,17 @@ export async function updateSession(request: NextRequest) {
 
       // --- Role-based route protection ---
       const cleanPath = stripLocale(request.nextUrl.pathname);
+
+      const isDisabled = DISABLED_PATHS.some(
+        (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
+      );
+      if (isDisabled) {
+        const locale = request.nextUrl.pathname.split("/")[1] || "es";
+        const dashboardUrl = request.nextUrl.clone();
+        dashboardUrl.pathname = `/${locale}/dashboard`;
+        return NextResponse.redirect(dashboardUrl);
+      }
+
       const requiresSuperAdmin = SUPER_ADMIN_ONLY_PATHS.some(
         (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
       );

@@ -17,7 +17,6 @@ import {
 const featureKeys = [
   "pos",
   "inventory",
-  "cfdi",
   "reports",
   "users",
   "support",

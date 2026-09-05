@@ -14,7 +14,6 @@ import {
   Settings,
   Search,
   FileText,
-  Receipt,
 } from "lucide-react";
 
 interface CommandMenuProps {
@@ -28,7 +27,6 @@ const NAVIGATION_ITEMS = [
   { id: "products", href: "/products", icon: Package, labelKey: "layout.products" },
   { id: "purchases", href: "/purchases", icon: ShoppingCartIcon, labelKey: "layout.purchases" },
   { id: "finances", href: "/finances", icon: Wallet, labelKey: "layout.finances" },
-  { id: "facturas", href: "/facturas", icon: Receipt, labelKey: "layout.facturas" },
   { id: "users", href: "/users", icon: Users, labelKey: "layout.users" },
   { id: "settings", href: "/settings", icon: Settings, labelKey: "layout.settings" },
   { id: "activity", href: "/activity", icon: FileText, labelKey: "common.activityLog" },

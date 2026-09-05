@@ -252,6 +252,17 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Sentry**: `@sentry/nextjs` integrado (`src/sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, `withSentryConfig` en `next.config.ts`), incluye `replayIntegration()` y CSP actualizada para permitir `js.sentry-cdn.com` / `*.sentry.io`.
 - **Búsqueda global**: `src/components/search/command-menu.tsx` (cmdk) para navegación rápida entre módulos del dashboard.
 
+### Sesión 2026-09-05 — Módulo de Facturación (CFDI) deshabilitado temporalmente
+
+Por decisión de negocio, el módulo de Facturación (CFDI 4.0) se ocultó "por el momento" — **no se borró código ni tablas**, solo se apagó el acceso. Para reactivarlo:
+
+- **Dashboard**: quitar `hidden: true` de la entrada `layout.facturas` en `src/components/layout/sidebar.tsx`; volver a agregar la entrada `facturas` en `NAVIGATION_ITEMS` de `src/components/search/command-menu.tsx`; quitar `/facturas` de `DISABLED_PATHS` en `src/lib/supabase/middleware.ts`; cambiar `FACTURAS_MODULE_ENABLED` a `true` en `src/lib/feature-flags.ts` (usado por una guarda agregada al inicio de los 7 handlers bajo `src/app/api/facturas/**`).
+- **Landing**: volver a importar y renderizar `<CFDISection />` en `src/app/[locale]/page.tsx` (el componente en `src/components/marketing/cfdi-section.tsx` no se tocó); volver a agregar los ítems quitados de `why-choose-us.tsx` (objeto `cfdi` en `benefits`, más el bloque de renderizado de `benefit.tags` que se eliminó — habría que restaurarlo desde git), `cta.tsx` (`"cfdi"` en `featureKeys`), `navbar.tsx` (`landing.nav.products.invoicing`), y el índice `"6"` de vuelta en `FAQ_KEYS` (`page.tsx`); volver a agregar `"CFDI"` a las listas de chips en `why-choose-us.tsx`/`business-types.tsx`.
+- **Traducciones**: las keys `landing.cfdi.*`, `landing.whyChooseUs.cfdi.*`, `landing.cta.features.cfdi`, `landing.nav.products.invoicing`, `landing.faq.items.6.*` siguen intactas en `es.json`/`en.json` (nunca se borraron, mismo patrón que `landing.hero.eyebrow`). Sí se reescribieron (no solo se dejaron de usar, porque son texto siempre visible) `landing.footer.description`, `landing.hero.subtitle`, `landing.about.story` y `landing.demo.restricted.description` — habría que restaurar la mención a CFDI en esas 4 keys manualmente si se reactiva.
+- **Metadata/SEO**: `src/app/[locale]/page.tsx` (metadata + JSON-LD), `src/app/layout.tsx` (metadata + JSON-LD) y `src/app/manifest.ts` tenían texto hardcodeado (no en JSON) mencionando CFDI — se reescribió directo, revisar el diff de este commit para restaurar el texto original si se reactiva.
+- **Legales**: `terminos/page.tsx` y `aviso-privacidad/page.tsx` se reescribieron para quitar menciones a CFDI (timbrado, cancelación de comprobantes fiscales) sin renumerar las secciones — si se reactiva el módulo, revisar si esas cláusulas deben restaurarse tal cual o mantenerse genéricas.
+- **Imagen OG** (`public/og-symvora-v3.jpg`): no se pudo verificar si el texto "CFDI" está incrustado visualmente en el diseño gráfico — pendiente de revisión manual por el usuario.
+
 ### Sesión 2026-09-04 — Auditoría QA (navegador, producción) + fixes
 
 Auditoría manual en `app.symvora.com.mx` con la cuenta de prueba real (login, POS, caja, compras, productos, importación, usuarios, RBAC con cuenta CAJERO real, checkout Conekta sin confirmar pago). 7 hallazgos críticos corregidos (ver lista numerada 12-17 en "Bugs Críticos Corregidos" arriba). Además:

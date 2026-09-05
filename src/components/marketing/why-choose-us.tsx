@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
-import { Puzzle, FileText, Database, Search, Zap, Server } from "lucide-react";
+import { Puzzle, Database, Search, Zap, Server } from "lucide-react";
 import {
   easeOutLong,
   easeOutShort,
@@ -23,16 +23,8 @@ export function WhyChooseUs() {
       visual: "modular" as const,
     },
     {
-      key: "cfdi",
-      number: "02",
-      icon: FileText,
-      titleKey: "landing.whyChooseUs.cfdi.title",
-      descKey: "landing.whyChooseUs.cfdi.description",
-      tags: ["CFDI 4.0", "PAC Integrado"],
-    },
-    {
       key: "atomic",
-      number: "03",
+      number: "02",
       icon: Database,
       titleKey: "landing.whyChooseUs.atomic.title",
       descKey: "landing.whyChooseUs.atomic.description",
@@ -40,7 +32,7 @@ export function WhyChooseUs() {
     },
     {
       key: "uptime",
-      number: "04",
+      number: "03",
       icon: Server,
       titleKey: "landing.whyChooseUs.uptime.title",
       descKey: "landing.whyChooseUs.uptime.description",
@@ -135,7 +127,7 @@ export function WhyChooseUs() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, ...easeOutShort }}
                   >
-                    {["POS", "Inventario", "CFDI", "Finanzas", "Reportes", "Usuarios"].map((mod) => (
+                    {["POS", "Inventario", "Finanzas", "Reportes", "Usuarios"].map((mod) => (
                       <motion.div
                         key={mod}
                         className="px-3 py-1.5 bg-white/10 border border-white/20 rounded text-xs font-medium"
@@ -145,31 +137,6 @@ export function WhyChooseUs() {
                         transition={{ delay: 0.05, type: "spring", stiffness: 300, damping: 20 }}
                       >
                         {mod}
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-
-                {benefit.tags && (
-                  <motion.div
-                    className="flex gap-4 mt-4"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, ...easeOutShort }}
-                  >
-                    {benefit.tags.map((tag) => (
-                      <motion.div
-                        key={tag}
-                        className="flex items-center gap-2 bg-neutral-800 px-3 py-2 rounded border border-neutral-700"
-                        whileHover={{ backgroundColor: "rgba(255,255,255,0.1)", x: 4 }}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.05, type: "spring", stiffness: 300, damping: 20 }}
-                      >
-                        <FileText className="w-4 h-4 text-blue-400" aria-hidden="true" />
-                        <span className="text-xs text-white font-medium">
-                          {tag}
-                        </span>
                       </motion.div>
                     ))}
                   </motion.div>

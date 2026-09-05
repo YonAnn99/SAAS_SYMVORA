@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: "SYMVORA",
   description:
-    "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+    "Punto de venta, inventario y finanzas para PyMEs mexicanas.",
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SYMVORA",
     description:
-      "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+      "Punto de venta, inventario y finanzas para PyMEs mexicanas.",
     url: `${getSiteUrl()}/es`,
     siteName: "SYMVORA",
     locale: "es_MX",
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
         url: "/og-symvora-v3.jpg",
         width: 1200,
         height: 630,
-        alt: "SYMVORA — Punto de venta, inventario y facturación CFDI 4.0 para PyMEs",
+        alt: "SYMVORA — Punto de venta e inventario para PyMEs",
       },
     ],
   },
@@ -106,7 +106,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SYMVORA",
     description:
-      "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+      "Punto de venta, inventario y finanzas para PyMEs mexicanas.",
     images: ["/og-symvora-v3.jpg"],
   },
 };
@@ -127,7 +127,7 @@ export default async function RootLayout({
   const siteUrl = getSiteUrl();
   const org = organizationSchema(siteUrl, {
     description:
-      "Sistema de punto de venta, inventarios y facturación CFDI 4.0 para PyMEs mexicanas.",
+      "Sistema de punto de venta, inventarios y finanzas para PyMEs mexicanas.",
   });
   const site = websiteSchema(siteUrl);
 

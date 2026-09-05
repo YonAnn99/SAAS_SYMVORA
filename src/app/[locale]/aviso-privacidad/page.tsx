@@ -33,7 +33,7 @@ export default function AvisoPrivacidadPage() {
         <li>
           Datos de su negocio: nombre comercial, giro comercial, logotipo, datos
           fiscales (RFC, razón social, régimen fiscal, código postal) necesarios para la
-          emisión y cancelación de CFDI.
+          operación de su negocio en la Plataforma.
         </li>
         <li>
           Datos financieros para procesar sus pagos (por ejemplo, a través de nuestro
@@ -59,10 +59,6 @@ export default function AvisoPrivacidadPage() {
       </p>
       <ul>
         <li>Proveer, operar, administrar y dar mantenimiento a la Plataforma.</li>
-        <li>
-          Permitir la facturación electrónica (CFDI), su timbrado y cancelación de
-          conformidad con las disposiciones del SAT.
-        </li>
         <li>Gestionar la relación comercial: registro, facturación de servicios, cobros y soporte.</li>
         <li>Verificar su identidad y proteger la seguridad de su cuenta.</li>
         <li>Dar cumplimiento a obligaciones legales y fiscales.</li>
@@ -77,7 +73,7 @@ export default function AvisoPrivacidadPage() {
       <h2>4. Datos de los clientes finales del usuario</h2>
       <p>
         La Plataforma permite a los usuarios registrar y procesar datos personales de sus
-        propios clientes (por ejemplo, RFC y razón social para la emisión de facturas),
+        propios clientes (por ejemplo, nombre, RFC y razón social),
         así como datos de sus operaciones. En estos casos, SYMVORA actúa como encargado
         del tratamiento y el usuario actúa como responsable, por lo que el usuario es
         quien debe acreditar, ante sus clientes, la información relativa al tratamiento
@@ -127,8 +123,7 @@ export default function AvisoPrivacidadPage() {
       <p>
         Conservaremos sus datos personales únicamente durante el tiempo necesario para
         cumplir las finalidades descritas, incluyendo el plazo que exija la
-        normatividad fiscal aplicable a la emisión y conservación de comprobantes
-        fiscales (CFDI). Al término del plazo, los datos serán suprimidos, salvo que
+        normatividad fiscal aplicable. Al término del plazo, los datos serán suprimidos, salvo que
         exista una obligación legal que exija su conservación.
       </p>
 

@@ -42,7 +42,7 @@ export default function TerminosPage() {
       <h2>3. Uso del servicio</h2>
       <p>
         La Plataforma permite administrar ventas, inventario, compras, finanzas,
-        clientes, proveedores y realizar facturación electrónica (CFDI). El usuario se
+        clientes y proveedores. El usuario se
         obliga a:
       </p>
       <ul>
@@ -60,10 +60,9 @@ export default function TerminosPage() {
       <h2>4. Responsabilidad fiscal del usuario</h2>
       <p>
         El usuario es responsable de la veracidad de sus datos fiscales y de los datos
-        de sus clientes utilizados para la emisión de comprobantes fiscales digitales
-        (CFDI). La emisión, el timbrado y el contenido de los comprobantes son
-        responsabilidad exclusiva del usuario, quien deberá cumplir con las obligaciones
-        que establezca el SAT y demás autoridades competentes.
+        de sus clientes que registre en la Plataforma. El uso y contenido de dicha
+        información es responsabilidad exclusiva del usuario, quien deberá cumplir con
+        las obligaciones que establezca el SAT y demás autoridades competentes.
       </p>
 
       <h2>5. Suscripción y pagos</h2>
@@ -113,8 +112,8 @@ export default function TerminosPage() {
       <p>
         La información que el usuario ingresa a la Plataforma — incluyendo, de manera
         enunciativa mas no limitativa, datos de productos, inventario, ventas,
-        compras, clientes, proveedores, movimientos de caja, comprobantes fiscales
-        (CFDI), reportes y cualquier otro dato generado por la operación de su
+        compras, clientes, proveedores, movimientos de caja,
+        reportes y cualquier otro dato generado por la operación de su
         negocio — es y seguirá siendo propiedad exclusiva del usuario. SYMVORA actúa
         únicamente como encargado del almacenamiento y procesamiento de dichos datos
         para la prestación del servicio contratado.

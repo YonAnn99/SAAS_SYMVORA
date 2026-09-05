@@ -28,7 +28,6 @@ const navItems: NavItem[] = [
       { label: "landing.nav.products.inventory", href: "#inventory" },
       { label: "landing.nav.products.purchases", href: "#purchases" },
       { label: "landing.nav.products.finances", href: "#finances" },
-      { label: "landing.nav.products.invoicing", href: "#invoicing" },
     ],
   },
   {

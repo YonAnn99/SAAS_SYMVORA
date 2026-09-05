@@ -45,6 +45,7 @@ interface NavItem {
   icon: LucideIcon;
   beta?: boolean;
   minRole?: UserRole;
+  hidden?: boolean;
 }
 
 const navigation: NavItem[] = [
@@ -54,7 +55,7 @@ const navigation: NavItem[] = [
   { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon, minRole: "ORG_ADMIN" },
   { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText, minRole: "ORG_ADMIN" },
   { name: "layout.finances", href: "/finances", icon: Wallet, minRole: "ORG_ADMIN" },
-  { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true, minRole: "ORG_ADMIN" },
+  { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true, minRole: "ORG_ADMIN", hidden: true },
   { name: "layout.users", href: "/users", icon: Users, minRole: "SUPER_ADMIN" },
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.settings", href: "/settings", icon: Settings, minRole: "ORG_ADMIN" },
@@ -101,7 +102,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
   };
 
   const visibleNav = navigation.filter(
-    (item) => !item.minRole || hasRole(role, item.minRole)
+    (item) => !item.hidden && (!item.minRole || hasRole(role, item.minRole))
   );
 
   const visibleInventory = inventoryNavigation.filter(

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "SYMVORA",
     short_name: "SYMVORA",
     description:
-      "Punto de venta, inventario y facturación CFDI 4.0 para PyMEs mexicanas.",
+      "Punto de venta, inventario y finanzas para PyMEs mexicanas.",
     start_url: "/es/dashboard",
     display: "standalone",
     background_color: "#0A0A0A",

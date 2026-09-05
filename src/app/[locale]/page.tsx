@@ -2,7 +2,7 @@
 // desde faq.tsx porque tiene "use client" y al cruzar el boundary
 // server→client se serializa como referencia, no como array literal.
 // En runtime resultaba en: "TypeError: o.FAQ_KEYS.map is not a function"
-const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
+const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8"] as const;
 
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -12,7 +12,6 @@ import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import LogoCarousel from "@/components/ui/logo-carousel";
 import { Features } from "@/components/marketing/features";
 import { BusinessTypes } from "@/components/marketing/business-types";
-import { CFDISection } from "@/components/marketing/cfdi-section";
 import { WhyChooseUs } from "@/components/marketing/why-choose-us";
 import { SecuritySection } from "@/components/marketing/security-section";
 import { Benefits } from "@/components/marketing/benefits";
@@ -30,9 +29,9 @@ import {
 } from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
-  title: "SYMVORA — POS, inventario y facturación CFDI para PyMEs",
+  title: "SYMVORA — POS e inventario para PyMEs",
   description:
-    "Sistema de punto de venta e inventarios con facturación CFDI 4.0 para PyMEs en México. Sin comisiones por venta y demo gratuita de 7 días.",
+    "Sistema de punto de venta e inventarios para PyMEs en México. Sin comisiones por venta y demo gratuita de 7 días.",
   alternates: {
     canonical: "/es",
   },
@@ -47,9 +46,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "SYMVORA — POS, inventario y facturación CFDI para PyMEs",
+    title: "SYMVORA — POS e inventario para PyMEs",
     description:
-      "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
+      "Punto de venta, inventarios y finanzas en una sola plataforma pensada para PyMEs mexicanas.",
     url: "https://www.symvora.com.mx/es",
     locale: "es_MX",
     type: "website",
@@ -59,15 +58,15 @@ export const metadata: Metadata = {
         url: "/og-symvora-v3.jpg",
         width: 1200,
         height: 630,
-        alt: "SYMVORA — Punto de venta, inventario y facturación CFDI 4.0 para PyMEs",
+        alt: "SYMVORA — Punto de venta e inventario para PyMEs",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "SYMVORA — POS, inventario y facturación CFDI para PyMEs",
+    title: "SYMVORA — POS e inventario para PyMEs",
     description:
-      "Punto de venta, inventarios y facturación CFDI 4.0 en una sola plataforma pensada para PyMEs mexicanas.",
+      "Punto de venta, inventarios y finanzas en una sola plataforma pensada para PyMEs mexicanas.",
     images: ["/og-symvora-v3.jpg"],
   },
 };
@@ -92,7 +91,7 @@ export default async function LocalePage() {
 
   const software = softwareApplicationSchema(siteUrl, {
     description:
-      "Punto de venta, inventarios y facturación CFDI 4.0 para PyMEs mexicanas. Suscripción fija de $400 MXN/mes sin comisiones por venta.",
+      "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $400 MXN/mes sin comisiones por venta.",
     featureList,
   });
 
@@ -105,7 +104,6 @@ export default async function LocalePage() {
       <CompatibilityBar />
       <Features />
       <BusinessTypes />
-      <CFDISection />
       <WhyChooseUs />
       <SecuritySection />
       <Benefits />

@@ -236,7 +236,7 @@ function MockupGeneral() {
     <div className="text-xs space-y-2">
       <div className="font-medium text-neutral-900 dark:text-neutral-100">Configuración flexible</div>
       <div className="grid grid-cols-3 gap-2">
-        {["POS", "Inventario", "CFDI", "Caja", "Reportes", "Usuarios"].map((m) => (
+        {["POS", "Inventario", "Caja", "Reportes", "Usuarios"].map((m) => (
           <div
             key={m}
             className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 bg-white dark:bg-neutral-900 text-center font-medium text-neutral-700 dark:text-neutral-300"

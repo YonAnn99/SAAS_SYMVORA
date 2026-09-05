@@ -574,7 +574,7 @@
       "eyebrow": "POS · Inventory · CFDI Invoicing",
       "title": "Your all in one system for your store",
       "highlight": "built for your store",
-      "subtitle": "Point of sale, inventory, CFDI 4.0 electronic invoicing and finance — all in one, no per-sale commissions, with Spanish support.",
+      "subtitle": "Point of sale, inventory and finance — all in one, no per-sale commissions, with Spanish support.",
       "ctaPrimary": "7-day free trial",
       "ctaSecondary": "See demo",
       "growthLabel": "Monthly sales",
@@ -800,7 +800,7 @@
       "restricted": {
         "eyebrow": "Demo mode",
         "title": "This feature isn't available in the demo",
-        "description": "To keep your real data isolated, external integrations (Conekta, Mercado Pago, CFDI invoicing PAC and email invitations) are disabled in the demo. Create a free account to try them with your own credentials.",
+        "description": "To keep your real data isolated, external integrations (Conekta, Mercado Pago and email invitations) are disabled in the demo. Create a free account to try them with your own credentials.",
         "cta": "Create my free account",
         "back": "Back to dashboard"
       }
@@ -811,7 +811,7 @@
       "subtitle": "SYMVORA was born to support Mexican businesses with modern tools, no per-sale commissions and Spanish-language support.",
       "foundedBy": "Founded by",
       "founders": "TecNM Ecatepec Graduates",
-      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they built a solution that truly understands the Mexican market: automatic VAT, CFDI 4.0 invoicing, cash payments at convenience stores, and a modern, reliable POS.",
+      "story": "Jonattan and Diego met during their Informatics Engineering degree. After experiencing the challenges of commerce firsthand, they built a solution that truly understands the Mexican market: automatic VAT, cash payments at convenience stores, and a modern, reliable POS.",
       "values": {
         "mission": "Mission",
         "missionDesc": "Democratize technology for Mexican commerce",
@@ -829,7 +829,7 @@
       }
     },
   "footer": {
-      "description": "Point of sale and inventory for Mexican businesses. Electronic invoicing, stock control and reports — all in one platform.",
+      "description": "Point of sale and inventory for Mexican businesses. Stock control, finance and reports — all in one platform.",
       "product": "Product",
       "features": "Features",
       "pricing": "Pricing",

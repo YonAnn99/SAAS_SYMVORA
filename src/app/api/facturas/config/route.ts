@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
+import { assertFacturasEnabled } from "@/lib/feature-flags";
 import {
   FacturacionError,
   getFiscalConfig,
@@ -10,6 +11,9 @@ import {
 } from "@/features/facturacion/services/factura-service";
 
 export async function GET(request: NextRequest) {
+  const facturas = assertFacturasEnabled();
+  if (!facturas.ok) return facturas.response;
+
   try {
     const auth = await requireTenantAccess(request);
     if (!auth.ok) return auth.response;
@@ -38,6 +42,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const facturas = assertFacturasEnabled();
+  if (!facturas.ok) return facturas.response;
+
   try {
     const body: SaveFiscalConfigInput = await request.json();
 

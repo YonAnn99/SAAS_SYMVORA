@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertFacturasEnabled } from "@/lib/feature-flags";
 import {
   FacturacionError,
   getFacturaPdf,
@@ -10,6 +11,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const facturas = assertFacturasEnabled();
+  if (!facturas.ok) return facturas.response;
+
   try {
     const { id } = await params;
     const supabase = createSupabaseServiceRoleClient();

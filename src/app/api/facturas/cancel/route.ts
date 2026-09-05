@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
+import { assertFacturasEnabled } from "@/lib/feature-flags";
 import {
   cancelFactura,
   FacturacionError,
@@ -9,6 +10,9 @@ import {
 } from "@/features/facturacion/services/factura-service";
 
 export async function POST(request: NextRequest) {
+  const facturas = assertFacturasEnabled();
+  if (!facturas.ok) return facturas.response;
+
   try {
     const body: CancelFacturaInput = await request.json();
     const supabase = createSupabaseServiceRoleClient();

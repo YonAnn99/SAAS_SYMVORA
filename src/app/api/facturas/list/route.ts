@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
+import { assertFacturasEnabled } from "@/lib/feature-flags";
 import {
   FacturacionError,
   listFacturas,
 } from "@/features/facturacion/services/factura-service";
 
 export async function GET(request: NextRequest) {
+  const facturas = assertFacturasEnabled();
+  if (!facturas.ok) return facturas.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenant_id");

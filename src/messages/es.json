@@ -647,7 +647,7 @@
       "eyebrow": "POS · Inventario · Facturación CFDI",
       "title": "Tu sistema todo en uno para tu tienda",
       "highlight": "hecho para tu comercio",
-      "subtitle": "Punto de venta, inventario, facturación CFDI 4.0 y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
+      "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
       "ctaPrimary": "Prueba 7 días gratis",
       "ctaSecondary": "Ver demo",
       "growthLabel": "Ventas del mes",
@@ -873,7 +873,7 @@
       "restricted": {
         "eyebrow": "Modo demo",
         "title": "Esta función no está disponible en la demo",
-        "description": "Para mantener aislados los datos reales, las integraciones externas (Conekta, Mercado Pago, PAC de facturación CFDI e invitaciones por email) están deshabilitadas en la demo. Crea una cuenta gratuita para probarlas con tus propias credenciales.",
+        "description": "Para mantener aislados los datos reales, las integraciones externas (Conekta, Mercado Pago e invitaciones por email) están deshabilitadas en la demo. Crea una cuenta gratuita para probarlas con tus propias credenciales.",
         "cta": "Crear mi cuenta gratis",
         "back": "Volver al dashboard"
       }
@@ -884,7 +884,7 @@
       "subtitle": "SYMVORA nació para apoyar a los negocios mexicanos con herramientas modernas, sin comisiones por venta y con soporte en español.",
       "foundedBy": "Fundado por",
       "founders": "Egresados del TecNM Ecatepec",
-      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, facturación CFDI 4.0, pagos en efectivo en tiendas de conveniencia y un POS moderno y confiable.",
+      "story": "Jonattan y Diego se conocieron en la carrera de Ingeniería en Informática. Tras experimentar de cerca los retos del comercio, crearon una solución que realmente entendiera al mercado mexicano: IVA automático, pagos en efectivo en tiendas de conveniencia y un POS moderno y confiable.",
       "values": {
         "mission": "Misión",
         "missionDesc": "Democratizar la tecnología para el comercio mexicano",
@@ -902,7 +902,7 @@
       }
     },
   "footer": {
-      "description": "Punto de venta e inventario para negocios mexicanos. Facturación electrónica, control de stock y reportes — todo en una sola plataforma.",
+      "description": "Punto de venta e inventario para negocios mexicanos. Control de stock, finanzas y reportes — todo en una sola plataforma.",
       "product": "Producto",
       "features": "Funciones",
       "pricing": "Precios",
