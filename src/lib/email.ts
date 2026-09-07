@@ -29,6 +29,8 @@ function buildEmailHtml(params: {
   type: WelcomeEmailType;
   businessName: string;
   referralCode: string | null;
+  billingPeriod?: "monthly" | "yearly";
+  amountCents?: number;
 }): { html: string; subject: string; preheader: string } {
   const { type, businessName } = params;
 
@@ -39,8 +41,8 @@ function buildEmailHtml(params: {
     : `Pago confirmado, ${businessName}`;
 
   const intro = isSignup
-    ? "Tu cuenta SYMVORA está lista. Activa tu prueba de 7 días con todo incluido: punto de venta, inventario y facturación CFDI 4.0 en un solo lugar."
-    : "Tu membresía SYMVORA está activa. Tu punto de venta, inventario y facturación CFDI 4.0 están listos para trabajar desde hoy.";
+    ? "Tu cuenta SYMVORA está lista. Activa tu prueba de 7 días con todo incluido: punto de venta, inventario y reportes en un solo lugar."
+    : "Tu membresía SYMVORA está activa. Tu punto de venta e inventario están listos para trabajar desde hoy.";
 
   const preheader = isSignup
     ? "Tu trial de 7 días está activo — entra y empieza a vender"
@@ -62,6 +64,30 @@ function buildEmailHtml(params: {
         </tr>
       </table>`
     : "";
+
+  const planLabel =
+    params.billingPeriod === "yearly" ? "SYMVORA Anual" : "SYMVORA Mensual";
+  const planAmount =
+    typeof params.amountCents === "number"
+      ? (params.amountCents / 100).toLocaleString("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        })
+      : null;
+
+  const planBox =
+    !isSignup && planAmount
+      ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+        <tr>
+          <td style="background:${BRAND.bone};border-radius:12px;padding:16px 20px;">
+            <p style="font-size:14px;color:${BRAND.ink};margin:0;line-height:1.6;">
+              <strong>${planLabel} — ${planAmount} MXN.</strong> Este es el cargo que se acaba de procesar a tu cuenta.
+            </p>
+          </td>
+        </tr>
+      </table>`
+      : "";
 
   const ctaHref = `${BRAND.appUrl}/es/dashboard`;
   const ctaLabel = isSignup ? "Entrar al sistema" : "Ir al sistema";
@@ -118,6 +144,7 @@ function buildEmailHtml(params: {
                     ${intro}
                   </p>
                   ${trialBox}
+                  ${planBox}
                   <!-- CTA principal -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                     <tr>
@@ -132,7 +159,7 @@ function buildEmailHtml(params: {
                   <!-- Propósitos de valor -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px;">
                     <tr>
-                      <td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">✓&nbsp; Punto de venta, inventario y CFDI 4.0 en un solo lugar</td>
+                      <td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">✓&nbsp; Punto de venta, inventario y reportes en un solo lugar</td>
                     </tr>
                     <tr>
                       <td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">✓&nbsp; Sin comisiones por venta</td>
@@ -173,6 +200,8 @@ export async function sendWelcomeEmail(params: {
   businessName: string;
   referralCode: string | null;
   type?: WelcomeEmailType;
+  billingPeriod?: "monthly" | "yearly";
+  amountCents?: number;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!resendApiKey) {
     console.warn("[email] RESEND_API_KEY not configured; skipping welcome email");
@@ -183,6 +212,8 @@ export async function sendWelcomeEmail(params: {
     type: params.type ?? "first_payment",
     businessName: params.businessName,
     referralCode: params.referralCode,
+    billingPeriod: params.billingPeriod,
+    amountCents: params.amountCents,
   });
 
   const resend = new Resend(resendApiKey);

@@ -25,6 +25,12 @@ export const conektaCustomersApi = new CustomersApi(config);
 export const conektaPlansApi = new PlansApi(config);
 export const conektaSubscriptionsApi = new SubscriptionsApi(config);
 
-export const CONEKTA_PLAN_ID = "symvora-basic";
-export const CONEKTA_PLAN_AMOUNT = 40000; // $400 MXN in centavos
+export const CONEKTA_PLAN_IDS = {
+  monthly: "symvora-basic-monthly",
+  yearly: "symvora-basic-yearly",
+} as const;
+export const CONEKTA_PLAN_AMOUNTS = {
+  monthly: 40000, // $400 MXN in centavos
+  yearly: 384000, // $320 MXN/mes x 12, en centavos
+} as const;
 export const TRIAL_PERIOD_DAYS = 7;

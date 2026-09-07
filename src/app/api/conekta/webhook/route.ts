@@ -201,7 +201,9 @@ async function consumeFreeMonthCredit(
 // Email de bienvenida al dueño del tenant que acaba de pagar su membresia.
 async function sendWelcomeEmailToOwner(
   supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
-  tenantId: string
+  tenantId: string,
+  billingPeriod: "monthly" | "yearly",
+  amountCents: number
 ): Promise<void> {
   try {
     const { data: owner } = await supabase
@@ -232,6 +234,8 @@ async function sendWelcomeEmailToOwner(
       businessName: tenant.nombre_comercial || "tu negocio",
       referralCode: tenant.codigo_referido,
       type: "first_payment",
+      billingPeriod,
+      amountCents,
     });
   } catch (emailError) {
     console.error("[conekta-webhook] Failed to send welcome email:", emailError);
@@ -327,7 +331,7 @@ export async function POST(request: Request) {
         // Lee el estado ANTES de actualizar para saber si es el primer pago.
         const { data: preSub } = await supabase
           .from("subscriptions")
-          .select("id, tenant_id, last_payment_at")
+          .select("id, tenant_id, last_payment_at, billing_period")
           .eq("conekta_customer_id", customerId)
           .maybeSingle();
 
@@ -369,8 +373,16 @@ export async function POST(request: Request) {
 
         if (preSub) {
           if (isFirstPayment) {
-            // Primer pago real => conversion del referido (si aplica).
+            // Primer pago real => conversion del referido (si aplica) + correo
+            // de bienvenida. Los cobros siguientes NO reenvían el correo
+            // (evita spam mensual/anual), solo consumen mes gratis si aplica.
             await convertReferralOnFirstPayment(supabase, preSub.tenant_id);
+            await sendWelcomeEmailToOwner(
+              supabase,
+              preSub.tenant_id,
+              preSub.billing_period === "yearly" ? "yearly" : "monthly",
+              data.amount || 40000
+            );
           } else if (data.last_billing_cycle_order_id) {
             // Cobro recurrente real => aplicar mes gratis acumulado.
             await consumeFreeMonthCredit(supabase, {
@@ -522,7 +534,12 @@ export async function POST(request: Request) {
           // los pagos siguientes consumen un mes gratis acumulado (si aplica).
           if (!subData.last_payment_at) {
             await convertReferralOnFirstPayment(supabase, subData.tenant_id);
-            await sendWelcomeEmailToOwner(supabase, subData.tenant_id);
+            await sendWelcomeEmailToOwner(
+              supabase,
+              subData.tenant_id,
+              subData.billing_period === "yearly" ? "yearly" : "monthly",
+              data.amount || 40000
+            );
           } else {
             await consumeFreeMonthCredit(supabase, {
               subscriptionId: subData.id,

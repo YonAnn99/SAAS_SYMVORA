@@ -1,11 +1,12 @@
-import { conektaSubscriptionsApi, CONEKTA_PLAN_ID } from "./config";
+import { conektaSubscriptionsApi } from "./config";
 
 export async function createSubscription(params: {
   customerId: string;
   cardId: string;
+  planId: string;
 }) {
   const subscriptionRequest = {
-    plan_id: CONEKTA_PLAN_ID,
+    plan_id: params.planId,
     card_id: params.cardId,
   };
 

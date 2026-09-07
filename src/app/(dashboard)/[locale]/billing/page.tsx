@@ -422,6 +422,19 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               </Badge>
             </div>
 
+            {subscription?.last_payment_at && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {t("billing.plan")}:
+                </span>
+                <span className="text-sm font-medium">
+                  {subscription.billing_period === "yearly"
+                    ? t("landing.cta.yearly")
+                    : t("landing.cta.monthly")}
+                </span>
+              </div>
+            )}
+
             {subscription?.status === "trial" && (
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-blue-500" />
@@ -536,23 +549,29 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
 
             <div className="space-y-3">
               <div className="flex flex-col gap-4">
-                <SpecularActionButton
-                  tone="money"
-                  onClick={handleAddCard}
-                  disabled={processing || !tenantId}
-                  className="w-full h-9"
-                >
-                  {t("billing.addCard")}
-                </SpecularActionButton>
+                <div className="space-y-1.5">
+                  <SpecularActionButton
+                    tone="money"
+                    onClick={handleAddCard}
+                    disabled={processing || !tenantId}
+                    className="w-full h-9"
+                  >
+                    {t("billing.addCard")}
+                  </SpecularActionButton>
+                  <p className="text-xs text-muted-foreground">{t("billing.addCardNote")}</p>
+                </div>
 
-                <SpecularActionButton
-                  tone="money"
-                  onClick={handlePayCash}
-                  disabled={processing || !tenantId}
-                  className="w-full h-9"
-                >
-                  {t("billing.payCash")}
-                </SpecularActionButton>
+                <div className="space-y-1.5">
+                  <SpecularActionButton
+                    tone="money"
+                    onClick={handlePayCash}
+                    disabled={processing || !tenantId}
+                    className="w-full h-9"
+                  >
+                    {t("billing.payCash")}
+                  </SpecularActionButton>
+                  <p className="text-xs text-muted-foreground">{t("billing.payCashNote")}</p>
+                </div>
               </div>
 
               {subscription?.status !== "active" && (

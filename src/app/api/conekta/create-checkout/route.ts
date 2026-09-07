@@ -153,24 +153,51 @@ export async function POST(request: Request) {
     const description =
       period === "yearly" ? "SYMVORA Basico - Anual" : "SYMVORA Basico - Mensual";
 
-    // Create hosted checkout order
+    // Tarjeta = cobro recurrente real (Conekta solo soporta suscripciones con
+    // tarjeta): en vez de una orden de una sola exhibición, se crea el checkout
+    // con un plan — Conekta guarda la tarjeta y cobra sola cada periodo.
+    // Efectivo no puede ser recurrente, así que sigue siendo una orden única.
+    const isCardSubscription = type === "card";
+
     let order;
     try {
-      const { createHostedCheckoutOrder } = await import("@/features/payments/services/conekta/orders");
-      order = await createHostedCheckoutOrder({
-        customerId: customerId!,
-        amount,
-        description,
-        successUrl: `${APP_URL}/${locale}/billing/success?type=${encodeURIComponent(type || "card")}`,
-        cancelUrl: `${APP_URL}/${locale}/billing`,
-        failureUrl: `${APP_URL}/${locale}/billing`,
-        allowedPaymentMethods: allowedMethods,
-      });
+      if (isCardSubscription) {
+        const { ensurePlanExists } = await import("@/features/payments/services/conekta/plans");
+        const { createSubscriptionCheckout } = await import("@/features/payments/services/conekta/orders");
+        const planId = await ensurePlanExists(period);
+        order = await createSubscriptionCheckout({
+          customerId: customerId!,
+          planId,
+          successUrl: `${APP_URL}/${locale}/billing/success?type=card`,
+          cancelUrl: `${APP_URL}/${locale}/billing`,
+          failureUrl: `${APP_URL}/${locale}/billing`,
+        });
+      } else {
+        const { createHostedCheckoutOrder } = await import("@/features/payments/services/conekta/orders");
+        order = await createHostedCheckoutOrder({
+          customerId: customerId!,
+          amount,
+          description,
+          successUrl: `${APP_URL}/${locale}/billing/success?type=${encodeURIComponent(type || "cash")}`,
+          cancelUrl: `${APP_URL}/${locale}/billing`,
+          failureUrl: `${APP_URL}/${locale}/billing`,
+          allowedPaymentMethods: allowedMethods,
+        });
+      }
     } catch (orderError: unknown) {
-      const msg = orderError instanceof Error ? orderError.message : String(orderError);
-      console.error("Error creating Conekta order:", msg);
+      // Mismo caso que la creación de cliente: el .message de axios solo dice
+      // "Request failed with status code 422" — el detalle real (qué campo
+      // rechazó Conekta) viene en error.response.data.
+      const errObj = orderError as {
+        response?: { data?: unknown; status?: number };
+        message?: string;
+      };
+      const detail = errObj.response?.data
+        ? JSON.stringify(errObj.response.data)
+        : errObj.message || String(orderError);
+      console.error("Error creating Conekta order:", detail);
       return NextResponse.json(
-        { error: `Error creating order: ${msg}` },
+        { error: `Error creating order: ${detail}` },
         { status: 500 }
       );
     }
@@ -188,18 +215,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Registrar el intento como "pendiente" para que /billing pueda
-    // mostrarlo mientras se espera la confirmación del webhook (Conekta
-    // no confirma el pago en efectivo al crear la orden, solo genera la
-    // referencia; la fila se actualiza a "completed" cuando llega order.paid).
-    await supabase.from("payment_history").insert({
-      subscription_id: subscription.id,
-      amount: amount / 100,
-      currency: "MXN",
-      payment_method: type || "card",
-      status: "pending",
-      conekta_order_id: (orderData.id as string) || null,
-    });
+    // Registrar el intento como "pendiente" solo para efectivo: ahí sí existe
+    // una referencia real y cobrable de inmediato aunque el cliente cierre la
+    // pestaña. Para tarjeta, si nunca llega a pagar en la página de Conekta no
+    // hay nada procesándose — el webhook de suscripción inserta el registro
+    // cuando el cobro realmente se confirma.
+    if (!isCardSubscription) {
+      await supabase.from("payment_history").insert({
+        subscription_id: subscription.id,
+        amount: amount / 100,
+        currency: "MXN",
+        payment_method: type || "cash",
+        status: "pending",
+        conekta_order_id: (orderData.id as string) || null,
+      });
+    }
 
     return NextResponse.json({ checkout_url: checkoutUrl });
   } catch (error: unknown) {

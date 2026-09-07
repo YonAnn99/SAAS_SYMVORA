@@ -1,13 +1,16 @@
-import { conektaPlansApi, CONEKTA_PLAN_ID, CONEKTA_PLAN_AMOUNT, TRIAL_PERIOD_DAYS } from "./config";
+import { conektaPlansApi, CONEKTA_PLAN_IDS, CONEKTA_PLAN_AMOUNTS, TRIAL_PERIOD_DAYS } from "./config";
 
-export async function ensurePlanExists(): Promise<string> {
+export async function ensurePlanExists(
+  period: "monthly" | "yearly"
+): Promise<string> {
+  const planId = CONEKTA_PLAN_IDS[period];
   try {
     const planRequest = {
-      id: CONEKTA_PLAN_ID,
-      name: "SYMVORA Basico",
-      amount: CONEKTA_PLAN_AMOUNT,
+      id: planId,
+      name: period === "yearly" ? "SYMVORA Basico Anual" : "SYMVORA Basico Mensual",
+      amount: CONEKTA_PLAN_AMOUNTS[period],
       currency: "MXN",
-      interval: "month" as const,
+      interval: (period === "yearly" ? "year" : "month") as "year" | "month",
       frequency: 1,
       trial_period_days: TRIAL_PERIOD_DAYS,
       max_retries: 3,
@@ -15,11 +18,11 @@ export async function ensurePlanExists(): Promise<string> {
 
     const response = await conektaPlansApi.createPlan(planRequest);
     const plan = response.data;
-    return plan.id || CONEKTA_PLAN_ID;
+    return plan.id || planId;
   } catch (error: unknown) {
     const err = error as { response?: { status?: number }; message?: string };
     if (err.response?.status === 409 || err.message?.includes("already")) {
-      return CONEKTA_PLAN_ID;
+      return planId;
     }
     throw error;
   }

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("id, conekta_customer_id, status")
+      .select("id, conekta_customer_id, conekta_subscription_id, status")
       .eq("tenant_id", tenant_id)
       .single();
 
@@ -43,8 +43,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cancel in Conekta first (only if a customer exists there)
-    if (subscription.conekta_customer_id) {
+    // Cancel in Conekta first — solo si existe una suscripción recurrente real
+    // ahí (tarjeta con cobro automático). Clientes que solo pagaron en
+    // efectivo, o que pagaron con el flujo antiguo de orden única, nunca
+    // tuvieron una Subscription en Conekta y no hay nada que cancelar del
+    // lado de Conekta; intentarlo con solo el customer_id fallaba con 404.
+    if (subscription.conekta_subscription_id) {
       try {
         const { cancelSubscription } = await import("@/features/payments/services/conekta/subscriptions");
         await cancelSubscription(subscription.conekta_customer_id);
