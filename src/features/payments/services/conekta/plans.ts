@@ -25,8 +25,23 @@ export async function ensurePlanExists(
     const plan = response.data;
     return plan.id || planId;
   } catch (error: unknown) {
-    const err = error as { response?: { status?: number }; message?: string };
-    if (err.response?.status === 409 || err.message?.includes("already")) {
+    // err.message es el genérico de axios ("Request failed with status code
+    // XXX") — el detalle real de Conekta (ej. "El recurso ya existe",
+    // code: conekta.errors.parameter_validation.id.found) viene en
+    // err.response.data.details, no en err.message.
+    const err = error as {
+      response?: {
+        status?: number;
+        data?: { details?: Array<{ code?: string; param?: string }> };
+      };
+      message?: string;
+    };
+    const details = err.response?.data?.details ?? [];
+    const alreadyExists =
+      err.response?.status === 409 ||
+      err.message?.includes("already") ||
+      details.some((d) => d.param === "id" || d.code?.includes("id.found"));
+    if (alreadyExists) {
       return planId;
     }
     throw error;
