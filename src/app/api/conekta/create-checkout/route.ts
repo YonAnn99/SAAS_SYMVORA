@@ -87,16 +87,35 @@ export async function POST(request: Request) {
           .maybeSingle();
 
         let ownerEmail: string | null = null;
+        let ownerName: string | null = null;
         if (ownerMembership) {
           const { data: ownerUser } = await supabase.auth.admin.getUserById(
             ownerMembership.user_id
           );
           ownerEmail = ownerUser?.user?.email ?? null;
+          ownerName = (ownerUser?.user?.user_metadata?.nombre as string | undefined) ?? null;
         }
+
+        // Conekta rechaza el "name" del cliente si no parece un nombre de
+        // persona (rechaza dígitos y símbolos, ej. "01232ts" -> 422
+        // conekta.errors.parameter_validation.name.invalid). nombre_comercial
+        // es texto libre del negocio y puede ser cualquier cosa, así que se
+        // prioriza el nombre real del dueño y se sanea el resultado.
+        const sanitizeConektaName = (value: string | null | undefined): string => {
+          const cleaned = (value || "")
+            .replace(/[^\p{L}\s]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          return cleaned.length >= 2 ? cleaned : "";
+        };
+        const customerName =
+          sanitizeConektaName(ownerName) ||
+          sanitizeConektaName(tenant.nombre_comercial) ||
+          "SYMVORA User";
 
         const { createCustomer } = await import("@/features/payments/services/conekta/customers");
         customerId = await createCustomer({
-          name: tenant.nombre_comercial || "SYMVORA User",
+          name: customerName,
           email: ownerEmail || tenant.email || "user@symvora.com",
           // Conekta requires `phone` (it's not marked optional in their
           // schema) — sending "" is what caused the 422. `telefono` isn't
