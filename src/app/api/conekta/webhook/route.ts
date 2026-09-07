@@ -459,7 +459,7 @@ export async function POST(request: Request) {
 
         const { data: subData } = await supabase
           .from("subscriptions")
-          .select("id, tenant_id, last_payment_at")
+          .select("id, tenant_id, last_payment_at, billing_period")
           .eq("conekta_customer_id", customerId)
           .single();
 
@@ -493,12 +493,22 @@ export async function POST(request: Request) {
             });
           }
 
+          const now = new Date();
+          const periodEnd = new Date(now);
+          if (subData.billing_period === "yearly") {
+            periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+          } else {
+            periodEnd.setMonth(periodEnd.getMonth() + 1);
+          }
+
           await supabase
             .from("subscriptions")
             .update({
               status: "active",
-              last_payment_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+              last_payment_at: now.toISOString(),
+              current_period_start: now.toISOString(),
+              current_period_end: periodEnd.toISOString(),
+              updated_at: now.toISOString(),
             })
             .eq("id", subData.id);
 

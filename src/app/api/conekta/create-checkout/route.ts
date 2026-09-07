@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     const locale = typeof body.locale === "string" && /^(es|en)$/.test(body.locale)
       ? body.locale
       : "es";
+    const period = body.period === "yearly" ? "yearly" : "monthly";
 
     if (!tenant_id) {
       return NextResponse.json(
@@ -49,6 +50,11 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    await supabase
+      .from("subscriptions")
+      .update({ billing_period: period })
+      .eq("id", subscription.id);
 
     // Get tenant info
     const { data: tenant, error: tenantError } = await supabase
@@ -141,14 +147,20 @@ export async function POST(request: Request) {
 
     const allowedMethods = METHOD_MAP[type] ?? ALL_METHODS;
 
+    // Monto en centavos: mensual $400 MXN, anual $320 MXN/mes facturado de
+    // una vez ($320 x 12 = $3,840 MXN, 20% de ahorro vs pagar mes a mes).
+    const amount = period === "yearly" ? 384000 : 40000;
+    const description =
+      period === "yearly" ? "SYMVORA Basico - Anual" : "SYMVORA Basico - Mensual";
+
     // Create hosted checkout order
     let order;
     try {
       const { createHostedCheckoutOrder } = await import("@/features/payments/services/conekta/orders");
       order = await createHostedCheckoutOrder({
         customerId: customerId!,
-        amount: 40000,
-        description: "SYMVORA Basico - Mensual",
+        amount,
+        description,
         successUrl: `${APP_URL}/${locale}/billing/success?type=${encodeURIComponent(type || "card")}`,
         cancelUrl: `${APP_URL}/${locale}/billing`,
         failureUrl: `${APP_URL}/${locale}/billing`,
@@ -182,7 +194,7 @@ export async function POST(request: Request) {
     // referencia; la fila se actualiza a "completed" cuando llega order.paid).
     await supabase.from("payment_history").insert({
       subscription_id: subscription.id,
-      amount: 400,
+      amount: amount / 100,
       currency: "MXN",
       payment_method: type || "card",
       status: "pending",

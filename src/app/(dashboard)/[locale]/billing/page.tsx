@@ -47,6 +47,7 @@ interface Subscription {
   next_payment_due: string | null;
   conekta_customer_id: string | null;
   creditos_mes_gratis: number;
+  billing_period: "monthly" | "yearly";
 }
 
 interface ReferralRecord {
@@ -83,6 +84,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [copied, setCopied] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoApplying, setPromoApplying] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<"monthly" | "yearly">("monthly");
 
   const fetchSubscription = async () => {
     if (!tenantId) {
@@ -100,6 +102,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
 
       if (data) {
         setSubscription(data);
+        setSelectedPeriod(data.billing_period === "yearly" ? "yearly" : "monthly");
 
         const { data: paymentData } = await supabase
           .from("payment_history")
@@ -189,7 +192,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "card", locale }),
+        body: JSON.stringify({ tenant_id: tenantId, type: "card", locale, period: selectedPeriod }),
       });
 
       const data = await response.json();
@@ -212,7 +215,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "cash", locale }),
+        body: JSON.stringify({ tenant_id: tenantId, type: "cash", locale, period: selectedPeriod }),
       });
 
       const data = await response.json();
@@ -483,7 +486,50 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               <span className="text-sm text-muted-foreground">
                 {t("billing.plan")}:
               </span>
-              <span className="text-sm font-medium">SYMVORA Basico - $400/mes</span>
+              <span className="text-sm font-medium">
+                SYMVORA Basico -{" "}
+                {selectedPeriod === "yearly"
+                  ? t("landing.cta.priceYearly")
+                  : t("landing.cta.priceMonthly")}
+              </span>
+            </div>
+
+            <div
+              role="radiogroup"
+              aria-label="Periodo de facturación"
+              className="inline-flex items-center bg-muted rounded-full p-1 border"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedPeriod === "monthly"}
+                onClick={() => setSelectedPeriod("monthly")}
+                disabled={processing}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedPeriod === "monthly"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t("landing.cta.monthly")}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedPeriod === "yearly"}
+                onClick={() => setSelectedPeriod("yearly")}
+                disabled={processing}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedPeriod === "yearly"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t("landing.cta.yearly")}
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                  {t("landing.cta.saveBadge")}
+                </span>
+              </button>
             </div>
 
             <Separator />

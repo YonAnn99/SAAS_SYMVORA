@@ -559,25 +559,11 @@ export function AuthForms({
       }
     }
 
-    // Create Conekta checkout
-    try {
-      const response = await fetch("/api/conekta/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenant.id, type: "card", locale }),
-      });
-
-      const data = await response.json();
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-    } catch (err) {
-      console.error("Error creating checkout:", err);
-    }
-
-    // Fallback: go to billing page
-    router.push(`/${locale}/billing`);
+    // Toda cuenta nueva ya tiene su trial de 7 días (creado dentro de
+    // complete_onboarding) — entra directo al sistema en vez de forzar el
+    // pago en Conekta. El pago real se ofrece desde /billing cuando el
+    // usuario decida pagar o cuando el trial esté por vencer.
+    router.push(`/${locale}/dashboard`);
     router.refresh();
   };
 
