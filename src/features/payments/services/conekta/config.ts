@@ -33,4 +33,3 @@ export const CONEKTA_PLAN_AMOUNTS = {
   monthly: 40000, // $400 MXN in centavos
   yearly: 384000, // $320 MXN/mes x 12, en centavos
 } as const;
-export const TRIAL_PERIOD_DAYS = 7;
