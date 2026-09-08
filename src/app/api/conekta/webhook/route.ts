@@ -293,19 +293,26 @@ export async function POST(request: Request) {
         // Nota: NO se fija last_payment_at aqui — solo lo hace un pago real
         // (order.paid / subscription.paid). La conversion del referido se
         // dispara con la guardia "last_payment_at IS NULL".
+        //
+        // Conekta reenvía/reintenta este evento, y no todos los reenvíos
+        // traen billing_cycle_start/end — solo se incluyen en el update
+        // cuando el evento sí los trae, para no borrar con null fechas que
+        // ya se habían guardado bien desde un evento anterior.
+        const createdUpdate: Record<string, unknown> = {
+          status: "active",
+          conekta_subscription_id: subscriptionId,
+          updated_at: new Date().toISOString(),
+        };
+        if (data.billing_cycle_start) {
+          createdUpdate.current_period_start = new Date(data.billing_cycle_start * 1000).toISOString();
+        }
+        if (data.billing_cycle_end) {
+          createdUpdate.current_period_end = new Date(data.billing_cycle_end * 1000).toISOString();
+        }
+
         await supabase
           .from("subscriptions")
-          .update({
-            status: "active",
-            conekta_subscription_id: subscriptionId,
-            current_period_start: data.billing_cycle_start
-              ? new Date(data.billing_cycle_start * 1000).toISOString()
-              : null,
-            current_period_end: data.billing_cycle_end
-              ? new Date(data.billing_cycle_end * 1000).toISOString()
-              : null,
-            updated_at: new Date().toISOString(),
-          })
+          .update(createdUpdate)
           .eq("conekta_customer_id", customerId);
 
         const { data: sub } = await supabase
@@ -366,20 +373,25 @@ export async function POST(request: Request) {
 
         const isFirstPayment = !preSub?.last_payment_at;
 
+        // Mismo cuidado que en subscription.created: solo se incluyen las
+        // fechas de periodo cuando el evento las trae, para no borrarlas con
+        // null si algún reenvío llega sin esos datos.
+        const paidUpdate: Record<string, unknown> = {
+          status: "active",
+          conekta_subscription_id: subscriptionId,
+          last_payment_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (data.billing_cycle_start) {
+          paidUpdate.current_period_start = new Date(data.billing_cycle_start * 1000).toISOString();
+        }
+        if (data.billing_cycle_end) {
+          paidUpdate.current_period_end = new Date(data.billing_cycle_end * 1000).toISOString();
+        }
+
         await supabase
           .from("subscriptions")
-          .update({
-            status: "active",
-            conekta_subscription_id: subscriptionId,
-            current_period_start: data.billing_cycle_start
-              ? new Date(data.billing_cycle_start * 1000).toISOString()
-              : null,
-            current_period_end: data.billing_cycle_end
-              ? new Date(data.billing_cycle_end * 1000).toISOString()
-              : null,
-            last_payment_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .update(paidUpdate)
           .eq("conekta_customer_id", customerId);
 
         // Conekta reintenta la entrega mientras no reciba 200 — sin este
