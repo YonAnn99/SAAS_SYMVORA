@@ -2,7 +2,24 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 
-const conektaWebhookPublicKey = process.env.CONEKTA_WEBHOOK_PUBLIC_KEY;
+// Reconstruye el PEM desde cero sin importar cómo haya quedado pegado el
+// valor en Vercel (saltos de línea reales, "\n" literales, o todo en una
+// sola línea) — cualquiera de esos formatos rompe crypto.verify() con
+// "DECODER routines::unsupported" si no se normaliza primero.
+function normalizePemPublicKey(raw: string): string {
+  const unescaped = raw.replace(/\\r\\n|\\n/g, "\n").replace(/\r\n/g, "\n");
+  const match = unescaped.match(
+    /-----BEGIN PUBLIC KEY-----([\s\S]*?)-----END PUBLIC KEY-----/
+  );
+  const body = (match ? match[1] : unescaped).replace(/\s+/g, "");
+  const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
+  return `-----BEGIN PUBLIC KEY-----\n${wrapped}\n-----END PUBLIC KEY-----\n`;
+}
+
+const rawConektaWebhookPublicKey = process.env.CONEKTA_WEBHOOK_PUBLIC_KEY;
+const conektaWebhookPublicKey = rawConektaWebhookPublicKey
+  ? normalizePemPublicKey(rawConektaWebhookPublicKey)
+  : undefined;
 const legacyWebhookSecret = process.env.CONEKTA_WEBHOOK_SECRET;
 
 function extractDigestBase64(digestHeader: string | null): Buffer | null {
