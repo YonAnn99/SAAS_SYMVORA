@@ -76,13 +76,15 @@ export default function ProductsPage() {
               {t("products.import.title")}
             </SpecularActionButton>
           )}
-          <SpecularActionButton
-            tone="add"
-            className="h-8 active:scale-[0.98] transition-transform flex-1 sm:flex-none"
-            onClick={openCreateDialog}
-          >
-            {t("products.addProduct")}
-          </SpecularActionButton>
+          <span id="tutorial-add-product-btn" className="flex flex-1 sm:flex-none">
+            <SpecularActionButton
+              tone="add"
+              className="h-8 w-full active:scale-[0.98] transition-transform"
+              onClick={openCreateDialog}
+            >
+              {t("products.addProduct")}
+            </SpecularActionButton>
+          </span>
         </div>
       </div>
 

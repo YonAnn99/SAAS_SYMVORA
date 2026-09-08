@@ -36,22 +36,26 @@ export default function FinancesPage() {
           </p>
         </div>
         {!cash.activeRegister ? (
-          <SpecularActionButton
-            tone="money"
-            onClick={() => cash.setShowOpenDialog(true)}
-            className="h-8 active:scale-[0.98] transition-transform"
-          >
+          <span id="tutorial-open-cash-btn">
+            <SpecularActionButton
+              tone="money"
+              onClick={() => cash.setShowOpenDialog(true)}
+              className="h-8 active:scale-[0.98] transition-transform"
+            >
 
-            {t("pos.openRegister")}
-          </SpecularActionButton>
+              {t("pos.openRegister")}
+            </SpecularActionButton>
+          </span>
         ) : (
-          <SpecularActionButton
-            tone="destructive"
-            onClick={() => cash.setShowCloseDialog(true)}
-            className="h-8 active:scale-[0.98] transition-transform"
-          >
-            {t("pos.closeRegister")}
-          </SpecularActionButton>
+          <span id="tutorial-close-cash-btn">
+            <SpecularActionButton
+              tone="destructive"
+              onClick={() => cash.setShowCloseDialog(true)}
+              className="h-8 active:scale-[0.98] transition-transform"
+            >
+              {t("pos.closeRegister")}
+            </SpecularActionButton>
+          </span>
         )}
       </div>
 

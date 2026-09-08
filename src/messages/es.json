@@ -420,6 +420,7 @@
     "general": "General",
     "appearance": "Apariencia",
     "modules": "Módulos",
+    "inventory": "Inventario",
     "billing": "Facturación",
     "company": "Empresa",
     "companyName": "Nombre de la empresa",
@@ -629,7 +630,7 @@
       },
       "advancedSettings": {
         "title": "Configuración avanzada",
-        "description": "Aquí encuentras ajustes avanzados: módulos activos, parámetros del POS, personalización visual y más. Puedes ajustar esto en cualquier momento."
+        "description": "En la pestaña \"Módulos\" de Configuración activas o desactivas funciones según tu negocio: variantes, lotes, mermas, crédito y más. Puedes ajustar esto en cualquier momento."
       },
       "shortcuts": {
         "title": "Atajos de teclado",

@@ -14,7 +14,7 @@ export function TutorialMinimized() {
   const nextStep = currentStep + 1;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[997] animate-in fade-in-0 slide-in-from-bottom-4 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
+    <div className="fixed bottom-20 right-6 z-[997] animate-in fade-in-0 slide-in-from-bottom-4 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
       <Button
         onClick={resume}
         size="sm"

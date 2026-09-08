@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Puzzle } from "lucide-react";
+import { Building2, Puzzle, Boxes } from "lucide-react";
+import { InventorySettingsTab } from "@/components/settings/inventory-settings-tab";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -227,9 +228,13 @@ export default function SettingsPage() {
             <Building2 className="h-3.5 w-3.5" />
             {t("settings.general")}
           </TabsTrigger>
-          <TabsTrigger value="modules" className="gap-1.5 text-xs">
+          <TabsTrigger id="settings-tab-modules" value="modules" className="gap-1.5 text-xs">
             <Puzzle className="h-3.5 w-3.5" />
             {t("settings.modules")}
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="gap-1.5 text-xs">
+            <Boxes className="h-3.5 w-3.5" />
+            {t("settings.inventory")}
           </TabsTrigger>
         </TabsList>
 
@@ -355,6 +360,11 @@ export default function SettingsPage() {
                 ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Inventory: variants, lots, adjustments */}
+        <TabsContent value="inventory">
+          <InventorySettingsTab tenantId={tenantId} tenantLoading={tenantLoading} />
         </TabsContent>
       </Tabs>
     </div>

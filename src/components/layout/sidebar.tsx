@@ -24,9 +24,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  Palette,
-  Calendar,
-  Wrench,
   TrendingUp,
   CreditCard,
   Receipt,
@@ -67,12 +64,6 @@ const navigation: NavItem[] = [
   { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "SUPER_ADMIN" },
 ];
 
-const inventoryNavigation: NavItem[] = [
-  { name: "layout.variants", href: "/variants", icon: Palette, minRole: "ORG_ADMIN" },
-  { name: "layout.lots", href: "/lots", icon: Calendar, minRole: "ORG_ADMIN" },
-  { name: "layout.adjustments", href: "/inventory-adjustments", icon: Wrench, minRole: "ORG_ADMIN" },
-];
-
 interface SidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -105,10 +96,6 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
 
   const visibleNav = navigation.filter(
     (item) => !item.hidden && (!item.minRole || hasRole(role, item.minRole))
-  );
-
-  const visibleInventory = inventoryNavigation.filter(
-    (item) => !item.minRole || hasRole(role, item.minRole)
   );
 
   return (
@@ -187,38 +174,6 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
                 );
               })}
             </nav>
-
-            {/* Inventory section */}
-            {!collapsed && visibleInventory.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-border/50">
-                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                  📦 Inventario
-                </p>
-                <nav className="flex flex-col gap-0.5" key={String(collapsed)}>
-                  {visibleInventory.map((item, idx) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={onLinkClick}
-                        className={cn(
-                          "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-sidebar-item-in",
-                          active
-                            ? "bg-gradient-to-r from-primary/90 to-primary text-primary-foreground shadow-[0_2px_8px_rgba(91,159,237,0.25)]"
-                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                        )}
-                        style={{ animationDelay: `${(visibleNav.length + idx) * 28}ms` }}
-                      >
-                        <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform duration-200", active ? "text-primary-foreground scale-110" : "text-muted-foreground group-hover:text-foreground")} />
-                        <span>{t(item.name)}</span>
-                      </Link>
-                    );
-                  })}
-                </nav>
-              </div>
-            )}
           </>
         )}
       </ScrollArea>

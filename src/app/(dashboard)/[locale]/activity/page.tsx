@@ -102,6 +102,7 @@ const ENTITY_KEYS: Record<string, string> = {
   cajas: "common.cashRegister",
   config: "common.settings",
   orden_compra: "common.ordenCompra",
+  ordenes_compra: "common.ordenCompra",
   movimientos_caja: "common.movimientoCaja",
   movimiento_caja: "common.movimientoCaja",
 };
@@ -298,7 +299,7 @@ export default function ActivityPage() {
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm">
                             <EntityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span>{t(ENTITY_KEYS[log.entity] || log.entity)}</span>
+                            <span>{ENTITY_KEYS[log.entity] ? t(ENTITY_KEYS[log.entity]) : log.entity}</span>
                             {log.entity_name && (
                               <span className="text-muted-foreground">
                                 — {log.entity_name}

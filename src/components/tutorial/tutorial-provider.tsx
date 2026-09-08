@@ -20,8 +20,9 @@ interface TutorialContextValue {
   start: () => void;
   startFromStep: (step: number) => void;
   resume: () => void;
-  next: (waitForRoute?: boolean) => void;
+  next: () => void;
   onRouteReady: () => void;
+  setWaitingForRoute: (value: boolean) => void;
   prev: () => void;
   minimize: () => void;
   skip: () => void;
@@ -44,11 +45,18 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const stepData = tutorialSteps[tutorial.currentStep];
 
-  // Auto-detect when user arrives at the target route
+  // Decide si el paso actual necesita que el usuario navegue a otra ruta,
+  // comparando el paso contra la URL real — no contra lo que hizo el paso
+  // anterior (eso quedaba desfasado un paso: el prompt "Ir a X" aparecía
+  // o no según de dónde venías, no según a dónde ibas).
   useEffect(() => {
-    if (!tutorial.isActive || !tutorial.waitingForRoute || !stepData) return;
+    if (!tutorial.isActive || !stepData) return;
 
-    if (pathname.includes(stepData.route)) {
+    const atTarget = pathname.includes(stepData.route);
+
+    if (stepData.navigates && !atTarget) {
+      tutorial.setWaitingForRoute(true);
+    } else if (tutorial.waitingForRoute && atTarget) {
       tutorial.onRouteReady();
     }
   }, [pathname, tutorial, stepData]);

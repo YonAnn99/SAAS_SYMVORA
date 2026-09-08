@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useTutorialContext } from "./tutorial-provider";
@@ -38,12 +38,17 @@ export function TutorialDialog() {
   const step = currentStepData;
   const Icon = step?.icon ?? Sparkles;
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const isCentered = !step?.targetSelector || step.position === "center";
   const needsNavigation = !!(step?.navigates && step?.route);
   const showWaiting = waitingForRoute && needsNavigation;
 
-  // Measure target element and position dialog after DOM update
+  // Measure target element and position dialog after DOM update. Usa el
+  // tamaño REAL del diálogo ya renderizado (contentRef) en vez de una
+  // altura estimada fija — con una estimación fija, un paso con texto más
+  // largo de lo previsto se sale de la pantalla porque el cálculo de "no
+  // te salgas del viewport" usa una altura menor a la real.
   useLayoutEffect(() => {
     if (isCentered) return;
 
@@ -55,8 +60,9 @@ export function TutorialDialog() {
       }
 
       const r = el.getBoundingClientRect();
-      const dialogWidth = 380;
-      const dialogHeight = showWaiting ? 240 : 320;
+      const dialogRect = contentRef.current?.getBoundingClientRect();
+      const dialogWidth = dialogRect?.width || 380;
+      const dialogHeight = dialogRect?.height || (showWaiting ? 240 : 320);
       const gap = 24;
 
       let top: number;
@@ -73,6 +79,11 @@ export function TutorialDialog() {
         case "bottom":
           top = r.bottom + gap;
           left = r.left + r.width / 2 - dialogWidth / 2;
+          if (top + dialogHeight > window.innerHeight - 16) {
+            // No cabe abajo (ej. el botón está cerca del fondo) — se
+            // coloca arriba del elemento en vez de cortarse.
+            top = r.top - dialogHeight - gap;
+          }
           break;
         default:
           top = window.innerHeight / 2 - dialogHeight / 2;
@@ -85,7 +96,26 @@ export function TutorialDialog() {
       setPos({ top, left });
     };
 
+    // Una pasada extra en el siguiente frame: la primera medición puede
+    // ocurrir antes de que fuentes/íconos terminen de afectar el layout.
     measure();
+    const raf = requestAnimationFrame(measure);
+
+    // El elemento objetivo puede no existir todavía al momento de este
+    // primer measure() — ej. un botón que solo aparece después de que la
+    // página termine de cargar sus datos (como "Abrir caja" en Finanzas).
+    // Un MutationObserver reintenta la medición cada vez que cambia el DOM,
+    // así que en cuanto el botón real aparece, el diálogo se reposiciona
+    // solo en vez de quedarse centrado para siempre.
+    const observer = new MutationObserver(measure);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [step, currentStep, isCentered, showWaiting]);
 
   const handleGoToModule = () => {
@@ -100,7 +130,7 @@ export function TutorialDialog() {
 
   const handleNext = () => {
     if (showWaiting) return;
-    next(needsNavigation && !showWaiting);
+    next();
   };
 
   if (!step) return null;
@@ -118,6 +148,7 @@ export function TutorialDialog() {
 
       <Dialog open={isActive} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent
+          ref={contentRef}
           noBlur
           showCloseButton={false}
           className={cn(
@@ -190,7 +221,11 @@ export function TutorialDialog() {
           </div>
 
           {/* Footer with navigation */}
-          <DialogFooter className="px-5 py-3 bg-muted/30 border-t border-border/50">
+          {/* mx-0 mb-0 cancela los -mx-4 -mb-4 que trae DialogFooter por
+              defecto (pensados para un DialogContent con p-4) — este
+              diálogo usa p-0, así que esos márgenes negativos desbordaban
+              el pie ~16px y overflow-hidden se los recortaba. */}
+          <DialogFooter className="px-5 py-3 bg-muted/30 border-t border-border/50 mx-0 mb-0">
             <div className="flex w-full items-center justify-between gap-2">
               <Button
                 variant="ghost"

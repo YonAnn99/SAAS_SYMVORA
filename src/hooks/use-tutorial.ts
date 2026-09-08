@@ -34,6 +34,12 @@ export function useTutorial(totalSteps: number) {
         setIsActive(true);
         setMinimized(true);
       }
+    } else if (localStorage.getItem(STORAGE_KEY_STEP) === null) {
+      // Nunca se tocó el tutorial en este navegador (ni completado, ni
+      // saltado, ni un paso guardado) — es la primera vez que alguien
+      // entra al sistema, así que se activa solo.
+      setIsActive(true);
+      localStorage.setItem(STORAGE_KEY_STEP, "0");
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
@@ -65,11 +71,15 @@ export function useTutorial(totalSteps: number) {
   }, []);
 
   const next = useCallback(
-    (waitForRoute?: boolean) => {
+    () => {
       setCurrentStep((prev) => {
         const nextStep = Math.min(prev + 1, totalSteps - 1);
         localStorage.setItem(STORAGE_KEY_STEP, String(nextStep));
-        setWaitingForRoute(!!waitForRoute);
+        // No se decide aquí si el siguiente paso necesita navegar — eso lo
+        // calcula TutorialProvider de forma reactiva comparando el paso
+        // nuevo contra la ruta actual (ver ese archivo). Decidirlo aquí
+        // según el paso que se está dejando (el único dato disponible en
+        // este callback) quedaba desfasado un paso.
         if (nextStep >= totalSteps - 1) {
           localStorage.setItem(STORAGE_KEY_COMPLETED, "true");
           setCompleted(true);
@@ -143,6 +153,7 @@ export function useTutorial(totalSteps: number) {
     resume,
     next,
     onRouteReady,
+    setWaitingForRoute,
     prev,
     minimize,
     skip,
