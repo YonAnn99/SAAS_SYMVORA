@@ -5,3 +5,4 @@ export const LEGAL_EMAIL = "legal@symvora.com.mx";
 export const PAYMENTS_EMAIL = "pagos@symvora.com.mx";
 export const BILLING_EMAIL = "facturacion@symvora.com.mx";
 export const NO_REPLY_EMAIL = "no-reply@symvora.com.mx";
+export const SUPPORT_EMAIL = "soporte@symvora.com.mx";

@@ -488,6 +488,19 @@
     "promoActiveSub": "No puedes aplicar un código con una suscripción activa",
     "confirmCancel": "¿Estás seguro de cancelar tu suscripción? Perderás acceso al sistema.",
     "subscriptionCanceled": "Suscripción cancelada",
+    "cancelReasonTitle": "¿Por qué cancelas?",
+    "cancelReasonDescription": "Ayúdanos a mejorar contándonos por qué cancelas.",
+    "cancelReasonOptions": {
+      "precio": "El precio es muy alto",
+      "no_uso": "Ya no uso el sistema / cerré mi negocio",
+      "funciones": "Me faltan funciones que necesito",
+      "problemas_tecnicos": "Tuve problemas técnicos",
+      "otra_opcion": "Encontré otra opción que se ajusta mejor",
+      "otro": "Otro"
+    },
+    "cancelReasonOtherPlaceholder": "Cuéntanos qué pasó...",
+    "cancelReasonBack": "Volver",
+    "cancelReasonConfirm": "Confirmar cancelación",
     "paymentHistory": "Historial de Pagos",
     "noPayments": "No hay pagos registrados"
   },

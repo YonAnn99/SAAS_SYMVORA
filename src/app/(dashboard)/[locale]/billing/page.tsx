@@ -79,6 +79,9 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showCancelReasonDialog, setShowCancelReasonDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelReasonOther, setCancelReasonOther] = useState("");
   const [referralCode, setReferralCode] = useState<string>("");
   const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
   const [copied, setCopied] = useState(false);
@@ -272,14 +275,20 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       const response = await fetch("/api/conekta/cancel-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId }),
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          reason: cancelReason || undefined,
+          reason_detail: cancelReason === "otro" ? cancelReasonOther.trim() : undefined,
+        }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || t("common.error"));
 
       toast.success(t("billing.subscriptionCanceled"));
-      setShowCancelDialog(false);
+      setShowCancelReasonDialog(false);
+      setCancelReason("");
+      setCancelReasonOther("");
       fetchSubscription();
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : t("common.error"));
@@ -801,10 +810,94 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             <SpecularActionButton
               tone="destructive"
               className="h-8"
-              onClick={handleCancelSubscription}
+              onClick={() => {
+                setShowCancelDialog(false);
+                setShowCancelReasonDialog(true);
+              }}
               disabled={processing}
             >
-              {processing ? t("common.loading") : t("billing.cancelSubscription")}
+              {t("billing.cancelSubscription")}
+            </SpecularActionButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showCancelReasonDialog}
+        onOpenChange={(open) => {
+          setShowCancelReasonDialog(open);
+          if (!open) {
+            setCancelReason("");
+            setCancelReasonOther("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("billing.cancelReasonTitle")}</DialogTitle>
+            <DialogDescription>{t("billing.cancelReasonDescription")}</DialogDescription>
+          </DialogHeader>
+
+          <div role="radiogroup" aria-label={t("billing.cancelReasonTitle")} className="space-y-2">
+            {(
+              [
+                "precio",
+                "no_uso",
+                "funciones",
+                "problemas_tecnicos",
+                "otra_opcion",
+                "otro",
+              ] as const
+            ).map((code) => (
+              <label
+                key={code}
+                className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm cursor-pointer hover:bg-muted/50"
+              >
+                <input
+                  type="radio"
+                  name="cancelReason"
+                  value={code}
+                  checked={cancelReason === code}
+                  onChange={() => setCancelReason(code)}
+                  className="h-4 w-4"
+                />
+                {t(`billing.cancelReasonOptions.${code}`)}
+              </label>
+            ))}
+
+            {cancelReason === "otro" && (
+              <textarea
+                value={cancelReasonOther}
+                onChange={(e) => setCancelReasonOther(e.target.value)}
+                placeholder={t("billing.cancelReasonOtherPlaceholder")}
+                maxLength={500}
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setShowCancelReasonDialog(false)}
+              disabled={processing}
+            >
+              {t("billing.cancelReasonBack")}
+            </Button>
+            <SpecularActionButton
+              tone="destructive"
+              className="h-8"
+              onClick={handleCancelSubscription}
+              disabled={
+                processing ||
+                !cancelReason ||
+                (cancelReason === "otro" && cancelReasonOther.trim().length === 0)
+              }
+            >
+              {processing ? t("common.loading") : t("billing.cancelReasonConfirm")}
             </SpecularActionButton>
           </DialogFooter>
         </DialogContent>

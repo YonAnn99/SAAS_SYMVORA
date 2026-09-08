@@ -6,7 +6,7 @@ import { assertNotDemo } from "@/lib/supabase/demo-guard";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenant_id } = body;
+    const { tenant_id, reason, reason_detail: reasonDetail } = body;
 
     if (!tenant_id) {
       return NextResponse.json(
@@ -108,6 +108,52 @@ export async function POST(request: Request) {
         { error: "Error al actualizar el estado local" },
         { status: 500 }
       );
+    }
+
+    // Correos post-cancelación: al dueño (confirmación) y a soporte (motivo).
+    // Best-effort — un fallo de correo no debe deshacer una cancelación que
+    // ya se completó en Conekta y en la base de datos.
+    try {
+      const { data: tenant } = await supabase
+        .from("tenants")
+        .select("nombre_comercial")
+        .eq("id", tenant_id)
+        .single();
+
+      const { data: ownerMembership } = await supabase
+        .from("tenant_memberships")
+        .select("user_id")
+        .eq("tenant_id", tenant_id)
+        .eq("role", "SUPER_ADMIN")
+        .limit(1)
+        .maybeSingle();
+
+      let ownerEmail: string | null = null;
+      if (ownerMembership) {
+        const { data: ownerUser } = await supabase.auth.admin.getUserById(
+          ownerMembership.user_id
+        );
+        ownerEmail = ownerUser?.user?.email ?? null;
+      }
+
+      const tenantName = tenant?.nombre_comercial || "tu negocio";
+      const { sendCancellationEmail, sendCancellationFeedbackEmail } = await import("@/lib/email");
+
+      await Promise.all([
+        ownerEmail
+          ? sendCancellationEmail({ to: ownerEmail, businessName: tenantName })
+          : Promise.resolve(),
+        typeof reason === "string" && reason.length > 0 && ownerEmail
+          ? sendCancellationFeedbackEmail({
+              tenantName,
+              userEmail: ownerEmail,
+              reason,
+              otherText: typeof reasonDetail === "string" ? reasonDetail : null,
+            })
+          : Promise.resolve(),
+      ]);
+    } catch (emailError) {
+      console.error("Error sending cancellation emails:", emailError);
     }
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
-import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL } from "@/lib/contact";
+import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SUPPORT_EMAIL } from "@/lib/contact";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -458,6 +458,192 @@ export async function sendSuggestionEmail(params: {
     return { ok: true };
   } catch (err) {
     console.error("[email] Failed to send suggestion email:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function sendCancellationEmail(params: {
+  to: string;
+  businessName: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY not configured; skipping cancellation email");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
+              <tr>
+                <td style="background:${BRAND.surface};padding:28px;text-align:center;">
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:32px;">
+                  <h1 style="font-size:22px;color:${BRAND.ink};margin:0 0 12px;line-height:1.3;">
+                    Tu suscripción fue cancelada, ${params.businessName}
+                  </h1>
+                  <p style="font-size:15px;color:${BRAND.body};margin:0 0 24px;line-height:1.6;">
+                    Cancelamos tu membresía SYMVORA. No se hará ningún cargo adicional a tu tarjeta.
+                  </p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                    <tr>
+                      <td style="background:${BRAND.subtleBg};border:1px solid ${BRAND.border};border-radius:12px;padding:20px;">
+                        <p style="font-size:14px;color:${BRAND.ink};margin:0;line-height:1.6;">
+                          Si cambias de opinión, puedes reactivar tu cuenta cuando quieras — tu información sigue guardada.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px;">
+                    <tr>
+                      <td align="center">
+                        <a href="${BRAND.appUrl}/es/billing"
+                           style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                          Reactivar mi cuenta
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 32px 28px;">
+                  <p style="font-size:13px;color:${BRAND.muted};margin:0;border-top:1px solid ${BRAND.border};padding-top:16px;line-height:1.6;">
+                    Si esto fue un error o tienes dudas, escríbenos a <a href="mailto:${SUPPORT_EMAIL}" style="color:${BRAND.ink};text-decoration:none;">${SUPPORT_EMAIL}</a>.
+                  </p>
+                  <p style="font-size:12px;color:${BRAND.muted};margin:12px 0 0;">
+                    © ${new Date().getFullYear()} SYMVORA. Todos los derechos reservados.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: params.to,
+      subject: "Tu suscripción SYMVORA ha sido cancelada",
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Failed to send cancellation email:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+const CANCELLATION_REASON_LABELS: Record<string, string> = {
+  precio: "El precio es muy alto",
+  no_uso: "Ya no uso el sistema / cerré el negocio",
+  funciones: "Me faltan funciones que necesito",
+  problemas_tecnicos: "Tuve problemas técnicos",
+  otra_opcion: "Encontré otra opción que se ajusta mejor",
+  otro: "Otro",
+};
+
+export async function sendCancellationFeedbackEmail(params: {
+  tenantName: string;
+  userEmail: string;
+  reason: string;
+  otherText?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY not configured; skipping cancellation feedback email");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const reasonLabel = CANCELLATION_REASON_LABELS[params.reason] || params.reason;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
+              <tr>
+                <td style="background:${BRAND.surface};padding:28px;text-align:center;">
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:32px;">
+                  <h1 style="font-size:20px;color:${BRAND.ink};margin:0 0 8px;line-height:1.3;">
+                    Cancelación de suscripción
+                  </h1>
+                  <p style="font-size:14px;color:${BRAND.body};margin:0 0 24px;line-height:1.6;">
+                    <strong>${params.tenantName}</strong> (${params.userEmail}) canceló su suscripción.
+                  </p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                    <tr>
+                      <td style="background:${BRAND.bone};border-radius:10px;padding:16px 20px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td style="font-size:13px;color:${BRAND.muted};padding:0;width:90px;vertical-align:top;">Motivo</td>
+                            <td style="font-size:14px;color:${BRAND.ink};font-weight:600;padding:0;">${reasonLabel}</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  ${
+                    params.otherText
+                      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                    <tr>
+                      <td style="padding:0;">
+                        <p style="font-size:13px;color:${BRAND.muted};margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Detalle</p>
+                        <p style="font-size:14px;color:${BRAND.body};margin:0;line-height:1.7;white-space:pre-wrap;">${params.otherText}</p>
+                      </td>
+                    </tr>
+                  </table>`
+                      : ""
+                  }
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 32px 28px;">
+                  <p style="font-size:13px;color:${BRAND.muted};margin:0;border-top:1px solid ${BRAND.border};padding-top:16px;line-height:1.6;">
+                    © ${new Date().getFullYear()} SYMVORA · Cancelaciones
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: SUPPORT_EMAIL,
+      replyTo: params.userEmail,
+      subject: `[Cancelación] ${params.tenantName}`,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Failed to send cancellation feedback email:", err);
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
