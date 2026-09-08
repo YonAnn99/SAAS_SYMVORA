@@ -54,17 +54,35 @@ export async function POST(request: Request) {
         await cancelSubscription(subscription.conekta_customer_id);
       } catch (conektaError: unknown) {
         const errObj = conektaError as {
-          response?: { data?: unknown };
+          response?: {
+            status?: number;
+            data?: { details?: Array<{ code?: string; type?: string }>; type?: string };
+          };
           message?: string;
         };
-        const detail = errObj.response?.data
-          ? JSON.stringify(errObj.response.data)
-          : errObj.message || String(conektaError);
-        console.error("Error canceling Conekta subscription:", detail);
-        return NextResponse.json(
-          { error: `Error al cancelar en Conekta: ${detail}` },
-          { status: 500 }
-        );
+        // Conekta solo permite una suscripción activa por cliente
+        // (/customers/{id}/subscription). Si ya no existe (por ejemplo, un
+        // intento anterior sí canceló en Conekta pero la actualización local
+        // no llegó a completarse), responde "no encontrado" — describiéndolo
+        // como si fuera el Customer el que falta, aunque en realidad es la
+        // suscripción anidada. Eso no es un fallo real: ya está cancelada
+        // del lado de Conekta, así que seguimos y sincronizamos lo local.
+        const details = errObj.response?.data?.details ?? [];
+        const notFound =
+          errObj.response?.status === 404 ||
+          errObj.response?.data?.type === "resource_not_found_error" ||
+          details.some((d) => d.type === "resource_not_found_error" || d.code?.includes("resource_not_found"));
+
+        if (!notFound) {
+          const detail = errObj.response?.data
+            ? JSON.stringify(errObj.response.data)
+            : errObj.message || String(conektaError);
+          console.error("Error canceling Conekta subscription:", detail);
+          return NextResponse.json(
+            { error: `Error al cancelar en Conekta: ${detail}` },
+            { status: 500 }
+          );
+        }
       }
     }
 
