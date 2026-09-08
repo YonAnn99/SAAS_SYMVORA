@@ -314,15 +314,27 @@ export async function POST(request: Request) {
           .eq("conekta_customer_id", customerId)
           .single();
 
-        if (sub) {
-          await supabase.from("payment_history").insert({
-            subscription_id: sub.id,
-            amount: (data.amount || 40000) / 100,
-            payment_method: "card",
-            status: "completed",
-            conekta_order_id: data.last_billing_cycle_order_id,
-            paid_at: new Date().toISOString(),
-          });
+        if (sub && data.last_billing_cycle_order_id) {
+          // Conekta reintenta la entrega del webhook mientras no reciba un
+          // 200 (ej. durante la firma rota que depurramos hoy) — sin este
+          // chequeo, cada reintento duplicaba la fila del mismo cargo.
+          const { data: existingPayment } = await supabase
+            .from("payment_history")
+            .select("id")
+            .eq("conekta_order_id", data.last_billing_cycle_order_id)
+            .eq("status", "completed")
+            .maybeSingle();
+
+          if (!existingPayment) {
+            await supabase.from("payment_history").insert({
+              subscription_id: sub.id,
+              amount: (data.amount || 40000) / 100,
+              payment_method: "card",
+              status: "completed",
+              conekta_order_id: data.last_billing_cycle_order_id,
+              paid_at: new Date().toISOString(),
+            });
+          }
         }
 
         const { data: tenantSub } = await supabase
@@ -370,7 +382,21 @@ export async function POST(request: Request) {
           })
           .eq("conekta_customer_id", customerId);
 
-        if (preSub) {
+        // Conekta reintenta la entrega mientras no reciba 200 — sin este
+        // chequeo, cada reintento del mismo cargo duplicaba el registro Y
+        // repetía el correo de bienvenida / la conversión de referido.
+        let alreadyProcessed = false;
+        if (data.last_billing_cycle_order_id) {
+          const { data: existingPayment } = await supabase
+            .from("payment_history")
+            .select("id")
+            .eq("conekta_order_id", data.last_billing_cycle_order_id)
+            .eq("status", "completed")
+            .maybeSingle();
+          alreadyProcessed = Boolean(existingPayment);
+        }
+
+        if (preSub && !alreadyProcessed) {
           await supabase.from("payment_history").insert({
             subscription_id: preSub.id,
             amount: (data.amount || 40000) / 100,
@@ -388,7 +414,7 @@ export async function POST(request: Request) {
             .eq("id", preSub.tenant_id);
         }
 
-        if (preSub) {
+        if (preSub && !alreadyProcessed) {
           if (isFirstPayment) {
             // Primer pago real => conversion del referido (si aplica) + correo
             // de bienvenida. Los cobros siguientes NO reenvían el correo
