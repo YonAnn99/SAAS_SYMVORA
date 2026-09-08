@@ -416,16 +416,8 @@ export async function POST(request: Request) {
 
         if (preSub && !alreadyProcessed) {
           if (isFirstPayment) {
-            // Primer pago real => conversion del referido (si aplica) + correo
-            // de bienvenida. Los cobros siguientes NO reenvían el correo
-            // (evita spam mensual/anual), solo consumen mes gratis si aplica.
+            // Primer pago real de la cuenta => conversion del referido (si aplica).
             await convertReferralOnFirstPayment(supabase, preSub.tenant_id);
-            await sendWelcomeEmailToOwner(
-              supabase,
-              preSub.tenant_id,
-              preSub.billing_period === "yearly" ? "yearly" : "monthly",
-              data.amount || 40000
-            );
           } else if (data.last_billing_cycle_order_id) {
             // Cobro recurrente real => aplicar mes gratis acumulado.
             await consumeFreeMonthCredit(supabase, {
@@ -435,6 +427,17 @@ export async function POST(request: Request) {
               amountCents: data.amount || 40000,
             });
           }
+
+          // Correo de "Pago confirmado" en cada cobro (primero o recurrente),
+          // no solo en el primer pago de la cuenta — así un cambio de plan
+          // (ej. mensual a anual) también manda un recibo con el monto real
+          // que se acaba de cobrar, en vez de quedarse en silencio.
+          await sendWelcomeEmailToOwner(
+            supabase,
+            preSub.tenant_id,
+            preSub.billing_period === "yearly" ? "yearly" : "monthly",
+            data.amount || 40000
+          );
         }
 
         break;
