@@ -626,7 +626,7 @@
       },
       "billing": {
         "title": "Gestiona tu suscripción",
-        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Tu plan es SYMVORA Basic a $400 MXN/mes con 7 días de prueba."
+        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Tu plan es SYMVORA Basic a $399 MXN/mes con 7 días de prueba."
       },
       "advancedSettings": {
         "title": "Configuración avanzada",
@@ -822,7 +822,7 @@
         },
         "3": {
           "question": "¿Qué pasa cuando termina mi prueba gratuita de 7 días?",
-          "answer": "Al finalizar los 7 días, tu suscripción se renueva automáticamente al plan vigente ($400 MXN/mes) y se cobra al método de pago que registraste al inicio. Si no quieres continuar, puedes cancelar en cualquier momento antes del cargo sin ningún costo."
+          "answer": "Al finalizar los 7 días, tu suscripción se renueva automáticamente al plan vigente ($399 MXN/mes) y se cobra al método de pago que registraste al inicio. Si no quieres continuar, puedes cancelar en cualquier momento antes del cargo sin ningún costo."
         },
         "4": {
           "question": "¿Necesito conocimientos técnicos para configurarlo?",
@@ -830,7 +830,7 @@
         },
         "5": {
           "question": "¿Cobra comisión por venta?",
-          "answer": "No. SYMVORA cobra una suscripción mensual fija de $400 MXN independientemente del número de transacciones. Lo que vendas es tuyo — sin comisiones ocultas, sin porcentaje por venta."
+          "answer": "No. SYMVORA cobra una suscripción mensual fija de $399 MXN independientemente del número de transacciones. Lo que vendas es tuyo — sin comisiones ocultas, sin porcentaje por venta."
         },
         "7": {
           "question": "¿Mis datos están seguros?",
@@ -851,11 +851,11 @@
       "subtitle": "Prueba gratis por 7 días. Sin tarjeta de crédito. Cancela cuando quieras.",
       "monthly": "Mensual",
       "yearly": "Anual",
-      "saveBadge": "Ahorra 20%",
-      "priceMonthly": "$400",
-      "priceYearly": "$320",
+      "saveBadge": "Ahorra 25%",
+      "priceMonthly": "$399",
+      "priceYearly": "$299",
       "periodMonthly": "MXN / mes",
-      "periodYearly": "MXN / mes facturado anualmente",
+      "periodYearly": "MXN / mes · $3,588 facturado al año",
       "features": {
         "pos": "Punto de venta completo",
         "inventory": "Inventario con lotes y variantes",

@@ -42,6 +42,23 @@ export async function ensurePlanExists(
       err.message?.includes("already") ||
       details.some((d) => d.param === "id" || d.code?.includes("id.found"));
     if (alreadyExists) {
+      // El plan ya existe en Conekta y su monto es inmutable. Si no coincide
+      // con el precio vigente, seguiríamos cobrando el precio viejo en
+      // silencio (ya pasó dos veces: por eso los ids van en -v3). Avisamos
+      // fuerte en logs; el fix es bumpear CONEKTA_PLAN_IDS, no editar el plan.
+      try {
+        const existing = await getPlan(planId);
+        const expected = CONEKTA_PLAN_AMOUNTS[period];
+        if (existing.amount !== expected) {
+          console.error(
+            `[conekta/plans] El plan "${planId}" ya existe en Conekta con amount=${existing.amount} ` +
+              `pero el precio vigente es ${expected} centavos. Conekta no permite editar el monto: ` +
+              `bumpea CONEKTA_PLAN_IDS a una version nueva para aplicar el precio nuevo.`
+          );
+        }
+      } catch {
+        // No poder leer el plan no debe tumbar el checkout: es solo la verificación.
+      }
       return planId;
     }
     throw error;

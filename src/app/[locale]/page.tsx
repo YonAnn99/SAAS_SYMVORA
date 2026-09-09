@@ -91,7 +91,7 @@ export default async function LocalePage() {
 
   const software = softwareApplicationSchema(siteUrl, {
     description:
-      "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $400 MXN/mes sin comisiones por venta.",
+      "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $399 MXN/mes sin comisiones por venta.",
     featureList,
   });
 

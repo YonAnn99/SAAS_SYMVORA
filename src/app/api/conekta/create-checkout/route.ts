@@ -3,6 +3,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { getAppUrl } from "@/lib/site";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
 
 const APP_URL = getAppUrl();
 
@@ -166,9 +167,12 @@ export async function POST(request: Request) {
 
     const allowedMethods = METHOD_MAP[type] ?? ALL_METHODS;
 
-    // Monto en centavos: mensual $400 MXN, anual $320 MXN/mes facturado de
-    // una vez ($320 x 12 = $3,840 MXN, 20% de ahorro vs pagar mes a mes).
-    const amount = period === "yearly" ? 384000 : 40000;
+    // Monto en centavos: mensual $399 MXN, anual $3,588 MXN cobrados de una vez
+    // ($299/mes, 25% de ahorro vs pagar mes a mes). Sale de la misma constante
+    // que usa el plan de Conekta para que tarjeta y efectivo nunca cobren
+    // distinto: esta rama (efectivo/transferencia) arma line_items a mano,
+    // mientras que la de tarjeta delega el monto al plan.
+    const amount = SUBSCRIPTION_PRICE_CENTS[period];
     const description =
       period === "yearly" ? "SYMVORA Basico - Anual" : "SYMVORA Basico - Mensual";
 

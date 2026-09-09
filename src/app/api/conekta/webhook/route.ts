@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
 
 // Reconstruye el PEM desde cero sin importar cómo haya quedado pegado el
 // valor en Vercel (saltos de línea reales, "\n" literales, o todo en una
@@ -215,6 +216,16 @@ async function consumeFreeMonthCredit(
   return { consumed: true };
 }
 
+// Conekta siempre manda `amount` en estos eventos; esto solo cubre el caso raro
+// de un evento sin monto. Depende del periodo a propósito: un fallback mensual
+// sobre un cobro anual registraría (y en el flujo de referidos reembolsaría) una
+// cantidad equivocada.
+function fallbackAmountCents(billingPeriod: string | null | undefined): number {
+  return billingPeriod === "yearly"
+    ? SUBSCRIPTION_PRICE_CENTS.yearly
+    : SUBSCRIPTION_PRICE_CENTS.monthly;
+}
+
 // Email de bienvenida al dueño del tenant que acaba de pagar su membresia.
 async function sendWelcomeEmailToOwner(
   supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
@@ -317,7 +328,7 @@ export async function POST(request: Request) {
 
         const { data: sub } = await supabase
           .from("subscriptions")
-          .select("id")
+          .select("id, billing_period")
           .eq("conekta_customer_id", customerId)
           .single();
 
@@ -335,7 +346,7 @@ export async function POST(request: Request) {
           if (!existingPayment) {
             await supabase.from("payment_history").insert({
               subscription_id: sub.id,
-              amount: (data.amount || 40000) / 100,
+              amount: (data.amount || fallbackAmountCents(sub.billing_period)) / 100,
               payment_method: "card",
               status: "completed",
               conekta_order_id: data.last_billing_cycle_order_id,
@@ -411,7 +422,7 @@ export async function POST(request: Request) {
         if (preSub && !alreadyProcessed) {
           await supabase.from("payment_history").insert({
             subscription_id: preSub.id,
-            amount: (data.amount || 40000) / 100,
+            amount: (data.amount || fallbackAmountCents(preSub.billing_period)) / 100,
             payment_method: "card",
             status: "completed",
             conekta_order_id: data.last_billing_cycle_order_id,
@@ -436,7 +447,7 @@ export async function POST(request: Request) {
               subscriptionId: preSub.id,
               tenantId: preSub.tenant_id,
               conektaOrderId: data.last_billing_cycle_order_id,
-              amountCents: data.amount || 40000,
+              amountCents: data.amount || fallbackAmountCents(preSub.billing_period),
             });
           }
 
@@ -448,7 +459,7 @@ export async function POST(request: Request) {
             supabase,
             preSub.tenant_id,
             preSub.billing_period === "yearly" ? "yearly" : "monthly",
-            data.amount || 40000
+            data.amount || fallbackAmountCents(preSub.billing_period)
           );
         }
 
@@ -596,14 +607,14 @@ export async function POST(request: Request) {
               supabase,
               subData.tenant_id,
               subData.billing_period === "yearly" ? "yearly" : "monthly",
-              data.amount || 40000
+              data.amount || fallbackAmountCents(subData.billing_period)
             );
           } else {
             await consumeFreeMonthCredit(supabase, {
               subscriptionId: subData.id,
               tenantId: subData.tenant_id,
               conektaOrderId: data.id,
-              amountCents: data.amount || 40000,
+              amountCents: data.amount || fallbackAmountCents(subData.billing_period),
             });
           }
         }

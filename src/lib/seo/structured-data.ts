@@ -169,14 +169,14 @@ export function softwareApplicationSchema(
       "@type": "Offer",
       url: `${siteUrl}/es`,
       priceCurrency: "MXN",
-      price: 400,
+      price: 399,
       priceValidUntil: "2027-12-31",
       availability: "https://schema.org/InStock",
       category: "subscription",
       priceSpecification: [
         {
           "@type": "UnitPriceSpecification",
-          price: 400,
+          price: 399,
           priceCurrency: "MXN",
           unitText: "mes",
           referenceQuantity: {

@@ -749,7 +749,7 @@
         },
         "3": {
           "question": "What happens when my 7-day free trial ends?",
-          "answer": "After 7 days, your subscription renews automatically to the current plan ($400 MXN/month) and is charged to the payment method you registered at signup. If you don't want to continue, you can cancel anytime before the charge at no cost."
+          "answer": "After 7 days, your subscription renews automatically to the current plan ($399 MXN/month) and is charged to the payment method you registered at signup. If you don't want to continue, you can cancel anytime before the charge at no cost."
         },
         "4": {
           "question": "Do I need technical knowledge to set it up?",
@@ -757,7 +757,7 @@
         },
         "5": {
           "question": "Is there a per-sale commission?",
-          "answer": "No. SYMVORA charges a flat monthly subscription of $400 MXN regardless of the number of transactions. What you sell is yours — no hidden fees, no per-sale percentage."
+          "answer": "No. SYMVORA charges a flat monthly subscription of $399 MXN regardless of the number of transactions. What you sell is yours — no hidden fees, no per-sale percentage."
         },
         "7": {
           "question": "Is my data secure?",
@@ -778,11 +778,11 @@
       "subtitle": "Free 7-day trial. No credit card. Cancel anytime.",
       "monthly": "Monthly",
       "yearly": "Yearly",
-      "saveBadge": "Save 20%",
-      "priceMonthly": "$400",
-      "priceYearly": "$320",
+      "saveBadge": "Save 25%",
+      "priceMonthly": "$399",
+      "priceYearly": "$299",
       "periodMonthly": "MXN / month",
-      "periodYearly": "MXN / month billed annually",
+      "periodYearly": "MXN / month · $3,588 billed yearly",
       "features": {
         "pos": "Full point of sale",
         "inventory": "Inventory with lots and variants",
