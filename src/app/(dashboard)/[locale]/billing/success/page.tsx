@@ -23,20 +23,18 @@ function BillingSuccessContent() {
   const isCash = searchParams.get("type") === "cash";
   const [countdown, setCountdown] = useState(5);
 
+  // La cuenta regresiva y el redirect van en efectos separados a propósito: React
+  // ejecuta los updaters de estado durante el render, así que navegar dentro de
+  // uno dispara "Cannot update a component while rendering a different component".
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          router.push(billingPath);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
-    return () => clearInterval(timer);
-  }, [router, billingPath]);
+  useEffect(() => {
+    if (countdown === 0) router.push(billingPath);
+  }, [countdown, router, billingPath]);
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
