@@ -577,6 +577,10 @@
     "goToModule": "Ir a {module}",
     "continueTutorial": "Continuar tutorial",
     "steps": {
+      "scanner": {
+        "title": "Escanea tus productos para vender más rápido",
+        "description": "Conecta un lector de código de barras para agregar productos a tu venta en segundos."
+      },
       "welcome": {
         "title": "¡Bienvenido a SYMVORA!",
         "description": "Este tutorial te guiará a través de los pasos para configurar y usar tu sistema de punto de venta. Sigue cada paso en orden para que todo funcione correctamente."

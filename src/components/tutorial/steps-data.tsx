@@ -1,4 +1,5 @@
 import {
+  ScanBarcode,
   Settings,
   Users,
   ShoppingCartIcon,
@@ -30,11 +31,31 @@ export interface TutorialStep {
   navigates: boolean;
   /** Module name for the "go to X" waiting state */
   moduleKey: string;
+  /**
+   * Imagen ilustrativa, encima de la descripción. Opcional a propósito: solo
+   * algunos pasos la tienen y los demás no se tocan.
+   */
+  image?: { src: string; alt: string };
 }
 
 export const tutorialSteps: TutorialStep[] = [
   {
     id: 1,
+    titleKey: "tutorial.steps.scanner.title",
+    descriptionKey: "tutorial.steps.scanner.description",
+    icon: ScanBarcode,
+    route: "/dashboard",
+    targetSelector: null,
+    position: "center",
+    navigates: false,
+    moduleKey: "",
+    image: {
+      src: "/lector-de-barras.png",
+      alt: "Lector de código de barras escaneando la etiqueta de un producto",
+    },
+  },
+  {
+    id: 2,
     titleKey: "tutorial.steps.welcome.title",
     descriptionKey: "tutorial.steps.welcome.description",
     icon: Sparkles,
@@ -45,7 +66,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "",
   },
   {
-    id: 2,
+    id: 3,
     titleKey: "tutorial.steps.business.title",
     descriptionKey: "tutorial.steps.business.description",
     icon: Building2,
@@ -56,7 +77,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.settings",
   },
   {
-    id: 3,
+    id: 4,
     titleKey: "tutorial.steps.users.title",
     descriptionKey: "tutorial.steps.users.description",
     icon: Users,
@@ -67,7 +88,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.users",
   },
   {
-    id: 4,
+    id: 5,
     titleKey: "tutorial.steps.suppliers.title",
     descriptionKey: "tutorial.steps.suppliers.description",
     icon: ShoppingCartIcon,
@@ -78,7 +99,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.purchases",
   },
   {
-    id: 5,
+    id: 6,
     titleKey: "tutorial.steps.products.title",
     descriptionKey: "tutorial.steps.products.description",
     icon: Package,
@@ -89,7 +110,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.products",
   },
   {
-    id: 6,
+    id: 7,
     titleKey: "tutorial.steps.createProduct.title",
     descriptionKey: "tutorial.steps.createProduct.description",
     icon: PlusCircle,
@@ -100,7 +121,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "",
   },
   {
-    id: 7,
+    id: 8,
     titleKey: "tutorial.steps.openCash.title",
     descriptionKey: "tutorial.steps.openCash.description",
     icon: ShoppingCart,
@@ -111,7 +132,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.finances",
   },
   {
-    id: 8,
+    id: 9,
     titleKey: "tutorial.steps.firstSale.title",
     descriptionKey: "tutorial.steps.firstSale.description",
     icon: Receipt,
@@ -122,7 +143,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.pos",
   },
   {
-    id: 9,
+    id: 10,
     titleKey: "tutorial.steps.closeCash.title",
     descriptionKey: "tutorial.steps.closeCash.description",
     icon: Wallet,
@@ -133,7 +154,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.finances",
   },
   {
-    id: 10,
+    id: 11,
     titleKey: "tutorial.steps.reports.title",
     descriptionKey: "tutorial.steps.reports.description",
     icon: LayoutDashboard,
@@ -144,7 +165,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.dashboard",
   },
   {
-    id: 11,
+    id: 12,
     titleKey: "tutorial.steps.activity.title",
     descriptionKey: "tutorial.steps.activity.description",
     icon: FileText,
@@ -155,7 +176,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "common.activityLog",
   },
   {
-    id: 12,
+    id: 13,
     titleKey: "tutorial.steps.billing.title",
     descriptionKey: "tutorial.steps.billing.description",
     icon: CreditCard,
@@ -166,7 +187,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.billing",
   },
   {
-    id: 13,
+    id: 14,
     titleKey: "tutorial.steps.advancedSettings.title",
     descriptionKey: "tutorial.steps.advancedSettings.description",
     icon: Settings,
@@ -177,7 +198,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "layout.settings",
   },
   {
-    id: 14,
+    id: 15,
     titleKey: "tutorial.steps.shortcuts.title",
     descriptionKey: "tutorial.steps.shortcuts.description",
     icon: Keyboard,
@@ -188,7 +209,7 @@ export const tutorialSteps: TutorialStep[] = [
     moduleKey: "",
   },
   {
-    id: 15,
+    id: 16,
     titleKey: "tutorial.steps.complete.title",
     descriptionKey: "tutorial.steps.complete.description",
     icon: PartyPopper,

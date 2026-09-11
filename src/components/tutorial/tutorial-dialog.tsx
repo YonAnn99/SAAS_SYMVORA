@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, ArrowRight, X, Sparkles, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export function TutorialDialog() {
   const t = useTranslations();
@@ -214,9 +215,26 @@ export function TutorialDialog() {
                 </DialogDescription>
               </div>
             ) : (
-              <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                {t(step.descriptionKey)}
-              </DialogDescription>
+              <>
+                {/* Imagen ilustrativa del paso, si la tiene. Va sobre fondo
+                    transparente para que el PNG se integre con el diálogo
+                    tanto en claro como en oscuro. */}
+                {step.image && (
+                  <div className="mb-3 flex justify-center">
+                    <Image
+                      src={step.image.src}
+                      alt={step.image.alt}
+                      width={420}
+                      height={200}
+                      className="h-auto w-full max-w-[320px] object-contain"
+                      priority
+                    />
+                  </div>
+                )}
+                <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                  {t(step.descriptionKey)}
+                </DialogDescription>
+              </>
             )}
           </div>
 

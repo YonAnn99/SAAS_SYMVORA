@@ -525,6 +525,20 @@ Filtrado y ordenación **en cliente**: `fetchProducts` ya trae todo el catálogo
 
 ---
 
+### Paso inicial del tutorial: lector de código de barras (2026-09-11)
+
+Paso nuevo **en primera posición**, antes de "¡Bienvenido a SYMVORA!": *"Escanea tus productos para vender más rápido"*, con una imagen de un lector escaneando una etiqueta. El tutorial pasa de **15 a 16 pasos**.
+
+- `TutorialStep` gana un campo **opcional** `image?: { src, alt }`. Opcional a propósito: los 15 pasos existentes no lo llevan y no se tocaron.
+- Se renderiza en `tutorial-dialog.tsx` encima de la descripción, sobre fondo transparente para que el PNG se integre con el diálogo en claro y en oscuro.
+- Textos en `es.json` bajo `tutorial.steps.scanner`. **`en.json` no tiene namespace `tutorial`** (ya era así antes), así que no se añadió nada ahí.
+- **El paso 13 pasó a ser el 14** y sigue apuntando a `#settings-tab-modules`. Verificado: renumerar no rompió ese selector, que es el punto frágil del tutorial (dio problemas en la sesión 2026-09-07/08).
+- Quien **ya completó** el tutorial no verá el paso nuevo salvo que lo reinicie desde el header. Quien lo tenga a medias verá su progreso corrido en uno.
+
+⚠️ **Lección sobre la imagen**: el archivo original (`public/lector:cbarras.jpeg`, borrado del árbol pero recuperable del commit `375574f`) era un **JPEG con el damero de "falsa transparencia" pintado como píxeles reales** — alguien guardó un PNG transparente como JPEG, formato sin canal alfa, y el fondo a cuadros quedó horneado. Se intentó recortarlo por código (color-key neutro + dos bandas, inundación desde bordes, regiones conectadas por tamaño, ajuste de la rejilla del damero) y **ninguna vía funcionó**: medido, el gris del fondo y algunos grises del escáner son **el mismo valor de píxel** (85, 160, 164), así que ningún método por color los separa; y la rejilla del damero no mantiene fase (ajusta 92.9% arriba, 1.6% abajo). Lo resolvió el usuario con un editor. **Si vuelve a aparecer un caso así, no iterar sobre el JPEG: pedir el PNG original con transparencia.** El asset final es `public/lector-de-barras.png` (optimizado de 1227 KB a 290 KB; nombre sin espacios, más seguro en URL que el `lector de barras.png` que entregó el usuario, que se conserva como fuente sin optimizar).
+
+---
+
 ### Pendiente
 
 > Re-verificado contra el código real el 2026-08-31 — varios puntos que seguían listados aquí ya estaban resueltos y fueron movidos a "Completado" o eliminados (ver sección "Sesión 2026-08-31" más abajo para el detalle de esa verificación).
