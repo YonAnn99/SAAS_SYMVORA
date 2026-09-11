@@ -22,6 +22,19 @@ export interface CompleteSaleParams {
   includeIva: boolean;
   notas?: string;
   montoRecibido?: number | null;
+  /**
+   * Campos de sincronización offline (migración 051). Solo los manda la cola
+   * al subir una venta diferida; una venta online normal los omite y el RPC
+   * se comporta exactamente igual que antes.
+   */
+  idempotencyKey?: string | null;
+  /** Fecha real de la venta, no la de sincronización. */
+  fechaVenta?: string | null;
+  /** Caja abierta cuando se vendió, no la que esté abierta al sincronizar. */
+  cajaId?: string | null;
+  /** Total del ticket entregado al cliente, para detectar cambios de precio. */
+  totalCobrado?: number | null;
+  origen?: "online" | "offline";
 }
 
 export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleTotals {
@@ -44,13 +57,30 @@ export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleT
 
 export async function completeSale(params: CompleteSaleParams) {
   const supabase = createSupabaseBrowserClient();
-  const { tenantId, userId, clienteId, metodoPago, items, includeIva, notas, montoRecibido } = params;
+  const {
+    tenantId,
+    userId,
+    clienteId,
+    metodoPago,
+    items,
+    includeIva,
+    notas,
+    montoRecibido,
+    idempotencyKey,
+    fechaVenta,
+    cajaId,
+    totalCobrado,
+    origen,
+  } = params;
 
   const { data: venta, error } = await supabase.rpc("complete_sale", {
     p_tenant_id: tenantId,
     p_usuario_id: userId,
     p_cliente_id: clienteId,
     p_metodo_pago: metodoPago,
+    // Solo se manda producto/cantidad/descuento: el precio lo recalcula el
+    // servidor desde `productos.precio_venta`. No mandar precio desde aquí
+    // (bug #5: sobreventa y precios inventados).
     p_items: items.map((item) => ({
       productId: item.productId,
       cantidad: item.cantidad,
@@ -59,6 +89,11 @@ export async function completeSale(params: CompleteSaleParams) {
     p_include_iva: includeIva,
     p_notas: notas || null,
     p_monto_recibido: montoRecibido ?? null,
+    p_idempotency_key: idempotencyKey ?? null,
+    p_fecha_venta: fechaVenta ?? null,
+    p_caja_id: cajaId ?? null,
+    p_total_cobrado: totalCobrado ?? null,
+    p_origen: origen ?? "online",
   });
 
   if (error) throw error;

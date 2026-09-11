@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -12,6 +12,22 @@ import {
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useOnlineStatus } from "@/hooks/use-online-status";
+import { useSaleSync } from "@/features/pos/hooks/use-sale-sync";
+import { PendingSalesBanner } from "@/features/pos/components/pending-sales-banner";
+import { enqueueSale } from "@/lib/offline/queue";
+import { requestPersistentStorage } from "@/lib/offline/persist";
+
+/**
+ * Métodos de pago permitidos sin conexión.
+ *
+ * Se dejan fuera a propósito:
+ *  - TARJETA_TERMINAL: MercadoPago Point necesita red por definición.
+ *  - CREDITO: hay que validar `saldo_pendiente` del cliente contra el
+ *    servidor; hacerlo con datos cacheados permitiría pasarse del límite
+ *    de crédito sin que nada lo detecte hasta sincronizar.
+ *  - TRANSFERENCIA: el cajero no puede confirmar que el dinero llegó.
+ */
+const OFFLINE_PAYMENT_METHODS = new Set(["EFECTIVO", "TARJETA"]);
 import { completeSale } from "@/features/pos/services/pos-service";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
@@ -38,9 +54,16 @@ export default function POSPage() {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
     usePosCart(tenantId);
-  const { products, customers, userId, loadingProducts, isOfflineCatalog, refetch } =
+  const { products, customers, userId, loadingProducts, isOfflineCatalog, cajaId, refetch } =
     usePosCatalog(tenantId, tenantLoading);
   const isOnline = useOnlineStatus();
+  const saleSync = useSaleSync(tenantId);
+
+  // Pedir almacenamiento persistente al entrar al POS: es lo que reduce el
+  // riesgo de que el navegador desaloje la cola de ventas sin subir.
+  useEffect(() => {
+    void requestPersistentStorage();
+  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
@@ -137,12 +160,16 @@ export default function POSPage() {
 
   const handleCompleteSale = async () => {
     if (items.length === 0) return;
-    if (!isOnline) {
-      toast.error("Sin conexión: no se puede completar la venta");
-      return;
-    }
     if (!selectedPayment) {
       toast.error("Selecciona un método de pago");
+      return;
+    }
+    // Sin red solo se permiten los métodos que el cajero puede confirmar por
+    // sí mismo (ver OFFLINE_PAYMENT_METHODS).
+    if (!isOnline && !OFFLINE_PAYMENT_METHODS.has(selectedPayment)) {
+      toast.error(
+        "Sin conexión solo puedes cobrar en efectivo o con tarjeta manual"
+      );
       return;
     }
 
@@ -166,15 +193,41 @@ export default function POSPage() {
 
     setProcessingSale(true);
     try {
-      await completeSale({
-        tenantId,
-        userId,
-        clienteId: selectedCustomer === "none" ? null : selectedCustomer,
-        metodoPago: selectedPayment as MetodoPagoDirecto,
-        items,
-        includeIva,
-        montoRecibido: isEfectivo ? montoRecibidoNum : null,
-      });
+      const clienteId = selectedCustomer === "none" ? null : selectedCustomer;
+
+      if (isOnline) {
+        await completeSale({
+          tenantId,
+          userId,
+          clienteId,
+          metodoPago: selectedPayment as MetodoPagoDirecto,
+          items,
+          includeIva,
+          montoRecibido: isEfectivo ? montoRecibidoNum : null,
+        });
+      } else {
+        // Sin red: la venta se guarda en IndexedDB y se sube sola al volver la
+        // conexión. `crypto.randomUUID()` genera la clave de idempotencia, que
+        // es lo que garantiza que un reintento no cree una venta duplicada.
+        await enqueueSale({
+          idempotencyKey: crypto.randomUUID(),
+          tenantId,
+          userId,
+          cajaId,
+          clienteId,
+          metodoPago: selectedPayment as MetodoPagoDirecto,
+          items,
+          includeIva,
+          notas: null,
+          montoRecibido: isEfectivo ? montoRecibidoNum : null,
+          // El total que se le cobró al cliente. Al sincronizar, el servidor
+          // recalcula desde el catálogo y marca la venta para revisión si el
+          // precio cambió mientras estábamos sin red.
+          totalCobrado: totals.total,
+          createdAt: new Date().toISOString(),
+        });
+        await saleSync.refresh();
+      }
 
       setSaleReceipt({
         items: [...items],
@@ -185,14 +238,18 @@ export default function POSPage() {
         montoRecibido: isEfectivo ? montoRecibidoNum : null,
         cambio: isEfectivo ? cambio : null,
       });
-      toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
+      toast.success(
+        isOnline
+          ? `Venta completada: $${totals.total.toFixed(2)}`
+          : `Venta guardada sin conexión: $${totals.total.toFixed(2)} — se subirá sola`
+      );
       clearCart();
       setSelectedCustomer("none");
       setSelectedPayment("");
       setMontoRecibido("");
       setShowConfirmDialog(false);
       setMobileCartOpen(false);
-      void refetch();
+      if (isOnline) void refetch();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al procesar la venta");
     } finally {
@@ -212,9 +269,19 @@ export default function POSPage() {
     <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5">
       {/* Left: Products grid / search */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
+        <PendingSalesBanner
+          pendingCount={saleSync.pendingCount}
+          failedCount={saleSync.failedCount}
+          syncing={saleSync.syncing}
+          needsReauth={saleSync.needsReauth}
+          oldestPendingAt={saleSync.oldestPendingAt}
+          onSyncNow={() => void saleSync.syncNow()}
+        />
+
         {isOfflineCatalog && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-            Sin conexión: mostrando el catálogo guardado de la última vez que hubo internet.
+            Sin conexión: mostrando el catálogo guardado de la última vez que hubo
+            internet. Las existencias que ves pueden estar desactualizadas.
           </div>
         )}
 

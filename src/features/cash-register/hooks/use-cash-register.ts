@@ -14,6 +14,7 @@ import {
   getCurrentUserId,
   openRegister,
 } from "../services/cash-register-service";
+import { countPendingSales } from "@/lib/offline/queue";
 
 export interface CashRegisterHookState {
   activeRegister: Caja | null;
@@ -153,6 +154,20 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
     async (saldoReal: number, notasCierre: string) => {
       if (!activeRegister) return;
 
+      // No se puede cerrar la caja con ventas cobradas sin subir: esas ventas
+      // aún no existen en el servidor, así que el saldo esperado que se
+      // calcula aquí estaría incompleto y el corte nunca cuadraría. Se avisa y
+      // se aborta en vez de cuadrar sobre datos parciales.
+      if (tenantId) {
+        const pendientes = await countPendingSales(tenantId);
+        if (pendientes > 0) {
+          throw new Error(
+            `Hay ${pendientes} ${pendientes === 1 ? "venta" : "ventas"} sin subir al servidor. ` +
+              "Conéctate a internet y espera a que se sincronicen antes de cerrar la caja."
+          );
+        }
+      }
+
       await closeRegister(activeRegister.id, {
         totalVentas,
         totalEntradas,
@@ -173,7 +188,7 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
       setTotalVentas(0);
       setShowCloseDialog(false);
     },
-    [activeRegister, totalVentas, totalEntradas, totalSalidas, saldoEsperado]
+    [activeRegister, totalVentas, totalEntradas, totalSalidas, saldoEsperado, tenantId]
   );
 
   return {

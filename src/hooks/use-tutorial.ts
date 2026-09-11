@@ -28,11 +28,19 @@ export function useTutorial(totalSteps: number) {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (isCompleted()) {
       setCompleted(true);
+      // Se restaura el paso solo para que el progreso siga siendo coherente si
+      // alguien reabre el tutorial desde el header. NO se reactiva: un
+      // tutorial ya completado no debe reaparecer solo.
+      //
+      // Antes esta rama hacía `setIsActive(true)` cuando el paso guardado era
+      // > 0, y como al terminar queda COMPLETED=true junto con el último paso
+      // (14), el diálogo se reabría en "Paso 15 de 15" en CADA carga. Se notaba
+      // sobre todo en la PWA instalada, que se abre muchas veces al día.
+      // `setMinimized(true)` tampoco servía de nada ahí: TutorialMinimized se
+      // oculta si `completed` es true.
       const step = getStoredStep();
       if (step > 0) {
         setCurrentStep(step);
-        setIsActive(true);
-        setMinimized(true);
       }
     } else if (localStorage.getItem(STORAGE_KEY_STEP) === null) {
       // Nunca se tocó el tutorial en este navegador (ni completado, ni

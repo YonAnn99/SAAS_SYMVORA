@@ -10,6 +10,7 @@ import { TutorialMinimized } from "@/components/tutorial/tutorial-minimized";
 import { LegalFooter } from "@/components/dashboard/legal-footer";
 import { PolicyUpdateBanner } from "@/components/compliance/policy-update-banner";
 import { DemoBanner } from "@/components/demo/demo-banner";
+import { OfflineCapabilitiesDialog } from "@/components/pwa/offline-capabilities-dialog";
 import { TenantProvider } from "@/contexts/tenant-context";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <TutorialProvider>
         <DemoBanner />
         <PolicyUpdateBanner />
+        <OfflineCapabilitiesDialog />
         <div className="flex h-screen overflow-hidden">
           <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
           <div className="flex flex-1 flex-col overflow-hidden">

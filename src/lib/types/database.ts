@@ -321,6 +321,10 @@ export type Database = {
           fecha_venta: string;
           factura_id: string | null;
           monto_recibido: number | null;
+          idempotency_key: string | null;
+          origen: string;
+          requiere_revision: boolean;
+          total_cobrado: number | null;
           cambio: number | null;
         };
         Insert: {
@@ -338,6 +342,10 @@ export type Database = {
           fecha_venta?: string;
           factura_id?: string | null;
           monto_recibido?: number | null;
+          idempotency_key?: string | null;
+          origen?: string;
+          requiere_revision?: boolean;
+          total_cobrado?: number | null;
           cambio?: number | null;
         };
         Update: {
@@ -355,6 +363,10 @@ export type Database = {
           fecha_venta?: string;
           factura_id?: string | null;
           monto_recibido?: number | null;
+          idempotency_key?: string | null;
+          origen?: string;
+          requiere_revision?: boolean;
+          total_cobrado?: number | null;
           cambio?: number | null;
         };
       };

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Cliente, Producto } from "@/lib/types/database";
 import { fetchCustomers } from "@/features/customers/services/customer-service";
+import { fetchActiveRegister } from "@/features/cash-register/services/cash-register-service";
 import { fetchPosProducts } from "../services/pos-service";
 
 export interface PosCatalogState {
@@ -12,29 +13,46 @@ export interface PosCatalogState {
   userId: string;
   loadingProducts: boolean;
   isOfflineCatalog: boolean;
+  /**
+   * Caja abierta al cargar el POS. Se cachea para que una venta offline pueda
+   * registrar EN QUÉ CAJA se hizo: el servidor, al sincronizar horas después,
+   * ya no puede deducirlo (buscaría la caja abierta en ese momento, que puede
+   * ser la del día siguiente).
+   */
+  cajaId: string | null;
   refetch: () => Promise<void>;
+}
+
+interface PosCache {
+  products: Producto[];
+  customers: Cliente[];
+  cajaId: string | null;
 }
 
 function catalogCacheKey(tenantId: string) {
   return `pos-catalog-cache:${tenantId}`;
 }
 
-function readCachedProducts(tenantId: string): Producto[] | null {
+function readCache(tenantId: string): PosCache | null {
   try {
     const raw = window.localStorage.getItem(catalogCacheKey(tenantId));
     if (!raw) return null;
-    return JSON.parse(raw) as Producto[];
+    const parsed = JSON.parse(raw);
+    // Compatibilidad con el formato viejo, que guardaba solo el array de
+    // productos. Sin esto, el primer arranque tras actualizar dejaría el POS
+    // sin catálogo offline.
+    if (Array.isArray(parsed)) {
+      return { products: parsed as Producto[], customers: [], cajaId: null };
+    }
+    return parsed as PosCache;
   } catch {
     return null;
   }
 }
 
-function writeCachedProducts(tenantId: string, products: Producto[]) {
+function writeCache(tenantId: string, cache: PosCache) {
   try {
-    window.localStorage.setItem(
-      catalogCacheKey(tenantId),
-      JSON.stringify(products)
-    );
+    window.localStorage.setItem(catalogCacheKey(tenantId), JSON.stringify(cache));
   } catch {
     // localStorage puede estar lleno o inaccesible (modo incógnito) — no es crítico.
   }
@@ -49,6 +67,7 @@ export function usePosCatalog(
   const [userId, setUserId] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isOfflineCatalog, setIsOfflineCatalog] = useState(false);
+  const [cajaId, setCajaId] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
@@ -60,20 +79,30 @@ export function usePosCatalog(
       if (!user) return;
       setUserId(user.id);
 
-      const [productsResult, customersResult] = await Promise.all([
+      const [productsResult, customersResult, activeRegister] = await Promise.all([
         fetchPosProducts(tenantId),
         fetchCustomers(tenantId),
+        fetchActiveRegister(user.id),
       ]);
+
+      const activeCajaId = activeRegister?.id ?? null;
 
       setProducts(productsResult);
       setCustomers(customersResult);
+      setCajaId(activeCajaId);
       setIsOfflineCatalog(false);
-      writeCachedProducts(tenantId, productsResult);
+      writeCache(tenantId, {
+        products: productsResult,
+        customers: customersResult,
+        cajaId: activeCajaId,
+      });
     } catch (error) {
       console.error("[pos] catalog fetch failed:", error);
-      const cached = readCachedProducts(tenantId);
+      const cached = readCache(tenantId);
       if (cached) {
-        setProducts(cached);
+        setProducts(cached.products);
+        setCustomers(cached.customers);
+        setCajaId(cached.cajaId);
         setIsOfflineCatalog(true);
       }
     } finally {
@@ -93,6 +122,7 @@ export function usePosCatalog(
     userId,
     loadingProducts,
     isOfflineCatalog,
+    cajaId,
     refetch,
   };
 }
