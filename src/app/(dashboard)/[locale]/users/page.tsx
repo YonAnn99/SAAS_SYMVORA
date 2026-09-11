@@ -36,8 +36,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Shield, UserCog, Trash2, Key, RefreshCw } from "lucide-react";
+import { Users, Shield, UserCog, Trash2, Key, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PermissionsDialog } from "@/features/users/components/permissions-dialog";
+import type { UserRole } from "@/lib/types/database";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
@@ -75,6 +77,8 @@ export default function UsersPage() {
 
   const [memberships, setMemberships] = useState<Member[]>([]);
   const [inviteKeys, setInviteKeys] = useState<InviteKey[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [permissionsFor, setPermissionsFor] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -101,6 +105,17 @@ export default function UsersPage() {
     }
     setLoading(false);
   }, [tenantId]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void (async () => {
+        const supabase = createSupabaseBrowserClient();
+        const { data } = await supabase.auth.getUser();
+        setCurrentUserId(data.user?.id ?? null);
+      })();
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   const fetchInviteKeys = useCallback(async () => {
     if (!tenantId) return;
@@ -355,6 +370,21 @@ export default function UsersPage() {
                     </TableCell>
                     {canManage && (
                       <TableCell className="text-right">
+                        {/* Sin switches sobre uno mismo ni sobre otro
+                            SUPER_ADMIN: nadie se bloquea por error y nadie
+                            recorta al dueño. El endpoint valida lo mismo en el
+                            servidor — esto solo evita ofrecer lo imposible. */}
+                        {membership.user_id !== currentUserId &&
+                          membership.role !== "SUPER_ADMIN" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => setPermissionsFor(membership)}
+                            >
+                              <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -539,6 +569,21 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {permissionsFor && tenantId && (
+        <PermissionsDialog
+          open={!!permissionsFor}
+          onOpenChange={(v) => !v && setPermissionsFor(null)}
+          tenantId={tenantId}
+          targetUserId={permissionsFor.user_id}
+          targetUserEmail={permissionsFor.user_email}
+          targetUserRole={permissionsFor.role as UserRole}
+          onSaved={() => {
+            setPermissionsFor(null);
+            fetchMemberships();
+          }}
+        />
+      )}
     </div>
   );
 }

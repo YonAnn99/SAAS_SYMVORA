@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { usePermissions } from "@/hooks/use-permissions";
+import { permissionForPath } from "@/lib/modules";
 import { hasRole } from "@/lib/rbac";
 import type { User } from "@supabase/supabase-js";
 import type { LucideIcon } from "lucide-react";
@@ -81,6 +83,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const { tenantName, tenantLogo, role, loading: tenantLoading } = useCurrentTenant();
+  const { can, loading: permsLoading } = usePermissions();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -94,9 +97,19 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
     return stripLocale(pathname) === href;
   };
 
-  const visibleNav = navigation.filter(
-    (item) => !item.hidden && (!item.minRole || hasRole(role, item.minRole))
-  );
+  // Se filtra por PERMISO EFECTIVO, no por rol: desde la migración 055 el
+  // SUPER_ADMIN puede conceder o quitar módulos a un usuario concreto, así que
+  // dos personas con el mismo rol pueden ver menús distintos.
+  //
+  // `minRole` se conserva como segundo filtro porque el permiso solo cubre las
+  // rutas mapeadas en modules.ts; las que no exigen permiso (Dashboard,
+  // Clientes, Actividad) siguen rigiéndose por él si lo tienen.
+  const visibleNav = navigation.filter((item) => {
+    if (item.hidden) return false;
+    const permission = permissionForPath(item.href);
+    if (permission) return can(permission);
+    return !item.minRole || hasRole(role, item.minRole);
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -133,7 +146,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-3">
-        {tenantLoading ? (
+        {tenantLoading || permsLoading ? (
           <div className="flex flex-col gap-1.5 px-1">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div

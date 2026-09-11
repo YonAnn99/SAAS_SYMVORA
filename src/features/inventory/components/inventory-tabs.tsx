@@ -2,8 +2,7 @@
 
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search, Palette, Calendar, Wrench } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search } from "lucide-react";
 import {
   useVariants,
   VariantDialog,
@@ -18,12 +17,12 @@ import {
   AdjustmentsTable,
 } from "@/features/inventory";
 
-interface InventorySectionProps {
+export interface InventorySectionProps {
   tenantId: string | null;
   tenantLoading: boolean;
 }
 
-function VariantsSection({ tenantId, tenantLoading }: InventorySectionProps) {
+export function VariantsSection({ tenantId, tenantLoading }: InventorySectionProps) {
   const {
     variants,
     products,
@@ -93,7 +92,7 @@ function VariantsSection({ tenantId, tenantLoading }: InventorySectionProps) {
   );
 }
 
-function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) {
+export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) {
   const {
     lots,
     products,
@@ -163,7 +162,7 @@ function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) {
   );
 }
 
-function AdjustmentsSection({ tenantId, tenantLoading }: InventorySectionProps) {
+export function AdjustmentsSection({ tenantId, tenantLoading }: InventorySectionProps) {
   const {
     adjustments,
     products,
@@ -222,36 +221,5 @@ function AdjustmentsSection({ tenantId, tenantLoading }: InventorySectionProps) 
         onSave={handleSave}
       />
     </div>
-  );
-}
-
-export function InventorySettingsTab({ tenantId, tenantLoading }: InventorySectionProps) {
-  return (
-    <Tabs defaultValue="variants" className="w-full">
-      <TabsList>
-        <TabsTrigger value="variants" className="gap-1.5 text-xs">
-          <Palette className="h-3.5 w-3.5" />
-          Variantes
-        </TabsTrigger>
-        <TabsTrigger value="lots" className="gap-1.5 text-xs">
-          <Calendar className="h-3.5 w-3.5" />
-          Lotes
-        </TabsTrigger>
-        <TabsTrigger value="adjustments" className="gap-1.5 text-xs">
-          <Wrench className="h-3.5 w-3.5" />
-          Ajustes
-        </TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="variants">
-        <VariantsSection tenantId={tenantId} tenantLoading={tenantLoading} />
-      </TabsContent>
-      <TabsContent value="lots">
-        <LotsSection tenantId={tenantId} tenantLoading={tenantLoading} />
-      </TabsContent>
-      <TabsContent value="adjustments">
-        <AdjustmentsSection tenantId={tenantId} tenantLoading={tenantLoading} />
-      </TabsContent>
-    </Tabs>
   );
 }

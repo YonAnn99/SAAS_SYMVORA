@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Package, Palette, Calendar, Wrench } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { hasRole } from "@/lib/rbac";
@@ -13,6 +15,11 @@ import { ProductDialog } from "@/features/inventory";
 import { ProductDeleteDialog } from "@/features/inventory";
 import { ProductsTable } from "@/features/inventory";
 import { ImportProductsDialog } from "@/features/inventory";
+import {
+  VariantsSection,
+  LotsSection,
+  AdjustmentsSection,
+} from "@/features/inventory";
 import type { Producto } from "@/features/inventory";
 
 export default function ProductsPage() {
@@ -39,6 +46,28 @@ export default function ProductsPage() {
   } = useProducts(tenantId, tenantLoading);
 
   const canImport = hasRole(role, "ORG_ADMIN");
+
+  // Variantes, Lotes y Ajustes son ORG_ADMIN+: antes vivían en /settings (que
+  // es admin-only) y este movimiento NO amplía permisos. Lo respalda la
+  // migración 053 en la base de datos — este gate solo evita enseñar pestañas
+  // que no se pueden usar.
+  const canManageInventory = hasRole(role, "ORG_ADMIN");
+
+  // No se pinta la barra hasta resolver el rol. Es la misma lección del fix
+  // del sidebar (2026-09-04): calcular con `role` aún en null mostraba unos
+  // cientos de ms el subconjunto equivocado. Aquí se verían pestañas que
+  // desaparecen.
+  const showInventoryTabs = !tenantLoading && canManageInventory;
+
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(
+    requestedTab && ["variants", "lots", "adjustments"].includes(requestedTab)
+      ? requestedTab
+      : "catalog"
+  );
+  // Si el rol no da para inventario, cualquier ?tab= cae de vuelta al catálogo.
+  const currentTab = showInventoryTabs ? activeTab : "catalog";
 
   const exportColumns = [
     { header: "Nombre", accessor: (p: Producto) => p.nombre },
@@ -88,6 +117,29 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      <Tabs value={currentTab} onValueChange={setActiveTab} className="w-full">
+        {showInventoryTabs && (
+          <TabsList className="mb-4">
+            <TabsTrigger value="catalog" className="gap-1.5 text-xs">
+              <Package className="h-3.5 w-3.5" />
+              Catálogo
+            </TabsTrigger>
+            <TabsTrigger value="variants" className="gap-1.5 text-xs">
+              <Palette className="h-3.5 w-3.5" />
+              Variantes
+            </TabsTrigger>
+            <TabsTrigger value="lots" className="gap-1.5 text-xs">
+              <Calendar className="h-3.5 w-3.5" />
+              Lotes
+            </TabsTrigger>
+            <TabsTrigger value="adjustments" className="gap-1.5 text-xs">
+              <Wrench className="h-3.5 w-3.5" />
+              Ajustes
+            </TabsTrigger>
+          </TabsList>
+        )}
+
+        <TabsContent value="catalog" className="space-y-6 md:space-y-8">
       {/* Search + Export */}
       <div className="flex items-center gap-2 animate-fade-in-up stagger-2">
         <div className="relative flex-1 max-w-sm">
@@ -116,6 +168,23 @@ export default function ProductsPage() {
         onDelete={setDeleteConfirm}
         onAdd={openCreateDialog}
       />
+
+        </TabsContent>
+
+        {showInventoryTabs && (
+          <>
+            <TabsContent value="variants">
+              <VariantsSection tenantId={tenantId} tenantLoading={tenantLoading} />
+            </TabsContent>
+            <TabsContent value="lots">
+              <LotsSection tenantId={tenantId} tenantLoading={tenantLoading} />
+            </TabsContent>
+            <TabsContent value="adjustments">
+              <AdjustmentsSection tenantId={tenantId} tenantLoading={tenantLoading} />
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
 
       {/* Create/Edit Dialog */}
       <ProductDialog

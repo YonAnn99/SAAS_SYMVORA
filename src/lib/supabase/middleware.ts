@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
+import { permissionForPath } from "@/lib/modules";
 
 const APP_HOST = "https://app.symvora.com.mx";
 const MARKETING_HOST = "https://www.symvora.com.mx";
@@ -238,10 +239,30 @@ export async function updateSession(request: NextRequest) {
       );
 
       if (requiresSuperAdmin || requiresOrgAdmin) {
-        const userRole = membership?.role || "CAJERO";
-        const requiredRole = requiresSuperAdmin ? "SUPER_ADMIN" : "ORG_ADMIN";
+        // Se decide por PERMISO EFECTIVO, no por rol. Desde la migración 055 el
+        // SUPER_ADMIN puede conceder un módulo a un usuario concreto, y si esta
+        // capa siguiera mirando el rol, esa persona tendría el permiso en la
+        // base de datos pero el middleware le cerraría la ruta igualmente.
+        const requiredPermission = permissionForPath(cleanPath);
+        let allowed: boolean;
 
-        if ((ROLE_HIERARCHY[userRole] || 0) < ROLE_HIERARCHY[requiredRole]) {
+        if (requiredPermission && membership) {
+          const { data: perms } = await supabaseAdmin.rpc(
+            "get_effective_permissions_for_user",
+            { p_tenant_id: membership.tenant_id, p_user_id: user.id }
+          );
+          allowed = (perms ?? []).some(
+            (r: { permission: string }) => r.permission === requiredPermission
+          );
+        } else {
+          // Ruta protegida que no está mapeada en modules.ts: se cae al
+          // criterio anterior por rol en vez de dejarla pasar.
+          const userRole = membership?.role || "CAJERO";
+          const requiredRole = requiresSuperAdmin ? "SUPER_ADMIN" : "ORG_ADMIN";
+          allowed = (ROLE_HIERARCHY[userRole] || 0) >= ROLE_HIERARCHY[requiredRole];
+        }
+
+        if (!allowed) {
           const locale = request.nextUrl.pathname.split("/")[1] || "es";
           const dashboardUrl = request.nextUrl.clone();
           dashboardUrl.pathname = `/${locale}/dashboard`;

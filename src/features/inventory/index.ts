@@ -32,3 +32,13 @@ export * from "./components/purchases/new-supplier-dialog";
 export * from "./components/purchase-orders/purchase-order-dialog";
 export * from "./components/purchase-orders/purchase-order-delete-dialog";
 export * from "./components/purchase-orders/purchase-orders-table";
+
+// Secciones de inventario (Variantes/Lotes/Ajustes). Viven aquí y no en
+// components/settings desde el 2026-09-11: son información de productos, así
+// que se muestran dentro de /products, no de /settings.
+export {
+  VariantsSection,
+  LotsSection,
+  AdjustmentsSection,
+  type InventorySectionProps,
+} from "./components/inventory-tabs";
