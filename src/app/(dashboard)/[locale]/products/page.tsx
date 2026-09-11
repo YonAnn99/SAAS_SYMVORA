@@ -9,7 +9,7 @@ import { Search, Package, Palette, Calendar, Wrench } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
-import { hasRole } from "@/lib/rbac";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useProducts } from "@/features/inventory";
 import { ProductDialog } from "@/features/inventory";
 import { ProductDeleteDialog } from "@/features/inventory";
@@ -24,7 +24,8 @@ import type { Producto } from "@/features/inventory";
 
 export default function ProductsPage() {
   const t = useTranslations();
-  const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { can, loading: permsLoading } = usePermissions();
   const [showImportDialog, setShowImportDialog] = useState(false);
   const {
     products,
@@ -45,19 +46,23 @@ export default function ProductsPage() {
     handleDelete,
   } = useProducts(tenantId, tenantLoading);
 
-  const canImport = hasRole(role, "ORG_ADMIN");
+  // Por PERMISO EFECTIVO, no por rol. Esta página se quedó atrás cuando el
+  // sidebar y el middleware pasaron a permisos (migración 055): conceder
+  // Inventario a un cajero guardaba el permiso pero las pestañas no aparecían,
+  // porque aquí se seguía mirando `role`.
+  const canImport = can("inventory.manage");
 
   // Variantes, Lotes y Ajustes son ORG_ADMIN+: antes vivían en /settings (que
   // es admin-only) y este movimiento NO amplía permisos. Lo respalda la
   // migración 053 en la base de datos — este gate solo evita enseñar pestañas
   // que no se pueden usar.
-  const canManageInventory = hasRole(role, "ORG_ADMIN");
+  const canManageInventory = can("inventory.manage");
 
   // No se pinta la barra hasta resolver el rol. Es la misma lección del fix
   // del sidebar (2026-09-04): calcular con `role` aún en null mostraba unos
   // cientos de ms el subconjunto equivocado. Aquí se verían pestañas que
   // desaparecen.
-  const showInventoryTabs = !tenantLoading && canManageInventory;
+  const showInventoryTabs = !permsLoading && canManageInventory;
 
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");

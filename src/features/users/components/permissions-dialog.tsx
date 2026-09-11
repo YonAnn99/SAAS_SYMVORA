@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Info, Lock } from "lucide-react";
+import { Info, Lock, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,16 @@ export function PermissionsDialog({
     [targetUserRole]
   );
 
+  // Cuántos switches difieren de lo que da el rol. Decide si "Restablecer"
+  // tiene algo que hacer y si hay que confirmar antes.
+  const exceptionCount = useMemo(
+    () =>
+      grantable.filter(
+        (m) => m.permission && enabled[m.permission] !== byRole.has(m.permission)
+      ).length,
+    [grantable, enabled, byRole]
+  );
+
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -102,17 +112,11 @@ export function PermissionsDialog({
     };
   }, [open, tenantId, targetUserId, grantable, byRole]);
 
-  const save = async () => {
+  const persist = async (
+    overrides: { permission: string; granted: boolean }[]
+  ) => {
     setSaving(true);
     try {
-      // Solo se manda lo que DIFIERE del rol. Guardar una excepción que coincide
-      // con el rol sería ruido, y peor: congelaría ese permiso si algún día
-      // cambian los permisos del rol.
-      const overrides = grantable
-        .filter((m) => m.permission)
-        .filter((m) => enabled[m.permission!] !== byRole.has(m.permission!))
-        .map((m) => ({ permission: m.permission!, granted: enabled[m.permission!] }));
-
       const res = await fetch(`/api/users/${targetUserId}/permissions`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -134,6 +138,32 @@ export function PermissionsDialog({
     } finally {
       setSaving(false);
     }
+  };
+
+  const save = () =>
+    // Solo se manda lo que DIFIERE del rol. Guardar una excepción que coincide
+    // con el rol sería ruido, y peor: congelaría ese permiso si algún día
+    // cambian los permisos del rol.
+    persist(
+      grantable
+        .filter((m) => m.permission)
+        .filter((m) => enabled[m.permission!] !== byRole.has(m.permission!))
+        .map((m) => ({ permission: m.permission!, granted: enabled[m.permission!] }))
+    );
+
+  const reset = () => {
+    // Confirmar solo si hay algo que deshacer: pedir confirmación cuando no
+    // hay excepciones sería un clic de más sin ningún riesgo detrás.
+    if (
+      exceptionCount > 0 &&
+      !window.confirm(
+        `Se quitarán ${exceptionCount} ${exceptionCount === 1 ? "excepción" : "excepciones"} y este usuario volverá a tener exactamente lo que da su rol ${targetUserRole}. ¿Continuar?`
+      )
+    ) {
+      return;
+    }
+    // Lista vacía = el endpoint borra todas las filas del usuario.
+    void persist([]);
   };
 
   const renderRow = (mod: ModuleDefinition) => {
@@ -200,13 +230,24 @@ export function PermissionsDialog({
           es solo lo que la persona ve, sino lo que puede hacer.
         </p>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
+        <DialogFooter className="sm:justify-between">
+          <Button
+            variant="ghost"
+            onClick={reset}
+            disabled={loading || saving || exceptionCount === 0}
+            className="gap-1.5"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Restablecer
           </Button>
-          <Button onClick={save} disabled={loading || saving}>
-            {saving ? "Guardando…" : "Guardar"}
-          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void save()} disabled={loading || saving}>
+              {saving ? "Guardando…" : "Guardar"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

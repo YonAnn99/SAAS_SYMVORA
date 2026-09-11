@@ -20,8 +20,16 @@ export interface ModuleDefinition {
   label: string;
   /** Para qué sirve, en una línea, en el idioma del dueño del negocio. */
   description: string;
-  /** Ruta principal. `null` si no es un módulo navegable. */
-  href: string | null;
+  /**
+   * Rutas que cubre este módulo. Vacío si no es navegable.
+   *
+   * Es una LISTA y no una ruta única a propósito: un módulo puede abarcar
+   * varias pantallas que comparten permiso (Compras y Órdenes de compra).
+   * Modelarlas como módulos separados creaba dos switches que en secreto
+   * controlaban el mismo permiso, y el diálogo lo mandaba duplicado -> error
+   * 500 por la restricción UNIQUE de user_permission_overrides.
+   */
+  paths: string[];
   /**
    * Permiso que exige. `null` = abierto a cualquier miembro del negocio
    * (Dashboard, POS, catálogo de productos).
@@ -38,7 +46,7 @@ export const MODULES: ModuleDefinition[] = [
     key: "pos",
     label: "Punto de venta",
     description: "Cobrar y registrar ventas",
-    href: "/pos",
+    paths: ["/pos"],
     permission: "sales.create",
     grantable: true,
   },
@@ -51,7 +59,7 @@ export const MODULES: ModuleDefinition[] = [
     key: "products",
     label: "Catálogo de productos",
     description: "Consultar el catálogo (abierto a todo el equipo)",
-    href: "/products",
+    paths: ["/products"],
     permission: null,
     grantable: false,
     notGrantableReason: "Todo el equipo necesita consultar el catálogo.",
@@ -60,42 +68,29 @@ export const MODULES: ModuleDefinition[] = [
     key: "inventory",
     label: "Inventario",
     description: "Crear y editar productos, variantes, lotes y ajustes",
-    href: null,
+    paths: [],
     permission: "inventory.manage",
     grantable: true,
   },
   {
+    // UN solo módulo para dos pantallas: ambas se rigen por `purchases.manage`,
+    // así que no se pueden conceder por separado. Tenerlas como dos módulos
+    // daba dos switches que controlaban lo mismo, y el permiso viajaba
+    // duplicado al guardar. `permissionForPath` compara por prefijo y
+    // "/purchase-orders" NO coincide con "/purchases", por eso hacen falta las
+    // dos rutas explícitas: si no, esa quedaría sin proteger.
     key: "purchases",
-    label: "Compras",
-    description: "Compras a proveedores",
-    href: "/purchases",
+    label: "Compras y órdenes de compra",
+    description: "Compras a proveedores y pedidos pendientes de recibir",
+    paths: ["/purchases", "/purchase-orders"],
     permission: "purchases.manage",
-    grantable: true,
-  },
-  {
-    // Ruta propia: `permissionForPath` compara por prefijo y "/purchase-orders"
-    // NO coincide con "/purchases", así que necesita su propia entrada o la
-    // ruta quedaría sin proteger.
-    key: "purchaseOrders",
-    label: "Órdenes de compra",
-    description: "Pedidos a proveedores y su recepción",
-    href: "/purchase-orders",
-    permission: "purchases.manage",
-    grantable: true,
-  },
-  {
-    key: "facturas",
-    label: "Facturación CFDI",
-    description: "Timbrado de comprobantes (módulo oculto por el momento)",
-    href: "/facturas",
-    permission: "billing.create",
     grantable: true,
   },
   {
     key: "finances",
     label: "Finanzas",
     description: "Caja, movimientos de dinero y cortes",
-    href: "/finances",
+    paths: ["/finances"],
     permission: "finances.manage",
     grantable: true,
   },
@@ -103,7 +98,7 @@ export const MODULES: ModuleDefinition[] = [
     key: "reports",
     label: "Reportes",
     description: "Ventas por periodo, productos y ganancias",
-    href: "/reports",
+    paths: ["/reports"],
     permission: "sales.view_reports",
     grantable: true,
   },
@@ -111,16 +106,8 @@ export const MODULES: ModuleDefinition[] = [
     key: "settings",
     label: "Configuración",
     description: "Datos del negocio y módulos activos",
-    href: "/settings",
+    paths: ["/settings"],
     permission: "org.manage_settings",
-    grantable: true,
-  },
-  {
-    key: "salesVoid",
-    label: "Cancelar ventas",
-    description: "Anular una venta ya registrada",
-    href: null,
-    permission: "sales.void",
     grantable: true,
   },
   // --- No concedibles: reparten poder ---
@@ -128,7 +115,7 @@ export const MODULES: ModuleDefinition[] = [
     key: "users",
     label: "Usuarios",
     description: "Invitar, eliminar y cambiar roles",
-    href: "/users",
+    paths: ["/users"],
     permission: "org.manage_members",
     grantable: false,
     notGrantableReason:
@@ -138,7 +125,7 @@ export const MODULES: ModuleDefinition[] = [
     key: "billing",
     label: "Facturación y suscripción",
     description: "Plan, pagos y cancelación de la suscripción",
-    href: "/billing",
+    paths: ["/billing"],
     permission: "subscription.manage",
     grantable: false,
     notGrantableReason:
@@ -159,12 +146,15 @@ export const GRANTABLE_PERMISSIONS = new Set(
 
 /** Permiso que protege una ruta, o `null` si está abierta a todo miembro. */
 export function permissionForPath(path: string): string | null {
-  // Se recorre de más específico a menos para que `/settings/payments` no
-  // coincida antes con `/settings` si algún día se separan.
-  const match = [...MODULES]
-    .filter((m) => m.href)
-    .sort((a, b) => (b.href?.length ?? 0) - (a.href?.length ?? 0))
-    .find((m) => path === m.href || path.startsWith(`${m.href}/`));
+  // Se aplana módulo×ruta y se ordena de MÁS específica a MENOS, para que
+  // "/settings/payments" no resuelva por "/settings" si algún día se separan.
+  const candidatos = MODULES.flatMap((m) =>
+    m.paths.map((ruta) => ({ ruta, permission: m.permission }))
+  ).sort((a, b) => b.ruta.length - a.ruta.length);
+
+  const match = candidatos.find(
+    (c) => path === c.ruta || path.startsWith(`${c.ruta}/`)
+  );
 
   return match?.permission ?? null;
 }

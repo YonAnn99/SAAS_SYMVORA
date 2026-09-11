@@ -41,6 +41,27 @@ describe("catálogo de módulos", () => {
     const keys = MODULES.map((m) => m.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
+
+  it("ningún permiso aparece en dos módulos concedibles", () => {
+    // ESTE es el invariante que faltaba y que causó el error 500:
+    // `purchases` y `purchaseOrders` compartían `purchases.manage`, así que al
+    // activar ambos switches el diálogo mandaba el permiso duplicado y el
+    // INSERT chocaba con UNIQUE (tenant_id, user_id, permission).
+    //
+    // Dos switches que controlan el mismo permiso son además engañosos: si
+    // activas uno y desactivas el otro, el resultado es indefinido. Si dos
+    // pantallas comparten permiso, deben ser UN módulo con varias rutas.
+    const permisos = GRANTABLE_MODULES.map((m) => m.permission);
+    const duplicados = permisos.filter((p, i) => permisos.indexOf(p) !== i);
+    expect(duplicados, `permisos duplicados: ${duplicados.join(", ")}`).toEqual([]);
+  });
+
+  it("las rutas no se solapan entre módulos distintos", () => {
+    // Una misma ruta en dos módulos haría que permissionForPath dependiera del
+    // orden del array, que es justo el tipo de fragilidad que causó el bug.
+    const rutas = MODULES.flatMap((m) => m.paths);
+    expect(new Set(rutas).size).toBe(rutas.length);
+  });
 });
 
 describe("permissionForPath", () => {
@@ -60,7 +81,7 @@ describe("permissionForPath", () => {
     // inventory.manage dejaría a los cajeros sin catálogo.
     expect(permissionForPath("/products")).toBeNull();
     expect(MODULES.find((m) => m.key === "inventory")!.permission).toBe("inventory.manage");
-    expect(MODULES.find((m) => m.key === "inventory")!.href).toBeNull();
+    expect(MODULES.find((m) => m.key === "inventory")!.paths).toEqual([]);
   });
 
   it("protege las rutas de administración con su permiso", () => {
@@ -71,10 +92,24 @@ describe("permissionForPath", () => {
     expect(permissionForPath("/billing")).toBe("subscription.manage");
   });
 
-  it("/purchase-orders tiene su propia entrada y no queda desprotegida", () => {
-    // No coincide por prefijo con "/purchases": sin entrada propia, la ruta
-    // habría quedado abierta a cualquiera.
+  it("/purchases y /purchase-orders comparten módulo pero ambas quedan protegidas", () => {
+    // Son UN módulo con dos rutas. "/purchase-orders" no coincide por prefijo
+    // con "/purchases", así que sin su ruta explícita quedaría abierta.
+    expect(permissionForPath("/purchases")).toBe("purchases.manage");
     expect(permissionForPath("/purchase-orders")).toBe("purchases.manage");
+
+    const compras = MODULES.filter((m) => m.permission === "purchases.manage");
+    expect(compras, "debe haber un solo módulo de compras").toHaveLength(1);
+    expect(compras[0].paths).toEqual(["/purchases", "/purchase-orders"]);
+  });
+
+  it("CFDI y Cancelar ventas ya no figuran como módulos", () => {
+    // CFDI está descartado por ahora; sales.void no lo usa ninguna pantalla
+    // (el permiso sigue en role_permissions gobernando la RLS de ventas).
+    expect(MODULES.find((m) => m.key === "facturas")).toBeUndefined();
+    expect(MODULES.find((m) => m.key === "salesVoid")).toBeUndefined();
+    // /facturas cae al chequeo por rol del middleware, como antes.
+    expect(permissionForPath("/facturas")).toBeNull();
   });
 
   it("resuelve subrutas por el prefijo más específico", () => {

@@ -105,11 +105,25 @@ export async function PUT(
       );
     }
 
-    if (overrides.length > 0) {
+    // Deduplicación defensiva: si dos módulos llegaran a compartir permiso, el
+    // INSERT chocaría con UNIQUE (tenant_id, user_id, permission) y devolvería
+    // un 500. Pasó de verdad con Compras y Órdenes de compra. La causa se
+    // corrigió en modules.ts (un módulo, varias rutas) y hay un test que la
+    // vigila, pero la API no debe romperse por ello.
+    const unicos = [
+      ...new Map(
+        (overrides as { permission: string; granted: boolean }[]).map((o) => [
+          o.permission,
+          o,
+        ])
+      ).values(),
+    ];
+
+    if (unicos.length > 0) {
       const { error: insertError } = await supabase
         .from("user_permission_overrides")
         .insert(
-          overrides.map((o: { permission: string; granted: boolean }) => ({
+          unicos.map((o: { permission: string; granted: boolean }) => ({
             tenant_id: tenantId,
             user_id: userId,
             permission: o.permission,
@@ -127,7 +141,7 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({ success: true, count: overrides.length });
+    return NextResponse.json({ success: true, count: unicos.length });
   } catch (error) {
     console.error("PUT permissions error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
