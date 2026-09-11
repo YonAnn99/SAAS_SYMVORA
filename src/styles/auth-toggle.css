@@ -494,8 +494,66 @@
   display: none;
 }
 
+/* "Recordarme" en escritorio.
+   Estaba en `display: none` y solo se mostraba en la media query movil, asi
+   que en computadora la opcion simplemente no existia. Los colores son los de
+   la tarjeta clara (pildora oscura al activarse); la media query movil los
+   invierte al completo para la tarjeta oscura. */
 .auth-remember-me {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 15px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-remember-me input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.auth-remember-switch {
+  position: relative;
+  width: 38px;
+  height: 21px;
+  border-radius: 999px;
+  background: #d8d6d3;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.auth-remember-switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.auth-remember-me input:checked + .auth-remember-switch {
+  background: #111;
+}
+
+.auth-remember-me input:checked + .auth-remember-switch::before {
+  transform: translateX(17px);
+}
+
+/* Foco visible al llegar con el teclado: el checkbox real esta oculto, asi que
+   sin esto no habria ninguna pista de donde esta el cursor. */
+.auth-remember-me input:focus-visible + .auth-remember-switch {
+  outline: 2px solid #1e3a8a;
+  outline-offset: 2px;
 }
 
 /* Desktop baseline for elements whose inline styles moved to CSS so the

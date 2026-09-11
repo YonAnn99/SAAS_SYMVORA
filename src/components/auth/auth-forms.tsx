@@ -15,6 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  applyRememberChoice,
+  loadRememberedEmail,
+} from "@/lib/auth/remembered-account";
 import { getAppUrl } from "@/lib/site";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
@@ -85,6 +89,17 @@ export function AuthForms({
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+
+  // El correo recordado se lee en un efecto, no en el estado inicial: en el
+  // servidor no hay localStorage, y devolver algo distinto en cliente rompe la
+  // hidratacion. Diferido como en el resto del proyecto (setState sincrono
+  // dentro de un efecto encadena renders: react-hooks/set-state-in-effect).
+  useEffect(() => {
+    const remembered = loadRememberedEmail();
+    if (!remembered) return;
+    const timeout = window.setTimeout(() => setLoginEmail(remembered), 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -227,6 +242,9 @@ export function AuthForms({
     setFailedLoginAttempts(0);
     setLoginCaptchaToken(null);
     turnstileLoginRef.current?.reset();
+    // Solo despues de que el servidor acepte las credenciales: recordar un
+    // correo con el que no se pudo entrar no le sirve a nadie.
+    applyRememberChoice(loginEmail, rememberMe);
     router.push(`/${locale}/dashboard`);
     router.refresh();
   };

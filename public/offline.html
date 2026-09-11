@@ -44,7 +44,14 @@
         color: #a1a1aa;
         margin: 0;
       }
-      button {
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+      }
+      button,
+      #pos-link {
         margin-top: 8px;
         border: none;
         border-radius: 8px;
@@ -54,6 +61,20 @@
         font-weight: 500;
         padding: 10px 20px;
         cursor: pointer;
+        font-family: inherit;
+      }
+      /* El enlace al Punto de Venta arranca oculto y solo se muestra si esa
+         pagina esta de verdad en cache (lo decide el script del final). */
+      #pos-link {
+        display: none;
+        background: #f0efed;
+        color: #111;
+        text-decoration: none;
+        margin-top: 0;
+      }
+      #pos-hint {
+        display: none;
+        font-size: 0.75rem;
       }
     </style>
   </head>
@@ -64,6 +85,43 @@
       No pudimos cargar esta página porque no hay conexión a internet.
       Verifica tu wifi o datos móviles e inténtalo de nuevo.
     </p>
-    <button onclick="location.reload()">Reintentar</button>
+    <div class="actions">
+      <button onclick="location.reload()">Reintentar</button>
+      <a id="pos-link" href="#" role="button">Abrir Punto de Venta</a>
+      <p id="pos-hint">Puedes seguir cobrando sin conexion.</p>
+    </div>
+
+    <script>
+      /*
+       * Sin esto la pagina es un callejon sin salida: el Punto de Venta
+       * funciona entero en el cliente (catalogo en localStorage, ventas en
+       * IndexedDB), pero si la URL que se pidio no estaba en cache no habia
+       * forma de llegar a el.
+       *
+       * Se ofrece el enlace SOLO si el Punto de Venta esta de verdad guardado.
+       * Un boton que lleva a otra pantalla de "sin conexion" es peor que no
+       * tener boton.
+       */
+      (async function () {
+        if (!("caches" in window)) return;
+        try {
+          for (const name of await caches.keys()) {
+            const cache = await caches.open(name);
+            for (const request of await cache.keys()) {
+              const path = new URL(request.url).pathname;
+              if (/^\/[a-z]{2}\/pos$/.test(path)) {
+                const link = document.getElementById("pos-link");
+                link.href = path;
+                link.style.display = "inline-block";
+                document.getElementById("pos-hint").style.display = "block";
+                return;
+              }
+            }
+          }
+        } catch (error) {
+          /* Sin acceso a las caches se queda solo el boton de reintentar. */
+        }
+      })();
+    </script>
   </body>
 </html>

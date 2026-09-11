@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { useTheme } from "next-themes";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { clearAppPagesCache } from "@/lib/offline/route-cache";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -64,6 +65,10 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
 
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
+    // Antes de cerrar sesion: el HTML guardado del panel lleva dentro los datos
+    // de quien lo genero. En un mostrador compartido, el siguiente cajero
+    // podria ver sin conexion el panel del anterior.
+    await clearAppPagesCache();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
