@@ -230,7 +230,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Demo**: self-serve (`/demo` → magic link), banner `?demo=1`, aislamiento total (12 endpoints + UI restringida + 10 tests).
 - **Seguridad**: `requireTenantAccess` en todas las APIs, webhook firmado, RBAC granular, RLS total, CAPTCHA Turnstile, headers (CSP, HSTS, nosniff, Referrer-Policy), `complete_sale` atómico con precio desde BD.
 - **Legal (LFPDPPP)**: aviso de privacidad integral, términos 17 secciones, política de cookies, `legal_acceptances` (IP+UA+versiones), PolicyUpdateBanner post-login.
-- **Calidad**: 174 tests Vitest (15 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
+- **Calidad**: 197 tests Vitest (16 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
 - **Cuenta de prueba (2026-08-25)**: `pruebas@symvora.com.mx` / `dZsFT8bPvFIhYQcU` — usuario real (no demo) con tenant "Pruebas SYMVORA" (subdominio `pruebas`, código referido `SYMAB77A437`), OR_ADMIN, suscripción trial. Creada vía `scripts/create-test-account.ts` (Admin API, idempotente — re-ejecutar rota la contraseña) + `complete_onboarding` vía SQL. Sin bandeja real (`email_confirm: true`, ningún correo sale a terceros). Aislada por RLS; puede probar Conekta real (cobros reales — montos pequeños). Login por script lo bloquea Turnstile (esperado) — probar en navegador.
 - **Legal**: stub de correo ya resuelto — `PRIVACY_EMAIL = "privacidad@symvora.com.mx"` en `src/lib/contact.ts` (real, no placeholder). Solo queda pendiente el domicilio físico (ver Pendiente).
 - **CFDI**: config fiscal UI+API (`facturas/config`) completa (RFC, razón social, régimen, CP, PAC, certificados); descarga XML/PDF + vista de detalle (`facturas/[id]`) completas; `pac-client.ts` ya resuelve endpoint de producción vs pruebas correctamente (no hardcodea demo). Solo falta cargar credenciales fiscales reales y escribir tests (ver "Plan Pendiente: Módulo CFDI").
@@ -493,6 +493,35 @@ Ahora, al agregar un producto que **tiene variantes creadas**, se abre un diálo
 - El diálogo muestra el **stock y el precio de cada opción**, y las agotadas salen deshabilitadas. `fetchPosVariants` **no** filtra por stock > 0 a propósito: el cajero necesita poder ver que una talla está agotada, no que desaparezca.
 
 **Verificado contra producción** (con `ROLLBACK`): vender la variante baja 5→3 y deja el producto en 50; vender general baja 50→47 y deja la variante intacta; el detalle guarda `variante_id` en el primer caso y `NULL` en el segundo; y una variante de otro producto se rechaza.
+
+---
+
+### Filtros y orden en el catálogo de productos (2026-09-11)
+
+`/products` solo filtraba por texto y siempre ordenaba por nombre. Se añadió un botón **Filtros** (con contador de filtros activos) que abre un diálogo con tres bloques: **Ordenar** (9 opciones), **Categoría** y **Stock**.
+
+**`src/features/inventory/stock-status.ts` es la fuente única.** Define tres grupos **mutuamente excluyentes que cubren todo**, así los conteos suman el total:
+
+```
+agotado   stock <= 0
+bajo      0 < stock <= stock_minimo
+ok        stock > stock_minimo
+```
+
+⚠️ **Corrigió una incoherencia real**: `products-table.tsx` pintaba la etiqueta con `stock_actual <= stock_minimo ? "Stock bajo" : "OK"`, regla que mete a los **agotados dentro de "stock bajo"** (0 <= mínimo es cierto). Un producto agotado decía "Stock bajo" en la tabla pero habría filtrado como "Agotado". Ahora la etiqueta tiene **tres estados** y lee de la misma función que el filtro, así que no pueden divergir — mismo patrón que `profit.ts` y `modules.ts`.
+
+**Detalles que importan:**
+
+- **El orden por defecto cambió de nombre a "Últimos creados"**, siguiendo la referencia del usuario. Es un cambio visible en la primera carga de la página.
+- **Búsqueda y filtros se aplican EN CADENA**, no se sustituyen: buscar "coca" con el filtro "stock bajo" da las cocas por acabarse. En `use-products.ts` son dos `useMemo` encadenados.
+- **Los conteos de los chips salen del catálogo COMPLETO**, no de lo ya filtrado. Si salieran de lo filtrado, marcar "stock bajo" pondría los otros dos en cero y no se podría volver atrás con criterio.
+- **El diálogo trabaja sobre un borrador** y solo lo vuelca al pulsar Aplicar. Si cada clic filtrara la tabla de detrás, "Limpiar" no tendría sentido.
+- **Todas las ordenaciones desempatan por nombre**, para que la lista no "salte" entre recargas cuando hay valores repetidos.
+- **Sin `stock_minimo` definido (0, el valor por defecto) todo lo que tenga existencias sale "ok"** — sin mínimo no hay forma de saber qué es "poco", y no se inventa un umbral.
+
+**Quedaron fuera dos cosas de la imagen de referencia**: **Favoritos** (no existe tal columna en `productos`; haría falta migración) y **Stock indefinido** (correspondería a `es_servicio` y no hay ningún servicio en la base — sería un chip que nunca filtra nada).
+
+Filtrado y ordenación **en cliente**: `fetchProducts` ya trae todo el catálogo sin paginar. Con miles de productos el problema será esa carga completa, no este diálogo.
 
 ---
 

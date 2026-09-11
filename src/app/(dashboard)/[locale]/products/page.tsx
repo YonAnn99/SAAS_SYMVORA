@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, Palette, Calendar, Wrench } from "lucide-react";
+import { Search, Package, Palette, Calendar, Wrench, SlidersHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -15,6 +15,8 @@ import { ProductDialog } from "@/features/inventory";
 import { ProductDeleteDialog } from "@/features/inventory";
 import { ProductsTable } from "@/features/inventory";
 import { ImportProductsDialog } from "@/features/inventory";
+import { ProductsFilterDialog } from "@/features/inventory/components/products/products-filter-dialog";
+import { Button } from "@/components/ui/button";
 import {
   VariantsSection,
   LotsSection,
@@ -27,11 +29,18 @@ export default function ProductsPage() {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const {
     products,
     filteredProducts,
     search,
     setSearch,
+    filters,
+    setFilters,
+    stockCounts,
+    categories,
+    sinCategoriaCount,
+    activeFilterCount,
     loading,
     showDialog,
     setShowDialog,
@@ -156,6 +165,20 @@ export default function ProductsPage() {
             className="pl-8 h-8 text-sm"
           />
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 gap-1.5 text-xs"
+          onClick={() => setShowFilters(true)}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="ml-0.5 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
         <DataTableToolbar
           data={filteredProducts}
           columns={exportColumns}
@@ -217,6 +240,16 @@ export default function ProductsPage() {
           onImported={refetch}
         />
       )}
+
+      <ProductsFilterDialog
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        filters={filters}
+        onApply={setFilters}
+        categories={categories}
+        stockCounts={stockCounts}
+        sinCategoriaCount={sinCategoriaCount}
+      />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import type { Producto } from "../../types/inventory.types";
 import { calcularMargenProducto } from "@/lib/profit";
+import { stockStatus } from "@/features/inventory/stock-status";
 
 interface ProductsTableProps {
   products: Producto[];
@@ -143,21 +144,7 @@ export function ProductsTable({
                       {product.stock_actual}
                     </TableCell>
                     <TableCell>
-                      {product.stock_actual <= product.stock_minimo ? (
-                        <Badge
-                          variant="destructive"
-                          className="text-[10px] px-1.5 py-0"
-                        >
-                          {t("products.lowStock")}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] px-1.5 py-0 bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]"
-                        >
-                          OK
-                        </Badge>
-                      )}
+                      <StockBadge product={product} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -224,5 +211,49 @@ function ProductMarginCell({
     <span className={tone} title={`Ganas $${margen.gananciaUnitaria.toFixed(2)} por unidad`}>
       {margen.margenPct.toFixed(1)}%
     </span>
+  );
+}
+
+/**
+ * Etiqueta de stock, en TRES estados.
+ *
+ * Antes eran dos (`stock <= minimo ? "Stock bajo" : "OK"`), lo que mostraba un
+ * producto agotado como "Stock bajo" — y el filtro del diálogo lo clasificaba
+ * como "Agotado". Ahora ambos leen de `stockStatus()`, así que no pueden
+ * contradecirse.
+ */
+function StockBadge({
+  product,
+}: {
+  product: { stock_actual: number; stock_minimo: number };
+}) {
+  const status = stockStatus(product);
+
+  if (status === "agotado") {
+    return (
+      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+        Agotado
+      </Badge>
+    );
+  }
+
+  if (status === "bajo") {
+    return (
+      <Badge
+        variant="secondary"
+        className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
+      >
+        Stock bajo
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge
+      variant="secondary"
+      className="text-[10px] px-1.5 py-0 bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]"
+    >
+      OK
+    </Badge>
   );
 }

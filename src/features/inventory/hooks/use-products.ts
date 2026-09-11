@@ -11,10 +11,18 @@ import {
   updateProduct,
   type ProductInput,
 } from "../services/product-service";
+import {
+  EMPTY_FILTERS,
+  applyProductFilters,
+  countActiveFilters,
+  countByStatus,
+  type ProductFilters,
+} from "@/features/inventory/stock-status";
 
 export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   const [products, setProducts] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Producto | null>(null);
@@ -102,7 +110,9 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     [refetch]
   );
 
-  const filteredProducts = useMemo(
+  // Búsqueda y filtros se aplican EN CADENA, no se sustituyen: buscar "coca"
+  // con el filtro "stock bajo" debe dar las cocas que están por acabarse.
+  const searchedProducts = useMemo(
     () =>
       products.filter(
         (product) =>
@@ -113,11 +123,42 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     [products, search]
   );
 
+  const filteredProducts = useMemo(
+    () => applyProductFilters(searchedProducts, filters),
+    [searchedProducts, filters]
+  );
+
+  // Los conteos de los chips salen del catálogo COMPLETO, no de lo ya
+  // filtrado: si salieran de lo filtrado, marcar "stock bajo" pondría los
+  // otros dos chips en cero y no se podría volver atrás con criterio.
+  const stockCounts = useMemo(() => countByStatus(products), [products]);
+
+  const categories = useMemo(
+    () =>
+      [...new Set(products.map((p) => p.categoria).filter(Boolean))].sort((a, b) =>
+        String(a).localeCompare(String(b), "es")
+      ) as string[],
+    [products]
+  );
+
+  const sinCategoriaCount = useMemo(
+    () => products.filter((p) => !p.categoria).length,
+    [products]
+  );
+
+  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
+
   return {
     products,
     filteredProducts,
     search,
     setSearch,
+    filters,
+    setFilters,
+    stockCounts,
+    categories,
+    sinCategoriaCount,
+    activeFilterCount,
     loading,
     showDialog,
     setShowDialog,
