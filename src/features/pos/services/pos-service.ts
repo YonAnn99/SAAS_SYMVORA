@@ -1,11 +1,12 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Producto } from "@/lib/types/database";
-import type { MetodoPago, SaleTotals } from "../types/pos.types";
+import type { MetodoPago, SaleTotals, VarianteProducto } from "../types/pos.types";
 
 const IVA_RATE = 0.16;
 
 export interface SaleItem {
   productId: string;
+  varianteId?: string | null;
   nombre: string;
   cantidad: number;
   precioUnitario: number;
@@ -83,6 +84,10 @@ export async function completeSale(params: CompleteSaleParams) {
     // (bug #5: sobreventa y precios inventados).
     p_items: items.map((item) => ({
       productId: item.productId,
+      // La variante va dentro del JSON de items, así que la FIRMA del RPC no
+      // cambia. El servidor valida que pertenezca al producto y al negocio, y
+      // usa SU precio y SU stock.
+      varianteId: item.varianteId ?? null,
       cantidad: item.cantidad,
       descuento: item.descuento,
     })),
@@ -113,4 +118,25 @@ export async function fetchPosProducts(tenantId: string): Promise<Producto[]> {
 
   if (error) throw error;
   return data ?? [];
+}
+
+/**
+ * Variantes del tenant para el POS.
+ *
+ * NO se filtra por stock > 0 (a diferencia de los productos): el diálogo
+ * necesita poder mostrar una talla agotada como tal en vez de ocultarla, que
+ * es lo que el cajero espera ver cuando el cliente pregunta por ella.
+ */
+export async function fetchPosVariants(
+  tenantId: string
+): Promise<VarianteProducto[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("variantes_producto")
+    .select("id, producto_id, talla, color, precio_venta, stock_actual")
+    .eq("tenant_id", tenantId)
+    .order("talla");
+
+  if (error) throw error;
+  return (data ?? []) as VarianteProducto[];
 }

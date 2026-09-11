@@ -12,14 +12,17 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { CartItem, SaleTotals } from "../types/pos.types";
+import { cartLineKey } from "@/features/pos/stores/cart";
 
 interface PosCartProps {
   items: CartItem[];
   totals: SaleTotals;
   itemCount: number;
   includeIva: boolean;
-  onUpdateQuantity: (productId: string, cantidad: number) => void;
-  onRemove: (productId: string) => void;
+  // Reciben la CLAVE de línea (producto+variante), no el productId: dos tallas
+  // del mismo producto son dos líneas distintas.
+  onUpdateQuantity: (key: string, cantidad: number) => void;
+  onRemove: (key: string) => void;
   onToggleIva: (checked: boolean) => void;
 }
 
@@ -56,11 +59,18 @@ export function PosCart({
           <div className="flex-1 overflow-y-auto space-y-3">
             {items.map((item) => (
               <div
-                key={item.productId}
+                key={cartLineKey(item.productId, item.varianteId)}
                 className="flex items-center justify-between gap-2 py-1 animate-fade-in-up"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.nombre}</p>
+                  <p className="text-sm font-medium truncate">
+                    {item.nombre}
+                    {item.varianteLabel && (
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        {item.varianteLabel}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground font-mono">
                     ${item.precioUnitario.toFixed(2)} x {item.cantidad}
                   </p>
@@ -71,7 +81,7 @@ export function PosCart({
                     size="icon"
                     className="h-6 w-6 text-muted-foreground hover:text-foreground"
                     onClick={() =>
-                      onUpdateQuantity(item.productId, item.cantidad - 1)
+                      onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad - 1)
                     }
                   >
                     <Minus className="h-3 w-3" />
@@ -84,7 +94,7 @@ export function PosCart({
                     size="icon"
                     className="h-6 w-6 text-muted-foreground hover:text-foreground"
                     onClick={() =>
-                      onUpdateQuantity(item.productId, item.cantidad + 1)
+                      onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad + 1)
                     }
                   >
                     <Plus className="h-3 w-3" />
@@ -93,7 +103,7 @@ export function PosCart({
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                    onClick={() => onRemove(item.productId)}
+                    onClick={() => onRemove(cartLineKey(item.productId, item.varianteId))}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

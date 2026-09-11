@@ -64,11 +64,13 @@ describe("completeSale", () => {
       p_items: [
         {
           productId: "00000000-0000-0000-0000-000000000003",
+          varianteId: null,
           cantidad: 2,
           descuento: 1.5,
         },
         {
           productId: "00000000-0000-0000-0000-000000000004",
+          varianteId: null,
           cantidad: 1,
           descuento: 0,
         },
@@ -111,7 +113,12 @@ describe("completeSale", () => {
     const payload = rpcMock.mock.calls[0][1];
     for (const item of payload.p_items) {
       expect(item).not.toHaveProperty("precioUnitario");
-      expect(Object.keys(item).sort()).toEqual(["cantidad", "descuento", "productId"]);
+      expect(Object.keys(item).sort()).toEqual([
+        "cantidad",
+        "descuento",
+        "productId",
+        "varianteId",
+      ]);
     }
   });
 

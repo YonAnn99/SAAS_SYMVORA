@@ -20,8 +20,8 @@ interface CheckoutPanelProps {
   totals: SaleTotals;
   itemCount: number;
   includeIva: boolean;
-  onUpdateQuantity: (productId: string, cantidad: number) => void;
-  onRemove: (productId: string) => void;
+  onUpdateQuantity: (key: string, cantidad: number) => void;
+  onRemove: (key: string) => void;
   onToggleIva: (checked: boolean) => void;
 
   paymentMethods: PaymentMethodOption[];

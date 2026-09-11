@@ -3,13 +3,25 @@ import type { CartItem } from "../types/pos.types";
 
 export type { CartItem } from "../types/pos.types";
 
+/**
+ * Identidad de una línea del carrito.
+ *
+ * Es producto + variante, no solo producto: dos tallas del mismo suéter son
+ * dos líneas separadas, con su propio precio y su propio stock. Usar solo
+ * `productId` las fusionaría y vendería la cantidad total contra una sola
+ * variante.
+ */
+export function cartLineKey(productId: string, varianteId: string | null): string {
+  return `${productId}::${varianteId ?? "general"}`;
+}
+
 interface CartStore {
   items: CartItem[];
   includeIva: boolean;
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, cantidad: number) => void;
-  updateDiscount: (productId: string, descuento: number) => void;
+  removeItem: (key: string) => void;
+  updateQuantity: (key: string, cantidad: number) => void;
+  updateDiscount: (key: string, descuento: number) => void;
   setIncludeIva: (value: boolean) => void;
   clearCart: () => void;
   getSubtotal: () => number;
@@ -24,14 +36,15 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => {
     set((state) => {
+      const key = cartLineKey(item.productId, item.varianteId);
       const existingItem = state.items.find(
-        (i) => i.productId === item.productId
+        (i) => cartLineKey(i.productId, i.varianteId) === key
       );
 
       if (existingItem) {
         return {
           items: state.items.map((i) =>
-            i.productId === item.productId
+            cartLineKey(i.productId, i.varianteId) === key
               ? { ...i, cantidad: i.cantidad + item.cantidad }
               : i
           ),
@@ -47,29 +60,31 @@ export const useCartStore = create<CartStore>((set, get) => ({
     });
   },
 
-  removeItem: (productId) => {
+  removeItem: (key) => {
     set((state) => ({
-      items: state.items.filter((i) => i.productId !== productId),
+      items: state.items.filter(
+        (i) => cartLineKey(i.productId, i.varianteId) !== key
+      ),
     }));
   },
 
-  updateQuantity: (productId, cantidad) => {
+  updateQuantity: (key, cantidad) => {
     if (cantidad <= 0) {
-      get().removeItem(productId);
+      get().removeItem(key);
       return;
     }
 
     set((state) => ({
       items: state.items.map((i) =>
-        i.productId === productId ? { ...i, cantidad } : i
+        cartLineKey(i.productId, i.varianteId) === key ? { ...i, cantidad } : i
       ),
     }));
   },
 
-  updateDiscount: (productId, descuento) => {
+  updateDiscount: (key, descuento) => {
     set((state) => ({
       items: state.items.map((i) =>
-        i.productId === productId ? { ...i, descuento } : i
+        cartLineKey(i.productId, i.varianteId) === key ? { ...i, descuento } : i
       ),
     }));
   },

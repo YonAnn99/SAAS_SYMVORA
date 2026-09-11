@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { useSaleSync } from "@/features/pos/hooks/use-sale-sync";
+import {
+  VariantPickerDialog,
+  variantLabel,
+  variantPrice,
+} from "@/features/pos/components/variant-picker-dialog";
 import { PendingSalesBanner } from "@/features/pos/components/pending-sales-banner";
 import { enqueueSale } from "@/lib/offline/queue";
 import { requestPersistentStorage } from "@/lib/offline/persist";
@@ -47,17 +52,31 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { MetodoPagoDirecto, Producto, SaleReceipt } from "@/features/pos/types/pos.types";
+import type {
+  MetodoPagoDirecto,
+  Producto,
+  SaleReceipt,
+  VarianteProducto,
+} from "@/features/pos/types/pos.types";
 
 export default function POSPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
     usePosCart(tenantId);
-  const { products, customers, userId, loadingProducts, isOfflineCatalog, cajaId, refetch } =
-    usePosCatalog(tenantId, tenantLoading);
+  const {
+    products,
+    variantsByProduct,
+    customers,
+    userId,
+    loadingProducts,
+    isOfflineCatalog,
+    cajaId,
+    refetch,
+  } = usePosCatalog(tenantId, tenantLoading);
   const isOnline = useOnlineStatus();
   const saleSync = useSaleSync(tenantId);
+  const [variantPickerFor, setVariantPickerFor] = useState<Producto | null>(null);
 
   // Pedir almacenamiento persistente al entrar al POS: es lo que reduce el
   // riesgo de que el navegador desaloje la cola de ventas sin subir.
@@ -75,21 +94,44 @@ export default function POSPage() {
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
-  const handleAddProduct = useCallback(
-    (product: Producto) => {
-      if (product.stock_actual <= 0) {
-        toast.error("Sin stock disponible");
-        return;
-      }
+  // Agrega ya resuelta la variante (o `null` para la venta general).
+  const addResolved = useCallback(
+    (product: Producto, variant: VarianteProducto | null) => {
       addItem({
         productId: product.id,
+        varianteId: variant?.id ?? null,
+        varianteLabel: variant ? variantLabel(variant) : null,
         nombre: product.nombre,
         cantidad: 1,
-        precioUnitario: product.precio_venta,
+        // La variante tiene su propio precio; 0 significa "usa el del producto".
+        precioUnitario: variant
+          ? variantPrice(variant, product)
+          : product.precio_venta,
         unidad_medida: product.unidad_medida,
       });
     },
     [addItem]
+  );
+
+  const handleAddProduct = useCallback(
+    (product: Producto) => {
+      const variants = variantsByProduct[product.id] ?? [];
+
+      // Solo se pregunta si el producto TIENE variantes creadas. Uno marcado
+      // como "permite variantes" pero sin ninguna (caso real: "Cafe") se vende
+      // directo — obligar a elegir lo dejaría invendible.
+      if (variants.length > 0) {
+        setVariantPickerFor(product);
+        return;
+      }
+
+      if (product.stock_actual <= 0) {
+        toast.error("Sin stock disponible");
+        return;
+      }
+      addResolved(product, null);
+    },
+    [variantsByProduct, addResolved]
   );
 
   const { search, setSearch, handleSearch, handleKeyDown } = useBarcodeScanner(
@@ -393,6 +435,18 @@ export default function POSPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <VariantPickerDialog
+        product={variantPickerFor}
+        variants={
+          variantPickerFor ? (variantsByProduct[variantPickerFor.id] ?? []) : []
+        }
+        onOpenChange={(open) => !open && setVariantPickerFor(null)}
+        onSelect={(variant) => {
+          if (variantPickerFor) addResolved(variantPickerFor, variant);
+          setVariantPickerFor(null);
+        }}
+      />
 
       <ConfirmSaleDialog
         open={showConfirmDialog}

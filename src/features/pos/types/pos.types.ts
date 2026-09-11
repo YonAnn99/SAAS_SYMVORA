@@ -6,6 +6,16 @@ export type UnidadMedida = "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
 
 export interface CartItem {
   productId: string;
+  /**
+   * Variante vendida (talla/color). `null` = venta "general", del stock sin
+   * clasificar del producto.
+   *
+   * Forma parte de la IDENTIDAD de la línea: dos tallas del mismo producto son
+   * dos líneas distintas del carrito, con su propio precio y su propio stock.
+   */
+  varianteId: string | null;
+  /** Etiqueta legible de la variante ("M · ROJO"), solo para mostrar. */
+  varianteLabel?: string | null;
   nombre: string;
   cantidad: number;
   precioUnitario: number;
@@ -51,4 +61,14 @@ export interface SaleReceipt {
   customerPhone?: string | null;
   montoRecibido?: number | null;
   cambio?: number | null;
+}
+
+/** Variante tal como la necesita el POS (subconjunto de `variantes_producto`). */
+export interface VarianteProducto {
+  id: string;
+  producto_id: string;
+  talla: string | null;
+  color: string | null;
+  precio_venta: number;
+  stock_actual: number;
 }

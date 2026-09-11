@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Cliente, Producto } from "@/lib/types/database";
+import type { VarianteProducto } from "../types/pos.types";
 import { fetchCustomers } from "@/features/customers/services/customer-service";
 import { fetchActiveRegister } from "@/features/cash-register/services/cash-register-service";
-import { fetchPosProducts } from "../services/pos-service";
+import { fetchPosProducts, fetchPosVariants } from "../services/pos-service";
 
 export interface PosCatalogState {
   products: Producto[];
+  /** Variantes del tenant, agrupadas por `producto_id`. */
+  variantsByProduct: Record<string, VarianteProducto[]>;
   customers: Cliente[];
   userId: string;
   loadingProducts: boolean;
@@ -25,6 +28,7 @@ export interface PosCatalogState {
 
 interface PosCache {
   products: Producto[];
+  variants: VarianteProducto[];
   customers: Cliente[];
   cajaId: string | null;
 }
@@ -42,7 +46,12 @@ function readCache(tenantId: string): PosCache | null {
     // productos. Sin esto, el primer arranque tras actualizar dejaría el POS
     // sin catálogo offline.
     if (Array.isArray(parsed)) {
-      return { products: parsed as Producto[], customers: [], cajaId: null };
+      return {
+        products: parsed as Producto[],
+        variants: [],
+        customers: [],
+        cajaId: null,
+      };
     }
     return parsed as PosCache;
   } catch {
@@ -68,6 +77,7 @@ export function usePosCatalog(
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isOfflineCatalog, setIsOfflineCatalog] = useState(false);
   const [cajaId, setCajaId] = useState<string | null>(null);
+  const [variants, setVariants] = useState<VarianteProducto[]>([]);
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
@@ -79,20 +89,24 @@ export function usePosCatalog(
       if (!user) return;
       setUserId(user.id);
 
-      const [productsResult, customersResult, activeRegister] = await Promise.all([
-        fetchPosProducts(tenantId),
-        fetchCustomers(tenantId),
-        fetchActiveRegister(user.id),
-      ]);
+      const [productsResult, variantsResult, customersResult, activeRegister] =
+        await Promise.all([
+          fetchPosProducts(tenantId),
+          fetchPosVariants(tenantId),
+          fetchCustomers(tenantId),
+          fetchActiveRegister(user.id),
+        ]);
 
       const activeCajaId = activeRegister?.id ?? null;
 
       setProducts(productsResult);
+      setVariants(variantsResult);
       setCustomers(customersResult);
       setCajaId(activeCajaId);
       setIsOfflineCatalog(false);
       writeCache(tenantId, {
         products: productsResult,
+        variants: variantsResult,
         customers: customersResult,
         cajaId: activeCajaId,
       });
@@ -101,6 +115,7 @@ export function usePosCatalog(
       const cached = readCache(tenantId);
       if (cached) {
         setProducts(cached.products);
+        setVariants(cached.variants ?? []);
         setCustomers(cached.customers);
         setCajaId(cached.cajaId);
         setIsOfflineCatalog(true);
@@ -116,8 +131,18 @@ export function usePosCatalog(
     return () => window.clearTimeout(timeout);
   }, [tenantLoading, refetch]);
 
+  // Agrupadas una sola vez: el POS pregunta por producto en cada clic.
+  const variantsByProduct = useMemo(() => {
+    const map: Record<string, VarianteProducto[]> = {};
+    for (const v of variants) {
+      (map[v.producto_id] ??= []).push(v);
+    }
+    return map;
+  }, [variants]);
+
   return {
     products,
+    variantsByProduct,
     customers,
     userId,
     loadingProducts,

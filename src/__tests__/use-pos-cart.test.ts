@@ -10,6 +10,7 @@ describe("usePosCart tenant scoping", () => {
 
   const mockItem = {
     productId: "p1",
+    varianteId: null,
     nombre: "Producto A",
     cantidad: 1,
     precioUnitario: 10,

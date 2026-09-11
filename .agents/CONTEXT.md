@@ -52,7 +52,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 │       ├── robots.ts           # robots.txt (disallow /api/, /es/demo, /en/demo; sitemap)
 │       ├── sitemap.ts          # sitemap.xml (www.symvora.com.mx: /es + /en + legales, hreflang)
 │       └── layout.tsx          # metadataBase = getSiteUrl() (www.symvora.com.mx)
-├── supabase/migrations/        # 001-055 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría, invite keys, IVA toggle, monto recibido, sugerencias, billing_period, security hardening, precio $399, RBAC billing/miembros — 034/035 reconstruidas el 2026-09-08, ver sesión abajo)
+├── supabase/migrations/        # 001-056 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría, invite keys, IVA toggle, monto recibido, sugerencias, billing_period, security hardening, precio $399, RBAC billing/miembros — 034/035 reconstruidas el 2026-09-08, ver sesión abajo)
 ├── e2e/                        # Playwright (app.spec, demo-isolation.spec)
 └── docs/                       # demo-isolation.md, login-background.md
 ```
@@ -99,7 +99,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 - **Tablas (34, todas con RLS habilitado)**: verificado contra producción el 2026-09-10. Núcleo: tenants, tenant_settings, user_roles, role_permissions, tenant_memberships, productos, clientes, proveedores, ventas, detalle_ventas, compras, detalle_compras, cajas, movimientos_caja. Inventario avanzado: variantes_producto, stock_variantes, lotes, ajustes_inventario, ordenes_compra, detalle_orden_compra. Facturación: facturas, factura_detalle, facturas_folios, facturas_cancelaciones, factura_fiscal_secrets. Cobro/negocio: subscriptions, payment_history, codigos_promocionales, referidos, pagos_credito, pagos_terminal. Otras: activity_logs, legal_acceptances, user_invite_keys, sugerencias. (`trial_codes` eliminada en migración 029 — sistema muerto, reemplazado por códigos promocionales.) `codigos_promocionales` tiene RLS **sin políticas** a propósito: solo se toca por RPC SECURITY DEFINER o service role.
 - ⚠️ El conteo de "19 tablas / 9 enums" que este documento traía hasta el 2026-09-10 llevaba tiempo desfasado. Antes de citar estas listas, confirmarlas contra `pg_class`/`pg_type`; se quedan viejas en cuanto entra una migración que no las actualice.
 - **Funciones SQL clave**: `user_tenant_ids()`, `authorize()`, `custom_access_token_hook()`, `log_activity()`, `complete_onboarding()` (SECURITY DEFINER, valida `auth.uid()`), `complete_sale()` (SECURITY DEFINER atómico), `reset_demo_tenant()`, `is_demo_user()` / `current_user_is_demo()` (solo service_role), `validar_codigo_promo()` / `aplicar_codigo_promo()` (SECURITY DEFINER, migración 027).
-- **Migraciones**: 001-055. Aplicar en Supabase SQL Editor con "Without RLS" (o vía MCP `apply_migration`). ⚠️ **034/035 no tenían archivo local** hasta el 2026-09-08 (se aplicaron con `apply_migration` sin comitear el `.sql` correspondiente) — reconstruidos desde el estado real de `log_table_changes()` en producción; si se detecta otro hueco así, reconstruir desde `pg_get_functiondef`/`information_schema` antes de asumir que "no pasa nada".
+- **Migraciones**: 001-056. Aplicar en Supabase SQL Editor con "Without RLS" (o vía MCP `apply_migration`). ⚠️ **034/035 no tenían archivo local** hasta el 2026-09-08 (se aplicaron con `apply_migration` sin comitear el `.sql` correspondiente) — reconstruidos desde el estado real de `log_table_changes()` en producción; si se detecta otro hueco así, reconstruir desde `pg_get_functiondef`/`information_schema` antes de asumir que "no pasa nada".
 
 ---
 
@@ -230,7 +230,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Demo**: self-serve (`/demo` → magic link), banner `?demo=1`, aislamiento total (12 endpoints + UI restringida + 10 tests).
 - **Seguridad**: `requireTenantAccess` en todas las APIs, webhook firmado, RBAC granular, RLS total, CAPTCHA Turnstile, headers (CSP, HSTS, nosniff, Referrer-Policy), `complete_sale` atómico con precio desde BD.
 - **Legal (LFPDPPP)**: aviso de privacidad integral, términos 17 secciones, política de cookies, `legal_acceptances` (IP+UA+versiones), PolicyUpdateBanner post-login.
-- **Calidad**: 170 tests Vitest (15 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
+- **Calidad**: 174 tests Vitest (15 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
 - **Cuenta de prueba (2026-08-25)**: `pruebas@symvora.com.mx` / `dZsFT8bPvFIhYQcU` — usuario real (no demo) con tenant "Pruebas SYMVORA" (subdominio `pruebas`, código referido `SYMAB77A437`), OR_ADMIN, suscripción trial. Creada vía `scripts/create-test-account.ts` (Admin API, idempotente — re-ejecutar rota la contraseña) + `complete_onboarding` vía SQL. Sin bandeja real (`email_confirm: true`, ningún correo sale a terceros). Aislada por RLS; puede probar Conekta real (cobros reales — montos pequeños). Login por script lo bloquea Turnstile (esperado) — probar en navegador.
 - **Legal**: stub de correo ya resuelto — `PRIVACY_EMAIL = "privacidad@symvora.com.mx"` en `src/lib/contact.ts` (real, no placeholder). Solo queda pendiente el domicilio físico (ver Pendiente).
 - **CFDI**: config fiscal UI+API (`facturas/config`) completa (RFC, razón social, régimen, CP, PAC, certificados); descarga XML/PDF + vista de detalle (`facturas/[id]`) completas; `pac-client.ts` ya resuelve endpoint de producción vs pruebas correctamente (no hardcodea demo). Solo falta cargar credenciales fiscales reales y escribir tests (ver "Plan Pendiente: Módulo CFDI").
@@ -472,6 +472,27 @@ El SUPER_ADMIN puede conceder o quitar módulos a un usuario concreto desde `/us
 - **Botón "Restablecer"**: devuelve al usuario a lo que da su rol, sin excepciones. Manda `overrides: []`, que el endpoint ya interpretaba como "borra todo". Solo pide confirmación si hay excepciones que deshacer.
 
 **Consecuencia para el dueño del negocio**: a partir de ahora **el rol ya no cuenta toda la historia**. Dos ORG_ADMIN pueden tener accesos distintos. Por eso el diálogo etiqueta cada módulo como **"por rol"** o **"manual"** — sin esa distinción, en unos meses nadie sabría por qué un usuario ve lo que ve. No quitar esas etiquetas.
+
+---
+
+### Venta por variante en el POS (2026-09-11)
+
+El POS **ignoraba las variantes por completo**: `detalle_ventas` no tenía `variante_id` y `CartItem` no llevaba variante. Vender un producto con variantes descontaba el stock del **producto** y cobraba el precio del **producto**, dejando el stock por talla/color congelado para siempre.
+
+Ahora, al agregar un producto que **tiene variantes creadas**, se abre un diálogo para elegir cuál. Migración `056`.
+
+**Modelo de stock** (decisión del usuario): cada variante tiene **su propio anaquel** y el stock del producto pasa a ser el **"sin clasificar"**, del que salen las ventas generales (se pidió permitir ambas). **No se descuentan los dos** — serían dos cifras que cuadrar a mano, y ya estaban descuadradas (`sueter`: 50 en producto contra 5 en la variante).
+
+**Detalles que importan:**
+
+- **Solo se pregunta si el producto TIENE variantes creadas.** Uno marcado como `permite_variantes` pero sin ninguna (caso real: `Cafe`) se vende directo. Obligar a elegir lo dejaría invendible.
+- **La variante forma parte de la IDENTIDAD de la línea del carrito** (`cartLineKey(productId, varianteId)`). Dos tallas del mismo producto son dos líneas separadas; fusionarlas vendería la cantidad total contra una sola variante. `removeItem`/`updateQuantity`/`updateDiscount` reciben ahora la **clave de línea**, no el `productId`.
+- **Precio y costo: `0` en la variante significa "usa el del producto"**, para no repetirlos en cada talla cuando todas valen igual. El costo alimenta el cálculo de ganancia de la migración 052.
+- **La firma del RPC no cambia**: la variante viaja dentro del JSON de items, así que `CREATE OR REPLACE` y no aplican los bugs #18/#23.
+- **Seguridad**: el servidor valida que la variante pertenezca al producto **y** al tenant. Sin eso, un cliente manipulado podría mandar el id de una variante ajena y vender a su precio. Verificado con una prueba que lo intenta.
+- El diálogo muestra el **stock y el precio de cada opción**, y las agotadas salen deshabilitadas. `fetchPosVariants` **no** filtra por stock > 0 a propósito: el cajero necesita poder ver que una talla está agotada, no que desaparezca.
+
+**Verificado contra producción** (con `ROLLBACK`): vender la variante baja 5→3 y deja el producto en 50; vender general baja 50→47 y deja la variante intacta; el detalle guarda `variante_id` en el primer caso y `NULL` en el segundo; y una variante de otro producto se rechaza.
 
 ---
 
