@@ -1,5 +1,6 @@
-"use client";
-
+// Server component a proposito: la marquesina es 100% CSS (@keyframes
+// infinite-scroll), sin estado, efectos ni handlers. No hay razon para enviar
+// este componente al bundle del cliente.
 import React from "react";
 import Image from "next/image";
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, type CSSProperties, type ReactNode, type MouseEventHandler } from 'react';
+import { useRef, useEffect, useState, type CSSProperties, type ReactNode, type MouseEventHandler } from 'react';
 import { Renderer, Program, Mesh, Triangle, Color } from 'ogl';
 
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -142,7 +142,28 @@ const SpecularButton = ({
 
   propsRef.current = { radius, lineColor, baseColor, intensity, shineSize, shineFade, thickness, speed, followMouse, proximity, autoAnimate };
 
+  // Cada instancia de este boton crea SU PROPIO contexto WebGL. Safari en iOS
+  // admite ~8 contextos simultaneos y hay pantallas del dashboard con 11
+  // botones (users, billing): al pasarse, Safari descarta los contextos mas
+  // antiguos —los canvas se quedan en blanco— y puede tumbar el proceso de GPU
+  // junto con la pagina. Ademas el wrapper pone `autoAnimate` en true, asi que
+  // cada boton corre un bucle rAF a 60fps aunque este fuera de pantalla.
+  //
+  // En tactil el efecto casi no se percibe y no hay hover que lo dispare, asi
+  // que ahi no se crea ningun contexto. Arranca en `false` para que servidor y
+  // cliente rendericen igual en la hidratacion; el efecto lo activa tras montar.
+  const [webglEnabled, setWebglEnabled] = useState(false);
+
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const hasHover = window.matchMedia('(hover: hover)').matches;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setWebglEnabled(hasHover && !reducedMotion);
+  }, []);
+
+  useEffect(() => {
+    if (!webglEnabled) return;
+
     const btn = btnRef.current;
     const fx = fxRef.current;
     if (!btn || !fx) return;
@@ -268,7 +289,7 @@ const SpecularButton = ({
       if (gl.canvas.parentNode === fx) fx.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, []);
+  }, [webglEnabled]);
 
   return (
     <button
@@ -276,18 +297,21 @@ const SpecularButton = ({
       type={type}
       disabled={disabled}
       onClick={onClick}
-      className={`relative m-0 inline-flex cursor-pointer items-center justify-center border-none font-medium leading-none tracking-[0.01em] outline-none transition-transform duration-150 active:scale-[0.97] disabled:cursor-default disabled:opacity-55 disabled:active:scale-100 [color:var(--sb-text-color)] [border-radius:var(--sb-radius)] [background:color-mix(in_srgb,var(--sb-tint)_calc(var(--sb-tint-opacity)*100%),transparent)] [backdrop-filter:blur(var(--sb-blur))] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.25)] focus-visible:outline-2 focus-visible:outline-offset-[3px] ${SIZES[size] || SIZES.md}${className ? ` ${className}` : ''}`}
+      className={`relative m-0 inline-flex cursor-pointer items-center justify-center border-none font-medium leading-none tracking-[0.01em] outline-none transition-transform duration-150 active:scale-[0.97] disabled:cursor-default disabled:opacity-55 disabled:active:scale-100 [color:var(--sb-text-color)] [border-radius:var(--sb-radius)] [background:color-mix(in_srgb,var(--sb-tint)_calc(var(--sb-tint-opacity)*100%),transparent)] [backdrop-filter:blur(var(--sb-blur))] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.25)] focus-visible:outline-2 focus-visible:outline-offset-[3px] ${SIZES[size] || SIZES.md}${webglEnabled ? '' : ' [box-shadow:inset_0_0_0_1px_color-mix(in_srgb,var(--sb-line-color)_55%,transparent),inset_0_1px_0_rgba(255,255,255,0.06),0_8px_24px_rgba(0,0,0,0.25)]'}${className ? ` ${className}` : ''}`}
       style={
         {
           '--sb-radius': `${radius}px`,
           '--sb-tint': tint,
           '--sb-tint-opacity': tintOpacity,
           '--sb-blur': `${blur}px`,
-          '--sb-text-color': textColor
+          '--sb-text-color': textColor,
+          '--sb-line-color': lineColor
         } as CSSProperties
       }
     >
-      <span ref={fxRef} aria-hidden="true" className="pointer-events-none absolute -inset-5 z-[1] [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full" />
+      {webglEnabled && (
+        <span ref={fxRef} aria-hidden="true" className="pointer-events-none absolute -inset-5 z-[1] [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full" />
+      )}
       <span className="relative z-[2]">{children}</span>
     </button>
   );

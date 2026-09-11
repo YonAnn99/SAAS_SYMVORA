@@ -1,11 +1,22 @@
 "use client";
 
 import React, { useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import BubbleMenu from "./bubble-menu";
 import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
-import { VoiceNarrator } from "@/components/marketing/voice-narrator";
+
+// BubbleMenu arrastra gsap entero, y AppFrame envuelve TODA la landing: sin
+// esto, cada visita descarga gsap solo por el menu movil. VoiceNarrator vive
+// bajo el fold y solo actua al pulsarlo. Los dos se cargan aparte.
+const BubbleMenu = dynamic(() => import("./bubble-menu"), { ssr: false });
+const VoiceNarrator = dynamic(
+  () =>
+    import("@/components/marketing/voice-narrator").then((m) => ({
+      default: m.VoiceNarrator,
+    })),
+  { ssr: false }
+);
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
