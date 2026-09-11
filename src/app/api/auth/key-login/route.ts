@@ -1,5 +1,50 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+
+/**
+ * Busca un usuario de auth por email, paginando el listado completo.
+ *
+ * La Admin API de Supabase no expone `getUserByEmail`, y `listUsers()` sin
+ * argumentos devuelve SOLO la primera pagina (50 usuarios por defecto). Con
+ * mas de 50 cuentas en el proyecto, un empleado que ya existia pero caia
+ * fuera de esa primera pagina no se encontraba: el flujo intentaba crearlo de
+ * nuevo, chocaba con el email duplicado y devolvia 500, rompiendo el login
+ * por clave de todos los empleados sin ningun aviso previo.
+ */
+async function findUserByEmail(
+  supabase: SupabaseClient,
+  email: string
+): Promise<User | null> {
+  const target = email.toLowerCase();
+  const PER_PAGE = 1000;
+  // Cota dura: evita un bucle infinito si la API devolviera un nextPage ciclico.
+  const MAX_PAGES = 100;
+
+  let page = 1;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: PER_PAGE,
+    });
+
+    if (error) {
+      console.error("[key-login] listUsers error:", error);
+      return null;
+    }
+
+    const found = data.users.find((u) => u.email?.toLowerCase() === target);
+    if (found) return found;
+
+    const nextPage = (data as { nextPage?: number | null }).nextPage;
+    if (!nextPage) return null;
+    page = nextPage;
+  }
+
+  console.error(
+    `[key-login] findUserByEmail agoto ${MAX_PAGES} paginas sin terminar el listado`
+  );
+  return null;
+}
 
 export async function POST(request: Request) {
   try {
@@ -59,13 +104,7 @@ export async function POST(request: Request) {
     let userId: string;
     let password: string;
 
-    const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
-    if (listError) {
-      console.error("[key-login] listUsers error:", listError);
-    }
-    const existingUser = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
+    const existingUser = await findUserByEmail(supabase, email);
     console.log("[key-login] Existing user found:", existingUser?.id || "none");
 
     if (existingUser) {

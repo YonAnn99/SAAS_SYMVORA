@@ -23,7 +23,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const auth = await requireTenantAccess(request, { tenantId: tenant_id });
+    // Solo el dueno (SUPER_ADMIN) contrata o cambia el plan de pago.
+    const auth = await requireTenantAccess(request, {
+      tenantId: tenant_id,
+      permission: "subscription.manage",
+    });
     if (!auth.ok) return auth.response;
 
     const demo = await assertNotDemo();

@@ -15,7 +15,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const auth = await requireTenantAccess(request, { tenantId: tenant_id });
+    // `subscription.manage` es SUPER_ADMIN-only (migracion 050). Sin este
+    // permiso bastaba con ser miembro del tenant: un CAJERO podia cancelar la
+    // suscripcion del negocio entero.
+    const auth = await requireTenantAccess(request, {
+      tenantId: tenant_id,
+      permission: "subscription.manage",
+    });
     if (!auth.ok) return auth.response;
 
     const demo = await assertNotDemo();

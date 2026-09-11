@@ -18,7 +18,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const auth = await requireTenantAccess(request, { tenantId: tenant_id });
+    // Aplicar un codigo promocional extiende el trial de la cuenta: es una
+    // accion de suscripcion, no de operacion diaria. En el signup el fundador
+    // ya es SUPER_ADMIN (migracion 044), asi que ese flujo sigue pasando.
+    const auth = await requireTenantAccess(request, {
+      tenantId: tenant_id,
+      permission: "subscription.manage",
+    });
     if (!auth.ok) return auth.response;
 
     const demo = await assertNotDemo();

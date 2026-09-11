@@ -20,7 +20,7 @@ export async function DELETE(
 
     const auth = await requireTenantAccess(request, {
       tenantId,
-      permission: "org.manage_members",
+      permission: "org.manage_members_write",
     });
     if (!auth.ok) return auth.response;
 

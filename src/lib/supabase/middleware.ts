@@ -129,6 +129,18 @@ export async function updateSession(request: NextRequest) {
     (segment) => request.nextUrl.pathname.endsWith(segment)
   );
 
+  // /billing es "publica" solo para efectos del redirect de login y del
+  // chequeo de suscripcion (bug #9: una suscripcion expirada redirige a
+  // /billing, y si /billing exigiera suscripcion se cicla). El chequeo de ROL
+  // si debe correr ahi — no puede ciclarse porque manda a /dashboard, otra
+  // ruta. Antes caia dentro de `!isPublicRoute` y por eso
+  // SUPER_ADMIN_ONLY_PATHS era codigo muerto: cualquier CAJERO entraba a
+  // /billing y podia cancelar la suscripcion del negocio.
+  const isBillingRoute = (() => {
+    const clean = stripLocale(request.nextUrl.pathname);
+    return clean === "/billing" || clean.startsWith("/billing/");
+  })();
+
   const isPublicRoute =
     request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/marketing") ||
@@ -149,7 +161,7 @@ export async function updateSession(request: NextRequest) {
   // Subscription + role access control for authenticated users on dashboard.
   // Single membership fetch (tenant_id + role) reused by both checks below —
   // avoids two redundant round trips to the same tenant_memberships row.
-  if (user && !isAuthRoute && !isPublicRoute) {
+  if (user && !isAuthRoute && (!isPublicRoute || isBillingRoute)) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (serviceRoleKey) {
       const supabaseAdmin = createClient(url, serviceRoleKey, {
@@ -164,7 +176,9 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       // --- Subscription check ---
-      if (membership) {
+      // Se salta en /billing a proposito: es la pagina a la que redirige este
+      // mismo chequeo, y evaluarla ahi produce el redirect loop del bug #9.
+      if (membership && !isBillingRoute) {
         const { data: tenant } = await supabaseAdmin
           .from("tenants")
           .select("subscription_status")

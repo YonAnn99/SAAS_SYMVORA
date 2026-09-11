@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     const auth = await requireTenantAccess(request, {
       tenantId,
-      permission: "org.manage_members",
+      permission: "org.manage_members_write",
     });
     if (!auth.ok) return auth.response;
 
