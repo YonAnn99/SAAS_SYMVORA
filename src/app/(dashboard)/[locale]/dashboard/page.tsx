@@ -16,10 +16,14 @@ import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { toast } from "sonner";
+import { calcularGanancia } from "@/lib/profit";
 
 interface DashboardStats {
   ventasHoy: number;
   ventasMes: number;
+  gananciaMes: number;
+  margenMesPct: number;
+  productosSinCosto: number;
   ticketPromedio: number;
   clientesAtendidos: number;
   productosVendidos: number;
@@ -37,6 +41,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     ventasHoy: 0,
     ventasMes: 0,
+    gananciaMes: 0,
+    margenMesPct: 0,
+    productosSinCosto: 0,
     ticketPromedio: 0,
     clientesAtendidos: 0,
     productosVendidos: 0,
@@ -88,9 +95,20 @@ export default function DashboardPage() {
     const { data: detalleVentas } = ventaIds.length
       ? await supabase
           .from("detalle_ventas")
-          .select("cantidad")
+          // Se amplía el select que ya existía para contar productos: con esto
+          // sale también la ganancia del mes sin añadir otra consulta. El
+          // cálculo usa `subtotal` (pre-IVA), nunca `ventas.total`.
+          .select("cantidad, subtotal, descuento, costo_unitario, producto_id")
           .in("venta_id", ventaIds)
-      : { data: [] as { cantidad: number }[] };
+      : {
+          data: [] as {
+            cantidad: number;
+            subtotal: number;
+            descuento: number;
+            costo_unitario: number | null;
+            producto_id: string;
+          }[],
+        };
 
     if (queryError) {
       setError("Error al cargar datos del dashboard");
@@ -106,6 +124,11 @@ export default function DashboardPage() {
 
       const ventasMes = ventas.reduce((sum, v) => sum + v.total, 0);
       const ticketPromedio = ventas.length > 0 ? ventasMes / ventas.length : 0;
+
+      // Ganancia del mes. Ojo: `ventasMes` incluye IVA (viene de ventas.total)
+      // mientras que la ganancia sale del subtotal pre-IVA. Son dos cifras
+      // distintas a propósito y no deben compararse entre sí directamente.
+      const resumenGanancia = calcularGanancia(detalleVentas ?? []);
 
       // Count unique clients served
       const uniqueClients = new Set(ventas.filter(v => v.cliente_id).map(v => v.cliente_id));
@@ -146,6 +169,9 @@ export default function DashboardPage() {
       setStats({
         ventasHoy,
         ventasMes,
+        gananciaMes: resumenGanancia.ganancia,
+        margenMesPct: resumenGanancia.margenPct,
+        productosSinCosto: resumenGanancia.productosSinCosto.length,
         ticketPromedio,
         clientesAtendidos: uniqueClients.size,
         productosVendidos,
@@ -171,7 +197,23 @@ export default function DashboardPage() {
   const kpis = [
     { title: t("dashboard.salesToday"), value: `$${stats.ventasHoy.toFixed(2)}`, icon: DollarSign, idx: 1, trend: null, color: "from-blue-500" },
     { title: t("dashboard.salesMonth"), value: `$${stats.ventasMes.toFixed(2)}`, icon: TrendingUp, idx: 2, trend: stats.crecimientoVentas, color: "from-emerald-500" },
-    { title: t("dashboard.averageTicket"), value: `$${stats.ticketPromedio.toFixed(2)}`, icon: ShoppingCart, idx: 3, trend: null, color: "from-amber-500" },
+    // Ganancia sobre productos: margen BRUTO, no la utilidad del negocio (no
+    // descuenta renta, sueldos ni gastos). El título lo dice para no inducir
+    // a error. Si hay productos sin costo capturado se avisa en el subtítulo,
+    // porque si no el número parecería completo cuando es parcial.
+    {
+      title: "Ganancia del mes",
+      value: `$${stats.gananciaMes.toFixed(2)}`,
+      icon: TrendingUp,
+      idx: 3,
+      trend: null,
+      color: "from-violet-500",
+      subtitle:
+        stats.productosSinCosto > 0
+          ? `${stats.margenMesPct.toFixed(1)}% · ${stats.productosSinCosto} sin costo`
+          : `${stats.margenMesPct.toFixed(1)}% de margen`,
+    },
+    { title: t("dashboard.averageTicket"), value: `$${stats.ticketPromedio.toFixed(2)}`, icon: ShoppingCart, idx: 4, trend: null, color: "from-amber-500" },
     { title: "Clientes Atendidos", value: stats.clientesAtendidos.toString(), icon: Users, idx: 4, trend: null, color: "from-violet-500" },
     { title: "Productos Vendidos", value: stats.productosVendidos.toString(), icon: Package, idx: 5, trend: null, color: "from-pink-500" },
     { title: "Ventas Mes Anterior", value: `$${stats.ventasAnteriores.toFixed(2)}`, icon: CreditCard, idx: 6, trend: null, color: "from-cyan-500" },
@@ -232,6 +274,9 @@ export default function DashboardPage() {
                 <p className={`text-xs mt-2 font-medium ${kpi.trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                   {kpi.trend > 0 ? '↑' : '↓'} {Math.abs(kpi.trend).toFixed(1)}%
                 </p>
+              )}
+              {"subtitle" in kpi && kpi.subtitle && (
+                <p className="mt-2 text-xs text-muted-foreground">{kpi.subtitle}</p>
               )}
             </CardContent>
           </Card>

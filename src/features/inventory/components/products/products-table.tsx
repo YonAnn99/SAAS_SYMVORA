@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Producto } from "../../types/inventory.types";
+import { calcularMargenProducto } from "@/lib/profit";
 
 interface ProductsTableProps {
   products: Producto[];
@@ -92,6 +93,9 @@ export function ProductsTable({
                     {t("products.salePrice")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
+                    {t("products.margin")}
+                  </TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("products.currentStock")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
@@ -131,6 +135,9 @@ export function ProductsTable({
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
                       ${product.precio_venta.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-mono">
+                      <ProductMarginCell product={product} />
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
                       {product.stock_actual}
@@ -181,5 +188,41 @@ export function ProductsTable({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Margen de un producto en la tabla.
+ *
+ * Sin costo capturado muestra un guion, NUNCA 100%: un producto al que no se
+ * le puso costo no es un producto que deje toda la venta como ganancia, y
+ * mostrarlo así invitaría a decisiones sobre un número falso.
+ */
+function ProductMarginCell({
+  product,
+}: {
+  product: { precio_venta: number; costo_compra: number | null };
+}) {
+  const margen = calcularMargenProducto(product.precio_venta, product.costo_compra);
+
+  if (!margen) {
+    return (
+      <span className="text-muted-foreground" title="Sin costo capturado">
+        —
+      </span>
+    );
+  }
+
+  // Se resalta lo que hay que mirar: pérdida en rojo, margen flaco en ámbar.
+  const tone = margen.esPerdida
+    ? "text-red-600 dark:text-red-400 font-semibold"
+    : margen.margenPct < 10
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-foreground";
+
+  return (
+    <span className={tone} title={`Ganas $${margen.gananciaUnitaria.toFixed(2)} por unidad`}>
+      {margen.margenPct.toFixed(1)}%
+    </span>
   );
 }

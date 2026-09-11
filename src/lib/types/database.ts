@@ -377,6 +377,7 @@ export type Database = {
           producto_id: string;
           cantidad: number;
           precio_unitario: number;
+          costo_unitario: number | null;
           subtotal: number;
           descuento: number;
         };
@@ -386,6 +387,7 @@ export type Database = {
           producto_id: string;
           cantidad: number;
           precio_unitario: number;
+          costo_unitario?: number | null;
           subtotal: number;
           descuento?: number;
         };
@@ -395,6 +397,7 @@ export type Database = {
           producto_id?: string;
           cantidad?: number;
           precio_unitario?: number;
+          costo_unitario?: number | null;
           subtotal?: number;
           descuento?: number;
         };

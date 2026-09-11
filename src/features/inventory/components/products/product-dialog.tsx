@@ -1,13 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { calcularMargenProducto } from "@/lib/profit";
 import { FileUpload } from "@/components/ui/file-upload";
 import { cropToSquareWebP } from "@/lib/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -205,6 +206,18 @@ export function ProductDialog({
     });
   };
 
+  // Margen en vivo mientras se escribe. Sale del mismo módulo que usan
+  // Reportes y Dashboard, para que el número que ves al fijar el precio sea
+  // exactamente el que verás después en los reportes.
+  const margenEnVivo = useMemo(
+    () =>
+      calcularMargenProducto(
+        parseFloat(formData.precio_venta),
+        formData.costo_compra === "" ? null : parseFloat(formData.costo_compra)
+      ),
+    [formData.precio_venta, formData.costo_compra]
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
@@ -322,6 +335,33 @@ export function ProductDialog({
               />
             </div>
           </div>
+
+          {/* Margen en vivo. Se muestran margen Y markup por su nombre porque
+              se confunden constantemente: $15 con costo $10 es 33.3% de margen
+              pero 50% de markup, y poner precios creyendo que se gana 50%
+              cuando se gana 33% es un error caro. */}
+          {margenEnVivo && (
+            <div
+              className={`rounded-md border px-3 py-2 text-xs ${
+                margenEnVivo.esPerdida
+                  ? "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
+                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              }`}
+            >
+              {margenEnVivo.esPerdida ? (
+                <span className="font-medium">
+                  El costo es mayor o igual al precio: venderías con pérdida de $
+                  {Math.abs(margenEnVivo.gananciaUnitaria).toFixed(2)} por unidad.
+                </span>
+              ) : (
+                <span>
+                  <strong>Ganas ${margenEnVivo.gananciaUnitaria.toFixed(2)}</strong>{" "}
+                  por unidad · Margen {margenEnVivo.margenPct.toFixed(1)}% · Markup{" "}
+                  {margenEnVivo.markupPct.toFixed(1)}%
+                </span>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Stock actual</Label>

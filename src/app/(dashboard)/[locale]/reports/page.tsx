@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Link } from "@/i18n/navigation";
+import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 
 interface ReportData {
   ventasPorPeriodo: { date: string; ventas: number }[];
@@ -34,6 +36,17 @@ interface ReportData {
     totalTransacciones: number;
     ticketPromedio: number;
     productosVendidos: number;
+  };
+  ganancia: {
+    ingresos: number;
+    costoVendido: number;
+    ganancia: number;
+    margenPct: number;
+    /** Cuántas líneas quedaron fuera por no tener costo capturado. */
+    lineasSinCosto: number;
+    productosSinCosto: number;
+    /** Ordenado por lo que más deja, no por lo que más factura. */
+    topPorGanancia: { nombre: string; ganancia: number; ingresos: number }[];
   };
 }
 
@@ -199,6 +212,15 @@ export default function ReportsPage() {
       ticketPromedio: 0,
       productosVendidos: 0,
     },
+    ganancia: {
+      ingresos: 0,
+      costoVendido: 0,
+      ganancia: 0,
+      margenPct: 0,
+      lineasSinCosto: 0,
+      productosSinCosto: 0,
+      topPorGanancia: [],
+    },
   });
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState("mes");
@@ -273,12 +295,21 @@ export default function ReportsPage() {
     const { data: detalleVentas } = ventaIds.length
       ? await supabase
           .from("detalle_ventas")
-          .select("cantidad, precio_unitario, producto_id, venta_id")
+          // `subtotal`/`descuento`/`costo_unitario` son lo que necesita el
+          // cálculo de ganancia. Se usa el subtotal (pre-IVA) y NUNCA
+          // `ventas.total`, que incluye el IVA — ese dinero se cobra para el
+          // SAT, no es ingreso del negocio, y contarlo inflaría la ganancia.
+          .select(
+            "cantidad, precio_unitario, subtotal, descuento, costo_unitario, producto_id, venta_id"
+          )
           .in("venta_id", ventaIds)
       : {
           data: [] as {
             cantidad: number;
             precio_unitario: number;
+            subtotal: number;
+            descuento: number;
+            costo_unitario: number | null;
             producto_id: string;
             venta_id: string;
           }[],
@@ -326,6 +357,13 @@ export default function ReportsPage() {
           total: existing.total + dv.cantidad * dv.precio_unitario,
         });
       });
+
+      // Ganancia del periodo. Las líneas sin `costo_unitario` (ventas previas a
+      // la migración 052, o productos a los que nunca se les puso costo) se
+      // excluyen por completo — ni su ingreso ni su costo entran. Incluir su
+      // ingreso sin su costo daría un margen artificialmente alto.
+      const resumenGanancia = calcularGanancia(detalleVentas);
+      const rankingGanancia = gananciaPorProducto(detalleVentas);
 
       const topProductos = Array.from(productoventasMap.entries())
         .map(([productoId, data]) => {
@@ -417,6 +455,21 @@ export default function ReportsPage() {
           totalTransacciones,
           ticketPromedio,
           productosVendidos,
+        },
+        ganancia: {
+          ingresos: resumenGanancia.ingresos,
+          costoVendido: resumenGanancia.costoVendido,
+          ganancia: resumenGanancia.ganancia,
+          margenPct: resumenGanancia.margenPct,
+          lineasSinCosto: resumenGanancia.lineasSinCosto,
+          productosSinCosto: resumenGanancia.productosSinCosto.length,
+          topPorGanancia: rankingGanancia.slice(0, 5).map((r) => ({
+            nombre:
+              productos.find((p) => p.id === r.productoId)?.nombre ||
+              "Producto desconocido",
+            ganancia: r.ganancia,
+            ingresos: r.ingresos,
+          })),
         },
       });
     }
@@ -663,6 +716,92 @@ export default function ReportsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Ganancia sobre productos */}
+      <Card className="animate-fade-in-up stagger-5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">
+            Ganancia sobre productos
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Margen bruto: no descuenta renta, sueldos ni otros gastos del negocio.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Ingresos (sin IVA)
+              </p>
+              <p className="text-xl font-semibold font-mono">
+                ${reportData.ganancia.ingresos.toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Costo de lo vendido
+              </p>
+              <p className="text-xl font-semibold font-mono text-muted-foreground">
+                ${reportData.ganancia.costoVendido.toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Ganancia
+              </p>
+              <p
+                className={`text-xl font-semibold font-mono ${
+                  reportData.ganancia.ganancia < 0
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                }`}
+              >
+                ${reportData.ganancia.ganancia.toFixed(2)}
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  {reportData.ganancia.margenPct.toFixed(1)}%
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {reportData.ganancia.productosSinCosto > 0 && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+              {reportData.ganancia.productosSinCosto}{" "}
+              {reportData.ganancia.productosSinCosto === 1
+                ? "producto sin costo capturado no se incluye"
+                : "productos sin costo capturado no se incluyen"}{" "}
+              en este cálculo.{" "}
+              <Link href="/products" className="underline underline-offset-2">
+                Ver productos
+              </Link>
+            </div>
+          )}
+
+          {reportData.ganancia.topPorGanancia.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
+                Lo que más deja
+              </p>
+              <div className="space-y-1.5">
+                {reportData.ganancia.topPorGanancia.map((p) => (
+                  <div
+                    key={p.nombre}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="truncate">{p.nombre}</span>
+                    <span className="shrink-0 font-mono text-emerald-600 dark:text-emerald-400">
+                      ${p.ganancia.toFixed(2)}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        de ${p.ingresos.toFixed(2)}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Charts Grid */}
       <div className="grid gap-4 md:grid-cols-2">

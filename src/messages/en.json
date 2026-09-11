@@ -47,9 +47,7 @@
     "records": "records",
     "noActivity": "No activity records",
     "loadMore": "Load more",
-    "create": "Create",
     "update": "Update",
-    "delete": "Delete",
     "ordenCompra": "Purchase order",
     "movimientoCaja": "Cash movement",
     "product": "Product",
@@ -84,7 +82,7 @@
     "signupSubtitle": "Register your business on SYMVORA",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
-    "orContinueWith": "Or continue with",
+    "orContinueWith": "Or continue with email",
     "firstName": "First name",
     "middleName": "Middle name",
     "middleNameOptional": "Middle name (optional)",
@@ -143,7 +141,6 @@
     "tooManyAttempts": "Too many attempts. Try again in",
     "continueWithGoogle": "Continue with Google",
     "continueWithMicrosoft": "Continue with Microsoft",
-    "orContinueWith": "Or continue with email",
     "oauthAccountNotFound": "We couldn't find an account with this provider. Please sign up first.",
     "oauthGenericError": "Error signing in with the provider",
     "referralInvite": "Invited by {business}",
@@ -311,7 +308,8 @@
       "noErrors": "No errors",
       "errorsFound": "{count} rows with errors",
       "row": "Row"
-    }
+    },
+    "margin": "Margin"
   },
   "pos": {
     "title": "Point of Sale",
@@ -507,7 +505,7 @@
   },
   "facturas": {
     "title": "Invoicing",
-    "description": "Electronic invoicing CFDI 4.0",
+    "description": "Description",
     "newInvoice": "New Invoice",
     "invoice": "Invoice",
     "invoices": "Invoices",
@@ -543,7 +541,6 @@
     "concepts": "Concepts",
     "addConcept": "Add concept",
     "concept": "Concept",
-    "description": "Description",
     "quantity": "Quantity",
     "unitPrice": "Unit price",
     "unit": "Unit",
@@ -624,10 +621,22 @@
     },
     "compatibility": {
       "ariaLabel": "Available on any device with internet",
-      "mobile": { "title": "Phone", "desc": "iOS and Android" },
-      "tablet": { "title": "Tablet", "desc": "Touch screen" },
-      "desktop": { "title": "Computer", "desc": "Any modern browser" },
-      "online": { "title": "Cloud-based", "desc": "Just need internet" }
+      "mobile": {
+        "title": "Phone",
+        "desc": "iOS and Android"
+      },
+      "tablet": {
+        "title": "Tablet",
+        "desc": "Touch screen"
+      },
+      "desktop": {
+        "title": "Computer",
+        "desc": "Any modern browser"
+      },
+      "online": {
+        "title": "Cloud-based",
+        "desc": "Just need internet"
+      }
     },
     "features": {
       "title": "Everything your business needs",
@@ -673,13 +682,34 @@
       "title": "Configured for your business type",
       "subtitle": "SYMVORA adapts to multiple business types with pre-defined modules and configurations. Activate only what you need.",
       "types": {
-        "ABARROTES": { "name": "Grocery Store", "desc": "Daily consumption products, minimarket and corner store" },
-        "VERDULERIA": { "name": "Produce Shop", "desc": "Fruits, vegetables and fresh products with expiry control" },
-        "MASCOTAS": { "name": "Pet Shop", "desc": "Food, accessories and services for pets" },
-        "ROPA": { "name": "Clothing & Footwear", "desc": "Sizes, colors and variants with independent stock" },
-        "FERRETERIA": { "name": "Hardware Store", "desc": "Tools, construction materials and spare parts" },
-        "FARMACIA": { "name": "Pharmacy", "desc": "Medications, lots with expiry and traceability" },
-        "GENERAL": { "name": "General", "desc": "Flexible configuration for any business type" }
+        "ABARROTES": {
+          "name": "Grocery Store",
+          "desc": "Daily consumption products, minimarket and corner store"
+        },
+        "VERDULERIA": {
+          "name": "Produce Shop",
+          "desc": "Fruits, vegetables and fresh products with expiry control"
+        },
+        "MASCOTAS": {
+          "name": "Pet Shop",
+          "desc": "Food, accessories and services for pets"
+        },
+        "ROPA": {
+          "name": "Clothing & Footwear",
+          "desc": "Sizes, colors and variants with independent stock"
+        },
+        "FERRETERIA": {
+          "name": "Hardware Store",
+          "desc": "Tools, construction materials and spare parts"
+        },
+        "FARMACIA": {
+          "name": "Pharmacy",
+          "desc": "Medications, lots with expiry and traceability"
+        },
+        "GENERAL": {
+          "name": "General",
+          "desc": "Flexible configuration for any business type"
+        }
       }
     },
     "security": {
@@ -687,10 +717,22 @@
       "title": "Your data is protected",
       "subtitle": "Multi-tenant architecture with database-level isolation. Each business operates in its own secure space.",
       "features": {
-        "rls": { "title": "Total Data Isolation", "description": "Your sales, costs and customers are 100% private and secure. Only you and your team have access." },
-        "roles": { "title": "Role-based access control", "description": "3 roles: Super Admin, Admin and Cashier. Each role has specific database-level permissions." },
-        "audit": { "title": "Audit trail", "description": "Every creation, edit and deletion is logged with user, date and details. 8 entity types tracked." },
-        "passwords": { "title": "Secure passwords", "description": "Security requirements: 8+ characters, uppercase, lowercase, number and special character." }
+        "rls": {
+          "title": "Total Data Isolation",
+          "description": "Your sales, costs and customers are 100% private and secure. Only you and your team have access."
+        },
+        "roles": {
+          "title": "Role-based access control",
+          "description": "3 roles: Super Admin, Admin and Cashier. Each role has specific database-level permissions."
+        },
+        "audit": {
+          "title": "Audit trail",
+          "description": "Every creation, edit and deletion is logged with user, date and details. 8 entity types tracked."
+        },
+        "passwords": {
+          "title": "Secure passwords",
+          "description": "Security requirements: 8+ characters, uppercase, lowercase, number and special character."
+        }
       }
     },
     "benefits": {
@@ -728,10 +770,22 @@
       "subtitle": "No installations, no technical configuration. Just create your account and start.",
       "stepLabel": "Step",
       "steps": {
-        "1": { "title": "Create your account", "description": "Sign up with your email and password. Choose your business type." },
-        "2": { "title": "Set up your catalog", "description": "Add products with price, cost and barcode. Enable variants or lots if needed." },
-        "3": { "title": "Register suppliers", "description": "Add your main suppliers to be able to record purchases." },
-        "4": { "title": "Open register and sell", "description": "Open a register with initial fund, search products and complete your first sale." }
+        "1": {
+          "title": "Create your account",
+          "description": "Sign up with your email and password. Choose your business type."
+        },
+        "2": {
+          "title": "Set up your catalog",
+          "description": "Add products with price, cost and barcode. Enable variants or lots if needed."
+        },
+        "3": {
+          "title": "Register suppliers",
+          "description": "Add your main suppliers to be able to record purchases."
+        },
+        "4": {
+          "title": "Open register and sell",
+          "description": "Open a register with initial fund, search products and complete your first sale."
+        }
       }
     },
     "faq": {
@@ -833,7 +887,7 @@
         "commission": "Per-sale commission"
       }
     },
-  "footer": {
+    "footer": {
       "description": "Point of sale and inventory for Mexican businesses. Stock control, finance and reports — all in one platform.",
       "product": "Product",
       "features": "Features",
@@ -861,5 +915,17 @@
     "description": "The page you're looking for doesn't exist or was moved. Check the URL or go back home.",
     "home": "Go home",
     "back": "Go back"
+  },
+  "profit": {
+    "title": "Product profit",
+    "revenue": "Revenue (excl. tax)",
+    "cogs": "Cost of goods sold",
+    "profit": "Profit",
+    "margin": "Margin",
+    "markup": "Markup",
+    "byProduct": "Most profitable",
+    "noCostWarning": "{count, plural, one {# product without cost} other {# products without cost}} — not included in this calculation",
+    "viewProducts": "View products",
+    "grossNote": "Gross product margin. Does not deduct rent, salaries or other business expenses."
   }
 }

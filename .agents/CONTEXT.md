@@ -52,7 +52,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 │       ├── robots.ts           # robots.txt (disallow /api/, /es/demo, /en/demo; sitemap)
 │       ├── sitemap.ts          # sitemap.xml (www.symvora.com.mx: /es + /en + legales, hreflang)
 │       └── layout.tsx          # metadataBase = getSiteUrl() (www.symvora.com.mx)
-├── supabase/migrations/        # 001-051 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría, invite keys, IVA toggle, monto recibido, sugerencias, billing_period, security hardening, precio $399, RBAC billing/miembros — 034/035 reconstruidas el 2026-09-08, ver sesión abajo)
+├── supabase/migrations/        # 001-052 (schema, RBAC, onboarding, sales, legal, demo guards, conekta methods, referidos, códigos promo, hardening, auditoría, invite keys, IVA toggle, monto recibido, sugerencias, billing_period, security hardening, precio $399, RBAC billing/miembros — 034/035 reconstruidas el 2026-09-08, ver sesión abajo)
 ├── e2e/                        # Playwright (app.spec, demo-isolation.spec)
 └── docs/                       # demo-isolation.md, login-background.md
 ```
@@ -99,7 +99,7 @@ SaaS multi-tenant ERP/POS para negocios en México (punto de venta, inventario, 
 - **Tablas (34, todas con RLS habilitado)**: verificado contra producción el 2026-09-10. Núcleo: tenants, tenant_settings, user_roles, role_permissions, tenant_memberships, productos, clientes, proveedores, ventas, detalle_ventas, compras, detalle_compras, cajas, movimientos_caja. Inventario avanzado: variantes_producto, stock_variantes, lotes, ajustes_inventario, ordenes_compra, detalle_orden_compra. Facturación: facturas, factura_detalle, facturas_folios, facturas_cancelaciones, factura_fiscal_secrets. Cobro/negocio: subscriptions, payment_history, codigos_promocionales, referidos, pagos_credito, pagos_terminal. Otras: activity_logs, legal_acceptances, user_invite_keys, sugerencias. (`trial_codes` eliminada en migración 029 — sistema muerto, reemplazado por códigos promocionales.) `codigos_promocionales` tiene RLS **sin políticas** a propósito: solo se toca por RPC SECURITY DEFINER o service role.
 - ⚠️ El conteo de "19 tablas / 9 enums" que este documento traía hasta el 2026-09-10 llevaba tiempo desfasado. Antes de citar estas listas, confirmarlas contra `pg_class`/`pg_type`; se quedan viejas en cuanto entra una migración que no las actualice.
 - **Funciones SQL clave**: `user_tenant_ids()`, `authorize()`, `custom_access_token_hook()`, `log_activity()`, `complete_onboarding()` (SECURITY DEFINER, valida `auth.uid()`), `complete_sale()` (SECURITY DEFINER atómico), `reset_demo_tenant()`, `is_demo_user()` / `current_user_is_demo()` (solo service_role), `validar_codigo_promo()` / `aplicar_codigo_promo()` (SECURITY DEFINER, migración 027).
-- **Migraciones**: 001-051. Aplicar en Supabase SQL Editor con "Without RLS" (o vía MCP `apply_migration`). ⚠️ **034/035 no tenían archivo local** hasta el 2026-09-08 (se aplicaron con `apply_migration` sin comitear el `.sql` correspondiente) — reconstruidos desde el estado real de `log_table_changes()` en producción; si se detecta otro hueco así, reconstruir desde `pg_get_functiondef`/`information_schema` antes de asumir que "no pasa nada".
+- **Migraciones**: 001-052. Aplicar en Supabase SQL Editor con "Without RLS" (o vía MCP `apply_migration`). ⚠️ **034/035 no tenían archivo local** hasta el 2026-09-08 (se aplicaron con `apply_migration` sin comitear el `.sql` correspondiente) — reconstruidos desde el estado real de `log_table_changes()` en producción; si se detecta otro hueco así, reconstruir desde `pg_get_functiondef`/`information_schema` antes de asumir que "no pasa nada".
 
 ---
 
@@ -230,7 +230,7 @@ UPDATE codigos_promocionales SET activo = false WHERE codigo = 'LANZAMIENTO';
 - **Demo**: self-serve (`/demo` → magic link), banner `?demo=1`, aislamiento total (12 endpoints + UI restringida + 10 tests).
 - **Seguridad**: `requireTenantAccess` en todas las APIs, webhook firmado, RBAC granular, RLS total, CAPTCHA Turnstile, headers (CSP, HSTS, nosniff, Referrer-Policy), `complete_sale` atómico con precio desde BD.
 - **Legal (LFPDPPP)**: aviso de privacidad integral, términos 17 secciones, política de cookies, `legal_acceptances` (IP+UA+versiones), PolicyUpdateBanner post-login.
-- **Calidad**: 140 tests Vitest (13 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
+- **Calidad**: 155 tests Vitest (14 archivos, incluye `product-import.test.ts` y `complete-sale.test.ts` con cobertura de `montoRecibido`), Playwright E2E, CI GitHub Actions.
 - **Cuenta de prueba (2026-08-25)**: `pruebas@symvora.com.mx` / `dZsFT8bPvFIhYQcU` — usuario real (no demo) con tenant "Pruebas SYMVORA" (subdominio `pruebas`, código referido `SYMAB77A437`), OR_ADMIN, suscripción trial. Creada vía `scripts/create-test-account.ts` (Admin API, idempotente — re-ejecutar rota la contraseña) + `complete_onboarding` vía SQL. Sin bandeja real (`email_confirm: true`, ningún correo sale a terceros). Aislada por RLS; puede probar Conekta real (cobros reales — montos pequeños). Login por script lo bloquea Turnstile (esperado) — probar en navegador.
 - **Legal**: stub de correo ya resuelto — `PRIVACY_EMAIL = "privacidad@symvora.com.mx"` en `src/lib/contact.ts` (real, no placeholder). Solo queda pendiente el domicilio físico (ver Pendiente).
 - **CFDI**: config fiscal UI+API (`facturas/config`) completa (RFC, razón social, régimen, CP, PAC, certificados); descarga XML/PDF + vista de detalle (`facturas/[id]`) completas; `pac-client.ts` ya resuelve endpoint de producción vs pruebas correctamente (no hardcodea demo). Solo falta cargar credenciales fiscales reales y escribir tests (ver "Plan Pendiente: Módulo CFDI").
@@ -402,6 +402,33 @@ El POS puede cobrar sin internet y las ventas se suben solas al volver la conexi
 **De paso se cerró un hueco**: `use-pos-catalog.ts` consultaba productos *y* clientes pero solo cacheaba productos, así que sin red la lista de clientes quedaba vacía. Ahora cachea productos, clientes y la caja activa, con compatibilidad hacia atrás para el formato viejo (un array pelado de productos).
 
 **Dependencia nueva**: `fake-indexeddb` (solo dev) para poder testear la cola — jsdom no implementa IndexedDB.
+
+---
+
+### Ganancia sobre productos (2026-09-11)
+
+Antes de esto **no existía ningún cálculo de ganancia en todo el sistema**: `costo_compra` se capturaba en el formulario de producto (obligatorio) pero no alimentaba nada, y Dashboard/Reportes/Finanzas mostraban solo **ingresos**.
+
+**Migración `052`** (aplicada como `052a/052b/052c`). Columna `detalle_ventas.costo_unitario`, **nullable a propósito**: distingue "no se capturó el costo" de "el costo era cero", que es lo que permite excluir esas líneas en vez de contarlas como 100% de ganancia.
+
+**Por qué se congela el costo al vender** (y no se cruza `productos.costo_compra` actual): si se calculara contra el costo vigente, cada actualización de costo —o sea, **cada compra a precio nuevo**— reescribiría la ganancia de todo el histórico. Un reporte de un mes cerrado dejaría de ser el mismo al volver a mirarlo. `detalle_compras` ya guardaba `costo_unitario` desde la 001; las ventas se habían quedado sin ese espejo.
+
+**El cambio en `_crear_venta_desde_items` NO tocó la firma**, solo el cuerpo: la función ya leía `productos` en su bucle, así que bastó con añadir `costo_compra` a ese `SELECT` y arrastrarlo hasta el `INSERT`. Por eso se usó `CREATE OR REPLACE` sin `DROP`, y **no aplicaron** las trampas de los bugs #18 (overload huérfano) y #23 (grants perdidos) — verificado igualmente: una sola firma de cada función y `anon` sin acceso. El costo sale de la BD, nunca del cliente (protección del bug #5).
+
+**`src/lib/profit.ts`** es la fuente única del cálculo para las cuatro pantallas. Dos reglas que no se deben relajar:
+
+1. **El IVA no entra.** Todo se calcula sobre `detalle_ventas.subtotal` (pre-impuesto), **nunca** sobre `ventas.total`. El IVA se cobra para enterarlo al SAT: no es ingreso del negocio. La diferencia no es menor — en el tenant demo, 4,507 pre-IVA contra 11,847 de total con IVA.
+2. **Costo nulo se excluye por completo**, ni su ingreso ni su costo entran. Incluir el ingreso sin el costo daría un margen artificialmente alto que nadie sospecharía. Un costo de **cero sí computa** (es un dato, no una ausencia).
+
+**Margen ≠ markup** y se confunden constantemente: $15 con costo $10 son 33.3% de margen y 50% de markup. El formulario muestra ambos con su nombre porque poner precios creyendo que se gana 50% cuando se gana 33% es un error caro.
+
+**Dónde se ve**: margen en vivo en `product-dialog.tsx` (avisa en rojo si el costo ≥ precio), columna de margen en `products-table.tsx` (guion si no hay costo, **nunca 100%**), sección de ganancias en `/reports` con desglose **ordenado por lo que más deja, no por lo que más factura**, y KPI "Ganancia del mes" en el Dashboard. El dashboard **no añadió consulta**: se amplió el `select` de `detalle_ventas` que ya existía para contar productos.
+
+**Backfill del histórico**: se rellenó `costo_unitario` con el costo actual en las 84 líneas existentes. Seguro porque todas pertenecían al tenant demo y a la cuenta de pruebas del dueño — cero clientes reales. **No repetir** ese backfill si hay ventas de clientes reales sin costo: dejarlas en NULL.
+
+⚠️ **Alcance**: esto es **margen bruto sobre producto**, no la utilidad del negocio — no descuenta renta, sueldos, luz ni la suscripción de SYMVORA. La UI lo dice explícitamente y no debe re-etiquetarse como "utilidad". Y el número solo vale lo que valgan los costos capturados: el aviso detecta productos **sin** costo, pero **no** puede detectar un costo desactualizado.
+
+**Verificado contra producción**: tenant demo con 60 líneas → ingresos 4,507, costo 3,050, ganancia 1,457, margen 32.33%, contrastado con una cuenta a mano línea por línea en SQL.
 
 ---
 
