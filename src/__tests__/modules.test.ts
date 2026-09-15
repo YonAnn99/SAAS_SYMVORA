@@ -85,7 +85,12 @@ describe("permissionForPath", () => {
   });
 
   it("protege las rutas de administración con su permiso", () => {
-    expect(permissionForPath("/finances")).toBe("finances.manage");
+    // `/finances` exige `cash.manage`, NO `finances.manage`: desde la migración
+    // 062 el cajero necesita entrar a esa pantalla para abrir su propia caja,
+    // sin la cual el POS lo bloquea. La pantalla ya es por usuario (solo
+    // muestra la caja de quien la abre). `finances.manage` sigue existiendo y
+    // gobierna en la base lo que va más allá de la caja propia.
+    expect(permissionForPath("/finances")).toBe("cash.manage");
     expect(permissionForPath("/purchases")).toBe("purchases.manage");
     expect(permissionForPath("/settings")).toBe("org.manage_settings");
     expect(permissionForPath("/users")).toBe("org.manage_members");
@@ -114,7 +119,7 @@ describe("permissionForPath", () => {
 
   it("resuelve subrutas por el prefijo más específico", () => {
     expect(permissionForPath("/settings/payments")).toBe("org.manage_settings");
-    expect(permissionForPath("/finances/algo/mas")).toBe("finances.manage");
+    expect(permissionForPath("/finances/algo/mas")).toBe("cash.manage");
   });
 
   it("una ruta desconocida queda abierta, no bloqueada", () => {

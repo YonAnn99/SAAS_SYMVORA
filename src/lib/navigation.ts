@@ -63,7 +63,12 @@ export const NAVIGATION: NavItem[] = [
   { name: "layout.customers", href: "/customers", icon: Contact },
 
   // --- Dinero y analisis.
-  { name: "layout.finances", href: "/finances", icon: Wallet, minRole: "ORG_ADMIN" },
+  // Finanzas ya NO lleva `minRole`: desde la migracion 062 la ruta exige
+  // `cash.manage`, que tambien tiene el CAJERO para operar su propia caja. Un
+  // `minRole: "ORG_ADMIN"` aqui seria codigo muerto (el permiso manda) y, peor,
+  // haria creer que el cajero no entra — cuando tiene que entrar para poder
+  // abrir caja y vender.
+  { name: "layout.finances", href: "/finances", icon: Wallet },
   { name: "layout.reports", href: "/reports", icon: TrendingUp },
 
   // --- Abastecimiento.

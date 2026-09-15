@@ -182,6 +182,7 @@ export async function updateSession(request: NextRequest) {
           subscription_status: string | null;
           trial_end: string | null;
           permisos: string[];
+          tiene_caja_abierta: boolean;
         }>();
 
       // Se conserva la forma de `membership` para no tocar el resto del bloque.
@@ -229,6 +230,19 @@ export async function updateSession(request: NextRequest) {
 
       // --- Role-based route protection ---
       const cleanPath = stripLocale(request.nextUrl.pathname);
+
+      // --- El POS exige caja abierta ---
+      // No es una barrera de seguridad sino de proceso de negocio: sin caja
+      // abierta las ventas no generan movimiento y el corte del dia no cuadra.
+      // Va en el middleware para que escribir la URL a mano tampoco funcione;
+      // `pos/page.tsx` repite la comprobacion porque el middleware no corre en
+      // la navegacion de cliente ni cuando la PWA abre el POS desde su cache.
+      if (contexto && !contexto.tiene_caja_abierta && cleanPath === "/pos") {
+        const locale = request.nextUrl.pathname.split("/")[1] || "es";
+        const financesUrl = request.nextUrl.clone();
+        financesUrl.pathname = `/${locale}/finances`;
+        return NextResponse.redirect(financesUrl);
+      }
 
       const isDisabled = DISABLED_PATHS.some(
         (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)

@@ -19,6 +19,8 @@ import {
   variantPrice,
 } from "@/features/pos/components/variant-picker-dialog";
 import { PendingSalesBanner } from "@/features/pos/components/pending-sales-banner";
+import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
+import { RegisterRequiredNotice } from "@/features/cash-register/components/register-required-notice";
 import { enqueueSale } from "@/lib/offline/queue";
 import { requestPersistentStorage } from "@/lib/offline/persist";
 
@@ -76,6 +78,9 @@ export default function POSPage() {
   } = usePosCatalog(tenantId, tenantLoading);
   const isOnline = useOnlineStatus();
   const saleSync = useSaleSync(tenantId);
+  // El middleware ya redirige si no hay caja, pero no corre en la navegacion
+  // de cliente ni cuando la PWA abre el POS desde su cache sin conexion.
+  const { hasOpenRegister, loading: loadingRegister } = useOpenRegister(tenantId);
   const [variantPickerFor, setVariantPickerFor] = useState<Producto | null>(null);
 
   // Pedir almacenamiento persistente al entrar al POS: es lo que reduce el
@@ -331,6 +336,12 @@ export default function POSPage() {
     { key: "CREDITO", label: t("pos.paymentMethods.CREDIT"), icon: AlertTriangle },
     { key: "TARJETA_TERMINAL", label: t("pos.paymentMethods.TERMINAL"), icon: Smartphone },
   ];
+
+  // Sin caja abierta no se vende: las ventas no generarian movimiento y el
+  // corte del dia no cuadraria. `null` es "no se pudo resolver" y no bloquea.
+  if (!tenantLoading && !loadingRegister && hasOpenRegister === false) {
+    return <RegisterRequiredNotice />;
+  }
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5">

@@ -208,11 +208,16 @@ describe("filterNavigation", () => {
     expect(visibles.some((i) => i.href === "/facturas")).toBe(false);
   });
 
-  // Los 4 permisos reales del rol CAJERO, verificados contra `role_permissions`
+  // Los 5 permisos reales del rol CAJERO, verificados contra `role_permissions`
   // en produccion. Modelar el caso real importa: con "ningun permiso" el POS
   // desaparece (exige `sales.create`) y el test daria una falsa alarma.
+  //
+  // `cash.manage` se añadio en la migracion 062: el cajero abre y cierra SU
+  // propia caja. Sin el, el POS lo bloquearia para siempre, porque desde ese
+  // mismo cambio vender exige tener caja abierta.
   const PERMISOS_CAJERO = [
     "billing.view",
+    "cash.manage",
     "inventory.view",
     "sales.create",
     "sales.view_reports",
@@ -227,6 +232,10 @@ describe("filterNavigation", () => {
       "/pos",
       "/products",
       "/customers",
+      // Finanzas SÍ aparece desde la migración 062. No es una fuga de permisos:
+      // la pantalla solo muestra la caja del propio usuario, y el cajero tiene
+      // que entrar para abrirla o el POS no lo deja vender.
+      "/finances",
       "/reports",
       "/activity",
       "/suggestions",
@@ -235,12 +244,13 @@ describe("filterNavigation", () => {
 
   it("un CAJERO NO ve los módulos de administración", () => {
     const visibles = filterNavigation("CAJERO", comoCajero).map((i) => i.href);
+    // `/finances` ya NO está en esta lista: el cajero entra a su propia caja.
+    // Lo que sigue fuera de su alcance es todo lo demás.
     for (const ruta of [
       "/users",
       "/billing",
       "/settings",
       "/settings/payments",
-      "/finances",
       "/purchases",
       "/purchase-orders",
     ]) {

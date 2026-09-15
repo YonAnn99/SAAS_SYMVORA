@@ -18,6 +18,15 @@ import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { moduleLabelKeyForPath } from "@/lib/navigation";
+import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -29,7 +38,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { tenantName, tenantLogo } = useCurrentTenant();
+  const { tenantId, tenantName, tenantLogo } = useCurrentTenant();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -48,7 +57,10 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   const labelKey = moduleLabelKeyForPath(pathname);
   const moduleLabel = labelKey ? t(labelKey) : "";
 
-  const handleLogout = async () => {
+  const { hasOpenRegister } = useOpenRegister(tenantId);
+  const [avisoCajaAbierta, setAvisoCajaAbierta] = useState(false);
+
+  const cerrarSesion = async () => {
     const supabase = createSupabaseBrowserClient();
     // Antes de cerrar sesion: el HTML guardado del panel lleva dentro los datos
     // de quien lo genero. En un mostrador compartido, el siguiente cajero
@@ -57,6 +69,22 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
+  };
+
+  /**
+   * Avisa si queda caja abierta, pero NO impide salir.
+   *
+   * Bloquear de verdad seria una trampa: sin conexion no se puede cerrar caja
+   * (`use-cash-register` lo impide si hay ventas sin subir), asi que el cajero
+   * quedaria encerrado hasta que volviera internet. Y tampoco podria bloquear
+   * una terminal compartida al alejarse de ella.
+   */
+  const handleLogout = async () => {
+    if (hasOpenRegister === true) {
+      setAvisoCajaAbierta(true);
+      return;
+    }
+    await cerrarSesion();
   };
 
   const handleLocaleSwitch = (locale: "es" | "en") => {
@@ -163,6 +191,37 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <Dialog open={avisoCajaAbierta} onOpenChange={setAvisoCajaAbierta}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Tienes la caja abierta</DialogTitle>
+            <DialogDescription className="text-sm">
+              Si sales sin cerrarla, el corte del día quedará sin cuadrar y el
+              siguiente turno arrancará sobre tu caja. Puedes cerrarla ahora o
+              salir de todos modos.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="h-8 w-full sm:w-auto"
+              onClick={() => void cerrarSesion()}
+            >
+              Salir de todos modos
+            </Button>
+            <Button
+              className="h-8 w-full sm:w-auto"
+              onClick={() => {
+                setAvisoCajaAbierta(false);
+                router.push("/finances");
+              }}
+            >
+              Ir a cerrar caja
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

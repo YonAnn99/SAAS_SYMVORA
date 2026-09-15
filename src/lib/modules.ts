@@ -91,7 +91,13 @@ export const MODULES: ModuleDefinition[] = [
     label: "Finanzas",
     description: "Caja, movimientos de dinero y cortes",
     paths: ["/finances"],
-    permission: "finances.manage",
+    // `cash.manage`, no `finances.manage`. La pantalla es POR USUARIO: muestra
+    // unicamente la caja del que la abre (`fetchActiveRegister(userId)`) y sus
+    // movimientos, nunca las de sus companeros. Y el cajero TIENE que entrar
+    // aqui: desde que el POS exige caja abierta, sin acceso a esta pantalla no
+    // podria vender. `finances.manage` sigue existiendo y gobierna en la base
+    // lo que va mas alla de la caja propia (ver migracion 062).
+    permission: "cash.manage",
     grantable: true,
   },
   {
