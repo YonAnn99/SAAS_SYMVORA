@@ -5,6 +5,10 @@ import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { getAppUrl } from "@/lib/site";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 30;
+
 const APP_URL = getAppUrl();
 
 export async function POST(request: Request) {

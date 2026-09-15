@@ -5,6 +5,14 @@ import {
 } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
+import { cabecerasRateLimit, consumirRateLimit } from "@/lib/rate-limit";
+
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 30;
+
+const PROMO_RATE_LIMIT_MAX = 10;
+const PROMO_RATE_LIMIT_WINDOW_SECONDS = 3600;
 
 export async function POST(request: Request) {
   try {
@@ -26,6 +34,22 @@ export async function POST(request: Request) {
       permission: "subscription.manage",
     });
     if (!auth.ok) return auth.response;
+
+    // Los codigos promocionales son de un solo uso global y no son adivinables
+    // por diseño, pero sin limite nada impide probarlos por fuerza bruta desde
+    // una cuenta valida. 10 intentos por hora y por tenant hace inviable el
+    // barrido sin estorbar a quien teclea mal su codigo un par de veces.
+    const limite = await consumirRateLimit(
+      `promo-apply:${tenant_id}`,
+      PROMO_RATE_LIMIT_MAX,
+      PROMO_RATE_LIMIT_WINDOW_SECONDS
+    );
+    if (!limite.permitido) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Intenta más tarde." },
+        { status: 429, headers: cabecerasRateLimit(limite) }
+      );
+    }
 
     const demo = await assertNotDemo();
     if (!demo.ok) return demo.response;

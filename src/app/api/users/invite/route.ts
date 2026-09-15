@@ -3,9 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { sendInviteKeyEmail } from "@/lib/email";
+import { cabecerasRateLimit, consumirRateLimit } from "@/lib/rate-limit";
 import type { UserRole } from "@/lib/types/database";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 30;
+
 const INVITABLE_ROLES: UserRole[] = ["ORG_ADMIN", "CAJERO"];
+const INVITE_RATE_LIMIT_MAX = 20;
+const INVITE_RATE_LIMIT_WINDOW_SECONDS = 3600;
 
 function generateKey(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -50,6 +57,22 @@ export async function POST(request: Request) {
       permission: "org.manage_members_write",
     });
     if (!auth.ok) return auth.response;
+
+    // Se limita despues de autenticar y por tenant, no por IP: cada invitacion
+    // dispara un correo real por Resend, asi que el recurso a proteger es la
+    // cuota de envio, no el endpoint. Un negocio legitimo no invita a 20
+    // personas en una hora.
+    const limite = await consumirRateLimit(
+      `users-invite:${tenantId}`,
+      INVITE_RATE_LIMIT_MAX,
+      INVITE_RATE_LIMIT_WINDOW_SECONDS
+    );
+    if (!limite.permitido) {
+      return NextResponse.json(
+        { error: "Demasiadas invitaciones en poco tiempo. Intenta más tarde." },
+        { status: 429, headers: cabecerasRateLimit(limite) }
+      );
+    }
 
     const demo = await assertNotDemo();
     if (!demo.ok) return demo.response;

@@ -13,6 +13,10 @@ import {
   type TerminalOrderItem,
 } from "@/features/payments/services/mercadopago/order-amount";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 30;
+
 export const dynamic = "force-dynamic";
 
 interface CreateOrderRequest {

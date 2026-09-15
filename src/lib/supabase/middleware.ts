@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import { type NextRequest, NextResponse } from "next/server";
+import { after, type NextRequest, NextResponse } from "next/server";
 import { permissionForPath } from "@/lib/modules";
+import type { UserRole } from "@/lib/types/database";
 
 const APP_HOST = "https://app.symvora.com.mx";
 const MARKETING_HOST = "https://www.symvora.com.mx";
@@ -160,8 +161,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Subscription + role access control for authenticated users on dashboard.
-  // Single membership fetch (tenant_id + role) reused by both checks below —
-  // avoids two redundant round trips to the same tenant_memberships row.
+  //
+  // UNA SOLA consulta para todo. Esto corre en cada navegacion autenticada, y
+  // antes encadenaba hasta 4 round trips secuenciales (membresia -> tenant ->
+  // suscripcion -> permisos efectivos) contra un PostgREST con pool pequeño.
+  // `get_middleware_context` (migracion 060) los resuelve de una vez porque
+  // todos cuelgan del mismo user_id.
   if (user && !isAuthRoute && (!isPublicRoute || isBillingRoute)) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (serviceRoleKey) {
@@ -169,24 +174,26 @@ export async function updateSession(request: NextRequest) {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
-      const { data: membership } = await supabaseAdmin
-        .from("tenant_memberships")
-        .select("tenant_id, role")
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
+      const { data: contexto } = await supabaseAdmin
+        .rpc("get_middleware_context", { p_user_id: user.id })
+        .maybeSingle<{
+          tenant_id: string;
+          rol: UserRole;
+          subscription_status: string | null;
+          trial_end: string | null;
+          permisos: string[];
+        }>();
+
+      // Se conserva la forma de `membership` para no tocar el resto del bloque.
+      const membership = contexto
+        ? { tenant_id: contexto.tenant_id, role: contexto.rol }
+        : null;
 
       // --- Subscription check ---
       // Se salta en /billing a proposito: es la pagina a la que redirige este
       // mismo chequeo, y evaluarla ahi produce el redirect loop del bug #9.
-      if (membership && !isBillingRoute) {
-        const { data: tenant } = await supabaseAdmin
-          .from("tenants")
-          .select("subscription_status")
-          .eq("id", membership.tenant_id)
-          .single();
-
-        const status = tenant?.subscription_status;
+      if (contexto && !isBillingRoute) {
+        const status = contexto.subscription_status;
 
         // Redirect to billing if expired or past_due
         if (status === "expired" || status === "past_due") {
@@ -197,24 +204,26 @@ export async function updateSession(request: NextRequest) {
         }
 
         // Check if trial has expired
-        if (status === "trial") {
-          const { data: subscription } = await supabaseAdmin
-            .from("subscriptions")
-            .select("trial_end")
-            .eq("tenant_id", membership.tenant_id)
-            .single();
-
-          if (subscription?.trial_end && new Date(subscription.trial_end) < new Date()) {
+        if (
+          status === "trial" &&
+          contexto.trial_end &&
+          new Date(contexto.trial_end) < new Date()
+        ) {
+          // La escritura NO bloquea el redirect: marcar el tenant como expirado
+          // es contabilidad interna, y quien navega solo necesita llegar a
+          // /billing. Dejarla en la ruta critica añadia un round trip a una
+          // respuesta que de todas formas es una redireccion.
+          after(async () => {
             await supabaseAdmin
               .from("tenants")
               .update({ subscription_status: "expired" })
-              .eq("id", membership.tenant_id);
+              .eq("id", contexto.tenant_id);
+          });
 
-            const billingUrl = request.nextUrl.clone();
-            const locale = request.nextUrl.pathname.split("/")[1] || "es";
-            billingUrl.pathname = `/${locale}/billing`;
-            return NextResponse.redirect(billingUrl);
-          }
+          const billingUrl = request.nextUrl.clone();
+          const locale = request.nextUrl.pathname.split("/")[1] || "es";
+          billingUrl.pathname = `/${locale}/billing`;
+          return NextResponse.redirect(billingUrl);
         }
       }
 
@@ -246,14 +255,10 @@ export async function updateSession(request: NextRequest) {
         const requiredPermission = permissionForPath(cleanPath);
         let allowed: boolean;
 
-        if (requiredPermission && membership) {
-          const { data: perms } = await supabaseAdmin.rpc(
-            "get_effective_permissions_for_user",
-            { p_tenant_id: membership.tenant_id, p_user_id: user.id }
-          );
-          allowed = (perms ?? []).some(
-            (r: { permission: string }) => r.permission === requiredPermission
-          );
+        if (requiredPermission && contexto) {
+          // Los permisos efectivos ya vinieron en el mismo RPC de arriba: aqui
+          // no hay consulta adicional.
+          allowed = contexto.permisos.includes(requiredPermission);
         } else {
           // Ruta protegida que no está mapeada en modules.ts: se cae al
           // criterio anterior por rol en vez de dejarla pasar.

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server.server";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 15;
+
 function isSafeRedirectPath(value: string | null): value is string {
   if (!value) {
     return false;

@@ -53,6 +53,21 @@ interface ReportData {
 const DIA_LABEL = "Día específico";
 const WEEKDAY_LABELS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
 
+/**
+ * Tope de ventas por reporte. Todo lo de abajo (agrupar por periodo, top de
+ * productos, ganancia, clientes frecuentes) se calcula en el navegador sobre
+ * estos arrays, asi que el limite protege la pestaña del comerciante, no al
+ * servidor. Con "último año" y un negocio activo se superaba de largo.
+ */
+const MAX_VENTAS_REPORTE = 5000;
+
+/**
+ * Tamaño de lote para el `.in("venta_id", ...)` de `detalle_ventas`. PostgREST
+ * recibe esos ids en la URL, y unos cientos de UUID bastan para superar el
+ * limite de longitud y provocar un 414 que tumba el reporte completo.
+ */
+const DETALLE_BATCH_SIZE = 200;
+
 function startOfDay(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -223,6 +238,10 @@ export default function ReportsPage() {
     },
   });
   const [loading, setLoading] = useState(true);
+  // Se avisa cuando el periodo tenia mas ventas que el tope: un reporte
+  // truncado en silencio se lee como si fueran las cifras completas del
+  // negocio, que es peor que no mostrarlo.
+  const [reporteTruncado, setReporteTruncado] = useState(false);
   const [periodo, setPeriodo] = useState("mes");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -280,7 +299,14 @@ export default function ReportsPage() {
         .eq("tenant_id", tenantId)
         .gte("fecha_venta", startDate.toISOString())
         .lte("fecha_venta", endDate.toISOString())
-        .eq("estado", "COMPLETADA"),
+        .eq("estado", "COMPLETADA")
+        // Tope duro: todo el reporte se agrega en el navegador, asi que sin
+        // limite un negocio con un año de historial congela la pestaña del
+        // comerciante. Se ordena por fecha descendente para que, si se trunca,
+        // lo que se conserve sea lo mas reciente (lo util) y no un corte
+        // arbitrario.
+        .order("fecha_venta", { ascending: false })
+        .limit(MAX_VENTAS_REPORTE),
       supabase
         .from("productos")
         .select("id, nombre, categoria")
@@ -291,9 +317,31 @@ export default function ReportsPage() {
         .eq("tenant_id", tenantId),
     ]);
 
+    setReporteTruncado((ventas?.length ?? 0) >= MAX_VENTAS_REPORTE);
+
     const ventaIds = (ventas ?? []).map((v) => v.id);
-    const { data: detalleVentas } = ventaIds.length
-      ? await supabase
+
+    // El `.in(...)` viaja en la URL: con unos cientos de UUID se supera el
+    // limite de longitud del servidor y la consulta falla entera con 414. Por
+    // eso se trocea en lotes en vez de mandar todos los ids de golpe.
+    type DetalleVenta = {
+      cantidad: number;
+      precio_unitario: number;
+      subtotal: number;
+      descuento: number;
+      costo_unitario: number | null;
+      producto_id: string;
+      venta_id: string;
+    };
+
+    const lotes: string[][] = [];
+    for (let i = 0; i < ventaIds.length; i += DETALLE_BATCH_SIZE) {
+      lotes.push(ventaIds.slice(i, i + DETALLE_BATCH_SIZE));
+    }
+
+    const resultados = await Promise.all(
+      lotes.map((lote) =>
+        supabase
           .from("detalle_ventas")
           // `subtotal`/`descuento`/`costo_unitario` son lo que necesita el
           // cálculo de ganancia. Se usa el subtotal (pre-IVA) y NUNCA
@@ -302,18 +350,13 @@ export default function ReportsPage() {
           .select(
             "cantidad, precio_unitario, subtotal, descuento, costo_unitario, producto_id, venta_id"
           )
-          .in("venta_id", ventaIds)
-      : {
-          data: [] as {
-            cantidad: number;
-            precio_unitario: number;
-            subtotal: number;
-            descuento: number;
-            costo_unitario: number | null;
-            producto_id: string;
-            venta_id: string;
-          }[],
-        };
+          .in("venta_id", lote)
+      )
+    );
+
+    const detalleVentas = resultados.flatMap(
+      (r) => (r.data ?? []) as DetalleVenta[]
+    );
 
     if (ventasError) {
       toast.error("Error al cargar reportes");
@@ -543,6 +586,17 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {reporteTruncado && (
+        <div
+          role="status"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200"
+        >
+          Este periodo tiene más de {MAX_VENTAS_REPORTE.toLocaleString("es-MX")}{" "}
+          ventas. Se están mostrando las más recientes, así que los totales no
+          cubren el periodo completo. Elige un rango más corto para ver cifras
+          exactas.
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
           <h2 className="text-xl md:text-2xl font-semibold tracking-tight">

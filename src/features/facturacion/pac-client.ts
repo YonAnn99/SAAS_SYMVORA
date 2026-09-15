@@ -1,6 +1,11 @@
 import soap from "soap";
 import type { TenantConfiguracionFiscal } from "@/lib/types/database";
 import type { ResolvedFiscalSecrets } from "@/lib/fiscal-secrets";
+import { TIMEOUTS, timeoutSignal, withTimeout } from "@/lib/http/timeout";
+
+// El cliente SOAP descarga el WSDL antes de cada llamada. Sin timeout aqui, un
+// PAC caido cuelga la funcion antes siquiera de intentar timbrar.
+const SOAP_OPTIONS = { wsdl_options: { timeout: TIMEOUTS.pac } } as const;
 
 export interface PACStampResult {
   uuid: string;
@@ -84,14 +89,22 @@ export class FinkokClient implements PACClient {
 
   async stamp(xml: string): Promise<PACStampResult> {
     const wsdl = finkokEndpoint(FINKOK_STAMP_WSDL, this.isTest);
-    const client = await soap.createClientAsync(wsdl);
+    const client = await withTimeout(
+      soap.createClientAsync(wsdl, SOAP_OPTIONS),
+      TIMEOUTS.pac,
+      "Finkok (WSDL de timbrado)"
+    );
     const xmlBase64 = Buffer.from(xml, "utf8").toString("base64");
 
-    const [result] = await client.sign_stampAsync({
-      xml: xmlBase64,
-      username: this.username,
-      password: this.password,
-    });
+    const [result] = await withTimeout<unknown[]>(
+      client.sign_stampAsync({
+        xml: xmlBase64,
+        username: this.username,
+        password: this.password,
+      }),
+      TIMEOUTS.pac,
+      "Finkok (timbrado)"
+    );
 
     const acuse = (result as { sign_stampResult?: FinkokAcuse })
       .sign_stampResult as FinkokAcuse | undefined;
@@ -124,27 +137,35 @@ export class FinkokClient implements PACClient {
 
   async cancel(params: CancelParams): Promise<PACCancelResult> {
     const wsdl = finkokEndpoint(FINKOK_CANCEL_WSDL, this.isTest);
-    const client = await soap.createClientAsync(wsdl);
+    const client = await withTimeout(
+      soap.createClientAsync(wsdl, SOAP_OPTIONS),
+      TIMEOUTS.pac,
+      "Finkok (WSDL de cancelacion)"
+    );
 
-    const [result] = await client.cancelAsync({
-      UUIDS: {
-        UUID: [
-          {
-            _attributes: {
-              UUID: params.uuid,
-              FolioSustitucion: params.folioSustitucion || undefined,
-              Motivo: params.motivo,
+    const [result] = await withTimeout<unknown[]>(
+      client.cancelAsync({
+        UUIDS: {
+          UUID: [
+            {
+              _attributes: {
+                UUID: params.uuid,
+                FolioSustitucion: params.folioSustitucion || undefined,
+                Motivo: params.motivo,
+              },
             },
-          },
-        ],
-      },
-      username: this.username,
-      password: this.password,
-      taxpayer_id: params.rfcEmisor,
-      cer: this.secrets.certificado_cer,
-      key: this.secrets.certificado_key,
-      store_pending: false,
-    });
+          ],
+        },
+        username: this.username,
+        password: this.password,
+        taxpayer_id: params.rfcEmisor,
+        cer: this.secrets.certificado_cer,
+        key: this.secrets.certificado_key,
+        store_pending: false,
+      }),
+      TIMEOUTS.pac,
+      "Finkok (cancelacion)"
+    );
 
     const cancelResult = (result as {
       cancelResult?: {
@@ -189,6 +210,7 @@ export class SWSapienClient implements PACClient {
 
     const response = await fetch(endpoint, {
       method: "POST",
+      signal: timeoutSignal(TIMEOUTS.pac),
       headers: {
         "Content-Type": "application/json",
       },
@@ -223,6 +245,7 @@ export class SWSapienClient implements PACClient {
 
     const response = await fetch(endpoint, {
       method: "POST",
+      signal: timeoutSignal(TIMEOUTS.pac),
       headers: {
         "Content-Type": "application/json",
       },

@@ -1,8 +1,25 @@
 import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
 import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SUPPORT_EMAIL } from "@/lib/contact";
+import { TIMEOUTS, withTimeout } from "@/lib/http/timeout";
 
 const resendApiKey = process.env.RESEND_API_KEY;
+
+type EmailPayload = Parameters<Resend["emails"]["send"]>[0];
+
+/**
+ * Unico punto de envio. Existe para que ningun correo pueda bloquear
+ * indefinidamente a quien lo dispara: varios de estos envios ocurren dentro del
+ * webhook de Conekta, antes de devolver el 200. Si Resend se demora, Conekta no
+ * recibe confirmacion y reintenta el evento entero.
+ *
+ * El timeout no cancela la peticion a Resend (el SDK no acepta AbortSignal),
+ * solo deja de esperarla. Es aceptable: un correo duplicado es mucho menos
+ * grave que un webhook de cobro reintentado.
+ */
+async function deliver(resend: Resend, payload: EmailPayload) {
+  return withTimeout(resend.emails.send(payload), TIMEOUTS.resend, "Resend");
+}
 
 // Identidad de marca SYMVORA (misma paleta que web/login: negro tinta,
 // blanco hueso, zinc para texto secundario).
@@ -219,7 +236,7 @@ export async function sendWelcomeEmail(params: {
   const resend = new Resend(resendApiKey);
 
   try {
-    await resend.emails.send({
+    await deliver(resend, {
       from: getFromAddress(),
       to: params.to,
       subject,
@@ -334,7 +351,7 @@ export async function sendInviteKeyEmail(params: {
   const resend = new Resend(resendApiKey);
 
   try {
-    await resend.emails.send({
+    await deliver(resend, {
       from: getFromAddress(),
       to: params.to,
       subject,
@@ -448,7 +465,7 @@ export async function sendSuggestionEmail(params: {
   const resend = new Resend(resendApiKey);
 
   try {
-    await resend.emails.send({
+    await deliver(resend, {
       from: getFromAddress(),
       to: HELLO_EMAIL,
       replyTo: params.userEmail,
@@ -534,7 +551,7 @@ export async function sendCancellationEmail(params: {
   const resend = new Resend(resendApiKey);
 
   try {
-    await resend.emails.send({
+    await deliver(resend, {
       from: getFromAddress(),
       to: params.to,
       subject: "Tu suscripción SYMVORA ha sido cancelada",
@@ -634,7 +651,7 @@ export async function sendCancellationFeedbackEmail(params: {
   const resend = new Resend(resendApiKey);
 
   try {
-    await resend.emails.send({
+    await deliver(resend, {
       from: getFromAddress(),
       to: SUPPORT_EMAIL,
       replyTo: params.userEmail,

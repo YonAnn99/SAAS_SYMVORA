@@ -1,28 +1,20 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
+import {
+  cabecerasRateLimit,
+  consumirRateLimit,
+  obtenerIpCliente,
+} from "@/lib/rate-limit";
 
-// Rate limit en memoria: 5 requests / minuto / IP
-const rateLimitMap = new Map<string, number[]>();
-const RATE_LIMIT_WINDOW_MS = 60_000;
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 30;
+
+// 5 peticiones por minuto y por IP, contadas en Postgres (migracion 058).
+// Antes vivia en un `new Map()` de modulo, que en serverless no limitaba nada:
+// cada instancia tenia su propio contador y cada arranque en frio lo vaciaba.
 const RATE_LIMIT_MAX = 5;
-
-function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  const real = request.headers.get("x-real-ip");
-  if (real) return real;
-  return "unknown";
-}
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const timestamps = rateLimitMap.get(ip) ?? [];
-  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT_MAX) return true;
-  recent.push(now);
-  rateLimitMap.set(ip, recent);
-  return false;
-}
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 const DEMO_EMAIL = "demo@symvora.com";
 const SUPPORTED_LOCALES = ["es", "en"] as const;
@@ -49,11 +41,16 @@ function resolveLocale(request: Request): SupportedLocale {
 }
 
 export async function POST(request: Request) {
-  const ip = getClientIp(request);
-  if (isRateLimited(ip)) {
+  const ip = obtenerIpCliente(request);
+  const limite = await consumirRateLimit(
+    `demo-start:${ip}`,
+    RATE_LIMIT_MAX,
+    RATE_LIMIT_WINDOW_SECONDS
+  );
+  if (!limite.permitido) {
     return NextResponse.json(
       { error: "Demasiadas solicitudes. Intenta en un minuto." },
-      { status: 429 }
+      { status: 429, headers: cabecerasRateLimit(limite) }
     );
   }
 

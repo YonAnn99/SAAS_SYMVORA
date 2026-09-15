@@ -1,7 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
+
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+// `after()` tambien se rige por este tope.
+export const maxDuration = 30;
+
+/**
+ * Marca en `payment_history.reference` cuando se consumio un mes gratis pero el
+ * reembolso en Conekta fallo: el cliente quedo cobrado y sin credito. Es la
+ * unica forma de saber a quien hay que devolverle el dinero a mano.
+ *
+ *   SELECT * FROM payment_history WHERE reference = 'referido:reembolso_pendiente';
+ */
+const REFERENCIA_REEMBOLSO_PENDIENTE = "referido:reembolso_pendiente";
 
 // Reconstruye el PEM desde cero sin importar cómo haya quedado pegado el
 // valor en Vercel (saltos de línea reales, "\n" literales, o todo en una
@@ -187,18 +201,21 @@ async function consumeFreeMonthCredit(
     .eq("id", subscriptionId);
 
   // 2. Registra el mes como 'credited' (trazable en el historial).
-  await supabase.from("payment_history").insert({
-    subscription_id: subscriptionId,
-    amount: 0,
-    payment_method: "card",
-    status: "credited",
-    reference: "referido",
-    conekta_order_id: conektaOrderId,
-    paid_at: new Date().toISOString(),
-  });
+  const { data: creditRow } = await supabase
+    .from("payment_history")
+    .insert({
+      subscription_id: subscriptionId,
+      amount: 0,
+      payment_method: "card",
+      status: "credited",
+      reference: "referido",
+      conekta_order_id: conektaOrderId,
+      paid_at: new Date().toISOString(),
+    })
+    .select("id")
+    .maybeSingle();
 
-  // 3. Reembolsa el cobro en Conekta (best-effort: si falla el reembolso, el
-  //    credito ya fue consumido y queda registrado para soporte manual).
+  // 3. Reembolsa el cobro en Conekta.
   try {
     const { refundOrder } = await import("@/features/payments/services/conekta/orders");
     await refundOrder({
@@ -207,10 +224,21 @@ async function consumeFreeMonthCredit(
       reason: "Mes gratis programa de referidos",
     });
   } catch (refundError) {
+    // Aqui el cliente YA fue cobrado y YA perdio el credito, pero el dinero no
+    // ha vuelto. Antes esto solo hacia console.error: el fallo desaparecia con
+    // los logs y nadie podia saber a quien habia que devolverle el dinero.
+    // Se deja marca en la propia fila para que sea consultable:
+    //   SELECT * FROM payment_history WHERE reference = 'referido:reembolso_pendiente';
     console.error(
       `[conekta-webhook] Refund failed for order ${conektaOrderId} (tenant ${tenantId}):`,
       refundError
     );
+    if (creditRow?.id) {
+      await supabase
+        .from("payment_history")
+        .update({ reference: REFERENCIA_REEMBOLSO_PENDIENTE })
+        .eq("id", creditRow.id);
+    }
   }
 
   return { consumed: true };
@@ -419,23 +447,27 @@ export async function POST(request: Request) {
           alreadyProcessed = Boolean(existingPayment);
         }
 
-        if (preSub && !alreadyProcessed) {
-          await supabase.from("payment_history").insert({
-            subscription_id: preSub.id,
-            amount: (data.amount || fallbackAmountCents(preSub.billing_period)) / 100,
-            payment_method: "card",
-            status: "completed",
-            conekta_order_id: data.last_billing_cycle_order_id,
-            paid_at: new Date().toISOString(),
-          });
-        }
-
-        if (preSub?.tenant_id) {
-          await supabase
-            .from("tenants")
-            .update({ subscription_status: "active" })
-            .eq("id", preSub.tenant_id);
-        }
+        // El registro del cobro y la activacion del tenant no dependen entre
+        // si: en secuencia solo suman latencia a la respuesta que Conekta esta
+        // esperando para dejar de reintentar.
+        await Promise.all([
+          preSub && !alreadyProcessed
+            ? supabase.from("payment_history").insert({
+                subscription_id: preSub.id,
+                amount: (data.amount || fallbackAmountCents(preSub.billing_period)) / 100,
+                payment_method: "card",
+                status: "completed",
+                conekta_order_id: data.last_billing_cycle_order_id,
+                paid_at: new Date().toISOString(),
+              })
+            : Promise.resolve(),
+          preSub?.tenant_id
+            ? supabase
+                .from("tenants")
+                .update({ subscription_status: "active" })
+                .eq("id", preSub.tenant_id)
+            : Promise.resolve(),
+        ]);
 
         if (preSub && !alreadyProcessed) {
           if (isFirstPayment) {
@@ -455,12 +487,18 @@ export async function POST(request: Request) {
           // no solo en el primer pago de la cuenta — así un cambio de plan
           // (ej. mensual a anual) también manda un recibo con el monto real
           // que se acaba de cobrar, en vez de quedarse en silencio.
-          await sendWelcomeEmailToOwner(
-            supabase,
-            preSub.tenant_id,
-            preSub.billing_period === "yearly" ? "yearly" : "monthly",
-            data.amount || fallbackAmountCents(preSub.billing_period)
-          );
+          //
+          // Va en `after()`: el correo no debe retrasar el 200. Antes se
+          // esperaba a Resend (3 consultas + getUserById + el envio) antes de
+          // responder, asi que un Resend lento hacia que Conekta no recibiera
+          // confirmacion y reintentara el evento entero. El envio sigue
+          // ocurriendo, solo que despues de contestar.
+          const periodo = preSub.billing_period === "yearly" ? "yearly" : "monthly";
+          const montoCents = data.amount || fallbackAmountCents(preSub.billing_period);
+          const tenantId = preSub.tenant_id;
+          after(async () => {
+            await sendWelcomeEmailToOwner(supabase, tenantId, periodo, montoCents);
+          });
         }
 
         break;
@@ -582,33 +620,43 @@ export async function POST(request: Request) {
             periodEnd.setMonth(periodEnd.getMonth() + 1);
           }
 
-          await supabase
-            .from("subscriptions")
-            .update({
-              status: "active",
-              last_payment_at: now.toISOString(),
-              current_period_start: now.toISOString(),
-              current_period_end: periodEnd.toISOString(),
-              updated_at: now.toISOString(),
-            })
-            .eq("id", subData.id);
-
-          await supabase
-            .from("tenants")
-            .update({ subscription_status: "active" })
-            .eq("id", subData.tenant_id);
+          // Dos tablas distintas, sin dependencia entre ellas: en paralelo.
+          await Promise.all([
+            supabase
+              .from("subscriptions")
+              .update({
+                status: "active",
+                last_payment_at: now.toISOString(),
+                current_period_start: now.toISOString(),
+                current_period_end: periodEnd.toISOString(),
+                updated_at: now.toISOString(),
+              })
+              .eq("id", subData.id),
+            supabase
+              .from("tenants")
+              .update({ subscription_status: "active" })
+              .eq("id", subData.tenant_id),
+          ]);
 
           // El checkout hosted es el pago real del flujo: el primer pago
           // dispara la conversion del referido y el email de bienvenida;
           // los pagos siguientes consumen un mes gratis acumulado (si aplica).
           if (!subData.last_payment_at) {
             await convertReferralOnFirstPayment(supabase, subData.tenant_id);
-            await sendWelcomeEmailToOwner(
-              supabase,
-              subData.tenant_id,
-              subData.billing_period === "yearly" ? "yearly" : "monthly",
-              data.amount || fallbackAmountCents(subData.billing_period)
-            );
+            // Fuera de la ruta critica: ver la nota en subscription.paid.
+            const periodoOrden =
+              subData.billing_period === "yearly" ? "yearly" : "monthly";
+            const montoOrden =
+              data.amount || fallbackAmountCents(subData.billing_period);
+            const tenantOrden = subData.tenant_id;
+            after(async () => {
+              await sendWelcomeEmailToOwner(
+                supabase,
+                tenantOrden,
+                periodoOrden,
+                montoOrden
+              );
+            });
           } else {
             await consumeFreeMonthCredit(supabase, {
               subscriptionId: subData.id,

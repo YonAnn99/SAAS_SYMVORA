@@ -1,6 +1,7 @@
 import { CustomersApi, Configuration, PlansApi, SubscriptionsApi } from "conekta";
 import https from "https";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
+import { TIMEOUTS } from "@/lib/http/timeout";
 
 const apiKey = process.env.CONEKTA_PRIVATE_KEY;
 
@@ -15,11 +16,21 @@ if (!apiKey) {
 // own httpsAgent short-circuits that code path (the SDK only loads the
 // cert when no httpsAgent is already set), using Node's default trust
 // store, which is sufficient for HTTPS to api.conekta.io.
-const conektaHttpsAgent = new https.Agent();
+const conektaHttpsAgent = new https.Agent({
+  // Corta conexiones que se quedan abiertas sin datos. El agente por defecto no
+  // tiene ningun limite, asi que un socket colgado sobrevivia a la funcion.
+  timeout: TIMEOUTS.conekta,
+});
 
 const config = new Configuration({
   accessToken: apiKey || "",
-  baseOptions: { httpsAgent: conektaHttpsAgent },
+  baseOptions: {
+    httpsAgent: conektaHttpsAgent,
+    // El SDK de Conekta va sobre axios: `timeout` aborta la peticion y rechaza
+    // con ECONNABORTED. Sin esto, una caida lenta de Conekta cuelga la funcion
+    // serverless entera hasta agotar su presupuesto, sin error util.
+    timeout: TIMEOUTS.conekta,
+  },
 });
 
 export const conektaCustomersApi = new CustomersApi(config);

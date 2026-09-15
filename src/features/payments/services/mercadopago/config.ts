@@ -1,3 +1,5 @@
+import { TIMEOUTS, timeoutSignal } from "@/lib/http/timeout";
+
 export const MERCADO_PAGO_API_URL =
   process.env.MERCADO_PAGO_API_URL ?? "https://api.mercadopago.com";
 
@@ -33,8 +35,20 @@ export async function mpFetch<T>(
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${MERCADO_PAGO_API_URL}${path}`, init);
+    // Timeout obligatorio: sin el, una respuesta lenta de Mercado Pago deja la
+    // funcion serverless colgada hasta el tope de la plataforma. `fetch` si
+    // admite AbortSignal, asi que aqui la peticion se cancela de verdad.
+    response = await fetch(`${MERCADO_PAGO_API_URL}${path}`, {
+      ...init,
+      signal: timeoutSignal(TIMEOUTS.mercadoPago, init?.signal),
+    });
   } catch (error) {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      throw new MercadoPagoError(
+        `Mercado Pago no respondio en ${TIMEOUTS.mercadoPago}ms`,
+        504
+      );
+    }
     throw new MercadoPagoError(
       error instanceof Error ? error.message : "No se pudo conectar con Mercado Pago",
       502

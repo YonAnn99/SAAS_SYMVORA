@@ -3,6 +3,10 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server.server";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 15;
+
 const acceptSchema = z.object({
   termsVersion: z.string().min(1),
   privacyVersion: z.string().min(1),

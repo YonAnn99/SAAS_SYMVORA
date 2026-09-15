@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 15;
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }

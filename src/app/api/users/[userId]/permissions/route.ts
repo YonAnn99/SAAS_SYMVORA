@@ -3,6 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { GRANTABLE_PERMISSIONS } from "@/lib/modules";
 
+// Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
+// deja la funcion ocupada hasta el tope por defecto de la plataforma.
+export const maxDuration = 15;
+
 /**
  * Guarda las excepciones de permisos de un usuario concreto.
  *
