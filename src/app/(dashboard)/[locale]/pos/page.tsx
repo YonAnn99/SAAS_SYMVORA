@@ -113,6 +113,18 @@ export default function POSPage() {
     [addItem]
   );
 
+  // Conteo para el distintivo de la cuadrícula. Se deriva de la MISMA fuente
+  // que decide si se abre el diálogo, unas líneas más abajo: si salieran de
+  // sitios distintos, la insignia podría prometer variantes que el diálogo no
+  // ofrece (o al revés).
+  const variantCountByProduct = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(variantsByProduct).map(([id, vs]) => [id, vs.length])
+      ),
+    [variantsByProduct]
+  );
+
   const handleAddProduct = useCallback(
     (product: Producto) => {
       const variants = variantsByProduct[product.id] ?? [];
@@ -342,6 +354,7 @@ export default function POSPage() {
           loading={loadingProducts}
           hasSearch={Boolean(search)}
           onAddProduct={handleAddProduct}
+          variantCountByProduct={variantCountByProduct}
         />
 
         <MobileCartBar

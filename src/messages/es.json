@@ -334,6 +334,7 @@
     "completeSale": "Completar venta",
     "quickAccess": "Acceso rápido",
     "barcodePlaceholder": "Escanea o escribe el código de barras",
+    "variantsAvailable": "{count, plural, one {# variante disponible} other {# variantes disponibles}}",
     "cashRegister": "Caja",
     "openRegister": "Abrir caja",
     "closeRegister": "Cerrar caja",

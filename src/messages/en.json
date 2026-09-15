@@ -334,6 +334,7 @@
     "completeSale": "Complete sale",
     "quickAccess": "Quick access",
     "barcodePlaceholder": "Scan or type barcode",
+    "variantsAvailable": "{count, plural, one {# variant available} other {# variants available}}",
     "cashRegister": "Cash register",
     "openRegister": "Open register",
     "closeRegister": "Close register",
