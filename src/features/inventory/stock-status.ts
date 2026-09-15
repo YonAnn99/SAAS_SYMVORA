@@ -36,6 +36,23 @@ export const STOCK_STATUS_LABEL: Record<StockStatus, string> = {
   ok: "Con stock",
 };
 
+/**
+ * Productos a los que el sistema NUNCA podrá avisar de que se están acabando,
+ * porque no tienen umbral definido.
+ *
+ * Es la otra cara del comentario de `stockStatus`: con `stock_minimo` en 0 la
+ * rama "bajo" no se cumple jamás. Esto pone nombre a ese conjunto para poder
+ * listarlo y arreglarlo.
+ *
+ * NO es un cuarto valor de `StockStatus` y no puede serlo: CRUZA los tres
+ * grupos en vez de excluirlos — un producto agotado también puede estar sin
+ * mínimo. Añadirlo al enum rompería la invariante de que los tres suman el
+ * total, que `countByStatus` y su test dan por buena.
+ */
+export function sinMinimoDefinido(product: StockFields): boolean {
+  return Number(product.stock_minimo) <= 0;
+}
+
 // ============================================================
 // Ordenación
 // ============================================================
@@ -121,6 +138,10 @@ export interface ProductFilters {
   /** `null` = todas. `"__sin__"` = solo los que no tienen categoría. */
   categoria: string | null;
   sort: SortOption;
+  /** Solo los que no tienen umbral de stock definido. */
+  sinMinimo?: boolean;
+  /** Solo los que el usuario actual marcó con el corazón. */
+  soloFavoritos?: boolean;
 }
 
 export const SIN_CATEGORIA = "__sin__";
@@ -129,6 +150,8 @@ export const EMPTY_FILTERS: ProductFilters = {
   stock: [],
   categoria: null,
   sort: DEFAULT_SORT,
+  sinMinimo: false,
+  soloFavoritos: false,
 };
 
 /** Cuántos filtros hay activos, para el contador del botón. */
@@ -136,26 +159,48 @@ export function countActiveFilters(filters: ProductFilters): number {
   return (
     (filters.stock.length > 0 ? 1 : 0) +
     (filters.categoria ? 1 : 0) +
-    (filters.sort !== DEFAULT_SORT ? 1 : 0)
+    (filters.sort !== DEFAULT_SORT ? 1 : 0) +
+    (filters.sinMinimo ? 1 : 0) +
+    (filters.soloFavoritos ? 1 : 0)
   );
 }
 
 interface FilterableProduct extends SortableProduct {
   categoria?: string | null;
+  id?: string;
 }
 
 /**
  * Aplica filtros y orden. El texto de búsqueda se filtra aparte, ANTES, para
  * que ambas cosas se combinen en cadena en vez de sustituirse.
+ *
+ * `favoritos` son los ids que el usuario marcó. Va como parámetro y no como
+ * campo del producto para que esta función siga sin saber de dónde salen: se
+ * guardan en otra tabla y se cargan aparte.
  */
 export function applyProductFilters<T extends FilterableProduct>(
   products: T[],
-  filters: ProductFilters
+  filters: ProductFilters,
+  favoritos?: ReadonlySet<string>
 ): T[] {
   const filtered = products.filter((p) => {
     if (filters.stock.length > 0 && !filters.stock.includes(stockStatus(p))) {
       return false;
     }
+    if (filters.sinMinimo && !sinMinimoDefinido(p)) {
+      return false;
+    }
+    // Sin lista de favoritos el filtro no deja pasar nada, que es lo correcto:
+    // "solo favoritos" con cero favoritos son cero productos. Devolver el
+    // catálogo entero sería leer "sin favoritos" como "sin filtro".
+    if (filters.soloFavoritos && !(p.id && favoritos?.has(p.id))) {
+      return false;
+    }
+
+    // ⚠️ LA CATEGORÍA VA LA ÚLTIMA porque la rama `SIN_CATEGORIA` hace `return`
+    // en vez de `return false`: decide sola el resultado de todo el predicado.
+    // Cualquier comprobación puesta DESPUÉS se saltaría al filtrar por "sin
+    // categoría", y el chip activo no haría nada en ese caso concreto.
     if (filters.categoria === SIN_CATEGORIA) {
       return !p.categoria;
     }

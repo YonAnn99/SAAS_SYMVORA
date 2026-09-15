@@ -16,6 +16,7 @@ import {
   applyProductFilters,
   countActiveFilters,
   countByStatus,
+  sinMinimoDefinido,
   type ProductFilters,
 } from "@/features/inventory/stock-status";
 import {
@@ -25,27 +26,8 @@ import {
   type CampoInline,
 } from "@/features/inventory/inline-edit";
 import { createAdjustment } from "../services/inventory-adjustment-service";
-
-/**
- * Los mensajes que llegan de la base no siempre son presentables.
- *
- * `ajustar_inventario` lanza su tope de stock en ingles, y PostgREST devuelve
- * el rechazo de RLS con la jerga de Postgres. Al cajero le salia tal cual.
- */
-function mensajeDeError(error: unknown): string {
-  const crudo = error instanceof Error ? error.message : "";
-
-  if (crudo.includes("Stock cannot be negative")) {
-    return "El stock no puede quedar en negativo";
-  }
-  if (
-    crudo.includes("row-level security") ||
-    crudo.includes("No tienes permiso")
-  ) {
-    return "No tienes permiso para modificar productos";
-  }
-  return crudo || "No se pudo guardar el cambio";
-}
+import { fetchFavoritos, toggleFavorito } from "../services/favorites-service";
+import { mensajeDeError } from "@/features/inventory/error-message";
 
 export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   const [products, setProducts] = useState<Producto[]>([]);
@@ -57,10 +39,21 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Producto | null>(null);
 
+  // Ids marcados con el corazon por el usuario ACTUAL. Viven aparte de
+  // `products` porque son de otra tabla y de otro dueño: dos usuarios ven el
+  // mismo catalogo con distintos favoritos.
+  const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set());
+
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    const data = await fetchProducts(tenantId);
+    // En paralelo: son dos tablas distintas y esperar una para pedir la otra
+    // solo suma latencia a la primera carga.
+    const [data, favs] = await Promise.all([
+      fetchProducts(tenantId),
+      fetchFavoritos(tenantId),
+    ]);
     setProducts(data);
+    setFavoritos(favs);
     setLoading(false);
   }, [tenantId]);
 
@@ -199,6 +192,40 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     [marcarGuardando, refetch]
   );
 
+  /**
+   * Marca o desmarca el corazon.
+   *
+   * Optimista sin excepcion: es un clic que solo cambia un icono, y esperar a
+   * la red para pintarlo haria que el corazon "tardara" en cada pulsacion.
+   */
+  const handleToggleFavorito = useCallback(
+    async (product: Producto) => {
+      if (!tenantId) return;
+
+      const eraFavorito = favoritos.has(product.id);
+      const siguiente = new Set(favoritos);
+      if (eraFavorito) siguiente.delete(product.id);
+      else siguiente.add(product.id);
+      setFavoritos(siguiente);
+
+      try {
+        await toggleFavorito(tenantId, product.id, !eraFavorito);
+      } catch (error: unknown) {
+        // Se vuelve al estado anterior. Sin esto el corazon quedaria relleno
+        // pero el producto no saldria en el filtro tras recargar, que es la
+        // clase de incoherencia que hace desconfiar de la pantalla entera.
+        setFavoritos((prev) => {
+          const revertido = new Set(prev);
+          if (eraFavorito) revertido.add(product.id);
+          else revertido.delete(product.id);
+          return revertido;
+        });
+        toast.error(mensajeDeError(error));
+      }
+    },
+    [tenantId, favoritos]
+  );
+
   const handleDelete = useCallback(
     async (product: Producto) => {
       try {
@@ -233,14 +260,28 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   );
 
   const filteredProducts = useMemo(
-    () => applyProductFilters(searchedProducts, filters),
-    [searchedProducts, filters]
+    () => applyProductFilters(searchedProducts, filters, favoritos),
+    [searchedProducts, filters, favoritos]
   );
 
   // Los conteos de los chips salen del catálogo COMPLETO, no de lo ya
   // filtrado: si salieran de lo filtrado, marcar "stock bajo" pondría los
   // otros dos chips en cero y no se podría volver atrás con criterio.
   const stockCounts = useMemo(() => countByStatus(products), [products]);
+
+  // Mismo criterio que `stockCounts`: sobre el catalogo completo.
+  const sinMinimoCount = useMemo(
+    () => products.filter(sinMinimoDefinido).length,
+    [products]
+  );
+
+  // Se cuentan los favoritos QUE SIGUEN EN EL CATALOGO, no el tamaño del Set.
+  // Con la busqueda activa el Set no cambia, pero un favorito borrado por otra
+  // pestaña dejaria el numero inflado respecto a lo que se puede enseñar.
+  const favoritosCount = useMemo(
+    () => products.filter((p) => favoritos.has(p.id)).length,
+    [products, favoritos]
+  );
 
   const categories = useMemo(
     () =>
@@ -281,6 +322,10 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     handleSave,
     handleInlineSave,
     guardandoInline,
+    favoritos,
+    favoritosCount,
+    sinMinimoCount,
+    handleToggleFavorito,
     handleDelete,
   };
 }

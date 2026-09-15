@@ -185,6 +185,27 @@ export type Database = {
           actualizado_en?: string;
         };
       };
+      productos_favoritos: {
+        Row: {
+          tenant_id: string;
+          user_id: string;
+          producto_id: string;
+          creado_en: string;
+        };
+        Insert: {
+          tenant_id: string;
+          // Lo pone la base con `DEFAULT auth.uid()`: el cliente no lo manda.
+          user_id?: string;
+          producto_id: string;
+          creado_en?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          user_id?: string;
+          producto_id?: string;
+          creado_en?: string;
+        };
+      };
       clientes: {
         Row: {
           id: string;

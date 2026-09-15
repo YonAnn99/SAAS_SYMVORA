@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import {
   EMPTY_FILTERS,
   SIN_CATEGORIA,
+  countActiveFilters,
   SORT_LABELS,
   STOCK_STATUS_LABEL,
   type ProductFilters,
@@ -216,11 +217,11 @@ export function ProductsFilterDialog({
           <Button
             variant="ghost"
             onClick={() => setDraft(EMPTY_FILTERS)}
-            disabled={
-              draft.stock.length === 0 &&
-              draft.categoria === null &&
-              draft.sort === EMPTY_FILTERS.sort
-            }
+            // Se apoya en `countActiveFilters` en vez de enumerar los campos a
+            // mano: la lista escrita a mano se quedó atrás al añadir los chips
+            // de acceso rápido, y "Limpiar" salía deshabilitado teniendo
+            // filtros activos, que es justo cuando hace falta.
+            disabled={countActiveFilters(draft) === 0}
           >
             Limpiar
           </Button>

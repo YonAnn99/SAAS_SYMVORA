@@ -16,6 +16,7 @@ export * from "./hooks/use-purchase-orders";
 export * from "./components/products/product-dialog";
 export * from "./components/products/product-delete-dialog";
 export * from "./components/products/products-table";
+export * from "./components/products/quick-filters";
 export * from "./components/products/import/import-products-dialog";
 export * from "./components/variants/variant-dialog";
 export * from "./components/variants/variant-delete-dialog";

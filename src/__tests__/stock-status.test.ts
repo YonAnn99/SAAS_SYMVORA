@@ -6,11 +6,15 @@ import {
   applyProductFilters,
   countActiveFilters,
   countByStatus,
+  sinMinimoDefinido,
   sortProducts,
   stockStatus,
 } from "@/features/inventory/stock-status";
 
+let secuencia = 0;
 const p = (o: Partial<Parameters<typeof applyProductFilters>[0][number]> = {}) => ({
+  // El id hace falta desde que existe el filtro de favoritos, que casa por id.
+  id: `p${++secuencia}`,
   nombre: "Producto",
   stock_actual: 10,
   stock_minimo: 5,
@@ -121,6 +125,27 @@ describe("sortProducts", () => {
   });
 });
 
+describe("sinMinimoDefinido", () => {
+  it("el mínimo por defecto (0) cuenta como indefinido", () => {
+    // Es el valor por defecto de la columna Y el que deja la importación CSV
+    // cuando no se mapea la columna: es el caso masivo, no el raro.
+    expect(sinMinimoDefinido(p({ stock_minimo: 0 }))).toBe(true);
+  });
+
+  it("un mínimo de verdad no es indefinido", () => {
+    expect(sinMinimoDefinido(p({ stock_minimo: 5 }))).toBe(false);
+  });
+
+  it("CRUZA los grupos de stock, no es un cuarto grupo", () => {
+    // Un producto agotado también puede estar sin mínimo. Por eso es un filtro
+    // booleano aparte y no un valor más de StockStatus: como cuarto valor
+    // rompería la invariante de que los tres suman el total.
+    const agotadoSinMinimo = p({ stock_actual: 0, stock_minimo: 0 });
+    expect(stockStatus(agotadoSinMinimo)).toBe("agotado");
+    expect(sinMinimoDefinido(agotadoSinMinimo)).toBe(true);
+  });
+});
+
 describe("applyProductFilters", () => {
   const agotado = p({ nombre: "Agotado", stock_actual: 0 });
   const bajo = p({ nombre: "Bajo", stock_actual: 2 });
@@ -164,6 +189,62 @@ describe("applyProductFilters", () => {
     });
     expect(r.map((x) => x.nombre)).toEqual(["Ok"]);
   });
+
+  it("filtra por stock indefinido", () => {
+    const sinMin = p({ nombre: "SinMinimo", stock_actual: 20, stock_minimo: 0 });
+    const r = applyProductFilters([...todos, sinMin], {
+      ...EMPTY_FILTERS,
+      sinMinimo: true,
+    });
+    expect(r.map((x) => x.nombre)).toEqual(["SinMinimo"]);
+  });
+
+  it("'solo favoritos' sin ningún favorito devuelve cero, no el catálogo", () => {
+    // El error clásico: leer "no hay favoritos" como "no hay filtro" y enseñar
+    // los 4 productos con el chip encendido.
+    const r = applyProductFilters(todos, {
+      ...EMPTY_FILTERS,
+      soloFavoritos: true,
+    });
+    expect(r).toHaveLength(0);
+  });
+
+  it("filtra por favoritos", () => {
+    const r = applyProductFilters(
+      todos,
+      { ...EMPTY_FILTERS, soloFavoritos: true },
+      new Set([ok.id, agotado.id])
+    );
+    expect(r.map((x) => x.nombre).sort()).toEqual(["Agotado", "Ok"]);
+  });
+
+  it("los chips se combinan: favoritos Y stock bajo dan la intersección", () => {
+    // Es la razón de que los chips no sean excluyentes: "mis favoritos que se
+    // están acabando" es la consulta útil.
+    const r = applyProductFilters(
+      todos,
+      { ...EMPTY_FILTERS, soloFavoritos: true, stock: ["bajo"] },
+      new Set([bajo.id, ok.id])
+    );
+    expect(r.map((x) => x.nombre)).toEqual(["Bajo"]);
+  });
+
+  it("el chip sigue filtrando junto a 'sin categoría'", () => {
+    // La rama de SIN_CATEGORIA hace `return` y decide sola el predicado: si un
+    // filtro nuevo se coloca DESPUÉS, se lo salta en este caso concreto.
+    const sinCatSinMinimo = p({
+      nombre: "SinCatSinMinimo",
+      stock_actual: 20,
+      stock_minimo: 0,
+      categoria: null,
+    });
+    const r = applyProductFilters([...todos, sinCatSinMinimo], {
+      ...EMPTY_FILTERS,
+      categoria: SIN_CATEGORIA,
+      sinMinimo: true,
+    });
+    expect(r.map((x) => x.nombre)).toEqual(["SinCatSinMinimo"]);
+  });
 });
 
 describe("countActiveFilters", () => {
@@ -180,6 +261,21 @@ describe("countActiveFilters", () => {
   it("suma stock, categoría y orden", () => {
     expect(
       countActiveFilters({ stock: ["bajo"], categoria: "Ropa", sort: "precioAsc" })
+    ).toBe(3);
+  });
+
+  it("los chips de acceso rápido también cuentan", () => {
+    // El contador del botón Filtros debe reflejarlos: si no, se puede tener la
+    // tabla filtrada por un chip con el botón diciendo que no hay filtros.
+    expect(countActiveFilters({ ...EMPTY_FILTERS, sinMinimo: true })).toBe(1);
+    expect(countActiveFilters({ ...EMPTY_FILTERS, soloFavoritos: true })).toBe(1);
+    expect(
+      countActiveFilters({
+        ...EMPTY_FILTERS,
+        sinMinimo: true,
+        soloFavoritos: true,
+        stock: ["bajo"],
+      })
     ).toBe(3);
   });
 });

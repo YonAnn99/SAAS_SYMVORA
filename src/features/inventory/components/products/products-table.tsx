@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Package, Pencil, Trash2 } from "lucide-react";
+import { Heart, Package, Pencil, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -51,6 +51,9 @@ interface ProductsTableProps {
   canEdit: boolean;
   /** Ids con un guardado en vuelo. */
   guardando: Set<string>;
+  /** Ids marcados con el corazón por el usuario actual. */
+  favoritos: ReadonlySet<string>;
+  onToggleFavorito: (product: Producto) => void;
 }
 
 export function ProductsTable({
@@ -63,6 +66,8 @@ export function ProductsTable({
   onInlineSave,
   canEdit,
   guardando,
+  favoritos,
+  onToggleFavorito,
 }: ProductsTableProps) {
   const t = useTranslations();
 
@@ -217,6 +222,11 @@ export function ProductsTable({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <FavoriteButton
+                          esFavorito={favoritos.has(product.id)}
+                          onToggle={() => onToggleFavorito(product)}
+                          nombre={product.nombre}
+                        />
                         <Button
                           variant="ghost"
                           size="sm"
@@ -325,5 +335,50 @@ function StockBadge({
     >
       OK
     </Badge>
+  );
+}
+
+/**
+ * El corazón de favoritos.
+ *
+ * SOBRE EL RELLENO: cuando está marcado se pinta con `fill-current` sobre
+ * `text-foreground`, que en el tema oscuro ES BLANCO y en el claro casi negro.
+ * Un blanco fijo (`fill-white`) cumpliría lo pedido a la vista en oscuro pero
+ * desaparecería por completo sobre el fondo claro.
+ *
+ * Va a `h-7`, la misma altura que Editar y la papelera, para que la fila no
+ * cambie de alto.
+ */
+function FavoriteButton({
+  esFavorito,
+  onToggle,
+  nombre,
+}: {
+  esFavorito: boolean;
+  onToggle: () => void;
+  nombre: string;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 px-1.5 text-xs"
+      onClick={onToggle}
+      aria-pressed={esFavorito}
+      aria-label={
+        esFavorito
+          ? `Quitar ${nombre} de favoritos`
+          : `Marcar ${nombre} como favorito`
+      }
+      title={esFavorito ? "Quitar de favoritos" : "Marcar como favorito"}
+    >
+      <Heart
+        className={`h-3.5 w-3.5 ${
+          esFavorito
+            ? "fill-current text-foreground"
+            : "text-muted-foreground"
+        }`}
+      />
+    </Button>
   );
 }

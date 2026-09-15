@@ -14,6 +14,7 @@ import { useProducts } from "@/features/inventory";
 import { ProductDialog } from "@/features/inventory";
 import { ProductDeleteDialog } from "@/features/inventory";
 import { ProductsTable } from "@/features/inventory";
+import { QuickFilters } from "@/features/inventory";
 import { ImportProductsDialog } from "@/features/inventory";
 import { ProductsFilterDialog } from "@/features/inventory/components/products/products-filter-dialog";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,10 @@ export default function ProductsPage() {
     handleSave,
     handleInlineSave,
     guardandoInline,
+    favoritos,
+    favoritosCount,
+    sinMinimoCount,
+    handleToggleFavorito,
     handleDelete,
   } = useProducts(tenantId, tenantLoading);
 
@@ -187,6 +192,13 @@ export default function ProductsPage() {
           title="Productos"
           filename="productos"
         />
+        <QuickFilters
+          filters={filters}
+          onChange={setFilters}
+          stockBajoCount={stockCounts.bajo}
+          sinMinimoCount={sinMinimoCount}
+          favoritosCount={favoritosCount}
+        />
       </div>
 
       {/* Products table */}
@@ -200,6 +212,8 @@ export default function ProductsPage() {
         onInlineSave={handleInlineSave}
         canEdit={canManageInventory}
         guardando={guardandoInline}
+        favoritos={favoritos}
+        onToggleFavorito={handleToggleFavorito}
       />
 
         </TabsContent>
