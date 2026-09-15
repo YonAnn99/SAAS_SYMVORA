@@ -34,7 +34,12 @@ export async function logActivity({
       p_entity: entity,
       p_entity_id: entityId || null,
       p_entity_name: entityName || null,
-      p_details: details ? JSON.stringify(details) : null,
+      // El objeto TAL CUAL, sin `JSON.stringify`. `log_activity` recibe jsonb y
+      // supabase-js ya serializa el cuerpo del RPC: al mandarle una cadena ya
+      // serializada, Postgres la guardaba como un escalar string de JSON
+      // (`"{\"fondo_inicial\":300}"`) en vez de un objeto, y la Bitácora la
+      // pintaba carácter a carácter (`0: { 1: " 2: f …`).
+      p_details: details ?? null,
     });
 
     if (error) {

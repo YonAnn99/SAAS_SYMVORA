@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { normalizarDetalles } from "@/features/activity/format-details";
 import {
   Select,
   SelectContent,
@@ -179,23 +180,25 @@ export default function ActivityPage() {
     });
   };
 
-  const formatDetails = (details: Record<string, unknown> | null) => {
-    if (!details) return "-";
-    const entries = Object.entries(details).filter(([key]) => key !== "operation" && key !== "table");
-    if (entries.length === 0) return "-";
+  // El parámetro es `unknown` a propósito: `details` es jsonb y puede no ser un
+  // objeto. La normalización (y el porqué) vive en `features/activity`.
+  const formatDetails = (details: unknown) => {
+    const normalizado = normalizarDetalles(details);
 
-    return entries.map(([key, value]) => {
-      const label = key
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      const displayValue = typeof value === "boolean" ? (value ? "Sí" : "No") : String(value);
-      return (
-        <span key={key} className="inline-flex items-center gap-1 mr-2">
-          <span className="text-muted-foreground">{label}:</span>
-          <span className="font-medium">{displayValue}</span>
-        </span>
-      );
-    });
+    if (normalizado.tipo === "vacio") return "-";
+
+    // Texto suelto: se muestra entero. NUNCA con Object.entries, que sobre una
+    // cadena devuelve pares índice/carácter y producía `0: { 1: " 2: f …`.
+    if (normalizado.tipo === "texto") {
+      return <span className="font-medium break-all">{normalizado.texto}</span>;
+    }
+
+    return normalizado.pares.map(({ clave, etiqueta, valor }) => (
+      <span key={clave} className="inline-flex items-center gap-1 mr-2">
+        <span className="text-muted-foreground">{etiqueta}:</span>
+        <span className="font-medium">{valor}</span>
+      </span>
+    ));
   };
 
   return (
