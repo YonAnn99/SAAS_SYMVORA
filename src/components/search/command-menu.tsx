@@ -4,38 +4,33 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Command } from "cmdk";
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  ShoppingCartIcon,
-  Wallet,
-  Users,
-  Settings,
-  Search,
-  FileText,
-} from "lucide-react";
+import { Search } from "lucide-react";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { usePermissions } from "@/hooks/use-permissions";
+import { filterNavigation } from "@/lib/navigation";
 
 interface CommandMenuProps {
   open: boolean;
   setOpen: (open: boolean) => void;
 }
 
-const NAVIGATION_ITEMS = [
-  { id: "dashboard", href: "/dashboard", icon: LayoutDashboard, labelKey: "layout.dashboard" },
-  { id: "pos", href: "/pos", icon: ShoppingCart, labelKey: "layout.pos" },
-  { id: "products", href: "/products", icon: Package, labelKey: "layout.products" },
-  { id: "purchases", href: "/purchases", icon: ShoppingCartIcon, labelKey: "layout.purchases" },
-  { id: "finances", href: "/finances", icon: Wallet, labelKey: "layout.finances" },
-  { id: "users", href: "/users", icon: Users, labelKey: "layout.users" },
-  { id: "settings", href: "/settings", icon: Settings, labelKey: "layout.settings" },
-  { id: "activity", href: "/activity", icon: FileText, labelKey: "common.activityLog" },
-];
-
 export function CommandMenu({ open, setOpen }: CommandMenuProps) {
   const t = useTranslations();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const { role, loading: tenantLoading } = useCurrentTenant();
+  const { can, loading: permsLoading } = usePermissions();
+
+  // Mismo origen y mismo filtro que el menú lateral. Antes esta lista era una
+  // copia aparte con 8 de los 14 módulos y SIN filtrar por permisos, así que un
+  // cajero veía aquí Usuarios y Configuración y el middleware lo rebotaba al
+  // panel al pulsarlos.
+  //
+  // Mientras el rol no resuelve no se ofrece nada: calcular con `role` en
+  // `null` mostraría el subconjunto de CAJERO a cualquiera durante unos cientos
+  // de ms (mismo motivo por el que el sidebar pinta un skeleton).
+  const navItems =
+    tenantLoading || permsLoading ? [] : filterNavigation(role, can);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -95,17 +90,20 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
             </Command.Empty>
 
             <Command.Group heading={t("search.navigation")} className="text-xs text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-medium">
-              {NAVIGATION_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
+                const label = t(item.name);
                 return (
                   <Command.Item
-                    key={item.id}
-                    value={item.id}
+                    key={item.href}
+                    // Se busca por el nombre traducido, no por un id interno:
+                    // quien teclea "reportes" espera encontrar Reportes.
+                    value={label}
                     onSelect={() => runAction(item.href)}
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
                   >
                     <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span>{t(item.labelKey)}</span>
+                    <span>{label}</span>
                   </Command.Item>
                 );
               })}

@@ -17,6 +17,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { moduleLabelKeyForPath } from "@/lib/navigation";
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -36,32 +37,16 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
     setMounted(true);
   }, []);
 
-  // Mapeo de rutas a etiquetas de módulos
-  const getModuleLabel = (path: string): string => {
-    const moduleLabels: Record<string, string> = {
-      "/dashboard": "Dashboard",
-      "/pos": "Punto de Venta",
-      "/products": "Productos",
-      "/purchases": "Compras",
-      "/purchase-orders": "Órdenes de Compra",
-      "/finances": "Finanzas",
-      "/facturas": "Facturación",
-      "/users": "Usuarios",
-      "/activity": "Bitácora",
-      "/settings": "Configuración",
-      "/settings/payments": "Métodos de pago",
-      "/reports": "Reportes",
-      "/billing": "Suscripción",
-      "/variants": "Variantes",
-      "/lots": "Lotes",
-      "/inventory-adjustments": "Ajustes de Inventario",
-    };
-
-    for (const [route, label] of Object.entries(moduleLabels)) {
-      if (path.includes(route)) return label;
-    }
-    return "Dashboard";
-  };
+  // El título sale de `lib/navigation.ts`, la misma fuente que el menú lateral
+  // y la búsqueda global. Antes este componente tenía su propio mapa con las
+  // etiquetas en español a pelo, y resolvía con `path.includes(...)` sobre un
+  // objeto en orden de declaración: `/settings/payments` mostraba
+  // "Configuración", y `/customers` y `/suggestions` mostraban "Dashboard".
+  //
+  // Si la ruta no se reconoce se devuelve cadena vacía, no "Dashboard":
+  // afirmar un módulo equivocado es peor que no mostrar ninguno.
+  const labelKey = moduleLabelKeyForPath(pathname);
+  const moduleLabel = labelKey ? t(labelKey) : "";
 
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
@@ -92,7 +77,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <h1 className="hidden sm:flex items-center gap-2 text-sm font-semibold tracking-wide text-foreground">
-          {getModuleLabel(pathname)}
+          {moduleLabel}
           {pathname.includes("/facturas") && (
             <span className="rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400">
               Beta

@@ -12,59 +12,12 @@ import {
   SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  ShoppingCartIcon,
-  Wallet,
-  Settings,
-  Users,
-  Contact,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  TrendingUp,
-  CreditCard,
-  Receipt,
-  Smartphone,
-  Lightbulb,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
-import { permissionForPath } from "@/lib/modules";
-import { hasRole } from "@/lib/rbac";
+import { filterNavigation, stripLocale } from "@/lib/navigation";
 import type { User } from "@supabase/supabase-js";
-import type { LucideIcon } from "lucide-react";
-import type { UserRole } from "@/lib/types/database";
-
-interface NavItem {
-  name: string;
-  href: string;
-  icon: LucideIcon;
-  beta?: boolean;
-  minRole?: UserRole;
-  hidden?: boolean;
-}
-
-const navigation: NavItem[] = [
-  { name: "layout.dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "layout.pos", href: "/pos", icon: ShoppingCart },
-  { name: "layout.products", href: "/products", icon: Package },
-  { name: "layout.customers", href: "/customers", icon: Contact },
-  { name: "layout.purchases", href: "/purchases", icon: ShoppingCartIcon, minRole: "ORG_ADMIN" },
-  { name: "layout.purchaseOrders", href: "/purchase-orders", icon: FileText, minRole: "ORG_ADMIN" },
-  { name: "layout.finances", href: "/finances", icon: Wallet, minRole: "ORG_ADMIN" },
-  { name: "layout.facturas", href: "/facturas", icon: Receipt, beta: true, minRole: "ORG_ADMIN", hidden: true },
-  { name: "layout.users", href: "/users", icon: Users, minRole: "SUPER_ADMIN" },
-  { name: "common.activityLog", href: "/activity", icon: FileText },
-  { name: "layout.settings", href: "/settings", icon: Settings, minRole: "ORG_ADMIN" },
-  { name: "layout.payments", href: "/settings/payments", icon: Smartphone, minRole: "ORG_ADMIN" },
-  { name: "layout.reports", href: "/reports", icon: TrendingUp },
-  { name: "layout.suggestions", href: "/suggestions", icon: Lightbulb },
-  { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "SUPER_ADMIN" },
-];
 
 interface SidebarProps {
   open: boolean;
@@ -92,24 +45,16 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
     });
   }, []);
 
-  const stripLocale = (p: string) => p.replace(/^\/(es|en)/, "") || "/";
+  // `stripLocale` viene de lib/navigation.ts: su regex ancla el prefijo a un
+  // separador, así que no mutila rutas que empiecen por esas letras.
   const isActive = (href: string) => {
     return stripLocale(pathname) === href;
   };
 
-  // Se filtra por PERMISO EFECTIVO, no por rol: desde la migración 055 el
-  // SUPER_ADMIN puede conceder o quitar módulos a un usuario concreto, así que
-  // dos personas con el mismo rol pueden ver menús distintos.
-  //
-  // `minRole` se conserva como segundo filtro porque el permiso solo cubre las
-  // rutas mapeadas en modules.ts; las que no exigen permiso (Dashboard,
-  // Clientes, Actividad) siguen rigiéndose por él si lo tienen.
-  const visibleNav = navigation.filter((item) => {
-    if (item.hidden) return false;
-    const permission = permissionForPath(item.href);
-    if (permission) return can(permission);
-    return !item.minRole || hasRole(role, item.minRole);
-  });
+  // El filtro vive en `lib/navigation.ts` para que el menú lateral y la
+  // búsqueda global (Ctrl+K) decidan con la misma regla. Ver la nota de esa
+  // función sobre por qué se decide por permiso efectivo y no por rol.
+  const visibleNav = filterNavigation(role, can);
 
   return (
     <div className="flex h-full flex-col">

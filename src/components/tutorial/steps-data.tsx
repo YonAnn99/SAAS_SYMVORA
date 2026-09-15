@@ -71,7 +71,12 @@ export const tutorialSteps: TutorialStep[] = [
     descriptionKey: "tutorial.steps.business.description",
     icon: Building2,
     route: "/settings",
-    targetSelector: 'a[href*="/settings"]',
+    // Anclado al FINAL (`$=`), no `*=`. El menú tiene tambien
+    // `/settings/payments`, y `tutorial-dialog.tsx` resuelve esto con
+    // `document.querySelector`, que devuelve la primera coincidencia del
+    // documento: con `*=` este paso resaltaria Metodos de pago, que desde el
+    // reordenado del menu va ANTES que Configuracion.
+    targetSelector: 'a[href$="/settings"]',
     position: "right",
     navigates: true,
     moduleKey: "layout.settings",
