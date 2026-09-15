@@ -10,6 +10,7 @@ import { MovementDialog } from "@/features/cash-register/components/movement-dia
 import { MovementsTable } from "@/features/cash-register/components/movements-table";
 import { OpenRegisterDialog } from "@/features/cash-register/components/open-register-dialog";
 import { RegisterSummaryCards } from "@/features/cash-register/components/register-summary-cards";
+import { OpenSinceTooltip } from "@/features/cash-register/components/open-since-tooltip";
 
 export default function FinancesPage() {
   const t = useTranslations();
@@ -27,14 +28,14 @@ export default function FinancesPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
-        <div>
+        <OpenSinceTooltip fechaApertura={cash.activeRegister?.fecha_apertura}>
           <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
             {t("finances.title")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Control de caja y movimientos financieros
           </p>
-        </div>
+        </OpenSinceTooltip>
         {!cash.activeRegister ? (
           <span id="tutorial-open-cash-btn">
             <SpecularActionButton

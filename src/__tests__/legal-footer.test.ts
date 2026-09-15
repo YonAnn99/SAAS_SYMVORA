@@ -82,4 +82,25 @@ describe("el pie se desplaza con el contenido", () => {
       "LegalFooter debe ir dentro de <main> para que haga scroll con el contenido"
     ).toBe(true);
   });
+
+  it("main es columna flex y el contenido crece: el pie cae al fondo", () => {
+    // LA REGRESIÓN CONCRETA: al meter el pie dentro de `main` sin más, en una
+    // pantalla con poco contenido quedaba plantado justo debajo del contenido,
+    // a media página, con ~319px vacíos por debajo — medido en /es/finances.
+    // El patrón de "sticky footer" lo corrige: `main` en columna flex y el
+    // contenido en un envoltorio `flex-1` que se come el espacio sobrante.
+    const etiquetaMain = shell.match(/<main[^>]*>/)?.[0] ?? "";
+    expect(etiquetaMain, "main debe ser flex").toMatch(/\bflex\b/);
+    expect(etiquetaMain, "main debe apilar en columna").toContain("flex-col");
+
+    const envoltorio = shell.match(/<main[^>]*>\s*(<div[^>]*>)\s*\{children\}/);
+    expect(
+      envoltorio,
+      "{children} debe ir en un <div> propio entre <main> y <LegalFooter />"
+    ).not.toBeNull();
+    expect(
+      envoltorio?.[1],
+      "el envoltorio de {children} necesita flex-1 para empujar el pie al fondo"
+    ).toContain("flex-1");
+  });
 });

@@ -33,14 +33,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 flex-col overflow-hidden">
             <Header onSearchOpen={() => setSearchOpen(true)} onMenuClick={() => setSidebarOpen(true)} />
             {/*
-              El pie va DENTRO de `main`, no como hermano. `main` es el único
-              elemento que hace scroll en este shell (`h-screen overflow-hidden`
-              en el contenedor), así que sacarlo de aquí lo deja clavado abajo
-              comiéndose espacio de forma permanente — que es justo el problema
-              que se estaba arreglando.
+              El pie va DENTRO de `main` (el único elemento que hace scroll en
+              este shell) para que NO quede clavado abajo comiéndose espacio de
+              forma permanente.
+
+              Pero meterlo ahí a secas no basta: en una pantalla con poco
+              contenido el pie se plantaba justo debajo del contenido, a media
+              página, dejando ~300px vacíos por debajo. De ahí el patrón de
+              "sticky footer": el contenido va en un envoltorio `flex-1` que se
+              come el espacio sobrante, así que el pie cae al fondo cuando hay
+              poco que mostrar y se va hacia abajo cuando hay mucho.
             */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-6">
-              {children}
+            <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
+              <div className="flex-1">{children}</div>
               <LegalFooter />
             </main>
           </div>
