@@ -18,6 +18,34 @@ import {
   countByStatus,
   type ProductFilters,
 } from "@/features/inventory/stock-status";
+import {
+  deltaStock,
+  hayCambio,
+  parsearCampo,
+  type CampoInline,
+} from "@/features/inventory/inline-edit";
+import { createAdjustment } from "../services/inventory-adjustment-service";
+
+/**
+ * Los mensajes que llegan de la base no siempre son presentables.
+ *
+ * `ajustar_inventario` lanza su tope de stock en ingles, y PostgREST devuelve
+ * el rechazo de RLS con la jerga de Postgres. Al cajero le salia tal cual.
+ */
+function mensajeDeError(error: unknown): string {
+  const crudo = error instanceof Error ? error.message : "";
+
+  if (crudo.includes("Stock cannot be negative")) {
+    return "El stock no puede quedar en negativo";
+  }
+  if (
+    crudo.includes("row-level security") ||
+    crudo.includes("No tienes permiso")
+  ) {
+    return "No tienes permiso para modificar productos";
+  }
+  return crudo || "No se pudo guardar el cambio";
+}
 
 export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   const [products, setProducts] = useState<Producto[]>([]);
@@ -88,6 +116,87 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
       }
     },
     [tenantId, editingProduct, refetch]
+  );
+
+  // Ids con una edicion express en vuelo. Es un Set y no un booleano porque
+  // se puede estar guardando el precio de una fila mientras se edita el stock
+  // de otra; un solo flag bloquearia la tabla entera.
+  const [guardandoInline, setGuardandoInline] = useState<Set<string>>(
+    () => new Set()
+  );
+
+  const marcarGuardando = useCallback((id: string, activo: boolean) => {
+    setGuardandoInline((prev) => {
+      const siguiente = new Set(prev);
+      if (activo) siguiente.add(id);
+      else siguiente.delete(id);
+      return siguiente;
+    });
+  }, []);
+
+  /**
+   * Guardado de una sola celda de la tabla.
+   *
+   * NO llama a `logActivity`: `productos` tiene el trigger `trg_log_productos`
+   * (migracion 032) que ya escribe la bitacora en cada UPDATE. El camino del
+   * dialogo llama a los dos y por eso la bitacora tiene las entidades
+   * "producto" y "productos" duplicadas; esto no agrava el problema.
+   */
+  const handleInlineSave = useCallback(
+    async (product: Producto, campo: CampoInline, texto: string) => {
+      const parseo = parsearCampo(campo, texto);
+      if (!parseo.ok) {
+        toast.error(parseo.error);
+        return;
+      }
+      if (!hayCambio(product, campo, parseo.valor)) return;
+
+      const anterior = product[campo];
+      // Optimista: el numero cambia al instante y, con el, el margen y el
+      // badge de estado, que se derivan de el.
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id ? { ...p, [campo]: parseo.valor } : p
+        )
+      );
+      marcarGuardando(product.id, true);
+
+      try {
+        if (campo === "stock_actual") {
+          // El stock NO se escribe a pelo: pasa por el libro de ajustes, que
+          // deja constancia de quien, cuando y cuanto. El RPC espera la
+          // DIFERENCIA, no el total.
+          await createAdjustment({
+            productoId: product.id,
+            cantidadAjuste: deltaStock(
+              product.stock_actual,
+              parseo.valor as number
+            ),
+            motivo: "CONTEO_FISICO",
+            notas: "Edición rápida desde el catálogo",
+            varianteId: null,
+            loteId: null,
+          });
+          // El servidor manda sobre el stock: entre el clic y el guardado
+          // pudo entrar una venta del punto de venta.
+          void refetch();
+        } else {
+          await updateProduct(product.id, { [campo]: parseo.valor });
+        }
+      } catch (error: unknown) {
+        // Se revierte: dejar en pantalla un valor que la base rechazo es peor
+        // que no haber editado, porque el cajero se va creyendo que se guardo.
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === product.id ? { ...p, [campo]: anterior } : p
+          )
+        );
+        toast.error(mensajeDeError(error));
+      } finally {
+        marcarGuardando(product.id, false);
+      }
+    },
+    [marcarGuardando, refetch]
   );
 
   const handleDelete = useCallback(
@@ -170,6 +279,8 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     openCreateDialog,
     openEditDialog,
     handleSave,
+    handleInlineSave,
+    guardandoInline,
     handleDelete,
   };
 }

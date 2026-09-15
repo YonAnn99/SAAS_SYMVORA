@@ -309,7 +309,9 @@
       "errorsFound": "{count} filas con errores",
       "row": "Fila"
     },
-    "margin": "Margen"
+    "margin": "Margen",
+    "inlineEditHint": "Clic para editar. Enter guarda, Esc cancela",
+    "inlineUnitHint": "Clic para cambiar la unidad"
   },
   "pos": {
     "title": "Punto de Venta",

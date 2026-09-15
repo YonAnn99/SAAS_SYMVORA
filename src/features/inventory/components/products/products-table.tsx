@@ -24,6 +24,12 @@ import {
 import type { Producto } from "../../types/inventory.types";
 import { calcularMargenProducto } from "@/lib/profit";
 import { stockStatus } from "@/features/inventory/stock-status";
+import {
+  unidadesPermitidas,
+  valorParaEditar,
+  type CampoInline,
+} from "@/features/inventory/inline-edit";
+import { EditableSelectCell, EditableTextCell } from "./editable-cell";
 
 interface ProductsTableProps {
   products: Producto[];
@@ -32,6 +38,19 @@ interface ProductsTableProps {
   onEdit: (product: Producto) => void;
   onDelete: (product: Producto) => void;
   onAdd: () => void;
+  /** Guardado de una sola celda. */
+  onInlineSave: (
+    product: Producto,
+    campo: CampoInline,
+    texto: string
+  ) => void | Promise<void>;
+  /**
+   * `inventory.manage`. Sin el, las celdas son texto plano: es el mismo
+   * permiso que exige la politica RLS `productos_update`.
+   */
+  canEdit: boolean;
+  /** Ids con un guardado en vuelo. */
+  guardando: Set<string>;
 }
 
 export function ProductsTable({
@@ -41,6 +60,9 @@ export function ProductsTable({
   onEdit,
   onDelete,
   onAdd,
+  onInlineSave,
+  canEdit,
+  guardando,
 }: ProductsTableProps) {
   const t = useTranslations();
 
@@ -108,7 +130,18 @@ export function ProductsTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product) => {
+                  const savingRow = guardando.has(product.id);
+                  const celda = (campo: CampoInline) => ({
+                    canEdit,
+                    saving: savingRow,
+                    hint: t("products.inlineEditHint"),
+                    value: valorParaEditar(product, campo),
+                    onCommit: (texto: string) =>
+                      void onInlineSave(product, campo, texto),
+                  });
+
+                  return (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium text-sm">
                       <div className="flex items-center gap-2.5">
@@ -125,23 +158,59 @@ export function ProductsTable({
                             {getInitials(product.nombre)}
                           </div>
                         )}
-                        <span className="truncate">{product.nombre}</span>
+                        {/* La miniatura queda FUERA del area editable: solo el
+                            texto entra en edicion. */}
+                        <EditableTextCell {...celda("nombre")} className="min-w-0 flex-1">
+                          <span className="block truncate">{product.nombre}</span>
+                        </EditableTextCell>
                       </div>
                     </TableCell>
+                    {/* Codigo de barras NO es editable desde aqui: identifica
+                        al producto y un clic accidental lo dejaria sin
+                        escanear. Se cambia desde el boton Editar. */}
                     <TableCell className="text-sm font-mono text-muted-foreground">
                       {product.codigo_barras || "-"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {t(`products.units.${product.unidad_medida}`)}
+                      <EditableSelectCell
+                        canEdit={canEdit}
+                        saving={savingRow}
+                        hint={t("products.inlineUnitHint")}
+                        value={product.unidad_medida}
+                        options={unidadesPermitidas(product).map((u) => ({
+                          value: u,
+                          label: t(`products.units.${u}`),
+                        }))}
+                        onCommit={(valor) =>
+                          void onInlineSave(product, "unidad_medida", valor)
+                        }
+                      >
+                        {t(`products.units.${product.unidad_medida}`)}
+                      </EditableSelectCell>
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      ${product.precio_venta.toFixed(2)}
+                      <EditableTextCell
+                        {...celda("precio_venta")}
+                        numerico
+                        className="text-right font-mono tabular-nums"
+                      >
+                        ${product.precio_venta.toFixed(2)}
+                      </EditableTextCell>
                     </TableCell>
+                    {/* Margen y Estado no se editan porque NO SON COLUMNAS: se
+                        calculan a partir del precio, el costo y el stock
+                        minimo, y se recalculan solos al editar los de al lado. */}
                     <TableCell className="text-right text-sm font-mono">
                       <ProductMarginCell product={product} />
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      {product.stock_actual}
+                      <EditableTextCell
+                        {...celda("stock_actual")}
+                        numerico
+                        className="text-right font-mono tabular-nums"
+                      >
+                        {product.stock_actual}
+                      </EditableTextCell>
                     </TableCell>
                     <TableCell>
                       <StockBadge product={product} />
@@ -168,7 +237,8 @@ export function ProductsTable({
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

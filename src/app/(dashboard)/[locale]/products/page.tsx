@@ -52,6 +52,8 @@ export default function ProductsPage() {
     openCreateDialog,
     openEditDialog,
     handleSave,
+    handleInlineSave,
+    guardandoInline,
     handleDelete,
   } = useProducts(tenantId, tenantLoading);
 
@@ -195,6 +197,9 @@ export default function ProductsPage() {
         onEdit={openEditDialog}
         onDelete={setDeleteConfirm}
         onAdd={openCreateDialog}
+        onInlineSave={handleInlineSave}
+        canEdit={canManageInventory}
+        guardando={guardandoInline}
       />
 
         </TabsContent>

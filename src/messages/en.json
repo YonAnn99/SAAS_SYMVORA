@@ -309,7 +309,9 @@
       "errorsFound": "{count} rows with errors",
       "row": "Row"
     },
-    "margin": "Margin"
+    "margin": "Margin",
+    "inlineEditHint": "Click to edit. Enter saves, Esc cancels",
+    "inlineUnitHint": "Click to change the unit"
   },
   "pos": {
     "title": "Point of Sale",

@@ -86,14 +86,22 @@ export async function createProduct(
   if (error) throw error;
 }
 
+/**
+ * `Partial` a proposito: el dialogo manda el producto entero, la edicion
+ * express de la tabla manda un solo campo. PostgREST acepta ambos.
+ */
 export async function updateProduct(
   productId: string,
-  input: ProductInput
+  input: Partial<ProductInput>
 ): Promise<void> {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase
     .from("productos")
-    .update(input)
+    // `productos` NO tiene trigger BEFORE UPDATE que toque `actualizado_en`
+    // (solo lo escriben algunos RPC). Sin esta linea, el orden "Últimos
+    // modificados" de la tabla no reflejaba NINGUNA edicion hecha desde la
+    // interfaz: la columna se quedaba en la fecha de creacion.
+    .update({ ...input, actualizado_en: new Date().toISOString() })
     .eq("id", productId);
   if (error) throw error;
 }
