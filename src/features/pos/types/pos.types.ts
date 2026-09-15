@@ -61,6 +61,14 @@ export interface SaleReceipt {
   customerPhone?: string | null;
   montoRecibido?: number | null;
   cambio?: number | null;
+  /**
+   * Referencia que imprime el ticket como numero de operacion.
+   *
+   * Online es el `id` de `ventas`; sin conexion esa fila todavia no existe y se
+   * usa la clave de idempotencia, que es con la que el servidor deduplica al
+   * sincronizar — asi que sigue apuntando a la misma venta cuando suba.
+   */
+  reference?: string | null;
 }
 
 /** Variante tal como la necesita el POS (subconjunto de `variantes_producto`). */

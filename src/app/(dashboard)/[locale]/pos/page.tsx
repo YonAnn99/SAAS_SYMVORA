@@ -249,8 +249,13 @@ export default function POSPage() {
     try {
       const clienteId = selectedCustomer === "none" ? null : selectedCustomer;
 
+      // Referencia que el ticket imprime como número de operación.
+      let referenciaTicket: string | null = null;
+
       if (isOnline) {
-        await completeSale({
+        // El retorno del RPC se descartaba. Trae la fila completa de `ventas`,
+        // y su `id` es lo que hace falta para el ticket.
+        const venta = (await completeSale({
           tenantId,
           userId,
           clienteId,
@@ -258,13 +263,20 @@ export default function POSPage() {
           items,
           includeIva,
           montoRecibido: isEfectivo ? montoRecibidoNum : null,
-        });
+        })) as { id?: string } | null;
+        referenciaTicket = venta?.id ?? null;
       } else {
         // Sin red: la venta se guarda en IndexedDB y se sube sola al volver la
         // conexión. `crypto.randomUUID()` genera la clave de idempotencia, que
         // es lo que garantiza que un reintento no cree una venta duplicada.
+        //
+        // Esa misma clave es la referencia del ticket: aquí todavía no existe
+        // fila en `ventas`, y como el servidor deduplica por ella, el número
+        // impreso seguirá apuntando a esta venta cuando termine de subir.
+        const claveIdempotencia = crypto.randomUUID();
+        referenciaTicket = claveIdempotencia;
         await enqueueSale({
-          idempotencyKey: crypto.randomUUID(),
+          idempotencyKey: claveIdempotencia,
           tenantId,
           userId,
           cajaId,
@@ -291,6 +303,7 @@ export default function POSPage() {
         customerPhone: selectedCustomerObj?.telefono ?? null,
         montoRecibido: isEfectivo ? montoRecibidoNum : null,
         cambio: isEfectivo ? cambio : null,
+        reference: referenciaTicket,
       });
       toast.success(
         isOnline

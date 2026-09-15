@@ -691,3 +691,201 @@
     @apply bg-destructive/10 text-destructive;
   }
 }
+
+/* =============================================
+   Ticket del punto de venta
+   ---------------------------------------------
+   Papel termico de 58mm: ~48mm imprimibles, ~32 caracteres por linea.
+
+   El ticket se pinta DOS veces: como vista previa dentro del dialogo
+   (`.ticket-preview`) y en `#ticket-impresion`, que cuelga del arbol normal y
+   solo existe al imprimir. Los estilos de contenido se comparten; lo unico que
+   cambia entre ambos es quien se ve.
+   ============================================= */
+
+.ticket-cuerpo {
+  width: 100%;
+  max-width: 48mm;
+  margin: 0 auto;
+  color: #000;
+  background: #fff;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 9pt;
+  line-height: 1.35;
+}
+
+.ticket-cabecera {
+  text-align: center;
+  margin-bottom: 3mm;
+}
+
+.ticket-logo {
+  display: block;
+  margin: 0 auto 1.5mm;
+  max-width: 28mm;
+  height: auto;
+  /* El logo puede venir a color; en termica solo hay negro. */
+  filter: grayscale(100%) contrast(140%);
+}
+
+.ticket-negocio {
+  margin: 0;
+  font-size: 12pt;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ticket-seccion {
+  margin: 0 0 0.5mm;
+  font-size: 9pt;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ticket-meta {
+  display: flex;
+  flex-direction: column;
+  font-size: 8pt;
+  margin-bottom: 2mm;
+}
+
+.ticket-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2mm;
+}
+
+.ticket-tabla th {
+  font-size: 8pt;
+  font-weight: 700;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.8mm;
+}
+
+.ticket-col-izq {
+  text-align: left;
+}
+
+.ticket-col-der {
+  text-align: right;
+}
+
+.ticket-producto {
+  padding: 1.2mm 0;
+  vertical-align: top;
+}
+
+.ticket-producto-nombre {
+  display: block;
+  font-weight: 700;
+  font-size: 9pt;
+  /* Un nombre largo parte de linea en vez de desbordar los 48mm. */
+  overflow-wrap: anywhere;
+}
+
+.ticket-producto-linea {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 2mm;
+  font-size: 8.5pt;
+}
+
+.ticket-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+  font-size: 9pt;
+  padding: 0.4mm 0;
+}
+
+.ticket-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2mm;
+  font-size: 14pt;
+  font-weight: 700;
+  margin: 1.5mm 0;
+}
+
+.ticket-pie {
+  margin-top: 3mm;
+  padding-top: 2mm;
+  border-top: 1px solid #000;
+  text-align: center;
+}
+
+.ticket-negocio-pie {
+  margin: 0;
+  font-size: 9pt;
+  font-weight: 700;
+}
+
+.ticket-direccion {
+  margin: 0.5mm 0 0;
+  font-size: 8pt;
+  overflow-wrap: anywhere;
+}
+
+.ticket-aviso {
+  margin: 2.5mm 0 0;
+  font-size: 9pt;
+  font-weight: 700;
+}
+
+.ticket-marca {
+  margin: 1.5mm 0 0;
+  font-size: 7pt;
+}
+
+/* En pantalla el ticket de impresion no existe. */
+#ticket-impresion {
+  display: none;
+}
+
+@media print {
+  /* Alto automatico: un ticket no tiene paginas, se corta donde acaba. */
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  /* El panel corre en modo oscuro. Sin forzar blanco, la termica recibe una
+     mancha negra y gasta papel sin imprimir nada legible. */
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 58mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Se oculta TODO menos el ticket. Es mas seguro que ir tapando piezas una a
+     una: cualquier elemento nuevo del panel queda fuera por defecto en vez de
+     colarse en el papel.
+
+     Funciona porque `#ticket-impresion` se monta por portal como HIJO DIRECTO
+     de `body`. Dentro del arbol de React su ancestro caeria en este selector y
+     el ticket no se imprimiria. */
+  body > *:not(#ticket-impresion) {
+    display: none !important;
+  }
+
+  #ticket-impresion {
+    display: block !important;
+    position: static !important;
+    width: 58mm;
+    padding: 2mm 3mm;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  #ticket-impresion * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+}

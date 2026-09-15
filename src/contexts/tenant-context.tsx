@@ -8,6 +8,8 @@ export interface TenantInfo {
   tenantId: string;
   tenantName: string;
   tenantLogo: string | null;
+  /** Domicilio del negocio. Lo imprime el pie del ticket del POS. */
+  tenantAddress: string | null;
   role: UserRole | null;
   loading: boolean;
   error: string | null;
@@ -21,6 +23,7 @@ const EMPTY_STATE: TenantInfo = {
   tenantId: "",
   tenantName: "",
   tenantLogo: null,
+  tenantAddress: null,
   role: null,
   loading: true,
   error: null,
@@ -51,7 +54,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         .from("tenant_memberships")
         .select(
           `tenant_id, role,
-           tenants!inner(nombre_comercial, logo_url)`
+           tenants!inner(nombre_comercial, logo_url, direccion)`
         )
         .eq("user_id", user.id)
         .limit(1)
@@ -69,12 +72,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const tenantData = membership.tenants as unknown as {
         nombre_comercial: string;
         logo_url: string | null;
+        direccion: string | null;
       };
 
       setState({
         tenantId: membership.tenant_id,
         tenantName: tenantData?.nombre_comercial || "Negocio",
         tenantLogo: tenantData?.logo_url || null,
+        tenantAddress: tenantData?.direccion || null,
         role: membership.role as UserRole,
         loading: false,
         error: null,
