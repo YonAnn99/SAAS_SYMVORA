@@ -32,8 +32,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
           <div className="flex flex-1 flex-col overflow-hidden">
             <Header onSearchOpen={() => setSearchOpen(true)} onMenuClick={() => setSidebarOpen(true)} />
-            <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
-            <LegalFooter />
+            {/*
+              El pie va DENTRO de `main`, no como hermano. `main` es el único
+              elemento que hace scroll en este shell (`h-screen overflow-hidden`
+              en el contenedor), así que sacarlo de aquí lo deja clavado abajo
+              comiéndose espacio de forma permanente — que es justo el problema
+              que se estaba arreglando.
+            */}
+            <main className="flex-1 overflow-y-auto p-4 md:p-6">
+              {children}
+              <LegalFooter />
+            </main>
           </div>
           <CommandMenu open={searchOpen} setOpen={setSearchOpen} />
           <TutorialDialog />
