@@ -664,3 +664,180 @@ export async function sendCancellationFeedbackEmail(params: {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+// =============================================
+// Avisos de fin de prueba
+// ---------------------------------------------
+// Estos dos comparten un shell (`buildNoticeHtml`) en vez de repetir la
+// maquetación completa como hacen las plantillas de arriba. El shell ya estaba
+// duplicado tres veces en este archivo; añadir el sexto y el séptimo no tenía
+// sentido. Las plantillas existentes NO se migraron a propósito: son las de
+// cobro y funcionan, y refactorizarlas de paso era arriesgar algo que no falla.
+// =============================================
+
+/** Maquetación común de los avisos: cabecera, cuerpo, CTA y pie de marca. */
+function buildNoticeHtml(params: {
+  preheader: string;
+  heading: string;
+  intro: string;
+  highlight?: string;
+  ctaLabel: string;
+  ctaHref: string;
+}): string {
+  const { preheader, heading, intro, highlight, ctaLabel, ctaHref } = params;
+
+  const highlightBox = highlight
+    ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+        <tr>
+          <td style="background:${BRAND.bone};border-radius:12px;padding:16px 20px;">
+            <p style="font-size:14px;color:${BRAND.ink};margin:0;line-height:1.6;">${highlight}</p>
+          </td>
+        </tr>
+      </table>`
+    : "";
+
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+      <span style="display:none;max-height:0;overflow:hidden;">${preheader}</span>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
+              <tr>
+                <td style="background:${BRAND.surface};padding:28px;text-align:center;">
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:32px;">
+                  <h1 style="font-size:22px;color:${BRAND.ink};margin:0 0 12px;line-height:1.3;">${heading}</h1>
+                  <p style="font-size:15px;color:${BRAND.body};margin:0 0 24px;line-height:1.6;">${intro}</p>
+                  ${highlightBox}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                    <tr>
+                      <td align="center">
+                        <a href="${ctaHref}"
+                           style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                          ${ctaLabel}
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px;">
+                    <tr><td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">&#10003;&nbsp; Tus datos y tu catálogo siguen intactos</td></tr>
+                    <tr><td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">&#10003;&nbsp; Sin comisiones por venta</td></tr>
+                    <tr><td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">&#10003;&nbsp; Cancela cuando quieras</td></tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 32px 28px;">
+                  <p style="font-size:13px;color:${BRAND.muted};margin:0;border-top:1px solid ${BRAND.border};padding-top:16px;line-height:1.6;">
+                    Si tienes dudas, escríbenos a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.ink};text-decoration:none;">${CONTACT_EMAIL}</a>.<br />
+                    <a href="${BRAND.siteUrl}/es/terminos" style="color:${BRAND.muted};text-decoration:underline;">Términos y condiciones</a> &middot;
+                    <a href="${BRAND.siteUrl}/es/aviso-privacidad" style="color:${BRAND.muted};text-decoration:underline;">Aviso de privacidad</a>
+                  </p>
+                  <p style="font-size:12px;color:${BRAND.muted};margin:12px 0 0;">
+                    &copy; ${new Date().getFullYear()} SYMVORA. Todos los derechos reservados.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * "Tu prueba termina pronto" — se manda a 2 días del vencimiento.
+ *
+ * Deliberadamente NO alarmista: el negocio todavía tiene acceso completo y el
+ * objetivo es que no le pille por sorpresa, no presionarlo.
+ */
+export async function sendTrialEndingEmail(params: {
+  to: string;
+  businessName: string;
+  daysLeft: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite el aviso de fin de prueba");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const dias =
+    params.daysLeft === 1 ? "mañana" : `en ${params.daysLeft} días`;
+
+  const html = buildNoticeHtml({
+    preheader: `Tu prueba de SYMVORA termina ${dias}`,
+    heading: `Tu prueba termina ${dias}, ${params.businessName}`,
+    intro:
+      "Queremos avisarte con tiempo para que no te agarre a media venta. Puedes activar tu suscripción ahora y seguir trabajando sin ninguna interrupción.",
+    highlight:
+      "<strong>No pierdes nada de lo que ya hiciste.</strong> Tus productos, ventas y clientes se quedan donde están; al activar la suscripción sigues justo donde lo dejaste.",
+    ctaLabel: "Activar mi suscripción",
+    ctaHref: `${BRAND.appUrl}/es/billing`,
+  });
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: params.to,
+      subject: `Tu prueba de SYMVORA termina ${dias}`,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de prueba por vencer:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * "Tu prueba terminó" — se manda el día que vence.
+ *
+ * Es el correo que faltaba y que dejaba a la gente bloqueada sin explicación:
+ * el middleware la manda a `/billing` y hasta ahora nada le decía por qué.
+ */
+export async function sendTrialEndedEmail(params: {
+  to: string;
+  businessName: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite el aviso de prueba terminada");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const html = buildNoticeHtml({
+    preheader: "Tu prueba terminó — reactiva tu acceso cuando quieras",
+    heading: `Tu prueba terminó, ${params.businessName}`,
+    intro:
+      "Los 7 días de prueba llegaron a su fin, así que por ahora el acceso al sistema está en pausa. Activar tu suscripción lo restablece al instante.",
+    highlight:
+      "<strong>Tu información sigue guardada.</strong> Nada se borra: productos, ventas, clientes e inventario te esperan tal cual los dejaste.",
+    ctaLabel: "Reactivar mi acceso",
+    ctaHref: `${BRAND.appUrl}/es/billing`,
+  });
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: params.to,
+      subject: "Tu prueba de SYMVORA terminó — reactiva tu acceso",
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de prueba terminada:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
