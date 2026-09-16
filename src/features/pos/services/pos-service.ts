@@ -36,6 +36,11 @@ export interface CompleteSaleParams {
   /** Total del ticket entregado al cliente, para detectar cambios de precio. */
   totalCobrado?: number | null;
   origen?: "online" | "offline";
+  /**
+   * Lista de precios con la que se cobra. Se manda el ID, jamas el precio:
+   * el servidor lo relee de `precios_lista` (migracion 068).
+   */
+  listaPrecioId?: string | null;
 }
 
 export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleTotals {
@@ -72,6 +77,7 @@ export async function completeSale(params: CompleteSaleParams) {
     cajaId,
     totalCobrado,
     origen,
+    listaPrecioId,
   } = params;
 
   const { data: venta, error } = await supabase.rpc("complete_sale", {
@@ -99,6 +105,7 @@ export async function completeSale(params: CompleteSaleParams) {
     p_caja_id: cajaId ?? null,
     p_total_cobrado: totalCobrado ?? null,
     p_origen: origen ?? "online",
+    p_lista_precio_id: listaPrecioId ?? null,
   });
 
   if (error) throw error;

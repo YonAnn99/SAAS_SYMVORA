@@ -28,6 +28,13 @@ interface VariantPickerDialogProps {
   variants: VarianteProducto[];
   onOpenChange: (open: boolean) => void;
   onSelect: (variant: VarianteProducto | null) => void;
+  /**
+   * Precio de cada fila. `null` como variante es la venta general.
+   * Se inyecta para que una lista de precios se refleje aqui igual que en
+   * la cuadricula: si el dialogo calculara por su cuenta, el cajero veria
+   * un precio al elegir la talla y otro en el carrito.
+   */
+  precioDe?: (variant: VarianteProducto | null) => number;
 }
 
 export function variantLabel(v: VarianteProducto): string {
@@ -40,6 +47,7 @@ export function variantPrice(v: VarianteProducto, product: Producto): number {
 }
 
 export function VariantPickerDialog({
+  precioDe,
   product,
   variants,
   onOpenChange,
@@ -79,7 +87,7 @@ export function VariantPickerDialog({
                 </span>
                 <span className="shrink-0 text-right">
                   <span className="block font-mono text-sm">
-                    ${variantPrice(v, product).toFixed(2)}
+                    ${(precioDe ? precioDe(v) : variantPrice(v, product)).toFixed(2)}
                   </span>
                   <span
                     className={`block text-xs ${agotado ? "text-red-500" : "text-muted-foreground"}`}
@@ -110,7 +118,7 @@ export function VariantPickerDialog({
               </span>
               <span className="shrink-0 text-right">
                 <span className="block font-mono text-sm">
-                  ${Number(product.precio_venta).toFixed(2)}
+                  ${(precioDe ? precioDe(null) : Number(product.precio_venta)).toFixed(2)}
                 </span>
                 <span className="block text-xs text-muted-foreground">
                   {sinClasificar} disponibles

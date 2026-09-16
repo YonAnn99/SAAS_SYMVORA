@@ -15,6 +15,7 @@ import {
   openRegister,
 } from "../services/cash-register-service";
 import { countPendingSales } from "@/lib/offline/queue";
+import { notifyCashRegisterChanged } from "./use-open-register";
 
 export interface CashRegisterHookState {
   activeRegister: Caja | null;
@@ -31,7 +32,7 @@ export interface CashRegisterHookState {
   setShowMovementDialog: (open: boolean) => void;
   setShowCloseDialog: (open: boolean) => void;
   refetch: () => Promise<void>;
-  handleOpenRegister: (fondoInicial: number) => Promise<void>;
+  handleOpenRegister: (fondoInicial: number) => Promise<Caja | null>;
   handleAddMovement: (
     tipo: "ENTRADA" | "SALIDA",
     monto: number,
@@ -79,20 +80,20 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
   }, [refetch]);
 
   const handleOpenRegister = useCallback(
-    async (fondoInicial: number) => {
+    async (fondoInicial: number): Promise<Caja | null> => {
       if (!tenantId) {
         toast.error("No se pudo identificar el tenant");
-        return;
+        return null;
       }
       if (!(fondoInicial >= 0)) {
         toast.error("El fondo inicial no puede ser negativo");
-        return;
+        return null;
       }
       try {
         const userId = await getCurrentUserId();
         if (!userId) {
           toast.error("No se pudo identificar el usuario");
-          return;
+          return null;
         }
 
         const register = await openRegister(userId, tenantId, fondoInicial);
@@ -104,12 +105,15 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
         });
         setActiveRegister(register);
         setShowOpenDialog(false);
-        toast.success("Caja abierta correctamente");
+        toast.success("Caja abierta correctamente. ¡Listo para vender!");
+        notifyCashRegisterChanged();
         void refetch();
+        return register;
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Error al abrir la caja"
         );
+        return null;
       }
     },
     [tenantId, refetch]
@@ -187,6 +191,7 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
       setMovements([]);
       setTotalVentas(0);
       setShowCloseDialog(false);
+      notifyCashRegisterChanged();
     },
     [activeRegister, totalVentas, totalEntradas, totalSalidas, saldoEsperado, tenantId]
   );

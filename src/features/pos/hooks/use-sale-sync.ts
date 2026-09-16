@@ -190,6 +190,9 @@ async function uploadSale(sale: PendingSale): Promise<void> {
     fechaVenta: sale.createdAt,
     cajaId: sale.cajaId,
     totalCobrado: sale.totalCobrado,
+    // Sin esto el servidor recalcularia a precio base y, al no cuadrar con
+    // `totalCobrado`, marcaria la venta para revision.
+    listaPrecioId: sale.listaPrecioId ?? null,
     origen: "offline",
   });
 }

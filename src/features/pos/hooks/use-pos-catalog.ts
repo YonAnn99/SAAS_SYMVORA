@@ -7,12 +7,18 @@ import type { VarianteProducto } from "../types/pos.types";
 import { fetchCustomers } from "@/features/customers/services/customer-service";
 import { fetchActiveRegister } from "@/features/cash-register/services/cash-register-service";
 import { fetchPosProducts, fetchPosVariants } from "../services/pos-service";
+import {
+  fetchPosPriceLists,
+  type ListaParaPos,
+} from "@/features/inventory/services/price-list-service";
 
 export interface PosCatalogState {
   products: Producto[];
   /** Variantes del tenant, agrupadas por `producto_id`. */
   variantsByProduct: Record<string, VarianteProducto[]>;
   customers: Cliente[];
+  /** Listas de precios activas, con sus renglones ya cargados. */
+  priceLists: ListaParaPos[];
   userId: string;
   loadingProducts: boolean;
   isOfflineCatalog: boolean;
@@ -31,6 +37,8 @@ interface PosCache {
   variants: VarianteProducto[];
   customers: Cliente[];
   cajaId: string | null;
+  /** Opcional: una cache escrita antes de las listas no las trae. */
+  priceLists?: ListaParaPos[];
 }
 
 function catalogCacheKey(tenantId: string) {
@@ -51,6 +59,7 @@ function readCache(tenantId: string): PosCache | null {
         variants: [],
         customers: [],
         cajaId: null,
+        priceLists: [],
       };
     }
     return parsed as PosCache;
@@ -78,6 +87,7 @@ export function usePosCatalog(
   const [isOfflineCatalog, setIsOfflineCatalog] = useState(false);
   const [cajaId, setCajaId] = useState<string | null>(null);
   const [variants, setVariants] = useState<VarianteProducto[]>([]);
+  const [priceLists, setPriceLists] = useState<ListaParaPos[]>([]);
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
@@ -89,19 +99,26 @@ export function usePosCatalog(
       if (!user) return;
       setUserId(user.id);
 
-      const [productsResult, variantsResult, customersResult, activeRegister] =
-        await Promise.all([
-          fetchPosProducts(tenantId),
-          fetchPosVariants(tenantId),
-          fetchCustomers(tenantId),
-          fetchActiveRegister(user.id),
-        ]);
+      const [
+        productsResult,
+        variantsResult,
+        customersResult,
+        activeRegister,
+        priceListsResult,
+      ] = await Promise.all([
+        fetchPosProducts(tenantId),
+        fetchPosVariants(tenantId),
+        fetchCustomers(tenantId),
+        fetchActiveRegister(user.id),
+        fetchPosPriceLists(tenantId),
+      ]);
 
       const activeCajaId = activeRegister?.id ?? null;
 
       setProducts(productsResult);
       setVariants(variantsResult);
       setCustomers(customersResult);
+      setPriceLists(priceListsResult);
       setCajaId(activeCajaId);
       setIsOfflineCatalog(false);
       writeCache(tenantId, {
@@ -109,6 +126,7 @@ export function usePosCatalog(
         variants: variantsResult,
         customers: customersResult,
         cajaId: activeCajaId,
+        priceLists: priceListsResult,
       });
     } catch (error) {
       console.error("[pos] catalog fetch failed:", error);
@@ -117,6 +135,9 @@ export function usePosCatalog(
         setProducts(cached.products);
         setVariants(cached.variants ?? []);
         setCustomers(cached.customers);
+        // Sin red el cajero sigue pudiendo elegir lista: los precios ya
+        // estan guardados y el servidor los revalidara al sincronizar.
+        setPriceLists(cached.priceLists ?? []);
         setCajaId(cached.cajaId);
         setIsOfflineCatalog(true);
       }
@@ -144,6 +165,7 @@ export function usePosCatalog(
     products,
     variantsByProduct,
     customers,
+    priceLists,
     userId,
     loadingProducts,
     isOfflineCatalog,

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -14,8 +16,18 @@ import { OpenSinceTooltip } from "@/features/cash-register/components/open-since
 
 export default function FinancesPage() {
   const t = useTranslations();
+  const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const cash = useCashRegister(tenantId);
+  const autoOpenedRef = useRef(false);
+
+  // Abre automáticamente la ventana de fondo inicial al entrar a Finanzas sin caja abierta
+  useEffect(() => {
+    if (!cash.loading && !tenantLoading && !cash.activeRegister && !autoOpenedRef.current) {
+      autoOpenedRef.current = true;
+      cash.setShowOpenDialog(true);
+    }
+  }, [cash.loading, tenantLoading, cash.activeRegister, cash]);
 
   if (cash.loading || tenantLoading) {
     return (
@@ -77,7 +89,12 @@ export default function FinancesPage() {
       <OpenRegisterDialog
         open={cash.showOpenDialog}
         onOpenChange={cash.setShowOpenDialog}
-        onConfirm={(fondoInicial) => void cash.handleOpenRegister(fondoInicial)}
+        onConfirm={async (fondoInicial) => {
+          const reg = await cash.handleOpenRegister(fondoInicial);
+          if (reg) {
+            router.push("/pos");
+          }
+        }}
       />
 
       <MovementDialog

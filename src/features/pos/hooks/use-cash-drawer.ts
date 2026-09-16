@@ -24,7 +24,11 @@ export interface CashDrawerState {
   terminalOrder: TerminalOrderState | null;
   terminalStatus: TerminalStatus;
   cancellingTerminal: boolean;
-  startTerminalSale: (clienteId: string | null, items: CartItem[]) => Promise<void>;
+  startTerminalSale: (
+    clienteId: string | null,
+    items: CartItem[],
+    listaPrecioId?: string | null
+  ) => Promise<void>;
   handleCancelTerminal: () => Promise<void>;
   closeTerminalDialog: () => Promise<void>;
 }
@@ -150,7 +154,11 @@ export function useCashDrawer({
   );
 
   const startTerminalSale = useCallback(
-    async (clienteId: string | null, items: CartItem[]) => {
+    async (
+      clienteId: string | null,
+      items: CartItem[],
+      listaPrecioId?: string | null
+    ) => {
       if (!tenantId) return;
       try {
         // Si queda una orden previa pendiente/timeout, se cancela antes de
@@ -169,6 +177,7 @@ export function useCashDrawer({
             cantidad: item.cantidad,
             descuento: item.descuento,
           })),
+          listaPrecioId: listaPrecioId ?? null,
         });
         onTerminalStarted();
         setTerminalOrder({ mpOrderId: order.mp_order_id, monto: order.monto });

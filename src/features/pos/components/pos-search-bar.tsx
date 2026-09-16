@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
+import { Search, Tag } from "lucide-react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/** Valor del desplegable cuando no hay lista elegida: precios normales. */
+export const SIN_LISTA = "none";
+
+export interface OpcionListaPrecios {
+  id: string;
+  nombre: string;
+}
+
 interface PosSearchBarProps {
   search: string;
   onSearchChange: (value: string) => void;
@@ -20,6 +28,10 @@ interface PosSearchBarProps {
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
   onSearchSubmit: () => void;
+  priceLists: OpcionListaPrecios[];
+  /** `SIN_LISTA` o el id de la lista elegida. */
+  selectedPriceList: string;
+  onPriceListChange: (value: string) => void;
 }
 
 export function PosSearchBar({
@@ -30,6 +42,9 @@ export function PosSearchBar({
   selectedCategory,
   onCategoryChange,
   onSearchSubmit,
+  priceLists,
+  selectedPriceList,
+  onPriceListChange,
 }: PosSearchBarProps) {
   const t = useTranslations();
 
@@ -63,6 +78,44 @@ export function PosSearchBar({
           </SelectContent>
         </Select>
       )}
+      {/* Solo aparece si hay listas activas: en un negocio que no las usa
+          seria un control muerto ocupando sitio en la barra. */}
+      {priceLists.length > 0 && (
+        <Select
+          value={selectedPriceList}
+          onValueChange={(v) => onPriceListChange(v ?? SIN_LISTA)}
+        >
+          <SelectTrigger
+            className={`w-full sm:w-48 h-9 ${
+              selectedPriceList !== SIN_LISTA
+                ? "border-primary text-primary"
+                : ""
+            }`}
+          >
+            <Tag className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+            <SelectValue placeholder="Lista de precios">
+              {/* Con render function: el SDK solo conoce las etiquetas cuando
+                  el desplegable se ha abierto una vez, y sin esto la barra
+                  mostraria el UUID crudo al recargar. */}
+              {(value: unknown) =>
+                value === SIN_LISTA
+                  ? "Precios normales"
+                  : priceLists.find((l) => l.id === value)?.nombre ??
+                    "Lista de precios"
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={SIN_LISTA}>Precios normales</SelectItem>
+            {priceLists.map((lista) => (
+              <SelectItem key={lista.id} value={lista.id}>
+                {lista.nombre}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
       <SpecularActionButton tone="add" className="h-9" onClick={onSearchSubmit}>
         {t("pos.addItem")}
       </SpecularActionButton>

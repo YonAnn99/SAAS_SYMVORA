@@ -227,3 +227,65 @@ export async function updatePriceListPrices(
     .update({ actualizado_en: ahora })
     .eq("id", listaId);
 }
+
+/**
+ * Lista activa tal y como la necesita el punto de venta: la cabecera y TODOS
+ * sus renglones de una vez.
+ */
+export interface ListaParaPos {
+  id: string;
+  nombre: string;
+  renglones: {
+    producto_id: string;
+    variante_id: string | null;
+    precio: number | null;
+  }[];
+}
+
+/**
+ * Las listas que el cajero puede elegir al cobrar.
+ *
+ * Solo las ACTIVAS: un borrador a medio armar no debe poder cobrarse. (El
+ * servidor, en cambio, si honra una lista desactivada despues de la venta —
+ * ver la 068 — para no dejar tirada una venta offline.)
+ *
+ * Los renglones vienen anidados a proposito, en UNA consulta: el POS tiene que
+ * poder guardarlo entero en la cache y seguir funcionando sin red, y pedirlos
+ * lista por lista serian N+1 viajes en el arranque.
+ */
+export async function fetchPosPriceLists(
+  tenantId: string
+): Promise<ListaParaPos[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("listas_precios")
+    .select("id, nombre, precios_lista(producto_id, variante_id, precio)")
+    .eq("tenant_id", tenantId)
+    .eq("activa", true)
+    .order("nombre");
+
+  if (error) throw error;
+
+  return (data ?? []).map((l) => {
+    const fila = l as unknown as {
+      id: string;
+      nombre: string;
+      precios_lista: {
+        producto_id: string;
+        variante_id: string | null;
+        precio: string | number | null;
+      }[];
+    };
+    return {
+      id: fila.id,
+      nombre: fila.nombre,
+      // `precio` es DECIMAL y PostgREST lo entrega como cadena. Sin este
+      // Number() las comparaciones y el formateo se harian sobre "400.00".
+      renglones: (fila.precios_lista ?? []).map((r) => ({
+        producto_id: r.producto_id,
+        variante_id: r.variante_id,
+        precio: r.precio === null ? null : Number(r.precio),
+      })),
+    };
+  });
+}

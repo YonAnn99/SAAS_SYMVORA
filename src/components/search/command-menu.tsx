@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Command } from "cmdk";
 import { Search } from "lucide-react";
@@ -49,7 +49,7 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
 
   const runAction = useCallback(
     (href: string) => {
-      router.push(`/es${href}`);
+      router.push(href);
       setOpen(false);
       setSearch("");
     },

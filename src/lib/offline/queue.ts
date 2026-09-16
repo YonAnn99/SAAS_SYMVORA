@@ -44,6 +44,13 @@ export interface PendingSale {
   montoRecibido: number | null;
   /** Total del ticket que se le entregó al cliente. */
   totalCobrado: number;
+  /**
+   * Lista de precios con la que se cobró, si hubo.
+   *
+   * Opcional porque una venta encolada ANTES de esta versión no la tiene:
+   * al leerla de IndexedDB llegaría `undefined` y no debe romper la subida.
+   */
+  listaPrecioId?: string | null;
   /** Fecha real de la venta (ISO), no la de sincronización. */
   createdAt: string;
   attempts: number;

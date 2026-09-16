@@ -61,6 +61,7 @@ describe("completeSale", () => {
       p_caja_id: null,
       p_total_cobrado: null,
       p_origen: "online",
+      p_lista_precio_id: null,
       p_items: [
         {
           productId: "00000000-0000-0000-0000-000000000003",
@@ -120,6 +121,39 @@ describe("completeSale", () => {
         "varianteId",
       ]);
     }
+  });
+
+  it("manda el ID de la lista de precios, nunca sus precios", async () => {
+    rpcMock.mockResolvedValueOnce({ data: { id: "venta-4" }, error: null });
+
+    await completeSale({
+      ...params,
+      listaPrecioId: "44444444-4444-4444-4444-444444444444",
+    });
+
+    // El servidor relee el precio de `precios_lista`. Si alguna vez se
+    // colara el precio de la lista desde el navegador, seria otra vez el
+    // bug #5 con un disfraz nuevo: un cliente manipulado se pondria el
+    // precio que quisiera diciendo que "viene de la lista".
+    const payload = rpcMock.mock.calls[0][1];
+    expect(payload.p_lista_precio_id).toBe(
+      "44444444-4444-4444-4444-444444444444"
+    );
+    for (const item of payload.p_items) {
+      expect(item).not.toHaveProperty("precioUnitario");
+      expect(item).not.toHaveProperty("precio");
+    }
+  });
+
+  it("sin lista elegida manda null, no undefined", async () => {
+    rpcMock.mockResolvedValueOnce({ data: { id: "venta-5" }, error: null });
+
+    await completeSale(params);
+
+    // `undefined` desaparece al serializar a JSON y PostgREST tomaria el
+    // DEFAULT del parametro. Funciona por casualidad; null lo hace explicito.
+    const payload = rpcMock.mock.calls[0][1];
+    expect(payload.p_lista_precio_id).toBeNull();
   });
 
   it("envia notas null cuando no se provee notas", async () => {

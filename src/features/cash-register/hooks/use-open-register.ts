@@ -22,6 +22,14 @@ export interface OpenRegisterState {
   refetch: () => Promise<void>;
 }
 
+export const CASH_REGISTER_CHANGED_EVENT = "cash-register-status-changed";
+
+export function notifyCashRegisterChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(CASH_REGISTER_CHANGED_EVENT));
+  }
+}
+
 export function useOpenRegister(tenantId: string | null): OpenRegisterState {
   const [hasOpenRegister, setHasOpenRegister] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,8 +67,19 @@ export function useOpenRegister(tenantId: string | null): OpenRegisterState {
   }, [tenantId]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => void refetch(), 0);
-    return () => window.clearTimeout(timeout);
+    void refetch();
+
+    const handleChanged = () => {
+      void refetch();
+    };
+
+    window.addEventListener(CASH_REGISTER_CHANGED_EVENT, handleChanged);
+    window.addEventListener("focus", handleChanged);
+
+    return () => {
+      window.removeEventListener(CASH_REGISTER_CHANGED_EVENT, handleChanged);
+      window.removeEventListener("focus", handleChanged);
+    };
   }, [refetch]);
 
   return { hasOpenRegister, loading, refetch };

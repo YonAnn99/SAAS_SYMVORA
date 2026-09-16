@@ -54,6 +54,12 @@ interface ProductGridProps {
    * este componente a un tipo que no usa.
    */
   variantCountByProduct?: Record<string, number>;
+  /**
+   * Precio a pintar. Por defecto el del catalogo; con una lista de precios
+   * elegida, el de la lista. Se inyecta en vez de leer `precio_venta` a
+   * secas para que la cuadricula y el carrito no puedan discrepar.
+   */
+  precioDe?: (product: Producto) => number;
 }
 
 export function ProductGrid({
@@ -62,6 +68,7 @@ export function ProductGrid({
   hasSearch,
   onAddProduct,
   variantCountByProduct,
+  precioDe,
 }: ProductGridProps) {
   const t = useTranslations();
 
@@ -137,7 +144,7 @@ export function ProductGrid({
                 </span>
                 <div className="flex items-center justify-between w-full mt-1">
                   <span className="text-[13px] text-muted-foreground font-mono">
-                    ${product.precio_venta.toFixed(2)}
+                    ${(precioDe ? precioDe(product) : product.precio_venta).toFixed(2)}
                   </span>
                   {product.es_servicio ? (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">

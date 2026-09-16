@@ -1,4 +1,8 @@
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
+import {
+  construirMapaLista,
+  precioConLista,
+} from "@/features/pos/price-list-pos";
 
 const IVA_RATE = 0.16;
 
@@ -31,12 +35,51 @@ export function validateTerminalItems(
 
 export async function computeTerminalOrderTotal(
   tenantId: string,
-  items: TerminalOrderItem[]
+  items: TerminalOrderItem[],
+  /**
+   * Lista de precios con la que se cobra. El monto que se le manda al
+   * datafono TIENE que salir de aqui: si no, la terminal cobraria el precio
+   * base y la venta se registraria con el de lista.
+   */
+  listaPrecioId?: string | null
 ): Promise<ComputedTerminalOrder> {
   validateTerminalItems(items);
 
   const supabase = createSupabaseServiceRoleClient();
   const ids = items.map((item) => item.productId);
+
+  // Se lee del servidor, nunca del navegador: el cliente manda el ID de la
+  // lista y el precio se relee aqui, igual que hace `complete_sale`.
+  let mapaLista = null;
+  if (listaPrecioId) {
+    const { data: lista, error: listaError } = await supabase
+      .from("listas_precios")
+      .select("id")
+      .eq("id", listaPrecioId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (listaError || !lista) {
+      throw new Error("Lista de precios inválida para este negocio");
+    }
+
+    const { data: renglones, error: renglonesError } = await supabase
+      .from("precios_lista")
+      .select("producto_id, variante_id, precio")
+      .eq("lista_id", listaPrecioId);
+
+    if (renglonesError) {
+      throw new Error("No se pudieron leer los precios de la lista");
+    }
+
+    mapaLista = construirMapaLista(
+      (renglones ?? []).map((r) => ({
+        producto_id: r.producto_id as string,
+        variante_id: r.variante_id as string | null,
+        precio: r.precio === null ? null : Number(r.precio),
+      }))
+    );
+  }
 
   const { data: products, error } = await supabase
     .from("productos")
@@ -65,7 +108,15 @@ export async function computeTerminalOrderTotal(
       );
     }
 
-    const lineSubtotal = product.precio_venta * item.cantidad;
+    // Nota: este camino no distingue variantes (limitacion previa a las
+    // listas), asi que se consulta la fila del producto suelto.
+    const precio = precioConLista(
+      product.precio_venta,
+      mapaLista,
+      product.id,
+      null
+    );
+    const lineSubtotal = precio * item.cantidad;
     let lineDescuento = Math.max(0, item.descuento ?? 0);
     if (lineDescuento > lineSubtotal) lineDescuento = lineSubtotal;
     lineDescuento = Math.round(lineDescuento * 100) / 100;

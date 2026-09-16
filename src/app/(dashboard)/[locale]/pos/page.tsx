@@ -20,7 +20,9 @@ import {
 } from "@/features/pos/components/variant-picker-dialog";
 import { PendingSalesBanner } from "@/features/pos/components/pending-sales-banner";
 import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
-import { RegisterRequiredNotice } from "@/features/cash-register/components/register-required-notice";
+import { OpenRegisterRequiredDialog } from "@/features/cash-register";
+import { useRouter } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import { enqueueSale } from "@/lib/offline/queue";
 import { requestPersistentStorage } from "@/lib/offline/persist";
 
@@ -43,7 +45,16 @@ import { usePosCatalog } from "@/features/pos/hooks/use-pos-catalog";
 import { CheckoutPanel } from "@/features/pos/components/checkout-panel";
 import { ConfirmSaleDialog } from "@/features/pos/components/confirm-sale-dialog";
 import { MobileCartBar } from "@/features/pos/components/mobile-cart-bar";
-import { PosSearchBar } from "@/features/pos/components/pos-search-bar";
+import {
+  PosSearchBar,
+  SIN_LISTA,
+} from "@/features/pos/components/pos-search-bar";
+import {
+  construirMapaLista,
+  estaEnLista,
+  filtrarCatalogoPorLista,
+  precioConLista,
+} from "@/features/pos/price-list-pos";
 import { ProductGrid } from "@/features/pos/components/product-grid";
 import { TerminalPaymentDialog } from "@/features/pos/components/terminal-payment-dialog";
 import { TicketReceipt } from "@/features/pos/components/ticket-receipt";
@@ -63,6 +74,7 @@ import type {
 
 export default function POSPage() {
   const t = useTranslations();
+  const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
     usePosCart(tenantId);
@@ -70,6 +82,7 @@ export default function POSPage() {
     products,
     variantsByProduct,
     customers,
+    priceLists,
     userId,
     loadingProducts,
     isOfflineCatalog,
@@ -90,6 +103,8 @@ export default function POSPage() {
   }, []);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedPriceList, setSelectedPriceList] =
+    useState<string>(SIN_LISTA);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
   const [selectedPayment, setSelectedPayment] = useState<string>("");
   const [montoRecibido, setMontoRecibido] = useState<string>("");
@@ -99,23 +114,44 @@ export default function POSPage() {
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
+  // Precios de la lista elegida, indexados. `null` = sin lista, y entonces
+  // todo el POS se comporta exactamente como antes.
+  const mapaLista = useMemo(() => {
+    if (selectedPriceList === SIN_LISTA) return null;
+    const lista = priceLists.find((l) => l.id === selectedPriceList);
+    // Si la lista desaparecio (la desactivaron mientras el POS estaba
+    // abierto), se cae a precios normales en vez de cobrar a ciegas.
+    if (!lista) return null;
+    return construirMapaLista(lista.renglones);
+  }, [priceLists, selectedPriceList]);
+
   // Agrega ya resuelta la variante (o `null` para la venta general).
   const addResolved = useCallback(
     (product: Producto, variant: VarianteProducto | null) => {
+      // El precio base primero (la variante tiene el suyo; 0 = "usa el del
+      // producto") y encima, si hay lista, el de la lista. Este es el mismo
+      // orden que sigue el servidor en `_crear_venta_desde_items`: si aqui se
+      // invirtiera, el ticket no cuadraria con lo cobrado.
+      const precioBase = variant
+        ? variantPrice(variant, product)
+        : product.precio_venta;
+
       addItem({
         productId: product.id,
         varianteId: variant?.id ?? null,
         varianteLabel: variant ? variantLabel(variant) : null,
         nombre: product.nombre,
         cantidad: 1,
-        // La variante tiene su propio precio; 0 significa "usa el del producto".
-        precioUnitario: variant
-          ? variantPrice(variant, product)
-          : product.precio_venta,
+        precioUnitario: precioConLista(
+          precioBase,
+          mapaLista,
+          product.id,
+          variant?.id ?? null
+        ),
         unidad_medida: product.unidad_medida,
       });
     },
-    [addItem]
+    [addItem, mapaLista]
   );
 
   // Conteo para el distintivo de la cuadrícula. Se deriva de la MISMA fuente
@@ -130,8 +166,37 @@ export default function POSPage() {
     [variantsByProduct]
   );
 
+  // Con una lista puesta, la cuadricula muestra SOLO sus productos: es lo
+  // que se decidio con el usuario. Se aplica antes que la busqueda y la
+  // categoria para que los contadores de esos filtros cuenten sobre la lista.
+  const productosDeLista = useMemo(
+    () => filtrarCatalogoPorLista(products, variantsByProduct, mapaLista),
+    [products, variantsByProduct, mapaLista]
+  );
+
+  // Ids visibles con la lista puesta. El codigo de barras busca sobre TODO el
+  // catalogo, asi que sin esto un escaneo colaria por la puerta de atras un
+  // producto que la cuadricula esta ocultando, y se cobraria a precio base
+  // dentro de un ticket de lista.
+  const idsDeLista = useMemo(
+    () => (mapaLista ? new Set(productosDeLista.map((p) => p.id)) : null),
+    [mapaLista, productosDeLista]
+  );
+
+  const nombreListaElegida = useMemo(
+    () => priceLists.find((l) => l.id === selectedPriceList)?.nombre ?? "",
+    [priceLists, selectedPriceList]
+  );
+
   const handleAddProduct = useCallback(
     (product: Producto) => {
+      if (idsDeLista && !idsDeLista.has(product.id)) {
+        toast.error(
+          `"${product.nombre}" no esta en ${nombreListaElegida}. Cambia a precios normales para venderlo.`
+        );
+        return;
+      }
+
       const variants = variantsByProduct[product.id] ?? [];
 
       // Solo se pregunta si el producto TIENE variantes creadas. Uno marcado
@@ -148,7 +213,7 @@ export default function POSPage() {
       }
       addResolved(product, null);
     },
-    [variantsByProduct, addResolved]
+    [variantsByProduct, addResolved, idsDeLista, nombreListaElegida]
   );
 
   const { search, setSearch, handleSearch, handleKeyDown } = useBarcodeScanner(
@@ -160,6 +225,10 @@ export default function POSPage() {
     clearCart();
     setSelectedCustomer("none");
     setSelectedPayment("");
+    // La lista se suelta al cobrar, por decision del usuario: dejarla puesta
+    // haria que el SIGUIENTE cliente, uno normal, se llevara el precio de
+    // mayoreo sin que nadie se diera cuenta.
+    setSelectedPriceList(SIN_LISTA);
     setShowConfirmDialog(false);
     setMobileCartOpen(false);
     void refetch();
@@ -182,22 +251,25 @@ export default function POSPage() {
 
   const filteredProducts = useMemo(
     () =>
-      products.filter(
+      productosDeLista.filter(
         (p) =>
           (selectedCategory === "all" || p.categoria === selectedCategory) &&
           (p.nombre.toLowerCase().includes(search.toLowerCase()) ||
             p.codigo_barras?.toLowerCase().includes(search.toLowerCase()) ||
             p.sku?.toLowerCase().includes(search.toLowerCase()))
       ),
-    [products, selectedCategory, search]
+    [productosDeLista, selectedCategory, search]
   );
 
+  // Las categorias salen de lo que la lista deja ver, no del catalogo entero:
+  // si no, con una lista puesta el desplegable ofreceria categorias que no
+  // tienen ni un producto detras.
   const categories = useMemo(
     () =>
       Array.from(
-        new Set(products.map((p) => p.categoria).filter(Boolean))
+        new Set(productosDeLista.map((p) => p.categoria).filter(Boolean))
       ) as string[],
-    [products]
+    [productosDeLista]
   );
 
   const selectedCustomerObj =
@@ -245,7 +317,8 @@ export default function POSPage() {
     if (selectedPayment === "TARJETA_TERMINAL") {
       await startTerminalSale(
         selectedCustomer === "none" ? null : selectedCustomer,
-        items
+        items,
+        selectedPriceList === SIN_LISTA ? null : selectedPriceList
       );
       return;
     }
@@ -253,6 +326,10 @@ export default function POSPage() {
     setProcessingSale(true);
     try {
       const clienteId = selectedCustomer === "none" ? null : selectedCustomer;
+      // Se manda el ID de la lista, NUNCA el precio: el servidor lo relee de
+      // `precios_lista`. Mandar el precio desde aqui es el bug #5.
+      const listaPrecioId =
+        selectedPriceList === SIN_LISTA ? null : selectedPriceList;
 
       // Referencia que el ticket imprime como número de operación.
       let referenciaTicket: string | null = null;
@@ -268,6 +345,7 @@ export default function POSPage() {
           items,
           includeIva,
           montoRecibido: isEfectivo ? montoRecibidoNum : null,
+          listaPrecioId,
         })) as { id?: string } | null;
         referenciaTicket = venta?.id ?? null;
       } else {
@@ -295,6 +373,10 @@ export default function POSPage() {
           // recalcula desde el catálogo y marca la venta para revisión si el
           // precio cambió mientras estábamos sin red.
           totalCobrado: totals.total,
+          // Sin la lista, al sincronizar el servidor recalcularia a precio
+          // base y `p_total_cobrado <> v_total` marcaria para revision TODAS
+          // las ventas offline hechas con lista.
+          listaPrecioId,
           createdAt: new Date().toISOString(),
         });
         await saleSync.refresh();
@@ -318,6 +400,7 @@ export default function POSPage() {
       clearCart();
       setSelectedCustomer("none");
       setSelectedPayment("");
+      setSelectedPriceList(SIN_LISTA);
       setMontoRecibido("");
       setShowConfirmDialog(false);
       setMobileCartOpen(false);
@@ -338,13 +421,19 @@ export default function POSPage() {
   ];
 
   // Sin caja abierta no se vende: las ventas no generarian movimiento y el
-  // corte del dia no cuadraria. `null` es "no se pudo resolver" y no bloquea.
-  if (!tenantLoading && !loadingRegister && hasOpenRegister === false) {
-    return <RegisterRequiredNotice />;
-  }
+  // corte del dia no cuadraria.
+  const isRegisterOpen = hasOpenRegister === true || Boolean(cajaId);
+  const isRegisterResolved = !tenantLoading && !loadingRegister && !loadingProducts;
+  const showRegisterBlocked = isRegisterResolved && !isRegisterOpen;
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5">
+    <>
+      <div
+        className={cn(
+          "flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5 transition-all duration-200",
+          showRegisterBlocked && "filter blur-sm pointer-events-none select-none opacity-40"
+        )}
+      >
       {/* Left: Products grid / search */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
         <PendingSalesBanner
@@ -371,6 +460,9 @@ export default function POSPage() {
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
           onSearchSubmit={handleSearch}
+          priceLists={priceLists}
+          selectedPriceList={selectedPriceList}
+          onPriceListChange={setSelectedPriceList}
         />
 
         <ProductGrid
@@ -379,6 +471,7 @@ export default function POSPage() {
           hasSearch={Boolean(search)}
           onAddProduct={handleAddProduct}
           variantCountByProduct={variantCountByProduct}
+          precioDe={(p) => precioConLista(p.precio_venta, mapaLista, p.id, null)}
         />
 
         <MobileCartBar
@@ -479,8 +572,34 @@ export default function POSPage() {
           variantPickerFor ? (variantsByProduct[variantPickerFor.id] ?? []) : []
         }
         onOpenChange={(open) => !open && setVariantPickerFor(null)}
+        precioDe={(variant) => {
+          if (!variantPickerFor) return 0;
+          const base = variant
+            ? variantPrice(variant, variantPickerFor)
+            : variantPickerFor.precio_venta;
+          return precioConLista(
+            base,
+            mapaLista,
+            variantPickerFor.id,
+            variant?.id ?? null
+          );
+        }}
         onSelect={(variant) => {
-          if (variantPickerFor) addResolved(variantPickerFor, variant);
+          if (!variantPickerFor) return;
+          // Un producto puede estar visible porque SOLO una de sus tallas
+          // entro en la lista. Las demas no se venden con esa lista: si no,
+          // el ticket mezclaria precios de lista con precios normales sin que
+          // el cajero lo note. Misma regla que con el codigo de barras.
+          if (
+            mapaLista &&
+            !estaEnLista(mapaLista, variantPickerFor.id, variant?.id ?? null)
+          ) {
+            toast.error(
+              `Esa opcion de "${variantPickerFor.nombre}" no esta en ${nombreListaElegida}.`
+            );
+            return;
+          }
+          addResolved(variantPickerFor, variant);
           setVariantPickerFor(null);
         }}
       />
@@ -525,5 +644,18 @@ export default function POSPage() {
         receipt={saleReceipt}
       />
     </div>
+
+    <OpenRegisterRequiredDialog
+      open={showRegisterBlocked}
+      onOpenChange={(open) => {
+        if (!open) {
+          router.push("/dashboard");
+        }
+      }}
+      onCancel={() => {
+        router.push("/dashboard");
+      }}
+    />
+  </>
   );
 }

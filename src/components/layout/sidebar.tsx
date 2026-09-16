@@ -35,7 +35,7 @@ function SidebarContent({ collapsed, onCollapsedChange, onLinkClick, isMobile }:
   const t = useTranslations();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
-  const { tenantName, tenantLogo, role, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, tenantName, tenantLogo, role, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
 
   useEffect(() => {

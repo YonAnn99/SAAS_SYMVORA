@@ -42,6 +42,7 @@ const ADMIN_ONLY_PATHS = [
   // `/products/price-lists`, que cuelga de `/products` — una ruta abierta a
   // todo el equipo a proposito — pero donde se definen los precios de venta.
   "/products/price-lists",
+  "/pos",
 ];
 
 // Modules temporarily disabled for everyone, regardless of role.
@@ -237,19 +238,6 @@ export async function updateSession(request: NextRequest) {
       // --- Role-based route protection ---
       const cleanPath = stripLocale(request.nextUrl.pathname);
 
-      // --- El POS exige caja abierta ---
-      // No es una barrera de seguridad sino de proceso de negocio: sin caja
-      // abierta las ventas no generan movimiento y el corte del dia no cuadra.
-      // Va en el middleware para que escribir la URL a mano tampoco funcione;
-      // `pos/page.tsx` repite la comprobacion porque el middleware no corre en
-      // la navegacion de cliente ni cuando la PWA abre el POS desde su cache.
-      if (contexto && !contexto.tiene_caja_abierta && cleanPath === "/pos") {
-        const locale = request.nextUrl.pathname.split("/")[1] || "es";
-        const financesUrl = request.nextUrl.clone();
-        financesUrl.pathname = `/${locale}/finances`;
-        return NextResponse.redirect(financesUrl);
-      }
-
       const isDisabled = DISABLED_PATHS.some(
         (path) => cleanPath === path || cleanPath.startsWith(`${path}/`)
       );
@@ -283,7 +271,11 @@ export async function updateSession(request: NextRequest) {
           // Ruta protegida que no está mapeada en modules.ts: se cae al
           // criterio anterior por rol en vez de dejarla pasar.
           const userRole = membership?.role || "CAJERO";
-          const requiredRole = requiresSuperAdmin ? "SUPER_ADMIN" : "ORG_ADMIN";
+          const requiredRole = requiresSuperAdmin
+            ? "SUPER_ADMIN"
+            : requiredPermission === "sales.create" || requiredPermission === "cash.manage"
+            ? "CAJERO"
+            : "ORG_ADMIN";
           allowed = (ROLE_HIERARCHY[userRole] || 0) >= ROLE_HIERARCHY[requiredRole];
         }
 

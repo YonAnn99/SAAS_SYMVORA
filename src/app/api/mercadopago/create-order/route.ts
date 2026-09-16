@@ -23,6 +23,7 @@ interface CreateOrderRequest {
   tenant_id: string;
   cliente_id?: string | null;
   items: TerminalOrderItem[];
+  lista_precio_id?: string | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
 
     const computed = await computeTerminalOrderTotal(
       body.tenant_id,
-      body.items
+      body.items,
+      body.lista_precio_id ?? null
     );
 
     const externalReference = crypto.randomUUID();
@@ -92,6 +94,9 @@ export async function POST(request: NextRequest) {
         monto: computed.total,
         estado: "CREADA",
         payload_items: computed.payload,
+        // Viaja con el pago para que `confirm_terminal_payment` cree la
+        // venta con la MISMA lista con la que se calculo el monto cobrado.
+        lista_precio_id: body.lista_precio_id ?? null,
       })
       .select()
       .single();

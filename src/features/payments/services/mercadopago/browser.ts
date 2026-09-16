@@ -23,6 +23,7 @@ export async function createTerminalOrder(
       tenant_id: params.tenantId,
       cliente_id: params.clienteId,
       items: params.items,
+      lista_precio_id: params.listaPrecioId ?? null,
     }),
   });
 

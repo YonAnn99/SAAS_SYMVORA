@@ -8,6 +8,8 @@ export interface CreateTerminalOrderParams {
   tenantId: string;
   clienteId: string | null;
   items: TerminalOrderItemPayload[];
+  /** Lista de precios con la que se calcula el monto a cobrar en el datafono. */
+  listaPrecioId?: string | null;
 }
 
 export interface CreateTerminalOrderResponse {
