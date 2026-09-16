@@ -143,6 +143,8 @@ export const defaultAjusteFormData: AjusteFormData = {
 
 export interface OrderItem {
   producto_id: string;
+  /** `null` = el producto suelto, sin desglosar por talla/color. */
+  variante_id: string | null;
   cantidad_solicitada: string;
   costo_unitario: string;
 }
@@ -158,7 +160,9 @@ export const defaultOrdenFormData: OrdenFormData = {
   proveedor_id: "",
   numero_orden: "",
   notas: "",
-  items: [{ producto_id: "", cantidad_solicitada: "", costo_unitario: "" }],
+  items: [
+    { producto_id: "", variante_id: null, cantidad_solicitada: "", costo_unitario: "" },
+  ],
 };
 
 export interface PurchaseWithRelations extends Compra {

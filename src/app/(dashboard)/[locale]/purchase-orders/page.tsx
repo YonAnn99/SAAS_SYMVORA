@@ -13,6 +13,7 @@ import { PurchaseOrderDialog } from "@/features/inventory";
 import { PurchaseOrderDeleteDialog } from "@/features/inventory";
 import { PurchaseOrdersTable } from "@/features/inventory";
 import { ReceiveOrderDialog } from "@/features/inventory";
+import { etiquetaVariante } from "@/features/inventory/purchase-order-items";
 import type { DetalleOrdenCompra } from "@/features/inventory";
 
 export default function PurchaseOrdersPage() {
@@ -25,6 +26,7 @@ export default function PurchaseOrdersPage() {
     orders,
     suppliers,
     products,
+    variants,
     filteredOrders,
     getSupplierName,
     search,
@@ -118,9 +120,14 @@ export default function PurchaseOrdersPage() {
         onOpenChange={(open) => !open && closeReceiveDialog()}
         order={receivingOrder}
         details={receivingDetails}
-        nombreProducto={(id) =>
-          products.find((p) => p.id === id)?.nombre ?? "Producto"
-        }
+        nombreProducto={(id, varianteId) => {
+          const base = products.find((p) => p.id === id)?.nombre ?? "Producto";
+          if (!varianteId) return base;
+          const v = variants.find((v) => v.id === varianteId);
+          // Sin el sufijo, dos renglones de la misma prenda en distinta talla
+          // se verían idénticos y no se sabría en cuál escribir.
+          return v ? `${base} · ${etiquetaVariante(v)}` : base;
+        }}
         saving={receiving}
         onConfirm={handleReceive}
       />
@@ -133,6 +140,7 @@ export default function PurchaseOrdersPage() {
         initialDetails={editingDetails}
         suppliers={suppliers}
         products={products}
+        variants={variants}
         existingOrders={orders}
         saving={saving}
         onSave={handleSave}

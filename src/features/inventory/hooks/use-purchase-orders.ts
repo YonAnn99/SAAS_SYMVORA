@@ -18,6 +18,8 @@ import {
   updateOrder,
   updateOrderStatus,
   receiveOrder,
+  fetchOrderVariants,
+  type VarianteDeCompra,
   type OrderDetailItem,
   type ItemRecepcion,
   type ProveedorContacto,
@@ -27,7 +29,12 @@ export interface OrdenSaveInput {
   proveedor_id: string;
   numero_orden: string;
   notas: string;
-  items: { producto_id: string; cantidad_solicitada: string; costo_unitario: string }[];
+  items: {
+    producto_id: string;
+    variante_id: string | null;
+    cantidad_solicitada: string;
+    costo_unitario: string;
+  }[];
 }
 
 export function usePurchaseOrders(
@@ -43,6 +50,7 @@ export function usePurchaseOrders(
     nombre: string;
     costo_compra: number;
   }[]>([]);
+  const [variants, setVariants] = useState<VarianteDeCompra[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -52,14 +60,17 @@ export function usePurchaseOrders(
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    const [ordersData, suppliersData, productsData] = await Promise.all([
-      fetchOrders(tenantId),
-      fetchOrderSuppliers(tenantId),
-      fetchOrderProducts(tenantId),
-    ]);
+    const [ordersData, suppliersData, productsData, variantsData] =
+      await Promise.all([
+        fetchOrders(tenantId),
+        fetchOrderSuppliers(tenantId),
+        fetchOrderProducts(tenantId),
+        fetchOrderVariants(tenantId),
+      ]);
     setOrders(ordersData);
     setSuppliers(suppliersData);
     setProducts(productsData);
+    setVariants(variantsData);
     setLoading(false);
   }, [tenantId]);
 
@@ -103,6 +114,7 @@ export function usePurchaseOrders(
           .filter((item) => item.producto_id)
           .map((item) => ({
             producto_id: item.producto_id,
+            variante_id: item.variante_id,
             cantidad_solicitada: parseFloat(item.cantidad_solicitada) || 0,
             costo_unitario: parseFloat(item.costo_unitario) || 0,
             subtotal:
@@ -313,6 +325,7 @@ export function usePurchaseOrders(
     orders,
     suppliers,
     products,
+    variants,
     filteredOrders,
     getSupplierName,
     search,

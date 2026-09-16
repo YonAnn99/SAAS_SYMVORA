@@ -44,7 +44,8 @@ interface ReceiveOrderDialogProps {
   onOpenChange: (open: boolean) => void;
   order: OrdenCompra | null;
   details: DetalleOrdenCompra[];
-  nombreProducto: (productoId: string) => string;
+  /** Nombre a mostrar en el renglón, ya con la variante si la lleva. */
+  nombreProducto: (productoId: string, varianteId: string | null) => string;
   saving: boolean;
   onConfirm: (items: ItemRecepcion[], numeroFactura: string | null) => void;
 }
@@ -163,7 +164,7 @@ export function ReceiveOrderDialog({
               {lineas.map((l) => (
                 <TableRow key={l.detalle.id}>
                   <TableCell className="text-sm">
-                    {nombreProducto(l.detalle.producto_id)}
+                    {nombreProducto(l.detalle.producto_id, l.detalle.variante_id ?? null)}
                     {!l.parseo.ok && (
                       <span className="block text-xs text-destructive">
                         {l.parseo.error}

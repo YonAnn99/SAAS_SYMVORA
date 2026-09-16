@@ -21,6 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxInputGroup,
+  ComboboxItem,
+  ComboboxItemIndicator,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxPortal,
+  ComboboxPositioner,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { DetalleOrdenCompra, OrdenCompra } from "../../types/inventory.types";
@@ -30,7 +43,25 @@ import {
   type ProductOption,
 } from "../../types/inventory.types";
 import type { OrdenSaveInput } from "../../hooks/use-purchase-orders";
-import type { OrderDetailItem } from "../../services/purchase-order-service";
+import type {
+  OrderDetailItem,
+  VarianteDeCompra,
+} from "../../services/purchase-order-service";
+import {
+  buscarOpcion,
+  componerValor,
+  construirOpciones,
+  descomponerValor,
+  type OpcionCompra,
+} from "../../purchase-order-items";
+
+/**
+ * Los campos numéricos van SIN las flechitas de incremento del navegador.
+ * Ocupan ~24px del ancho del campo y, en la columna de Costo, dejaban el
+ * importe cortado ("15" en vez de "15.00").
+ */
+const SIN_SPINNERS =
+  "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
 interface PurchaseOrderDialogProps {
   open: boolean;
@@ -39,6 +70,7 @@ interface PurchaseOrderDialogProps {
   initialDetails: DetalleOrdenCompra[];
   suppliers: ProductOption[];
   products: { id: string; nombre: string; costo_compra: number }[];
+  variants: VarianteDeCompra[];
   existingOrders?: OrdenCompra[];
   saving: boolean;
   onSave: (input: OrdenSaveInput) => void;
@@ -64,6 +96,7 @@ export function PurchaseOrderDialog({
   initialDetails,
   suppliers,
   products,
+  variants,
   existingOrders = [],
   saving,
   onSave,
@@ -82,6 +115,7 @@ export function PurchaseOrderDialog({
           notas: editingOrder.notas || "",
           items: initialDetails.map((d) => ({
             producto_id: d.producto_id,
+            variante_id: d.variante_id ?? null,
             cantidad_solicitada: d.cantidad_solicitada.toString(),
             costo_unitario: d.costo_unitario.toString(),
           })),
@@ -103,7 +137,7 @@ export function PurchaseOrderDialog({
   const updateItem = (
     index: number,
     field: keyof (typeof formData.items)[number],
-    value: string
+    value: string | null
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -118,7 +152,12 @@ export function PurchaseOrderDialog({
       ...prev,
       items: [
         ...prev.items,
-        { producto_id: "", cantidad_solicitada: "", costo_unitario: "" },
+        {
+          producto_id: "",
+          variante_id: null,
+          cantidad_solicitada: "",
+          costo_unitario: "",
+        },
       ],
     }));
   };
@@ -135,14 +174,32 @@ export function PurchaseOrderDialog({
     [suppliers, formData.proveedor_id]
   );
 
-  const getProductCost = (productId: string): number => {
-    const product = products.find((p) => p.id === productId);
-    return product?.costo_compra ?? 0;
-  };
+  // Productos y, debajo de cada uno, sus variantes. Se recalcula solo cuando
+  // cambian los datos, no en cada tecleo del buscador.
+  const opciones = useMemo(
+    () => construirOpciones(products, variants),
+    [products, variants]
+  );
 
-  const handleProductChange = (index: number, productId: string) => {
-    updateItem(index, "producto_id", productId);
-    updateItem(index, "costo_unitario", getProductCost(productId).toString());
+  const handleProductChange = (index: number, value: string) => {
+    const { productoId, varianteId } = descomponerValor(value);
+    const opcion = buscarOpcion(opciones, productoId, varianteId);
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              producto_id: productoId,
+              variante_id: varianteId,
+              // El costo se precarga del que corresponda: el de la variante si
+              // se eligió una, el del producto si no. En un solo `setFormData`
+              // para que no se pisen dos actualizaciones seguidas.
+              costo_unitario: String(opcion?.costo ?? 0),
+            }
+          : item
+      ),
+    }));
   };
 
   const subtotal = formData.items.reduce((acc, item) => {
@@ -168,6 +225,7 @@ export function PurchaseOrderDialog({
       .filter((item) => item.producto_id)
       .map((item) => ({
         producto_id: item.producto_id,
+        variante_id: item.variante_id,
         cantidad_solicitada: parseFloat(item.cantidad_solicitada) || 0,
         costo_unitario: parseFloat(item.costo_unitario) || 0,
         subtotal:
@@ -186,6 +244,7 @@ export function PurchaseOrderDialog({
       notas: formData.notas || "",
       items: details.map((d) => ({
         producto_id: d.producto_id,
+        variante_id: d.variante_id,
         cantidad_solicitada: d.cantidad_solicitada.toString(),
         costo_unitario: d.costo_unitario.toString(),
       })),
@@ -262,29 +321,53 @@ export function PurchaseOrderDialog({
                     key={index}
                     className="grid grid-cols-12 gap-2 items-end"
                   >
-                    <div className="col-span-6 space-y-1">
+                    {/* El producto cede una columna al costo: con 6 el importe
+                        no cabía. El buscador lo compensa — ya no hace falta
+                        leer la lista entera para encontrar algo. */}
+                    <div className="col-span-5 space-y-1 min-w-0">
                       <Label className="text-[10px] text-muted-foreground">
                         Producto
                       </Label>
-                      <Select
-                        value={item.producto_id}
-                        onValueChange={(v) =>
-                          handleProductChange(index, v ?? "")
+                      <Combobox
+                        items={opciones}
+                        value={
+                          item.producto_id
+                            ? componerValor(item.producto_id, item.variante_id)
+                            : null
                         }
+                        onValueChange={(value) =>
+                          handleProductChange(index, (value as string) ?? "")
+                        }
+                        itemToStringLabel={(value) =>
+                          opciones.find((o) => o.value === value)?.label ?? ""
+                        }
+                        filter={(candidato, query) => {
+                          const o = candidato as unknown as OpcionCompra;
+                          return o.keywords
+                            .toLowerCase()
+                            .includes(query.toLowerCase());
+                        }}
                       >
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Seleccionar">
-                            {products.find((p) => p.id === item.producto_id)?.nombre ?? item.producto_id}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <ComboboxInputGroup className="h-8">
+                          <ComboboxInput placeholder="Buscar producto..." />
+                          <ComboboxTrigger />
+                        </ComboboxInputGroup>
+                        <ComboboxPortal>
+                          <ComboboxPositioner>
+                            <ComboboxPopup>
+                              <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                              <ComboboxList>
+                                {(o: OpcionCompra) => (
+                                  <ComboboxItem key={o.value} value={o.value}>
+                                    <ComboboxItemIndicator />
+                                    <span>{o.label}</span>
+                                  </ComboboxItem>
+                                )}
+                              </ComboboxList>
+                            </ComboboxPopup>
+                          </ComboboxPositioner>
+                        </ComboboxPortal>
+                      </Combobox>
                     </div>
                     <div className="col-span-2 space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
@@ -301,10 +384,10 @@ export function PurchaseOrderDialog({
                             e.target.value
                           )
                         }
-                        className="h-8 text-sm font-mono"
+                        className={`h-8 text-sm font-mono ${SIN_SPINNERS}`}
                       />
                     </div>
-                    <div className="col-span-2 space-y-1">
+                    <div className="col-span-3 space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
                         Costo
                       </Label>
@@ -316,7 +399,7 @@ export function PurchaseOrderDialog({
                         onChange={(e) =>
                           updateItem(index, "costo_unitario", e.target.value)
                         }
-                        className="h-8 text-sm font-mono"
+                        className={`h-8 text-sm font-mono ${SIN_SPINNERS}`}
                       />
                     </div>
                     <div className="col-span-2 flex justify-end">

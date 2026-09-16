@@ -22,6 +22,8 @@ export const orderEstadoColors: Record<string, string> = {
 
 export interface OrderDetailItem {
   producto_id: string;
+  /** `null` = se pide el producto suelto, sin desglosar por talla/color. */
+  variante_id: string | null;
   cantidad_solicitada: number;
   costo_unitario: number;
   subtotal: number;
@@ -55,6 +57,32 @@ export async function fetchOrderSuppliers(
     .select("id, nombre, telefono")
     .eq("tenant_id", tenantId)
     .order("nombre");
+  return data ?? [];
+}
+
+export interface VarianteDeCompra {
+  id: string;
+  producto_id: string;
+  talla: string | null;
+  color: string | null;
+  costo_compra: number;
+}
+
+/**
+ * Las variantes de todo el catálogo, para poder pedir una talla concreta.
+ *
+ * Se traen de una sola vez y no por producto: son pocas y el diálogo las
+ * necesita todas para armar el desplegable sin ir a la red en cada selección.
+ */
+export async function fetchOrderVariants(
+  tenantId: string
+): Promise<VarianteDeCompra[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase
+    .from("variantes_producto")
+    .select("id, producto_id, talla, color, costo_compra")
+    .eq("tenant_id", tenantId)
+    .order("talla");
   return data ?? [];
 }
 
