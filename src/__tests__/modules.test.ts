@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   GRANTABLE_MODULES,
@@ -75,13 +77,24 @@ describe("permissionForPath", () => {
   });
 
   it("el CATÁLOGO de productos sigue abierto a todo el equipo", () => {
-    // /products es lo que el cajero consulta para vender. El módulo
-    // "inventory" (variantes/lotes/ajustes) sí exige permiso, pero vive como
-    // pestañas DENTRO de esa página, no como ruta propia. Mapear /products a
+    // /products es lo que el cajero consulta para vender. Mapearlo a
     // inventory.manage dejaría a los cajeros sin catálogo.
     expect(permissionForPath("/products")).toBeNull();
     expect(MODULES.find((m) => m.key === "inventory")!.permission).toBe("inventory.manage");
-    expect(MODULES.find((m) => m.key === "inventory")!.paths).toEqual([]);
+  });
+
+  it("las LISTAS DE PRECIOS exigen inventory.manage pese a colgar de /products", () => {
+    // EL DEFECTO QUE EVITA: `permissionForPath` compara por prefijo, y
+    // `/products` es `permission: null` a propósito. Si esta ruta no estuviera
+    // declarada en el módulo `inventory`, heredaría ese `null` y CUALQUIER
+    // CAJERO podría entrar a definir los precios de venta del negocio.
+    //
+    // Funciona porque la función ordena de ruta más larga a más corta: la
+    // específica gana a `/products`.
+    expect(permissionForPath("/products/price-lists")).toBe("inventory.manage");
+    expect(permissionForPath("/products/price-lists/abc-123")).toBe("inventory.manage");
+    // Y la pantalla de al lado no se contamina.
+    expect(permissionForPath("/products")).toBeNull();
   });
 
   it("protege las rutas de administración con su permiso", () => {
@@ -143,6 +156,44 @@ describe("GRANTABLE_MODULES", () => {
     // datos: el switch no haría nada.
     for (const mod of GRANTABLE_MODULES) {
       expect(mod.permission, `${mod.key} concedible sin permiso`).toBeTruthy();
+    }
+  });
+});
+
+describe("el middleware enciende el control de TODAS las rutas con permiso", () => {
+  // EL DEFECTO QUE EVITA, y que se cometió al añadir las listas de precios:
+  // `modules.ts` solo dice QUÉ permiso exige una ruta. Quien decide si se
+  // comprueba algo es `ADMIN_ONLY_PATHS` en el middleware. Declarar la ruta en
+  // uno y no en el otro la deja completamente abierta, en silencio y sin que
+  // ningún test lo note.
+  //
+  // Se inspecciona el fuente en vez de importar el middleware porque ese módulo
+  // arrastra `next/server` y el cliente de Supabase al cargarse. Mismo enfoque
+  // que `legal-footer.test.ts`.
+  const middleware = readFileSync(
+    join(process.cwd(), "src/lib/supabase/middleware.ts"),
+    "utf8"
+  );
+
+  // Hueco PREEXISTENTE, descubierto al escribir este test (2026-09-16):
+  // `/reports` exige `sales.view_reports` en modules.ts pero no está en la
+  // lista del middleware, así que esa comprobación nunca corre. NO se añade
+  // aquí porque hacerlo cambiaría a quién deja entrar el sistema hoy, y esa es
+  // una decisión del dueño del negocio, no de un test. Queda anotado para que
+  // la excepción sea deliberada y visible en vez de un descuido silencioso.
+  const EXCEPCIONES_CONOCIDAS = new Set(["/reports"]);
+
+  it("cada ruta que exige permiso está en la lista del middleware", () => {
+    const protegidas = MODULES.filter((m) => m.permission !== null)
+      .flatMap((m) => m.paths)
+      .filter((ruta) => !EXCEPCIONES_CONOCIDAS.has(ruta));
+    expect(protegidas.length).toBeGreaterThan(0);
+
+    for (const ruta of protegidas) {
+      expect(
+        middleware.includes(`"${ruta}"`),
+        `${ruta} exige permiso en modules.ts pero NO está en ADMIN_ONLY_PATHS/SUPER_ADMIN_ONLY_PATHS: el middleware la deja pasar sin comprobar nada`
+      ).toBe(true);
     }
   });
 });

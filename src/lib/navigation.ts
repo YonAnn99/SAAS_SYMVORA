@@ -106,6 +106,8 @@ const RUTAS_SIN_MENU: Record<string, string> = {
   "/variants": "layout.variants",
   "/lots": "layout.lots",
   "/inventory-adjustments": "layout.adjustments",
+  // Se llega desde el boton de /products, no desde el menu lateral.
+  "/products/price-lists": "layout.priceLists",
 };
 
 /** Candidatos ordenados de ruta MAS especifica a MENOS. */

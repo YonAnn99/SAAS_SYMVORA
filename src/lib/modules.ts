@@ -68,7 +68,16 @@ export const MODULES: ModuleDefinition[] = [
     key: "inventory",
     label: "Inventario",
     description: "Crear y editar productos, variantes, lotes y ajustes",
-    paths: [],
+    // ⚠️ `/products/price-lists` TIENE QUE ESTAR AQUI. `permissionForPath`
+    // compara por prefijo, y `/products` pertenece al modulo `products`, que es
+    // `permission: null` a proposito (todo el equipo consulta el catalogo). Sin
+    // esta linea la pantalla de listas de precios quedaria abierta a cualquier
+    // cajero — y ahi se definen los precios de venta. Funciona porque la funcion
+    // ordena de ruta MAS larga a MENOS, asi que esta gana a `/products`.
+    //
+    // Las demas pantallas de este modulo son pestañas dentro de `/products` y
+    // por eso no aparecen aqui.
+    paths: ["/products/price-lists"],
     permission: "inventory.manage",
     grantable: true,
   },

@@ -198,6 +198,7 @@
     }
   },
   "layout": {
+    "priceLists": "Listas de precios",
     "dashboard": "Dashboard",
     "pos": "Punto de Venta",
     "products": "Productos",

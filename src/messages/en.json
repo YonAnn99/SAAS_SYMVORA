@@ -198,6 +198,7 @@
     }
   },
   "layout": {
+    "priceLists": "Price lists",
     "dashboard": "Dashboard",
     "pos": "Point of Sale",
     "products": "Products",

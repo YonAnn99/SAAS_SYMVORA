@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import type { Producto } from "@/features/inventory";
 
 export default function ProductsPage() {
   const t = useTranslations();
+  const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -117,6 +119,18 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
+              Va el primero porque es lo que menos se usa a diario; los dos de
+              la derecha son los del trabajo del día. */}
+          {canManageInventory && (
+            <SpecularActionButton
+              tone="money"
+              className="h-8 active:scale-[0.98] transition-transform flex-1 sm:flex-none"
+              onClick={() => router.push("/products/price-lists")}
+            >
+              Lista de precios
+            </SpecularActionButton>
+          )}
           {canImport && (
             <SpecularActionButton
               tone="neutral"

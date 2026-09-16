@@ -206,6 +206,52 @@ export type Database = {
           creado_en?: string;
         };
       };
+      listas_precios: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          nombre: string;
+          activa: boolean;
+          creado_por: string | null;
+          creado_en: string;
+          actualizado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          nombre: string;
+          activa?: boolean;
+          creado_por?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+        Update: {
+          nombre?: string;
+          activa?: boolean;
+          actualizado_en?: string;
+        };
+      };
+      precios_lista: {
+        Row: {
+          lista_id: string;
+          producto_id: string;
+          variante_id: string | null;
+          /** `null` = "No definido": está en la lista pero sin precio propio. */
+          precio: number | null;
+          actualizado_en: string;
+        };
+        Insert: {
+          lista_id: string;
+          producto_id: string;
+          variante_id?: string | null;
+          precio?: number | null;
+          actualizado_en?: string;
+        };
+        Update: {
+          precio?: number | null;
+          actualizado_en?: string;
+        };
+      };
       clientes: {
         Row: {
           id: string;
@@ -1115,6 +1161,8 @@ export type TenantSettings =
 export type TenantMembership =
   Database["public"]["Tables"]["tenant_memberships"]["Row"];
 export type Producto = Database["public"]["Tables"]["productos"]["Row"];
+export type ListaPrecios = Database["public"]["Tables"]["listas_precios"]["Row"];
+export type PrecioLista = Database["public"]["Tables"]["precios_lista"]["Row"];
 export type Cliente = Database["public"]["Tables"]["clientes"]["Row"];
 export type PagoCredito =
   Database["public"]["Tables"]["pagos_credito"]["Row"];

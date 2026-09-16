@@ -36,6 +36,12 @@ const ADMIN_ONLY_PATHS = [
   "/inventory-adjustments",
   "/variants",
   "/lots",
+  // ⚠️ ESTA LISTA ES LA QUE ENCIENDE EL CONTROL, `modules.ts` solo dice QUE
+  // permiso pedir. Declarar la ruta alli y no aqui la deja SIN PROTEGER: el
+  // bloque de `permissionForPath` ni siquiera se ejecuta. Es el caso de
+  // `/products/price-lists`, que cuelga de `/products` — una ruta abierta a
+  // todo el equipo a proposito — pero donde se definen los precios de venta.
+  "/products/price-lists",
 ];
 
 // Modules temporarily disabled for everyone, regardless of role.
