@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, FileText, Pencil, Send, Trash2 } from "lucide-react";
+import { Check, FileText, MessageCircle, Pencil, Send, Trash2 } from "lucide-react";
+import { normalizarTelefonoMx } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -33,6 +34,12 @@ interface PurchaseOrdersTableProps {
   onDelete: (order: OrdenCompra) => void;
   onAdd: () => void;
   onStatusChange: (order: OrdenCompra, newStatus: OrdenCompra["estado"]) => void;
+  /** Abre el diálogo de recepción. */
+  onReceive: (order: OrdenCompra) => void;
+  /** Abre WhatsApp con el pedido escrito. No cambia el estado. */
+  onWhatsApp: (order: OrdenCompra) => void;
+  /** Teléfono del proveedor, para saber si se puede ofrecer WhatsApp. */
+  getSupplierPhone: (supplierId: string) => string | null;
 }
 
 export function PurchaseOrdersTable({
@@ -44,6 +51,9 @@ export function PurchaseOrdersTable({
   onDelete,
   onAdd,
   onStatusChange,
+  onReceive,
+  onWhatsApp,
+  getSupplierPhone,
 }: PurchaseOrdersTableProps) {
   return (
     <Card className="animate-fade-in-up stagger-3">
@@ -150,14 +160,35 @@ export function PurchaseOrdersTable({
                             </Button>
                           </>
                         )}
-                        {order.estado === "ENVIADA" && (
+                        {/* WhatsApp solo mientras tiene sentido mandar el
+                            pedido, y solo si el teléfono se puede normalizar:
+                            un enlace a un número adivinado abre el chat de un
+                            desconocido. */}
+                        {(order.estado === "BORRADOR" ||
+                          order.estado === "ENVIADA") &&
+                          normalizarTelefonoMx(
+                            getSupplierPhone(order.proveedor_id)
+                          ) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-emerald-600 hover:text-emerald-600"
+                              onClick={() => onWhatsApp(order)}
+                              title="Mandar el pedido por WhatsApp"
+                            >
+                              <MessageCircle className="h-3 w-3 mr-1" />
+                              WhatsApp
+                            </Button>
+                          )}
+                        {/* También en RECIBIDA_PARCIAL: la segunda entrega se
+                            recibe igual que la primera. */}
+                        {(order.estado === "ENVIADA" ||
+                          order.estado === "RECIBIDA_PARCIAL") && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs text-green-600 hover:text-green-600"
-                            onClick={() =>
-                              onStatusChange(order, "RECIBIDA_TOTAL")
-                            }
+                            onClick={() => onReceive(order)}
                           >
                             <Check className="h-3 w-3 mr-1" />
                             Recibir

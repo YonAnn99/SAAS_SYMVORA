@@ -430,6 +430,10 @@ export type Database = {
           proveedor_id: string;
           usuario_id: string;
           numero_factura: string | null;
+          // Migración 065. NULL cuando la compra se anotó a mano sin orden.
+          orden_compra_id: string | null;
+          subtotal: number | null;
+          impuesto: number | null;
           total: number;
           estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
           fecha_compra: string;
@@ -442,6 +446,9 @@ export type Database = {
           proveedor_id: string;
           usuario_id: string;
           numero_factura?: string | null;
+          orden_compra_id?: string | null;
+          subtotal?: number | null;
+          impuesto?: number | null;
           total: number;
           estado?: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
           fecha_compra?: string;
@@ -454,6 +461,9 @@ export type Database = {
           proveedor_id?: string;
           usuario_id?: string;
           numero_factura?: string | null;
+          orden_compra_id?: string | null;
+          subtotal?: number | null;
+          impuesto?: number | null;
           total?: number;
           estado?: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
           fecha_compra?: string;
@@ -1057,6 +1067,9 @@ export type Database = {
         Args: {
           p_orden_id: string;
           p_items: Json;
+          // La factura llega con la mercancía (migración 065). Opcional: hay
+          // entregas que llegan sin ella y se anota después.
+          p_numero_factura?: string | null;
         };
         Returns: Json;
       };

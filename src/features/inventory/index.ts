@@ -33,6 +33,7 @@ export * from "./components/purchases/new-supplier-dialog";
 export * from "./components/purchase-orders/purchase-order-dialog";
 export * from "./components/purchase-orders/purchase-order-delete-dialog";
 export * from "./components/purchase-orders/purchase-orders-table";
+export * from "./components/purchase-orders/receive-order-dialog";
 
 // Secciones de inventario (Variantes/Lotes/Ajustes). Viven aquí y no en
 // components/settings desde el 2026-09-11: son información de productos, así

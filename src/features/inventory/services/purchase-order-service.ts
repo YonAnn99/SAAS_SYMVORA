@@ -2,7 +2,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type {
   DetalleOrdenCompra,
   OrdenCompra,
-  ProductOption,
 } from "../types/inventory.types";
 
 export const orderEstadoLabels: Record<string, string> = {
@@ -38,13 +37,22 @@ export async function fetchOrders(tenantId: string): Promise<OrdenCompra[]> {
   return data ?? [];
 }
 
+export interface ProveedorContacto {
+  id: string;
+  nombre: string;
+  /** Texto libre sin normalizar; se pasa por `normalizarTelefonoMx` para WhatsApp. */
+  telefono: string | null;
+}
+
 export async function fetchOrderSuppliers(
   tenantId: string
-): Promise<ProductOption[]> {
+): Promise<ProveedorContacto[]> {
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
     .from("proveedores")
-    .select("id, nombre")
+    // `telefono` se trae para poder mandar la orden por WhatsApp sin una
+    // consulta extra por fila.
+    .select("id, nombre, telefono")
     .eq("tenant_id", tenantId)
     .order("nombre");
   return data ?? [];
@@ -144,16 +152,51 @@ export async function updateOrderStatus(
   newStatus: OrdenCompra["estado"]
 ): Promise<void> {
   const supabase = createSupabaseBrowserClient();
-  const updates: Record<string, unknown> = { estado: newStatus };
-  if (newStatus === "ENVIADA" || newStatus === "RECIBIDA_TOTAL") {
-    updates.fecha_recepcion = new Date().toISOString();
-  }
 
+  // Solo el estado. Antes esta funcion escribia tambien `fecha_recepcion` al
+  // pasar a ENVIADA, asi que una orden RECIEN ENVIADA nacia con fecha de
+  // recepcion: las 6 ordenes de produccion estaban asi, con 0 de 27 unidades
+  // recibidas. La fecha real la pone `recibir_orden_compra`, que es quien sabe
+  // que llego algo.
   const { error } = await supabase
     .from("ordenes_compra")
-    .update(updates)
+    .update({ estado: newStatus })
     .eq("id", orderId);
   if (error) throw error;
+}
+
+export interface ItemRecepcion {
+  detalle_id: string;
+  cantidad_recibida: number;
+}
+
+export interface ResultadoRecepcion {
+  compra_id: string;
+  total: number;
+  nuevo_estado: OrdenCompra["estado"];
+}
+
+/**
+ * Recibe mercancia de una orden.
+ *
+ * Todo el trabajo lo hace el RPC en UNA transaccion: acumula lo recibido, suma
+ * el stock, fija el costo del producto, crea la compra con sus renglones y
+ * decide entre RECIBIDA_PARCIAL y RECIBIDA_TOTAL. Hacerlo desde el cliente con
+ * varios UPDATE dejaria medio recibido lo que falle a mitad.
+ */
+export async function receiveOrder(
+  orderId: string,
+  items: ItemRecepcion[],
+  numeroFactura: string | null
+): Promise<ResultadoRecepcion> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("recibir_orden_compra", {
+    p_orden_id: orderId,
+    p_items: items,
+    p_numero_factura: numeroFactura,
+  });
+  if (error) throw error;
+  return data as unknown as ResultadoRecepcion;
 }
 
 export async function deleteOrder(orderId: string): Promise<void> {

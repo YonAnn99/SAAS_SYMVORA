@@ -12,10 +12,11 @@ import {
 import { PurchaseOrderDialog } from "@/features/inventory";
 import { PurchaseOrderDeleteDialog } from "@/features/inventory";
 import { PurchaseOrdersTable } from "@/features/inventory";
+import { ReceiveOrderDialog } from "@/features/inventory";
 import type { DetalleOrdenCompra } from "@/features/inventory";
 
 export default function PurchaseOrdersPage() {
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, tenantName, loading: tenantLoading } = useCurrentTenant();
   const [editingDetails, setEditingDetails] = useState<DetalleOrdenCompra[]>(
     []
   );
@@ -40,7 +41,14 @@ export default function PurchaseOrdersPage() {
     handleSave,
     handleStatusChange,
     handleDelete,
-  } = usePurchaseOrders(tenantId, tenantLoading);
+    receivingOrder,
+    receivingDetails,
+    receiving,
+    openReceiveDialog,
+    closeReceiveDialog,
+    handleReceive,
+    handleWhatsApp,
+  } = usePurchaseOrders(tenantId, tenantLoading, tenantName ?? undefined);
 
   const handleEdit = async (order: Parameters<typeof openEditDialog>[0]) => {
     const details = await fetchOrderDetails(order.id);
@@ -97,6 +105,24 @@ export default function PurchaseOrdersPage() {
         onDelete={setDeleteConfirm}
         onAdd={handleAdd}
         onStatusChange={handleStatusChange}
+        onReceive={(order) => void openReceiveDialog(order)}
+        onWhatsApp={(order) => void handleWhatsApp(order)}
+        getSupplierPhone={(id) =>
+          suppliers.find((s) => s.id === id)?.telefono ?? null
+        }
+      />
+
+      {/* Recepción de mercancía */}
+      <ReceiveOrderDialog
+        open={receivingOrder !== null}
+        onOpenChange={(open) => !open && closeReceiveDialog()}
+        order={receivingOrder}
+        details={receivingDetails}
+        nombreProducto={(id) =>
+          products.find((p) => p.id === id)?.nombre ?? "Producto"
+        }
+        saving={receiving}
+        onConfirm={handleReceive}
       />
 
       {/* Create/Edit Dialog */}

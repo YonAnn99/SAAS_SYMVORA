@@ -4,10 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/supabase/activity-logger";
-import type {
-  OrdenCompra,
-  ProductOption,
-} from "../types/inventory.types";
+import type { OrdenCompra, DetalleOrdenCompra } from "../types/inventory.types";
+import { normalizarTelefonoMx, urlWhatsApp } from "@/lib/whatsapp";
+import { mensajeParaProveedor } from "../purchase-order-message";
 import {
   createOrder,
   deleteOrder,
@@ -18,7 +17,10 @@ import {
   orderEstadoLabels,
   updateOrder,
   updateOrderStatus,
+  receiveOrder,
   type OrderDetailItem,
+  type ItemRecepcion,
+  type ProveedorContacto,
 } from "../services/purchase-order-service";
 
 export interface OrdenSaveInput {
@@ -30,10 +32,12 @@ export interface OrdenSaveInput {
 
 export function usePurchaseOrders(
   tenantId: string | null,
-  tenantLoading: boolean
+  tenantLoading: boolean,
+  /** Para firmar el mensaje de WhatsApp con el nombre de la tienda. */
+  nombreNegocio: string = "nuestro negocio"
 ) {
   const [orders, setOrders] = useState<OrdenCompra[]>([]);
-  const [suppliers, setSuppliers] = useState<ProductOption[]>([]);
+  const [suppliers, setSuppliers] = useState<ProveedorContacto[]>([]);
   const [products, setProducts] = useState<{
     id: string;
     nombre: string;
@@ -166,6 +170,106 @@ export function usePurchaseOrders(
     [refetch]
   );
 
+  // ---- Recepción de mercancía ----
+
+  const [receivingOrder, setReceivingOrder] = useState<OrdenCompra | null>(null);
+  const [receivingDetails, setReceivingDetails] = useState<DetalleOrdenCompra[]>([]);
+  const [receiving, setReceiving] = useState(false);
+
+  /**
+   * Abre el diálogo de recepción.
+   *
+   * Los renglones se cargan aquí y no en `refetch` porque solo hacen falta al
+   * recibir: traerlos para toda la tabla serían N consultas por pintar la lista.
+   */
+  const openReceiveDialog = useCallback(async (order: OrdenCompra) => {
+    const details = await fetchOrderDetails(order.id);
+    setReceivingDetails(details);
+    setReceivingOrder(order);
+  }, []);
+
+  const handleReceive = useCallback(
+    async (items: ItemRecepcion[], numeroFactura: string | null) => {
+      if (!receivingOrder) return;
+      setReceiving(true);
+      try {
+        const resultado = await receiveOrder(
+          receivingOrder.id,
+          items,
+          numeroFactura
+        );
+        await logActivity({
+          action: "UPDATE",
+          entity: "orden_compra",
+          entityId: receivingOrder.id,
+          entityName: receivingOrder.numero_orden,
+          details: {
+            recibido: true,
+            nuevo_estado: resultado.nuevo_estado,
+            compra_id: resultado.compra_id,
+          },
+        });
+        toast.success(
+          resultado.nuevo_estado === "RECIBIDA_TOTAL"
+            ? "Orden recibida completa. Se registró la compra y subió el stock."
+            : "Recepción parcial registrada. La orden sigue abierta."
+        );
+        setReceivingOrder(null);
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : typeof error === "object" && error !== null && "message" in error
+              ? String((error as { message: unknown }).message)
+              : "No se pudo registrar la recepción"
+        );
+      } finally {
+        setReceiving(false);
+      }
+    },
+    [receivingOrder, refetch]
+  );
+
+  // ---- Envío al proveedor por WhatsApp ----
+
+  /**
+   * Abre WhatsApp con el pedido ya escrito.
+   *
+   * NO cambia el estado de la orden, y es deliberado: abrir el chat no es
+   * prueba de haberlo enviado, y pasar a ENVIADA bloquea la edición. Si se
+   * abandona el chat, la orden quedaría bloqueada sin que el proveedor haya
+   * recibido nada. Marcarla como enviada sigue siendo el botón "Enviar".
+   */
+  const handleWhatsApp = useCallback(
+    async (order: OrdenCompra) => {
+      const proveedor = suppliers.find((s) => s.id === order.proveedor_id);
+      const telefono = normalizarTelefonoMx(proveedor?.telefono);
+      if (!telefono) {
+        toast.error("Este proveedor no tiene un teléfono válido");
+        return;
+      }
+
+      const details = await fetchOrderDetails(order.id);
+      const mensaje = mensajeParaProveedor({
+        numeroOrden: order.numero_orden,
+        proveedor: proveedor?.nombre ?? "",
+        negocio: nombreNegocio,
+        lineas: details.map((d) => ({
+          nombre:
+            products.find((p) => p.id === d.producto_id)?.nombre ?? "Producto",
+          cantidad: Number(d.cantidad_solicitada),
+          costo_unitario: Number(d.costo_unitario),
+        })),
+        total: Number(order.total),
+        fechaEstimada: order.fecha_estimada_recepcion,
+      });
+
+      window.open(urlWhatsApp(telefono, mensaje), "_blank", "noopener");
+    },
+    [suppliers, products, nombreNegocio]
+  );
+
   const handleDelete = useCallback(
     async (order: OrdenCompra) => {
       try {
@@ -226,6 +330,13 @@ export function usePurchaseOrders(
     handleSave,
     handleStatusChange,
     handleDelete,
+    receivingOrder,
+    receivingDetails,
+    receiving,
+    openReceiveDialog,
+    closeReceiveDialog: () => setReceivingOrder(null),
+    handleReceive,
+    handleWhatsApp,
   };
 }
 
