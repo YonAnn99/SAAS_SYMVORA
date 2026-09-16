@@ -1,11 +1,17 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import {
+  fetchLastClosedRegister,
+  getCurrentUserId,
+} from "../services/cash-register-service";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +33,38 @@ export function OpenRegisterDialog({
   onConfirm,
 }: OpenRegisterDialogProps) {
   const t = useTranslations();
+  const { tenantId } = useCurrentTenant();
   const [initialFund, setInitialFund] = useState("");
+  const [lastClosedAmount, setLastClosedAmount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setInitialFund("");
+      setLastClosedAmount(null);
+      return;
+    }
+
+    let isCancelled = false;
+    async function loadLastClosed() {
+      if (!tenantId) return;
+      try {
+        const userId = await getCurrentUserId();
+        if (!userId || isCancelled) return;
+        const lastClosed = await fetchLastClosedRegister(userId, tenantId);
+        if (!isCancelled && lastClosed && typeof lastClosed.saldo_real === "number") {
+          setLastClosedAmount(lastClosed.saldo_real);
+        }
+      } catch (err) {
+        console.error("Error fetching last closed register:", err);
+      }
+    }
+
+    void loadLastClosed();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [open, tenantId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,6 +86,24 @@ export function OpenRegisterDialog({
               className="h-8 text-sm font-mono"
             />
           </div>
+
+          {lastClosedAmount !== null && (
+            <div className="pt-0.5">
+              <button
+                type="button"
+                onClick={() => setInitialFund(lastClosedAmount.toFixed(2))}
+                className="inline-flex items-center gap-1.5 rounded-md bg-muted/60 hover:bg-muted px-2.5 py-1.5 text-xs text-foreground font-medium transition-colors border border-border/60 hover:border-border cursor-pointer group"
+              >
+                <History className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-muted-foreground group-hover:text-foreground">
+                  Usar saldo de cierre anterior:
+                </span>
+                <span className="font-mono font-semibold text-primary">
+                  ${lastClosedAmount.toFixed(2)}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button

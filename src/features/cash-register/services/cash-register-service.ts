@@ -24,6 +24,27 @@ export async function fetchActiveRegister(
   return data ?? null;
 }
 
+export async function fetchLastClosedRegister(
+  userId: string,
+  tenantId?: string
+): Promise<Caja | null> {
+  const supabase = createSupabaseBrowserClient();
+  let query = supabase
+    .from("cajas")
+    .select("*")
+    .eq("usuario_id", userId)
+    .eq("estado", "CERRADA")
+    .order("fecha_cierre", { ascending: false })
+    .limit(1);
+
+  if (tenantId) {
+    query = query.eq("tenant_id", tenantId);
+  }
+
+  const { data } = await query.maybeSingle();
+  return data ?? null;
+}
+
 export async function fetchMovements(cajaId: string): Promise<MovimientoCaja[]> {
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
