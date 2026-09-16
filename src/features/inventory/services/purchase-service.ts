@@ -18,7 +18,6 @@ export interface PurchaseInput {
 
 export interface SupplierInput {
   nombre: string;
-  contact: string;
   email: string;
   phone: string;
 }
@@ -70,7 +69,6 @@ export async function createSupplier(
   const { error } = await supabase.from("proveedores").insert({
     tenant_id: tenantId,
     nombre: input.nombre,
-    contact_name: input.contact || null,
     email: input.email || null,
     telefono: input.phone || null,
   });
@@ -84,9 +82,11 @@ export async function updateSupplier(
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase
     .from("proveedores")
+    // ⚠️ `contact_name` NO va en el patch, y es a proposito. La columna sigue
+    // existiendo con datos de proveedores antiguos; si se mandara desde un
+    // formulario que ya no lo captura, el primer "Guardar cambios" lo borraria.
     .update({
       nombre: input.nombre,
-      contact_name: input.contact || null,
       email: input.email || null,
       telefono: input.phone || null,
     })

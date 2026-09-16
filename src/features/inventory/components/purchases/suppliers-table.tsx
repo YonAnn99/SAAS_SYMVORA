@@ -56,14 +56,14 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
                   <TableHead className="text-xs uppercase tracking-wider">
                     {t("common.name")}
                   </TableHead>
+                  {/* El celular va antes del email: es el dato con el que se
+                      manda el pedido. La columna "Contacto" se quitó al dejar de
+                      capturarse — habría salido vacía en todo proveedor nuevo. */}
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Contacto
+                    Celular
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
                     {t("common.email")}
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">
-                    {t("common.phone")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
                     {t("common.actions")}
@@ -76,14 +76,11 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
                     <TableCell className="font-medium text-sm">
                       {supplier.nombre}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {supplier.contact_name || "-"}
+                    <TableCell className="text-sm font-mono">
+                      {supplier.telefono || "—"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {supplier.email || "-"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {supplier.telefono || "-"}
+                      {supplier.email || "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

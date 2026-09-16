@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { normalizarTelefonoMx } from "@/lib/whatsapp";
 import type { Proveedor, SupplierFormData } from "../../types/inventory.types";
 
 interface NewSupplierDialogProps {
@@ -33,7 +34,6 @@ export function NewSupplierDialog({
 
   const [formData, setFormData] = useState<SupplierFormData>({
     nombre: "",
-    contact: "",
     email: "",
     phone: "",
   });
@@ -44,12 +44,11 @@ export function NewSupplierDialog({
       if (editingSupplier) {
         setFormData({
           nombre: editingSupplier.nombre,
-          contact: editingSupplier.contact_name || "",
           email: editingSupplier.email || "",
           phone: editingSupplier.telefono || "",
         });
       } else {
-        setFormData({ nombre: "", contact: "", email: "", phone: "" });
+        setFormData({ nombre: "", email: "", phone: "" });
       }
     }, 0);
     return () => window.clearTimeout(timeout);
@@ -61,17 +60,25 @@ export function NewSupplierDialog({
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
-      setFormData({ nombre: "", contact: "", email: "", phone: "" });
+      setFormData({ nombre: "", email: "", phone: "" });
     }
     onOpenChange(next);
   };
 
   const handleConfirm = () => {
-    if (!formData.nombre) {
+    if (!formData.nombre.trim()) {
       toast.error("Ingresa el nombre del proveedor");
       return;
     }
-    onConfirm(formData);
+    // El celular se valida AL CAPTURARLO, no al querer usarlo. Antes un numero
+    // mal escrito se guardaba sin chistar y el problema salia mucho despues:
+    // el boton de WhatsApp de la orden simplemente no aparecia, sin explicar
+    // por que.
+    if (!normalizarTelefonoMx(formData.phone)) {
+      toast.error("Escribe un celular de 10 dígitos para poder mandarle pedidos");
+      return;
+    }
+    onConfirm({ ...formData, nombre: formData.nombre.trim() });
   };
 
   return (
@@ -97,31 +104,30 @@ export function NewSupplierDialog({
               className="h-8 text-sm"
             />
           </div>
+          {/* El celular va ANTES del email: es el dato que de verdad se usa
+              (mandar el pedido por WhatsApp), y el orden del formulario le dice
+              al usuario qué importa. */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Contacto</Label>
+            <Label className="text-xs">Celular *</Label>
             <Input
-              placeholder="Nombre de contacto"
-              value={formData.contact}
-              onChange={(e) => updateField("contact", e.target.value)}
+              type="tel"
+              inputMode="tel"
+              placeholder="55 1234 5678"
+              value={formData.phone}
+              onChange={(e) => updateField("phone", e.target.value)}
               className="h-8 text-sm"
             />
+            <p className="text-[11px] text-muted-foreground">
+              Con este número podrás mandarle los pedidos por WhatsApp.
+            </p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Email</Label>
+            <Label className="text-xs">Email (opcional)</Label>
             <Input
               type="email"
               placeholder="correo@ejemplo.com"
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Teléfono</Label>
-            <Input
-              placeholder="+52 ..."
-              value={formData.phone}
-              onChange={(e) => updateField("phone", e.target.value)}
               className="h-8 text-sm"
             />
           </div>

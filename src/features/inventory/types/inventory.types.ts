@@ -168,7 +168,8 @@ export interface PurchaseWithRelations extends Compra {
 
 export interface SupplierFormData {
   nombre: string;
-  contact: string;
+  /** Opcional. */
   email: string;
+  /** Celular: es lo que permite mandarle el pedido por WhatsApp. */
   phone: string;
 }
