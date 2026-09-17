@@ -53,6 +53,7 @@ describe("mensajeParaProveedor", () => {
       { nombre: "Azúcar", cantidad: 1.5, costo_unitario: 20 },
     ],
     total: 116,
+    incluyeIva: true,
     fechaEstimada: null,
   };
 
@@ -89,5 +90,29 @@ describe("mensajeParaProveedor", () => {
   it("no usa Markdown de dos asteriscos", () => {
     // WhatsApp usa UN asterisco para negrita; "**texto**" llegaría literal.
     expect(mensajeParaProveedor(datos)).not.toContain("**");
+  });
+});
+
+describe("mensajeParaProveedor: el IVA en el total", () => {
+  const base = {
+    numeroOrden: "OC-010",
+    proveedor: "Diego",
+    negocio: "Pruebas SYMVORA",
+    lineas: [{ nombre: "Café", cantidad: 2, costo_unitario: 30 }],
+    fechaEstimada: null,
+  };
+
+  it("avisa cuando el total NO lleva IVA", () => {
+    // Sin esto el proveedor ve un "Total" a secas y no puede saber si habrá
+    // que sumarle el 16% después. Es un malentendido sobre cuánto se le paga.
+    const m = mensajeParaProveedor({ ...base, total: 60, incluyeIva: false });
+    expect(m).toContain("(sin IVA)");
+    expect(m).not.toContain("(IVA incluido)");
+  });
+
+  it("avisa cuando el total ya lleva IVA", () => {
+    const m = mensajeParaProveedor({ ...base, total: 69.6, incluyeIva: true });
+    expect(m).toContain("(IVA incluido)");
+    expect(m).not.toContain("(sin IVA)");
   });
 });

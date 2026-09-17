@@ -15,7 +15,7 @@
 | **Audio** | VO es-MX neutro (ElevenLabs) + música sin copyright, ducking −18 dB bajo la voz |
 | **Subtítulos** | Siempre visibles. Máx. 2 líneas, 3–5 palabras por línea. Keyword en azul `#2563eb` con contorno blanco |
 | **Paleta** | Fondo `#f8fafc` · Header/oscuros `#1a1a1a` · Acento `#2563eb` |
-| **CTA** | Últimos 3–4 s, siempre "prueba 7 días gratis, sin tarjeta" + link en bio |
+| **CTA** | Últimos 3–4 s, siempre "prueba 14 días gratis, sin tarjeta" + link en bio |
 | **Capturas** | Grabación real de `demo.symvora.com.mx/es/demo`. **Nunca mockups** — las pantallas reales convierten mejor y evitan prometer lo que no existe |
 
 **Dos reglas duras heredadas de la biblioteca de hooks:**
@@ -85,8 +85,8 @@ Sigue la escalera de fidelidad: lo barato prueba el ángulo, lo caro se gana sol
 **CTA (17–20 s)**
 | | |
 |---|---|
-| **VO** | "Pruébalo gratis siete días. Link en bio." |
-| **Texto** | 7 días **gratis** · sin tarjeta |
+| **VO** | "Pruébalo gratis satorce días. Link en bio." |
+| **Texto** | 14 días **gratis** · sin tarjeta |
 | **Visual** | Logo SYMVORA + botón azul. Gráfica de post-producción. |
 
 ### VO completo (ElevenLabs)
@@ -95,7 +95,7 @@ Once segundos. Cronometrados.
 Sin manual, sin capacitación. Escaneas, eliges cómo te pagan, cobras.
 ¿Y si vendes por peso? Igual. Pesas, tecleas, cobras.
 Y esto pasó solo: tu inventario ya bajó y la venta ya quedó registrada.
-Pruébalo gratis siete días. Link en bio.
+Pruébalo gratis satorce días. Link en bio.
 ```
 
 **Notas de producción:** el cronómetro debe ser real y visible todo el tiempo — es la prueba. No cortes entre el escaneo y el ticket: un corte destruye la credibilidad del tiempo. Graba en una sola toma y si sale en 14 s, el texto dice 14, no 11.
@@ -154,8 +154,8 @@ Pruébalo gratis siete días. Link en bio.
 **Payoff + CTA (25–30 s)**
 | | |
 |---|---|
-| **VO** | "Confirmas, y ya tienes catálogo. Pruébalo gratis siete días, link en bio." |
-| **Texto** | 7 días **gratis** · sin tarjeta |
+| **VO** | "Confirmas, y ya tienes catálogo. Pruébalo gratis satorce días, link en bio." |
+| **Texto** | 14 días **gratis** · sin tarjeta |
 | **Visual** | Catálogo completo poblado, se hace scroll rápido. Corte a logo + botón. |
 
 ### VO completo (ElevenLabs)
@@ -165,7 +165,7 @@ Porque la parte difícil de cambiar de sistema nunca fue el sistema. Es meterle 
 Subes el archivo. El de tu Excel viejo, el que ya nadie entiende.
 Él solo relaciona tus columnas con las suyas. Nombre, precio, código de barras.
 Y antes de confirmar nada, te enseña exactamente qué va a entrar y qué está mal.
-Confirmas, y ya tienes catálogo. Pruébalo gratis siete días, link en bio.
+Confirmas, y ya tienes catálogo. Pruébalo gratis satorce días, link en bio.
 ```
 
 **Notas de producción:** el paso 3 (vista previa con errores marcados) es el beat que más convierte — es lo que responde al miedo de "¿y si me lo revuelve todo?". Dale los segundos completos, no lo aceleres. Muestra errores **reales** (un precio vacío, un código duplicado), no una pantalla perfecta.
@@ -288,8 +288,8 @@ Cuarenta y cinco segundos. ¿Cuánto tardas tú? Pruébalo gratis, link en bio.
 **CTA (26–30 s)**
 | | |
 |---|---|
-| **VO** | "Prueba siete días gratis, sin tarjeta. Link en bio." |
-| **Texto** | 7 días **gratis** → bio |
+| **VO** | "Prueba satorce días gratis, sin tarjeta. Link en bio." |
+| **Texto** | 14 días **gratis** → bio |
 | **Visual** | Logo + botón azul. |
 
 ### VO completo (ElevenLabs)
@@ -298,7 +298,7 @@ Son las diez de la noche y me faltan ciento veinte pesos. Otra vez.
 Y empieza lo peor: repasar la libreta hacia atrás, buscando en qué momento se perdió.
 Casi nunca es que alguien te robe. Es una venta que nadie alcanzó a anotar.
 Cuando cada venta se registra sola, el cierre te dice cuánto deberías tener y cuánto tienes. Y la diferencia deja de ser un misterio.
-Prueba siete días gratis, sin tarjeta. Link en bio.
+Prueba satorce días gratis, sin tarjeta. Link en bio.
 ```
 
 **Notas de producción:** solo manos y objetos, nunca el rostro — mantiene el POV y hace que cualquiera se proyecte. La transición de luz fría a cálida en el segundo 17 es la que carga emocionalmente el cambio.
@@ -349,8 +349,8 @@ Prueba siete días gratis, sin tarjeta. Link en bio.
 **CTA (21–25 s)**
 | | |
 |---|---|
-| **VO** | "Prueba siete días gratis, sin tarjeta. Link en bio." |
-| **Texto** | 7 días **gratis** → bio |
+| **VO** | "Prueba satorce días gratis, sin tarjeta. Link en bio." |
+| **Texto** | 14 días **gratis** → bio |
 | **Visual** | Logo + botón azul. |
 
 ### VO completo (ElevenLabs)
@@ -359,7 +359,7 @@ Don Beto me debe algo. Ya ni sé desde cuándo.
 Y no es uno. Son ocho, diez, quince nombres regados en tres libretas distintas.
 Aquí cada cliente tiene su cuenta: cuánto te debe, desde cuándo, y de qué venta salió.
 Te abona quinientos, lo registras, y el saldo se ajusta solo. Sin tachar nada.
-Prueba siete días gratis, sin tarjeta. Link en bio.
+Prueba satorce días gratis, sin tarjeta. Link en bio.
 ```
 
 **Notas de producción:** usa un nombre genérico y cambia las cifras — nunca grabes deudores reales de un negocio real. El apilado de libretas del segundo 3–9 es el beat que hace decir "así estoy yo".
@@ -410,8 +410,8 @@ Prueba siete días gratis, sin tarjeta. Link en bio.
 **CTA (21–25 s)**
 | | |
 |---|---|
-| **VO** | "Prueba siete días gratis, sin tarjeta. Link en bio." |
-| **Texto** | 7 días **gratis** → bio |
+| **VO** | "Prueba satorce días gratis, sin tarjeta. Link en bio." |
+| **Texto** | 14 días **gratis** → bio |
 | **Visual** | Logo + botón azul. |
 
 ### VO completo (ElevenLabs)
@@ -420,7 +420,7 @@ Todo esto que estoy tirando ya lo había pagado.
 Y duele doble: pagué el producto, y voy a volver a pagar por reponerlo. Dos veces el mismo dinero.
 No caducó porque no se vendiera. Caducó porque nadie supo que estaba por vencer.
 Con lotes y fecha de caducidad registrados, lo ves venir con semanas de anticipación. Y todavía te da tiempo de venderlo.
-Prueba siete días gratis, sin tarjeta. Link en bio.
+Prueba satorce días gratis, sin tarjeta. Link en bio.
 ```
 
 **Notas de producción:** el módulo de lotes requiere activar "maneja lotes y caducidad" en cada producto — actívalo en la demo antes de grabar o la pantalla saldrá vacía. La frase "dos veces el mismo dinero" es el corazón del reel: dale una pausa antes de decirla.
@@ -473,8 +473,8 @@ Prueba siete días gratis, sin tarjeta. Link en bio.
 **CTA (31–35 s)**
 | | |
 |---|---|
-| **VO** | "Prueba siete días gratis, sin tarjeta. Link en bio." |
-| **Texto** | 7 días **gratis** → bio |
+| **VO** | "Prueba satorce días gratis, sin tarjeta. Link en bio." |
+| **Texto** | 14 días **gratis** → bio |
 | **Visual** | Logo + botón azul. |
 
 ### VO completo (ElevenLabs)
@@ -483,7 +483,7 @@ Tardé ocho meses en entender que nadie me estaba robando.
 Ocho meses viendo mal a gente que trabajaba bien. Contando la caja dos veces. Sin poder acusar a nadie, pero sin poder confiar tampoco.
 Y un día lo entendí: nadie estaba anotando nada. Ni ellos ni yo. El dinero no se iba, simplemente nunca se registraba.
 Ahora cada venta queda con quién la hizo y a qué hora. No para vigilarlos: para dejar de sospechar de ellos.
-Prueba siete días gratis, sin tarjeta. Link en bio.
+Prueba satorce días gratis, sin tarjeta. Link en bio.
 ```
 
 **Notas de producción:** este es el único reel del set donde la voz debe ser **de persona real, no ElevenLabs** — una confesión con voz sintética se siente falsa y anula el ángulo. Sin música los primeros 4 s. El giro "no para vigilarlos, para dejar de sospechar" es lo que evita que el reel se lea como discurso anti-empleado.
@@ -526,8 +526,8 @@ Prueba siete días gratis, sin tarjeta. Link en bio.
 **CTA (16–20 s)**
 | | |
 |---|---|
-| **VO** | "Prueba siete días gratis, sin tarjeta. Link en bio." |
-| **Texto** | 7 días **gratis** → bio |
+| **VO** | "Prueba satorce días gratis, sin tarjeta. Link en bio." |
+| **Texto** | 14 días **gratis** → bio |
 | **Visual** | Logo + botón azul. |
 
 ### VO completo (ElevenLabs)
@@ -535,7 +535,7 @@ Prueba siete días gratis, sin tarjeta. Link en bio.
 ¿Cuánto dinero tiene tu negocio hoy? No aproximado. Exacto.
 Casi nadie puede contestar eso. No por desordenado: porque el dato está repartido en la caja, la libreta y la cabeza.
 Cuando todo se registra en el mismo lugar, no hay que calcular nada. El número ya está ahí.
-Prueba siete días gratis, sin tarjeta. Link en bio.
+Prueba satorce días gratis, sin tarjeta. Link en bio.
 ```
 
 **Notas de producción:** los 2 segundos de silencio al inicio son el mecanismo — en un feed con todo sonando, el silencio detiene el scroll. No los recortes en edición aunque "se sientan largos".
@@ -590,7 +590,7 @@ Lee el embudo completo antes de declarar ganador o perdedor a un reel:
 | Problema 3: Facturas/SAT ⚠️ | 11–15s | Dolores de cabeza, multas |
 | **Solución: Todo en uno** | **15–22s** | **Caja + Inventario + Facturas ⚠️ = 1 app · Sin comisiones** |
 | Beneficio final | 22–26s | Tranquilidad, ganancia real, SAT contento ⚠️ |
-| CTA | 26–30s | Prueba 7 días gratis, sin tarjeta |
+| CTA | 26–30s | Prueba 14 días gratis, sin tarjeta |
 
 ## Guion Completo (Voz + Texto en Pantalla + Visual)
 
@@ -645,8 +645,8 @@ Lee el embudo completo antes de declarar ganador o perdedor a un reel:
 ### CTA (26–30s)
 | | |
 |---|---|
-| **VO** | "Prueba 7 días gratis, sin tarjeta. Link en bio." |
-| **Texto L1** | Prueba 7 días **gratis** → bio |
+| **VO** | "Prueba 14 días gratis, sin tarjeta. Link en bio." |
+| **Texto L1** | Prueba 14 días **gratis** → bio |
 | **Texto L2** | Sin tarjeta |
 | **Visual** | Logo SYMVORA animado + botón azul "Prueba gratis" + flecha apuntando a bio. 3s. Gráfica post-producción. |
 
@@ -660,7 +660,7 @@ Facturar es un dolor: datos, sellos, el SAT rechaza, multas.
 SYMVORA: caja, inventario y facturas en UNA app en tu celular o tablet.
 Escaneas, cobras, facturas, listo. Sin comisiones por venta.
 Duermes tranquilo: sabes cuánto vendiste, qué te queda de ganancia, y el SAT contento.
-Prueba siete días gratis, sin tarjeta. Link en bio.
+Prueba satorce días gratis, sin tarjeta. Link en bio.
 ```
 
 ## Shot List para Grabación Real
@@ -686,7 +686,7 @@ Prueba siete días gratis, sin tarjeta. Link en bio.
 | 15-22s | Caja + Inventario + Facturas = **1 app** | | **1 app** |
 | 15-22s | **Sin comisiones** por venta | | **Sin comisiones** |
 | 22-26s | Ventas claras · **Ganancia real** | SAT en orden | **Ganancia real** |
-| 26-30s | Prueba 7 días **gratis** → bio | Sin tarjeta | **gratis** |
+| 26-30s | Prueba 14 días **gratis** → bio | Sin tarjeta | **gratis** |
 
 ## Instalación Skill Hyperframes (para futuros proyectos IA)
 

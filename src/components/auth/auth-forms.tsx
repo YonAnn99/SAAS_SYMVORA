@@ -562,7 +562,7 @@ export function AuthForms({
       keepalive: true,
     }).catch((err) => console.error("Welcome email failed:", err));
 
-    // La suscripción trial (7 días) se crea server-side dentro de
+    // La suscripción trial (14 días) se crea server-side dentro de
     // complete_onboarding (migración 028) — no insertar aquí.
 
     // Aplicar código promocional: consume el código y extiende el trial.
@@ -590,7 +590,7 @@ export function AuthForms({
       }
     }
 
-    // Toda cuenta nueva ya tiene su trial de 7 días (creado dentro de
+    // Toda cuenta nueva ya tiene su trial de 14 días (creado dentro de
     // complete_onboarding) — entra directo al sistema en vez de forzar el
     // pago en Conekta. El pago real se ofrece desde /billing cuando el
     // usuario decida pagar o cuando el trial esté por vencer.

@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
 import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SUPPORT_EMAIL } from "@/lib/contact";
 import { TIMEOUTS, withTimeout } from "@/lib/http/timeout";
+import { DIAS_PRUEBA } from "@/lib/trial";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -58,15 +59,15 @@ function buildEmailHtml(params: {
     : `Pago confirmado, ${businessName}`;
 
   const intro = isSignup
-    ? "Tu cuenta SYMVORA está lista. Activa tu prueba de 7 días con todo incluido: punto de venta, inventario y reportes en un solo lugar."
+    ? `Tu cuenta SYMVORA está lista. Activa tu prueba de ${DIAS_PRUEBA} días con todo incluido: punto de venta, inventario y reportes en un solo lugar.`
     : "Tu membresía SYMVORA está activa. Tu punto de venta e inventario están listos para trabajar desde hoy.";
 
   const preheader = isSignup
-    ? "Tu trial de 7 días está activo — entra y empieza a vender"
+    ? `Tu trial de ${DIAS_PRUEBA} días está activo — entra y empieza a vender`
     : "Tu membresía está activa — entra y empieza a vender";
 
   const subject = isSignup
-    ? "Tu trial de 7 días está activo — bienvenido a SYMVORA"
+    ? `Tu trial de ${DIAS_PRUEBA} días está activo — bienvenido a SYMVORA`
     : "Pago confirmado — tu SYMVORA ya está activo";
 
   const trialBox = isSignup
@@ -75,7 +76,7 @@ function buildEmailHtml(params: {
         <tr>
           <td style="background:${BRAND.bone};border-radius:12px;padding:16px 20px;">
             <p style="font-size:14px;color:${BRAND.ink};margin:0;line-height:1.6;">
-              <strong>7 días gratis, sin cargo.</strong> Tu prueba dura una semana — si no quieres continuar, cancela antes sin costo.
+              <strong>${DIAS_PRUEBA} días gratis, sin cargo.</strong> Si no quieres continuar, cancela antes sin costo.
             </p>
           </td>
         </tr>
@@ -819,7 +820,7 @@ export async function sendTrialEndedEmail(params: {
     preheader: "Tu prueba terminó — reactiva tu acceso cuando quieras",
     heading: `Tu prueba terminó, ${params.businessName}`,
     intro:
-      "Los 7 días de prueba llegaron a su fin, así que por ahora el acceso al sistema está en pausa. Activar tu suscripción lo restablece al instante.",
+      `Los ${DIAS_PRUEBA} días de prueba llegaron a su fin, así que por ahora el acceso al sistema está en pausa. Activar tu suscripción lo restablece al instante.`,
     highlight:
       "<strong>Tu información sigue guardada.</strong> Nada se borra: productos, ventas, clientes e inventario te esperan tal cual los dejaste.",
     ctaLabel: "Reactivar mi acceso",

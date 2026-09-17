@@ -24,11 +24,17 @@ import {
   type ItemRecepcion,
   type ProveedorContacto,
 } from "../services/purchase-order-service";
+import {
+  ordenLlevaIva,
+  totalesOrdenCompra,
+} from "../purchase-order-totals";
 
 export interface OrdenSaveInput {
   proveedor_id: string;
   numero_orden: string;
   notas: string;
+  /** Si la orden lleva el 16 %. Se guarda como `impuesto = 0` cuando es `false`. */
+  incluye_iva: boolean;
   items: {
     producto_id: string;
     variante_id: string | null;
@@ -101,14 +107,13 @@ export function usePurchaseOrders(
         } = await supabase.auth.getUser();
         if (!user) throw new Error("No se pudo identificar el usuario");
 
-        let subtotal = 0;
-        input.items.forEach((item) => {
-          subtotal +=
-            parseFloat(item.cantidad_solicitada || "0") *
-            parseFloat(item.costo_unitario || "0");
-        });
-        const impuesto = subtotal * 0.16;
-        const total = subtotal + impuesto;
+        // La MISMA funcion que usa el dialogo para pintar los totales. Antes
+        // aqui habia un `subtotal * 0.16` suelto: dos cuentas separadas que
+        // coincidian solo mientras el IVA fuera siempre obligatorio.
+        const { subtotal, impuesto, total } = totalesOrdenCompra(
+          input.items,
+          input.incluye_iva
+        );
 
         const details: OrderDetailItem[] = input.items
           .filter((item) => item.producto_id)
@@ -274,6 +279,9 @@ export function usePurchaseOrders(
           costo_unitario: Number(d.costo_unitario),
         })),
         total: Number(order.total),
+        // Se deduce de la orden guardada, no de un parametro: asi el mensaje
+        // no puede contradecir a lo que se guardo.
+        incluyeIva: ordenLlevaIva(order),
         fechaEstimada: order.fecha_estimada_recepcion,
       });
 

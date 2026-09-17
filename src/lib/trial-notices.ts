@@ -4,8 +4,13 @@
  * Se separa de la ruta de cron a proposito: es la unica parte con reglas de
  * negocio y la unica que merece test. La ruta solo consulta, itera y manda.
  *
- * DOS AVISOS, no mas: uno cuando faltan <=2 dias y otro cuando ya vencio. En
- * una prueba de 7 dias, mas correos se leen como insistencia.
+ * DOS AVISOS, no mas: uno cuando faltan <=2 dias y otro cuando ya vencio. Mas
+ * correos se leen como insistencia.
+ *
+ * Este razonamiento se escribio cuando la prueba duraba 7 dias. Ahora dura 14
+ * (ver `src/lib/trial.ts`), asi que un tercer aviso a mitad de camino seria
+ * defendible. Se deja en dos a proposito, como decision de producto pendiente
+ * de revisar, no por descuido.
  */
 
 /** Dias antes del vencimiento en que sale el aviso previo. */

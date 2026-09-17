@@ -153,6 +153,13 @@ export interface OrdenFormData {
   proveedor_id: string;
   numero_orden: string;
   notas: string;
+  /**
+   * Si la orden lleva el 16 %. Arranca en `false`, igual que el carrito del
+   * Punto de Venta. Al EDITAR una orden ya guardada no se usa este valor: se
+   * rehidrata con `ordenLlevaIva()` para no devolverle el IVA a una orden que
+   * se emitio sin el.
+   */
+  incluye_iva: boolean;
   items: OrderItem[];
 }
 
@@ -160,6 +167,7 @@ export const defaultOrdenFormData: OrdenFormData = {
   proveedor_id: "",
   numero_orden: "",
   notas: "",
+  incluye_iva: false,
   items: [
     { producto_id: "", variante_id: null, cantidad_solicitada: "", costo_unitario: "" },
   ],

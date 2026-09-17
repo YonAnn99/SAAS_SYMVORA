@@ -630,7 +630,7 @@
       },
       "billing": {
         "title": "Gestiona tu suscripción",
-        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Tu plan es SYMVORA Basic a $399 MXN/mes con 7 días de prueba."
+        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Tu plan es SYMVORA Basic a $399 MXN/mes con {dias} días de prueba."
       },
       "advancedSettings": {
         "title": "Configuración avanzada",
@@ -678,11 +678,9 @@
       "title": "Tu sistema todo en uno para tu tienda",
       "highlight": "hecho para tu comercio",
       "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
-      "ctaPrimary": "Prueba 7 días gratis",
+      "ctaPrimary": "Prueba {dias} días gratis",
       "ctaSecondary": "Ver demo",
       "growthLabel": "Ventas del mes",
-      "trialTitle": "Prueba 7 días gratis",
-      "trialDesc": "Sin tarjeta de crédito. Configura tu tienda en minutos y empieza a vender hoy mismo.",
       "mockup": {
         "searchPlaceholder": "Buscar producto o escanear código…",
         "products": "Productos",
@@ -882,8 +880,8 @@
           "answer": "Sí. SYMVORA funciona en cualquier dispositivo con navegador moderno e internet: iOS, Android, Windows, macOS y Linux. No necesitas instalar nada — entras desde el navegador y listo."
         },
         "3": {
-          "question": "¿Qué pasa cuando termina mi prueba gratuita de 7 días?",
-          "answer": "Al finalizar los 7 días, tu suscripción se renueva automáticamente al plan vigente ($399 MXN/mes) y se cobra al método de pago que registraste al inicio. Si no quieres continuar, puedes cancelar en cualquier momento antes del cargo sin ningún costo."
+          "question": "¿Qué pasa cuando termina mi prueba gratuita de {dias} días?",
+          "answer": "Al finalizar los {dias} días, tu suscripción se renueva automáticamente al plan vigente ($399 MXN/mes) y se cobra al método de pago que registraste al inicio. Si no quieres continuar, puedes cancelar en cualquier momento antes del cargo sin ningún costo."
         },
         "4": {
           "question": "¿Necesito conocimientos técnicos para configurarlo?",
@@ -909,7 +907,7 @@
     },
     "cta": {
       "title": "Empieza a vender hoy",
-      "subtitle": "Prueba gratis por 7 días. Sin tarjeta de crédito. Cancela cuando quieras.",
+      "subtitle": "Prueba gratis por {dias} días. Sin tarjeta de crédito. Cancela cuando quieras.",
       "monthly": "Mensual",
       "yearly": "Anual",
       "saveBadge": "Ahorra 25%",
@@ -926,9 +924,9 @@
         "catalogImport": "Importa tu catálogo desde Excel/CSV",
         "pwa": "Instálala como app, funciona sin conexión"
       },
-      "primary": "Probar 7 días gratis (Sin tarjeta)",
+      "primary": "Probar {dias} días gratis (Sin tarjeta)",
       "secondary": "Hablar por WhatsApp",
-      "trialNote": "7 días gratis · Sin tarjeta de crédito · Cancela cuando quieras"
+      "trialNote": "{dias} días gratis · Sin tarjeta de crédito · Cancela cuando quieras"
     },
     "demo": {
       "banner": {

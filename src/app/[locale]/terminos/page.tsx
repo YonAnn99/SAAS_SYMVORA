@@ -1,5 +1,6 @@
 import { LegalShell } from "@/components/marketing/legal-shell";
 import { CONTACT_EMAIL, LEGAL_EMAIL, PAYMENTS_EMAIL } from "@/lib/contact";
+import { DIAS_PRUEBA } from "@/lib/trial";
 
 export const metadata = {
   title: "Términos y Condiciones | SYMVORA",
@@ -76,8 +77,8 @@ export default function TerminosPage() {
 
       <h2>5.1 Periodo de prueba</h2>
       <p>
-        SYMVORA ofrece un periodo de prueba gratuito de siete (7) días naturales a
-        partir del registro de la cuenta. Durante este periodo el usuario puede
+        SYMVORA ofrece un periodo de prueba gratuito de {DIAS_PRUEBA} días
+        naturales a partir del registro de la cuenta. Durante este periodo el usuario puede
         utilizar todas las funcionalidades de la Plataforma sin costo y puede cancelar
         en cualquier momento sin cargo alguno. Si el usuario no cancela antes del
         vencimiento del periodo de prueba, la suscripción se renovará automáticamente

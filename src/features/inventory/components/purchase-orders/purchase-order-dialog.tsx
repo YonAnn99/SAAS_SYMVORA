@@ -6,6 +6,11 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ordenLlevaIva,
+  totalesOrdenCompra,
+} from "@/features/inventory/purchase-order-totals";
 import {
   Dialog,
   DialogContent,
@@ -76,8 +81,6 @@ interface PurchaseOrderDialogProps {
   onSave: (input: OrdenSaveInput) => void;
 }
 
-const TAX_RATE = 0.16;
-
 function getNextOrderNumber(existingOrders: OrdenCompra[]): string {
   const prefix = "OC-";
   const numbers = existingOrders
@@ -113,6 +116,10 @@ export function PurchaseOrderDialog({
           proveedor_id: editingOrder.proveedor_id,
           numero_orden: editingOrder.numero_orden,
           notas: editingOrder.notas || "",
+          // Se deduce de lo guardado, no del valor por defecto: si no, abrir
+          // una orden emitida sin IVA y guardarla le volveria a poner el 16 %.
+          // Y una orden anterior a este cambio sigue saliendo con su IVA.
+          incluye_iva: ordenLlevaIva(editingOrder),
           items: initialDetails.map((d) => ({
             producto_id: d.producto_id,
             variante_id: d.variante_id ?? null,
@@ -130,7 +137,12 @@ export function PurchaseOrderDialog({
     return () => window.clearTimeout(timeout);
   }, [open, editingOrder, initialDetails, existingOrders]);
 
-  const updateField = (field: keyof OrdenFormData, value: string) => {
+  // Genérico por campo: `incluye_iva` es booleano y el resto texto, así que
+  // fijar `value: string` obligaría a un cast en el único campo que no lo es.
+  const updateField = <K extends keyof OrdenFormData>(
+    field: K,
+    value: OrdenFormData[K]
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -202,13 +214,12 @@ export function PurchaseOrderDialog({
     }));
   };
 
-  const subtotal = formData.items.reduce((acc, item) => {
-    const cantidad = parseFloat(item.cantidad_solicitada) || 0;
-    const costo = parseFloat(item.costo_unitario) || 0;
-    return acc + cantidad * costo;
-  }, 0);
-  const impuesto = subtotal * TAX_RATE;
-  const total = subtotal + impuesto;
+  // La MISMA funcion que usa el hook al guardar. Antes eran dos cuentas
+  // distintas y solo contaba la del hook, asi que la pantalla podia mentir.
+  const { subtotal, impuesto, total } = totalesOrdenCompra(
+    formData.items,
+    formData.incluye_iva
+  );
 
   const handleSave = () => {
     if (!formData.proveedor_id) {
@@ -242,6 +253,7 @@ export function PurchaseOrderDialog({
       proveedor_id: formData.proveedor_id,
       numero_orden: formData.numero_orden,
       notas: formData.notas || "",
+      incluye_iva: formData.incluye_iva,
       items: details.map((d) => ({
         producto_id: d.producto_id,
         variante_id: d.variante_id,
@@ -428,14 +440,32 @@ export function PurchaseOrderDialog({
             />
           </div>
 
-          <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm font-mono">
-            <span className="text-muted-foreground text-xs">
+          <div className="flex flex-col gap-1 border-t pt-3 text-sm font-mono">
+            <span className="self-end text-muted-foreground text-xs">
               Subtotal: ${subtotal.toFixed(2)}
             </span>
-            <span className="text-muted-foreground text-xs">
-              IVA (16%): ${impuesto.toFixed(2)}
-            </span>
-            <span className="font-semibold">
+
+            {/* Mismo patrón que el carrito del Punto de Venta: la casilla a la
+                izquierda y el importe a la derecha, que solo aparece cuando el
+                IVA está activo. */}
+            <div className="flex items-center justify-between text-xs">
+              <label className="flex cursor-pointer select-none items-center gap-1.5 font-sans text-muted-foreground">
+                <Checkbox
+                  checked={formData.incluye_iva}
+                  onCheckedChange={(checked) =>
+                    updateField("incluye_iva", checked === true)
+                  }
+                />
+                Incluir IVA (16%)
+              </label>
+              {formData.incluye_iva && (
+                <span className="text-muted-foreground">
+                  ${impuesto.toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            <span className="self-end font-semibold">
               Total: ${total.toFixed(2)}
             </span>
           </div>

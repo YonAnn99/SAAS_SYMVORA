@@ -601,11 +601,9 @@
       "title": "Your all in one system for your store",
       "highlight": "built for your store",
       "subtitle": "Point of sale, inventory and finance — all in one, no per-sale commissions, with Spanish support.",
-      "ctaPrimary": "7-day free trial",
+      "ctaPrimary": "{dias}-day free trial",
       "ctaSecondary": "See demo",
       "growthLabel": "Monthly sales",
-      "trialTitle": "7-day free trial",
-      "trialDesc": "No credit card required. Set up your store in minutes and start selling today.",
       "mockup": {
         "searchPlaceholder": "Search product or scan barcode…",
         "products": "Products",
@@ -805,8 +803,8 @@
           "answer": "Yes. SYMVORA works on any device with a modern browser and internet: iOS, Android, Windows, macOS and Linux. You don't need to install anything — open it from your browser and you're set."
         },
         "3": {
-          "question": "What happens when my 7-day free trial ends?",
-          "answer": "After 7 days, your subscription renews automatically to the current plan ($399 MXN/month) and is charged to the payment method you registered at signup. If you don't want to continue, you can cancel anytime before the charge at no cost."
+          "question": "What happens when my {dias}-day free trial ends?",
+          "answer": "After {dias} days, your subscription renews automatically to the current plan ($399 MXN/month) and is charged to the payment method you registered at signup. If you don't want to continue, you can cancel anytime before the charge at no cost."
         },
         "4": {
           "question": "Do I need technical knowledge to set it up?",
@@ -832,7 +830,7 @@
     },
     "cta": {
       "title": "Start selling today",
-      "subtitle": "Free 7-day trial. No credit card. Cancel anytime.",
+      "subtitle": "Free {dias}-day trial. No credit card. Cancel anytime.",
       "monthly": "Monthly",
       "yearly": "Yearly",
       "saveBadge": "Save 25%",
@@ -849,9 +847,9 @@
         "catalogImport": "Import your catalog from Excel/CSV",
         "pwa": "Installable app, works offline"
       },
-      "primary": "Try 7 days free (No credit card)",
+      "primary": "Try {dias} days free (No credit card)",
       "secondary": "Chat on WhatsApp",
-      "trialNote": "7-day free trial · No credit card · Cancel anytime"
+      "trialNote": "{dias}-day free trial · No credit card · Cancel anytime"
     },
     "demo": {
       "banner": {

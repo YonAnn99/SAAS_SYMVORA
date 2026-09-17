@@ -20,9 +20,9 @@
 | 4 | 3 · Le fías a un cliente y **se te olvida cuánto te debe** |
 | 5 | 4 · Tu empleado vendió, pero **no sabes qué ni cuándo** |
 | 6 | 5 · Revisas tus números **"a ojo"** al final del mes |
-| 7 | Si te pasaron 2 o más: es hora de un sistema. → "Prueba SYMVORA gratis 7 días" |
+| 7 | Si te pasaron 2 o más: es hora de un sistema. → "Prueba SYMVORA gratis 14 días" |
 
-**Caption:** "Si te identificaste con 2 o más de estas señales, no es que seas desordenado: es que le estás pidiendo a una libreta un trabajo que no puede hacer. Un sistema no es un lujo de negocio grande, es lo que evita que el dinero se te escape sin que lo notes. Prueba SYMVORA gratis 7 días, sin tarjeta." + hashtags (#NegocioLocal #Emprendedor #ControlFinanciero #PuntoDeVenta #PymesMexico)
+**Caption:** "Si te identificaste con 2 o más de estas señales, no es que seas desordenado: es que le estás pidiendo a una libreta un trabajo que no puede hacer. Un sistema no es un lujo de negocio grande, es lo que evita que el dinero se te escape sin que lo notes. Prueba SYMVORA gratis 14 días, sin tarjeta." + hashtags (#NegocioLocal #Emprendedor #ControlFinanciero #PuntoDeVenta #PymesMexico)
 
 **Prompt imagen:** "Carrusel 4:5 limpio tipo infografía, header oscuro #1a1a1a con logo chico, iconos de libreta tachada, calculadora, signo de interrogación, paleta #f8fafc con acentos #2563eb, sin texto"
 
@@ -44,7 +44,7 @@
 | 7 | Paso 4 · Confirmas y listo: catálogo completo, sin errores de dedo |
 | 8 | Resultado: de un Excel a un catálogo funcionando. → "Pruébalo gratis" |
 
-**Caption:** "Pasar tu catálogo de un Excel viejo a un sistema nuevo suena a semanas de trabajo. Con la importación de SYMVORA fueron 10 minutos: subes el archivo, revisas la vista previa, confirmas. Nada de capturar producto por producto. Prueba gratis 7 días, sin tarjeta." + hashtags (#MigracionDeDatos #Inventario #PuntoDeVenta #NegocioLocal #PymesMexico)
+**Caption:** "Pasar tu catálogo de un Excel viejo a un sistema nuevo suena a semanas de trabajo. Con la importación de SYMVORA fueron 10 minutos: subes el archivo, revisas la vista previa, confirmas. Nada de capturar producto por producto. Prueba gratis 14 días, sin tarjeta." + hashtags (#MigracionDeDatos #Inventario #PuntoDeVenta #NegocioLocal #PymesMexico)
 
 **Prompt imagen:** "Carrusel 4:5 con laptop mostrando una hoja de cálculo transformándose en una lista de productos ordenada, paleta #f8fafc/#1a1a1a/#2563eb, sin texto"
 
@@ -86,7 +86,7 @@
 | 5 | No estoy en contra de los sistemas robustos. Estoy en contra de vendértelos a ti, que solo quieres cobrar rápido |
 | 6 | SYMVORA se aprende en un turno, no en un curso. → "Pruébalo gratis" |
 
-**Caption:** "Si tu cajero necesita capacitación de días para hacer una venta, no es que le falte experiencia: es que el sistema está mal diseñado para tu negocio. Vender debería ser lo más simple del sistema, no lo más complicado. En SYMVORA, cualquiera cobra desde el primer turno. Prueba gratis 7 días." + hashtags (#PuntoDeVenta #NegocioLocal #Software #PymesMexico #Emprendedor)
+**Caption:** "Si tu cajero necesita capacitación de días para hacer una venta, no es que le falte experiencia: es que el sistema está mal diseñado para tu negocio. Vender debería ser lo más simple del sistema, no lo más complicado. En SYMVORA, cualquiera cobra desde el primer turno. Prueba gratis 14 días." + hashtags (#PuntoDeVenta #NegocioLocal #Software #PymesMexico #Emprendedor)
 
 **Prompt imagen:** "Carrusel 4:5 editorial, pantalla saturada de botones vs pantalla limpia con un solo botón grande, header oscuro #1a1a1a, acentos #2563eb, sin texto"
 
@@ -108,7 +108,7 @@
 | 6 | Paso 3 · Elige cómo te pagan: efectivo, tarjeta, transferencia o crédito |
 | 7 | Paso 4 · Cobra e imprime o comparte el ticket. Así de simple. → "Pruébalo gratis" |
 
-**Caption:** "Vender no debería tomar más tiempo que hacer la fila. Escanear, agregar, cobrar: 15 segundos y la venta ya quedó registrada sola, sin que tengas que anotar nada después. Así de simple debería ser el punto de venta de tu negocio. Prueba SYMVORA gratis 7 días, sin tarjeta." + hashtags (#PuntoDeVenta #POS #NegocioLocal #VenderMas #PymesMexico)
+**Caption:** "Vender no debería tomar más tiempo que hacer la fila. Escanear, agregar, cobrar: 15 segundos y la venta ya quedó registrada sola, sin que tengas que anotar nada después. Así de simple debería ser el punto de venta de tu negocio. Prueba SYMVORA gratis 14 días, sin tarjeta." + hashtags (#PuntoDeVenta #POS #NegocioLocal #VenderMas #PymesMexico)
 
 **Prompt imagen:** "Capturas reales del POS de SYMVORA mostrando el carrito y el cobro, header oscuro #1a1a1a, acentos #2563eb — usar pantallas reales de la demo, no mockups"
 
@@ -128,7 +128,7 @@
 | 4 | ¿Qué resolvemos? Que dejes de perder tiempo (y dinero) haciendo cuentas a mano al final del día |
 | 5 | Todo en español y pensado para cómo se vende de verdad en un mostrador: rápido, sin menús complicados |
 | 6 | Sin letras chiquitas: pagas una mensualidad fija, **sin comisión** por cada venta que hagas |
-| 7 | Así nos ves en acción → "Prueba SYMVORA gratis 7 días, sin tarjeta" |
+| 7 | Así nos ves en acción → "Prueba SYMVORA gratis 14 días, sin tarjeta" |
 
 **Caption:** "Nueva por aquí 👋 Somos SYMVORA: un sistema de punto de venta, inventario y control financiero para negocios en México que están cansados de llevar todo a mano. Nada de facturas gigantes de software para 'empresas grandes' — esto está hecho para el negocio del día a día, del que abre la cortina y ya quiere vender. Si es tu primera vez viéndonos, prueba gratis 7 días, sin tarjeta." + hashtags (#SYMVORA #NegocioLocal #Emprendedor #PymesMexico #PuntoDeVenta)
 
@@ -149,9 +149,9 @@
 | 4 | 3 · **Llevar el registro de tus clientes** — nombre y teléfono, para saber a quién le fías y cuánto te debe |
 | 5 | 4 · **Ver tu dinero real** — cierres de caja y reportes, sin adivinar cuánto tienes de verdad |
 | 6 | 5 · **Usarlo desde tu celular** — se instala como app directo desde el navegador, sin bajar nada de una tienda de apps |
-| 7 | Todo esto en un solo sistema, sin comisión extra por vender → "Pruébalo gratis 7 días" |
+| 7 | Todo esto en un solo sistema, sin comisión extra por vender → "Pruébalo gratis 14 días" |
 
-**Caption:** "Esto es lo que puedes hacer con SYMVORA desde que abres tu cuenta: cobrar, controlar tu inventario, llevar tus clientes y ver tu dinero real, todo desde el celular o la tablet que ya tienes. Nada de instalar cinco apps distintas para hacer lo que un solo sistema puede hacer por ti. Prueba SYMVORA gratis 7 días, sin tarjeta." + hashtags (#SYMVORA #PuntoDeVenta #Inventario #NegocioLocal #PymesMexico)
+**Caption:** "Esto es lo que puedes hacer con SYMVORA desde que abres tu cuenta: cobrar, controlar tu inventario, llevar tus clientes y ver tu dinero real, todo desde el celular o la tablet que ya tienes. Nada de instalar cinco apps distintas para hacer lo que un solo sistema puede hacer por ti. Prueba SYMVORA gratis 14 días, sin tarjeta." + hashtags (#SYMVORA #PuntoDeVenta #Inventario #NegocioLocal #PymesMexico)
 
 **Prompt imagen:** "Carrusel 4:5 tipo infografía de producto, iconos de escáner, caja registradora, libreta de clientes, gráfica de reporte y celular, header oscuro #1a1a1a, paleta #f8fafc con acentos #2563eb, sin texto"
 
@@ -172,9 +172,9 @@
 | 5 | Paso 3 · Haz una venta de verdad: busca un producto, agrégalo al carrito y cobra |
 | 6 | Paso 4 · Mira lo que pasó solo: **el inventario bajó** y la venta ya quedó registrada con su hora |
 | 7 | Paso 5 · Abre y cierra la caja, revisa los reportes. **Rompe lo que quieras**: cada vez que entras, la demo se reinicia sola |
-| 8 | Cuando quieras el tuyo, con tus productos → "Prueba 7 días gratis, sin tarjeta" |
+| 8 | Cuando quieras el tuyo, con tus productos → "Prueba 14 días gratis, sin tarjeta" |
 
-**Caption:** "La pregunta que más nos llega es '¿y cómo lo pruebo sin comprometerme?'. Así: entras a demo.symvora.com.mx y ya estás adentro. No te pedimos correo, no te pedimos tarjeta, no tienes que crear ninguna cuenta ni pagar ninguna membresía para ver cómo funciona. Es el sistema real, con la tienda de ejemplo ya cargada, para que hagas una venta, muevas inventario y cierres una caja como lo harías un martes cualquiera. Y no tengas miedo de mover nada: cada vez que alguien entra, la demo se reinicia sola, así que no hay forma de que la descompongas. Cuando ya lo hayas visto y quieras el tuyo con tus propios productos, ahí sí empiezas tu prueba de 7 días gratis, también sin tarjeta." + hashtags (#Demo #PruebaGratis #PuntoDeVenta #NegocioLocal #PymesMexico)
+**Caption:** "La pregunta que más nos llega es '¿y cómo lo pruebo sin comprometerme?'. Así: entras a demo.symvora.com.mx y ya estás adentro. No te pedimos correo, no te pedimos tarjeta, no tienes que crear ninguna cuenta ni pagar ninguna membresía para ver cómo funciona. Es el sistema real, con la tienda de ejemplo ya cargada, para que hagas una venta, muevas inventario y cierres una caja como lo harías un martes cualquiera. Y no tengas miedo de mover nada: cada vez que alguien entra, la demo se reinicia sola, así que no hay forma de que la descompongas. Cuando ya lo hayas visto y quieras el tuyo con tus propios productos, ahí sí empiezas tu prueba de 14 días gratis, también sin tarjeta." + hashtags (#Demo #PruebaGratis #PuntoDeVenta #NegocioLocal #PymesMexico)
 
 **Prompt imagen:** "Carrusel 4:5 tipo tutorial paso a paso, numeración grande visible en cada slide, laptop y celular mostrando un panel de sistema limpio, header oscuro #1a1a1a, paleta #f8fafc con acentos #2563eb, sin texto"
 
@@ -235,7 +235,7 @@
 - **#:** #Tips #Consejos #NegocioLocal #PuntoDeVenta
 
 ### SP8 — Promo: prueba gratis
-- **Imagen:** mockup de tablet + texto. **Copy:** "7 días gratis. Sin tarjeta. Sin comisiones por venta. Punto de venta, inventario y finanzas en español. Si no te gusta, cancelas."
+- **Imagen:** mockup de tablet + texto. **Copy:** "14 días gratis. Sin tarjeta. Sin comisiones por venta. Punto de venta, inventario y finanzas en español. Si no te gusta, cancelas."
 - **CTA:** Enlace en bio → app.symvora.com.mx
 - **Prompt:** "Mockup premium de tablet POS, fondo #f8fafc, header oscuro #1a1a1a, botón azul #2563eb, 1:1, sin texto"
 - **#:** #PruebaGratis #Software #NegocioLocal #Oferta

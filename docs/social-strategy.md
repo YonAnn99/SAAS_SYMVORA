@@ -11,7 +11,7 @@
 | **Producto** | SaaS todo-en-uno para negocios en México: POS, inventario, finanzas, compras y facturación CFDI 4.0. Sin comisiones por venta, soporte en español. |
 | **Audiencia (ICP)** | Dueños de abarrotes/tienditas, verdulerías, tiendas de ropa, ferreterías, farmacias, papelerías. 30–55 años, poco tiempo, manejo básico de smartphone, viven en Facebook/WhatsApp. |
 | **Dolor central** | "No tengo tiempo ni ganas de aprender software complicado; mi caja nunca cuadra; el SAT me da miedo; otros sistemas cobran comisiones." |
-| **Objetivo primario** | Prueba gratis de 7 días (sin tarjeta) → suscripción paga. |
+| **Objetivo primario** | Prueba gratis de 14 días (sin tarjeta) → suscripción paga. |
 | **Acción deseada** | Click a bio/WhatsApp → registrarse en `app.symvora.com.mx`. |
 | **Voz de marca** | Cercana, directa, cero jerga. Habla como quien ya pasó por el mostrador. Español de México. |
 | **Marca visual** | Fondo `#1a1a1a` (headers oscuros), CTA azul `#2563eb`, fondo claro `#f8fafc`, logo SYMVORA (`.agents`/brand → `public/symvora-logo-email.png` como base). Tipografías: sans-serif redondeada (interés: Manrope/Inter), sin serif decorativas. |
@@ -169,7 +169,7 @@ Ver **`docs/social-calendar.md`**. Ritmo semanal tipo:
 
 - [ ] Crear/cablear **Meta Business Suite** (FB + IG) y **TikTok Business** y **YouTube**.
 - [ ] Bios: "SYMVORA — Sistema de punto de venta, inventario y CFDI 4.0 para tu tienda. Sin comisiones. 🇲🇽". Link → `https://app.symvora.com.mx` (o linktree con prueba gratis + WhatsApp).
-- [ ] Portada/avatar con el logo; imagen de portada con CTA "Prueba 7 días gratis".
+- [ ] Portada/avatar con el logo; imagen de portada con CTA "Prueba 14 días gratis".
 - [ ] Foto de perfil consistente en todas las plataformas.
 - [ ] Marcar **categoría "Software / Tecnología"** y ubicación de la ciudad del usuario (buscan "cerca de mí").
 - [ ] Enlace WhatsApp Business con mensaje predefinido: "Hola, quiero probar SYMVORA gratis".

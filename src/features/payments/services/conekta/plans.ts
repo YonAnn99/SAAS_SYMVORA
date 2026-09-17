@@ -12,10 +12,10 @@ export async function ensurePlanExists(
       currency: "MXN",
       interval: (period === "yearly" ? "year" : "month") as "year" | "month",
       frequency: 1,
-      // Sin trial aquí: el trial de 7 días ya lo maneja SYMVORA a nivel de
+      // Sin trial aquí: el trial de 14 días ya lo maneja SYMVORA a nivel de
       // app (subscriptions.trial_end) antes de que el usuario llegue a
       // "Pagar con tarjeta". Ponerle trial también al plan de Conekta
-      // duplicaba el periodo de prueba y retrasaba 7 días el primer cobro
+      // duplicaba el periodo de prueba y retrasaba el primer cobro
       // real, incluso para quien decide pagar de inmediato.
       trial_period_days: 0,
       max_retries: 3,

@@ -27,11 +27,12 @@ import {
   faqPageSchema,
   softwareApplicationSchema,
 } from "@/lib/seo/structured-data";
+import { DIAS_PRUEBA } from "@/lib/trial";
 
 export const metadata: Metadata = {
   title: "SYMVORA — POS e inventario para PyMEs",
   description:
-    "Sistema de punto de venta e inventarios para PyMEs en México. Sin comisiones por venta y demo gratuita de 7 días.",
+    `Sistema de punto de venta e inventarios para PyMEs en México. Sin comisiones por venta y demo gratuita de ${DIAS_PRUEBA} días.`,
   alternates: {
     canonical: "/es",
   },

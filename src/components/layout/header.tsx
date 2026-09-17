@@ -28,8 +28,10 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { usePermissions } from "@/hooks/use-permissions";
 import { moduleLabelKeyForPath } from "@/lib/navigation";
 import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
+import { ProfileDialog } from "@/components/profile/profile-dialog";
 import {
   Dialog,
   DialogContent,
@@ -49,8 +51,13 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { tenantId, tenantName, tenantLogo } = useCurrentTenant();
+  const { tenantId, tenantName, tenantLogo, role } = useCurrentTenant();
+  const { can } = usePermissions();
   const [mounted, setMounted] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const canManageSettings =
+    role === "SUPER_ADMIN" || role === "ORG_ADMIN" || can("org.manage_settings");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -187,14 +194,22 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="end">
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => setProfileOpen(true)}
+            >
               <User className="mr-2 h-4 w-4" />
               <span className="text-sm">Perfil</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              <span className="text-sm">{t("layout.settings")}</span>
-            </DropdownMenuItem>
+            {canManageSettings && (
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push("/settings")}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span className="text-sm">{t("layout.settings")}</span>
+              </DropdownMenuItem>
+            )}
             {/* Sin esta entrada, el diálogo de modo sin conexión (y con él
                 el diagnóstico de por qué la app no abre en modo avión) era
                 inalcanzable después de la primera vez. */}
@@ -246,6 +261,8 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </header>
   );
 }

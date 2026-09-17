@@ -13,7 +13,7 @@
 ### P1 · Lun · EDU · C — "5 errores de facturación que te pueden costar una multa"
 - **Hook (slide 1):** "5 errores con el SAT que cometen 8 de cada 10 tiendas"
 - **Copy:** El SAT no avisa antes de multar. Estos son los 5 errores que más vemos en negocios que recién empiezan a facturar — y cómo evitarlos. → desliza
-- **CTA:** ¿Quieres facturar bien desde el día 1? Escríbenos y prueba SYMVORA gratis 7 días.
+- **CTA:** ¿Quieres facturar bien desde el día 1? Escríbenos y prueba SYMVORA gratis 14 días.
 - **Prompt imagen:** "Estilo editorial limpio, tarjetas 4:5, header oscuro #1a1a1a con logo SYMVORA chico, iconos de factura, paleta #f8fafc con acentos azules #2563eb, sin texto en las imágenes"
 - **#:** #FacturacionCFDI #SAT #FacturacionElectronica #NegociosMexico #TiendaEnLinea
 
@@ -45,9 +45,9 @@
 - **Prompt video:** "Tablet escaneando código de barras, lista de productos en pantalla, bodega de tienda de abarrotes con cajas, luz natural, cámara fija con zoom al escáner, sin texto"
 - **#:** #Inventario #CodigoDeBarras #Abarrotes #ControlDeInventario #PuntoDeVenta
 
-### P6 · Sáb · PRO · E — "7 días gratis, sin tarjeta"
-- **Hook (imagen):** "Prueba SYMVORA 7 días GRATIS" (superpuesto en edición)
-- **Copy:** 7 días gratis. Sin tarjeta. Sin comisiones por venta. Punto de venta, inventario y facturación CFDI 4.0 en un solo lugar, en español y con soporte para tu negocio. Cancelas cuando quieras.
+### P6 · Sáb · PRO · E — "14 días gratis, sin tarjeta"
+- **Hook (imagen):** "Prueba SYMVORA 14 días GRATIS" (superpuesto en edición)
+- **Copy:** 14 días gratis. Sin tarjeta. Sin comisiones por venta. Punto de venta, inventario y facturación CFDI 4.0 en un solo lugar, en español y con soporte para tu negocio. Cancelas cuando quieras.
 - **CTA:** Enlace en bio → app.symvora.com.mx
 - **Prompt imagen:** "Tarjeta 4:5 premium, smartphone mostrando app tipo POS con header oscuro y botón azul 'Probar gratis', luz suave, fondo neutro #f8fafc, sin texto"
 - **#:** #PruebaGratis #Software #PuntoDeVenta #NegocioLocal #Tecnologia
@@ -100,7 +100,7 @@
 ### P13 · Vie · DEM · R — "Reporte del día en un tap"
 - **Hook:** [Texto] "¿Qué vendiste HOY?" + VO "No esperes al fin de mes para saber cómo te fue."
 - **Guion (VO):** "Un tap y tienes tus ventas de hoy, el ticket promedio y lo que más se vendió. Decide sobre datos, no sobre corazonadas."
-- **CTA:** "Prueba gratis 7 días → bio"
+- **CTA:** "Prueba gratis 14 días → bio"
 - **Prompt video:** "Tablet mostrando dashboard de ventas con gráficas, dueño de tienda tocando pantalla, tienda de abarrotes, luz natural, cámara fija, sin texto"
 - **#:** #ReporteDeVentas #Dashboard #PuntoDeVenta #NegocioLocal #Data
 
@@ -159,14 +159,14 @@
 ### P21 · Vie · DEM · R — "Ticket de venta al instante"
 - **Hook:** [Texto] "Cobra y el ticket sale SOLO" + VO "¿Imprimes tickets o escribes a mano?"
 - **Guion (VO):** "Cobra la venta y el ticket sale al instante, con IVA, descuentos y tu logo. Sin libretas, sin notas de memoria."
-- **CTA:** "Prueba gratis 7 días → bio"
+- **CTA:** "Prueba gratis 14 días → bio"
 - **Prompt video:** "Impresora térmica imprimiendo ticket, manos de vendedor, caja registradora de tienda, luz natural, cámara fija con zoom al ticket, sin texto"
 - **#:** #TicketDeVenta #ImpresoraTermica #PuntoDeVenta #NegocioLocal
 
 ### P22 · Sáb · PRO · E — Testimonio + prueba gratis
 - **Hook (imagen):** "💬 'Antes no sabía si ganaba o perdía' — dueña de abarrotes"
 - **Copy:** "Con SYMVORA por fin veo mis ventas, mi inventario y mis facturas en un solo lugar. Y sin comisiones." → historias reales de clientes (sustituir nombre).
-- **CTA:** "Quieres lo mismo? 7 días gratis en bio."
+- **CTA:** "Quieres lo mismo? 14 días gratis en bio."
 - **Prompt imagen:** "Tarjeta 4:5 con foto cálida de dueña de abarrotes sonriendo (generada con IA), logo chico, header oscuro, sin texto"
 - **#:** #Testimonio #Abarrotes #PuntoDeVenta #CasosDeExito #NegocioLocal
 
@@ -211,13 +211,13 @@
 ### P28 · Vie · DEM · R — "Cierra tu caja y cuadra sola"
 - **Hook:** [Texto] "Tu caja CUADRA SOLA al cerrar" + VO "¿Cansado de cuadrar a mano?"
 - **Guion (VO):** "Cada venta queda registrada. Al cerrar, SYMVORA te dice el esperado, el real y la diferencia. Si hay sobrante o faltante, te avisa al instante."
-- **CTA:** "Prueba gratis 7 días → bio"
+- **CTA:** "Prueba gratis 14 días → bio"
 - **Prompt video:** "Cajero cerrando caja en tablet, saldo en verde 'Cuadre correcto', billetes en caja registradora, luz de tienda, cámara fija, sin texto"
 - **#:** #CuadreDeCaja #CierreDeCaja #PuntoDeVenta #ControlFinanciero
 
 ### P29 · Sáb · PRO · E — "Cierra el mes: prueba gratis"
 - **Hook (imagen):** "Este mes, toma el control de tu tienda"
-- **Copy:** 7 días gratis. Sin tarjeta. Sin comisiones. POS, inventario, facturación CFDI 4.0 y finanzas en español. Y si invitas a otro negocio, ambos ganan 1 mes gratis.
+- **Copy:** 14 días gratis. Sin tarjeta. Sin comisiones. POS, inventario, facturación CFDI 4.0 y finanzas en español. Y si invitas a otro negocio, ambos ganan 1 mes gratis.
 - **CTA:** Enlace en bio → app.symvora.com.mx
 - **Prompt imagen:** "Tarjeta 4:5 premium, tablet POS con gráficas, fondo #f8fafc, header oscuro #1a1a1a, botón azul #2563eb, sin texto"
 - **#:** #PruebaGratis #PuntoDeVenta #NegocioLocal #Software #Oferta
