@@ -22,6 +22,7 @@ import {
   type PendingSale,
 } from "@/lib/offline/queue";
 import { completeSale } from "../services/pos-service";
+import { hayConexionReal } from "@/lib/offline/connectivity";
 
 export interface SaleSyncState {
   pendingCount: number;
@@ -33,29 +34,6 @@ export interface SaleSyncState {
   oldestPendingAt: string | null;
   refresh: () => Promise<void>;
   syncNow: () => Promise<void>;
-}
-
-/**
- * `navigator.onLine` miente: devuelve `true` estando conectado a un WiFi sin
- * salida a internet, que es justo lo que pasa en un local con el módem caído.
- * Antes de vaciar la cola se confirma con una petición real y barata.
- */
-async function hasRealConnectivity(): Promise<boolean> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) return false;
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    // Archivo estático propio: no gasta cuota de Supabase y esquiva el caché.
-    await fetch(`/icons/icon-192.png?ping=${Date.now()}`, {
-      method: "HEAD",
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export function useSaleSync(tenantId: string | null): SaleSyncState {
@@ -92,7 +70,7 @@ export function useSaleSync(tenantId: string | null): SaleSyncState {
       return;
     }
 
-    if (!(await hasRealConnectivity())) return;
+    if (!(await hayConexionReal())) return;
 
     runningRef.current = true;
     setSyncing(true);

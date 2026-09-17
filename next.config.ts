@@ -85,6 +85,16 @@ const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   disable: isDev,
+  // El valor por defecto es TRUE, y hace que `sw-entry` registre
+  // `window.addEventListener("online", () => location.reload())`.
+  //
+  // En una caja registradora eso es inaceptable: al volver la red la pagina se
+  // recarga sola y SE PIERDE EL CARRITO a medio cobrar. Ademas, ese listener se
+  // registra al inicializar el bundle, antes que cualquier `useEffect`, asi que
+  // ganaba la carrera a los nuestros: el precalentado de rutas
+  // (`offline-route-warmer`) y la sincronizacion de ventas (`use-sale-sync`)
+  // escuchan el mismo evento `online` y nunca llegaban a ejecutarse.
+  reloadOnOnline: false,
 });
 
 export default withSerwist(

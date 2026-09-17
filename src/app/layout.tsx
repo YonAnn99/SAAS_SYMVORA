@@ -96,8 +96,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og-symvora.jpeg",
-        width: 2848,
-        height: 1496,
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
         alt: "SYMVORA — Punto de venta e inventario para PyMEs",
       },
     ],

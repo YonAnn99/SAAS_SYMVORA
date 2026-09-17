@@ -1,158 +1,173 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { warmOfflineRoutes } from "@/lib/offline/route-cache";
+import { describe, expect, it } from "vitest";
+import {
+  APP_PAGE_PATH,
+  esRespuestaUtilizable,
+  rutasAPrecalentar,
+  rutasPorPrecalentar,
+} from "@/lib/offline/route-cache";
 
-const MARCA = "symvora_offline_warm_at";
+/**
+ * El fallo que previenen estos test: en Android, con la PWA instalada, abrir en
+ * modo avion mostraba una pantalla de "Sin conexion" sin salida. La causa era
+ * que la cache del panel estaba vacia y el precalentado no la volvia a
+ * intentar.
+ */
 
-/** Respuesta como la que devuelve `fetch` tras seguir un redirect a /login. */
-function redirigida(destino: string): Response {
-  return {
-    ok: true,
-    status: 200,
-    redirected: true,
-    url: `http://localhost${destino}`,
-  } as Response;
-}
+const HORA = 60 * 60 * 1000;
+const MINUTO = 60 * 1000;
+const AHORA = 1_700_000_000_000;
 
-function correcta(path: string): Response {
-  return {
-    ok: true,
-    status: 200,
-    redirected: false,
-    url: `http://localhost${path}`,
-  } as Response;
-}
-
-describe("precalentado de rutas offline", () => {
-  beforeEach(() => {
-    window.localStorage.clear();
-    // Sin service worker controlando, `fetch` gastaría datos sin guardar nada.
-    Object.defineProperty(navigator, "serviceWorker", {
-      value: { controller: {} },
-      configurable: true,
-    });
-    Object.defineProperty(navigator, "onLine", {
-      value: true,
-      configurable: true,
-    });
+describe("rutasAPrecalentar", () => {
+  it("antepone el idioma a cada ruta", () => {
+    expect(rutasAPrecalentar("es")).toEqual(["/es/dashboard", "/es/pos"]);
+    expect(rutasAPrecalentar("en")).toEqual(["/en/dashboard", "/en/pos"]);
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("el dashboard va primero, porque es el start_url de la PWA", () => {
+    // Si el arranque en frio no encuentra el dashboard, da igual lo demas.
+    expect(rutasAPrecalentar("es")[0]).toBe("/es/dashboard");
+  });
+});
+
+describe("rutasPorPrecalentar", () => {
+  const TODAS = new Set(["/es/dashboard", "/es/pos"]);
+
+  it("pide una ruta AUSENTE aunque el candado siga vigente", () => {
+    // Este es el test que habria cazado el fallo. Antes, la marca de tiempo
+    // bloqueaba el reintento seis horas SIN mirar si la cache tenia algo, asi
+    // que un dispositivo que perdia la cache se quedaba sin Punto de Venta.
+    const recienIntentado = { at: AHORA - MINUTO, ok: true };
+    expect(
+      rutasPorPrecalentar("es", new Set(), recienIntentado, AHORA)
+    ).toEqual(["/es/dashboard", "/es/pos"]);
   });
 
-  it("guarda las rutas y deja marca cuando todo va bien", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation((path: string) => Promise.resolve(correcta(path)));
-    vi.stubGlobal("fetch", fetchMock);
+  it("no repite una ruta ya guardada antes de seis horas", () => {
+    const hace1h = { at: AHORA - HORA, ok: true };
+    expect(rutasPorPrecalentar("es", TODAS, hace1h, AHORA)).toEqual([]);
+  });
 
-    await warmOfflineRoutes("es");
-
-    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+  it("refresca lo guardado pasadas seis horas", () => {
+    const hace7h = { at: AHORA - 7 * HORA, ok: true };
+    expect(rutasPorPrecalentar("es", TODAS, hace7h, AHORA)).toEqual([
       "/es/dashboard",
       "/es/pos",
     ]);
-    expect(window.localStorage.getItem(MARCA)).not.toBeNull();
   });
 
-  it("con la sesión caducada NO deja marca, para reintentar en la próxima carga", async () => {
-    // El fallo real: el servidor responde 307 a /login, `fetch` lo sigue y
-    // devuelve un 200 impecable con el login dentro. Si eso contara como éxito,
-    // el dispositivo se quedaría sin Punto de Venta y sin reintentar en 6 h.
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(redirigida("/es/login")));
-
-    await warmOfflineRoutes("es");
-
-    expect(window.localStorage.getItem(MARCA)).toBeNull();
+  it("si el ultimo intento fallo, reintenta a los cinco minutos", () => {
+    const fallo = { at: AHORA - 6 * MINUTO, ok: false };
+    expect(rutasPorPrecalentar("es", TODAS, fallo, AHORA)).toHaveLength(2);
   });
 
-  it("detecta el redirect aunque `redirected` se pierda: mira la URL final", async () => {
-    // `redirected` no siempre sobrevive al paso por el service worker.
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        redirected: false,
-        url: "http://localhost/es/login",
-      } as Response)
-    );
-
-    await warmOfflineRoutes("es");
-
-    expect(window.localStorage.getItem(MARCA)).toBeNull();
+  it("tras un fallo muy reciente espera un poco antes de insistir", () => {
+    const fallo = { at: AHORA - MINUTO, ok: false };
+    expect(rutasPorPrecalentar("es", TODAS, fallo, AHORA)).toEqual([]);
   });
 
-  it("se detiene en la primera ruta que falla", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      redirected: false,
-      url: "http://localhost/es/dashboard",
-    } as Response);
-    vi.stubGlobal("fetch", fetchMock);
-
-    await warmOfflineRoutes("es");
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.getItem(MARCA)).toBeNull();
-  });
-
-  it("si se corta la red a mitad no deja marca ni lanza", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("sin red")));
-
-    await expect(warmOfflineRoutes("es")).resolves.toBeUndefined();
-    expect(window.localStorage.getItem(MARCA)).toBeNull();
-  });
-
-  it("no hace nada sin un service worker controlando la página", async () => {
-    Object.defineProperty(navigator, "serviceWorker", {
-      value: { controller: null },
-      configurable: true,
-    });
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-
-    await warmOfflineRoutes("es");
-
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("no repite el precalentado antes de que pasen 6 horas", async () => {
-    window.localStorage.setItem(MARCA, String(Date.now()));
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-
-    await warmOfflineRoutes("es");
-
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("al volver la conexión se fuerza el precalentado aunque sea reciente", async () => {
-    // Es justo el momento en que conviene refrescar: si se cayó la red, lo
-    // guardado empieza a envejecer.
-    window.localStorage.setItem(MARCA, String(Date.now()));
-    const fetchMock = vi
-      .fn()
-      .mockImplementation((path: string) => Promise.resolve(correcta(path)));
-    vi.stubGlobal("fetch", fetchMock);
-
-    await warmOfflineRoutes("es", { force: true });
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  it("respeta el idioma activo", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation((path: string) => Promise.resolve(correcta(path)));
-    vi.stubGlobal("fetch", fetchMock);
-
-    await warmOfflineRoutes("en");
-
-    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
-      "/en/dashboard",
-      "/en/pos",
+  it("pide solo la que falta cuando la otra ya esta", () => {
+    const soloDashboard = new Set(["/es/dashboard"]);
+    const recien = { at: AHORA - MINUTO, ok: true };
+    expect(rutasPorPrecalentar("es", soloDashboard, recien, AHORA)).toEqual([
+      "/es/pos",
     ]);
   });
+
+  it("sin marca previa pide todo", () => {
+    expect(rutasPorPrecalentar("es", new Set(), null, AHORA)).toHaveLength(2);
+  });
+
+  it("con force pide todo aunque este guardado y recien intentado", () => {
+    const recien = { at: AHORA - MINUTO, ok: true };
+    expect(
+      rutasPorPrecalentar("es", TODAS, recien, AHORA, true)
+    ).toHaveLength(2);
+  });
+});
+
+describe("esRespuestaUtilizable", () => {
+  const ORIGEN = "https://app.symvora.com.mx";
+
+  it("acepta un 200 cuya URL final es la pedida", () => {
+    expect(
+      esRespuestaUtilizable(
+        "/es/pos",
+        { ok: true, status: 200, redirected: false, url: `${ORIGEN}/es/pos` },
+        ORIGEN
+      )
+    ).toBe("guardada");
+  });
+
+  it("rechaza el login devuelto como 200 tras seguir el redirect", () => {
+    // Con la sesion caducada el servidor manda 307 a /login y `fetch` lo SIGUE.
+    // Guardarlo bajo la URL del panel dejaria una pantalla de inicio de sesion
+    // sin conexion, incapaz de validar nada: peor que la pagina de "sin
+    // conexion", que al menos lo explica.
+    expect(
+      esRespuestaUtilizable(
+        "/es/dashboard",
+        { ok: true, status: 200, redirected: true, url: `${ORIGEN}/es/login` },
+        ORIGEN
+      )
+    ).toBe("redirigida");
+  });
+
+  it("rechaza aunque `redirected` venga en false pero la URL cambie", () => {
+    // `redirected` no siempre sobrevive al paso por el service worker.
+    expect(
+      esRespuestaUtilizable(
+        "/es/dashboard",
+        {
+          ok: true,
+          status: 200,
+          redirected: false,
+          url: `${ORIGEN}/es/billing`,
+        },
+        ORIGEN
+      )
+    ).toBe("redirigida");
+  });
+
+  it("rechaza offline.html, que es lo que devuelve el respaldo sin red", () => {
+    // `NetworkOnly` tambien recibe el plugin de respaldo de serwist, asi que
+    // sin red contesta 200 con la pagina de "sin conexion" dentro.
+    expect(
+      esRespuestaUtilizable(
+        "/es/pos",
+        {
+          ok: true,
+          status: 200,
+          redirected: false,
+          url: `${ORIGEN}/offline.html`,
+        },
+        ORIGEN
+      )
+    ).toBe("redirigida");
+  });
+
+  it("rechaza cualquier cosa que no sea 200", () => {
+    expect(
+      esRespuestaUtilizable(
+        "/es/pos",
+        { ok: false, status: 500, redirected: false, url: `${ORIGEN}/es/pos` },
+        ORIGEN
+      )
+    ).toBe("http-error");
+  });
+});
+
+describe("APP_PAGE_PATH", () => {
+  it.each(["/es/dashboard", "/es/pos", "/en/pos", "/es/pos/", "/es/dashboard/x"])(
+    "acepta %s",
+    (path) => {
+      expect(APP_PAGE_PATH.test(path)).toBe(true);
+    }
+  );
+
+  it.each(["/es/products", "/pos", "/es/posts", "/es/positions", "/dashboard"])(
+    "rechaza %s",
+    (path) => {
+      expect(APP_PAGE_PATH.test(path)).toBe(false);
+    }
+  );
 });

@@ -35,39 +35,55 @@ export function useOpenRegister(tenantId: string | null): OpenRegisterState {
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    if (!tenantId) return;
-    const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    if (!tenantId) {
       setLoading(false);
       return;
     }
+    // Todo va dentro del try: sin conexion, `getUser()` y la consulta LANZAN,
+    // y sin capturarlas la promesa quedaba rechazada sin atender y `loading`
+    // se quedaba en `true` para siempre. `hasOpenRegister` sigue en `null`
+    // ("no se pudo resolver"), que es justo lo que el POS necesita para no
+    // cerrarse: un `false` por fallo de red dejaria al cajero sin vender.
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    // `head: true` con `count`: no se traen filas, solo si existe alguna.
-    const { count, error } = await supabase
-      .from("cajas")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("usuario_id", user.id)
-      .eq("estado", "ABIERTA");
+      // `head: true` con `count`: no se traen filas, solo si existe alguna.
+      const { count, error } = await supabase
+        .from("cajas")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("usuario_id", user.id)
+        .eq("estado", "ABIERTA");
 
-    if (error) {
-      // Ante un fallo NO se afirma que no hay caja: eso bloquearia el POS y
-      // dispararia el aviso de cierre de sesion sin motivo. Se deja sin
-      // resolver y quien consuma el hook decide.
-      console.error("[use-open-register] fallo la consulta:", error.message);
+      if (error) {
+        // Ante un fallo NO se afirma que no hay caja: eso bloquearia el POS y
+        // dispararia el aviso de cierre de sesion sin motivo. Se deja sin
+        // resolver y quien consuma el hook decide.
+        console.error("[use-open-register] fallo la consulta:", error.message);
+        setLoading(false);
+        return;
+      }
+
+      setHasOpenRegister((count ?? 0) > 0);
       setLoading(false);
-      return;
+    } catch (error: unknown) {
+      console.error("[use-open-register] sin red:", error);
+      setLoading(false);
     }
-
-    setHasOpenRegister((count ?? 0) > 0);
-    setLoading(false);
   }, [tenantId]);
 
   useEffect(() => {
-    void refetch();
+    // Diferido, convención del repo: sin tenant, `refetch` llama a `setLoading`
+    // de forma síncrona dentro del efecto y eso encadena renders
+    // (`react-hooks/set-state-in-effect`).
+    const inicial = window.setTimeout(() => void refetch(), 0);
 
     const handleChanged = () => {
       void refetch();
@@ -77,6 +93,7 @@ export function useOpenRegister(tenantId: string | null): OpenRegisterState {
     window.addEventListener("focus", handleChanged);
 
     return () => {
+      window.clearTimeout(inicial);
       window.removeEventListener(CASH_REGISTER_CHANGED_EVENT, handleChanged);
       window.removeEventListener("focus", handleChanged);
     };

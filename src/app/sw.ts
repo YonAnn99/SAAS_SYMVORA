@@ -1,7 +1,11 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { ExpirationPlugin, NetworkFirst, Serwist } from "serwist";
-import { APP_PAGES_CACHE, APP_PAGE_PATH } from "@/lib/offline/route-cache";
+import { ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
+import {
+  APP_PAGES_CACHE,
+  APP_PAGE_PATH,
+  CABECERA_PRECALENTADO,
+} from "@/lib/offline/route-cache";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -33,6 +37,23 @@ const OFFLINE_URL = "/offline.html";
 // una navegacion. Si se filtrara por modo, lo precalentado caeria en otra
 // cache y la navegacion posterior no lo encontraria.
 
+// El precalentado del cliente NO lo cachea ninguna estrategia.
+//
+// El cliente escribe la entrada el mismo con `cache.put` para poder verificarla
+// despues. Si ademas la guardara `NetworkFirst`, habria dos escritores para la
+// misma URL y volveriamos a no poder comprobar nada: el `cache.put` de la
+// estrategia ocurre dentro de un `waitUntil` que puede resolverse despues de
+// que el `fetch` devuelva.
+//
+// OJO: `NetworkOnly` tambien recibe el plugin de respaldo de serwist, asi que
+// sin red devolvera `/offline.html` con un 200. Es contraintuitivo, pero el
+// cliente lo detecta comparando el `pathname` final.
+const warmPassthrough = {
+  matcher: ({ request }: { request: Request }) =>
+    request.headers.get(CABECERA_PRECALENTADO) === "1",
+  handler: new NetworkOnly(),
+};
+
 const appPagesCaching = {
   matcher: ({
     request,
@@ -44,6 +65,7 @@ const appPagesCaching = {
     sameOrigin: boolean;
   }) =>
     sameOrigin &&
+    request.headers.get(CABECERA_PRECALENTADO) !== "1" &&
     // Los payloads RSC ya tienen su propia cache en `defaultCache`; meterlos
     // aqui guardaria dos cosas distintas bajo la misma URL.
     request.headers.get("RSC") !== "1" &&
@@ -55,6 +77,10 @@ const appPagesCaching = {
     // sirve lo guardado: en una caja registradora esperar es peor que servir
     // una version de hace un rato.
     networkTimeoutSeconds: 3,
+    // Una entrada guardada por el cliente no lleva `Vary`, pero las que
+    // guarde la propia estrategia si. Cuesta nada y cubre el dia que la
+    // plataforma añada una cabecera nueva al `Vary` y deje de casar.
+    matchOptions: { ignoreVary: true },
     plugins: [
       {
         // Nunca guardar bajo la URL del panel algo que no sea el panel.
@@ -88,7 +114,8 @@ const serwist = new Serwist({
   // Aqui no aporta nada (no hay respuestas de navegacion lentas que precargar).
   navigationPreload: false,
   // Delante de `defaultCache`: la primera regla que coincide gana.
-  runtimeCaching: [appPagesCaching, ...defaultCache],
+  // El paso libre del precalentado va PRIMERO: la primera regla gana.
+  runtimeCaching: [warmPassthrough, appPagesCaching, ...defaultCache],
   fallbacks: {
     entries: [
       {
@@ -99,21 +126,14 @@ const serwist = new Serwist({
   },
 });
 
-// Red de seguridad: si `/offline.html` no se pudo precachear, se cachea aparte
-// durante `install` sin dejar que un fallo rechace la instalacion completa.
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    (async () => {
-      try {
-        const cache = await caches.open("symvora-offline-fallback");
-        await cache.add(new Request(OFFLINE_URL, { cache: "reload" }));
-      } catch (error) {
-        // El service worker se instala igual: perder la pagina offline degrada
-        // la experiencia sin conexion, pero nunca debe romper la navegacion.
-        console.warn("[sw] No se pudo cachear la pagina offline:", error);
-      }
-    })()
-  );
-});
+// Nota: aqui habia un handler de `install` que cacheaba `/offline.html` en una
+// cache aparte (`symvora-offline-fallback`) como red de seguridad. Era codigo
+// muerto: `PrecacheFallbackPlugin` de serwist solo hace `matchPrecache()`, asi
+// que nunca miraba esa cache. Se retira para no dar falsa sensacion de respaldo.
+//
+// Tampoco se puede instrumentar `appPagesCaching` con un plugin que tenga
+// `handlerDidError`: serwist solo inyecta el respaldo de `/offline.html` en las
+// estrategias que NO tengan ya ese callback, asi que añadirlo dejaria las
+// paginas del panel sin pagina de respaldo.
 
 serwist.addEventListeners();

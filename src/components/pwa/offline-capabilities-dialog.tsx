@@ -9,8 +9,11 @@
  * un cajero que da por hecho que puede vender a crédito sin red y descubre
  * que no a mitad de una venta, con el cliente delante.
  *
- * Se puede cerrar y no vuelve a salir (queda la entrada del menú para
- * consultarlo cuando haga falta).
+ * Se puede cerrar y no vuelve a salir. Queda la entrada del menú de usuario
+ * para consultarlo cuando haga falta: dispara `EVENTO_ABRIR_OFFLINE`, que es
+ * lo que escucha este componente. Antes el comentario prometía esa entrada y
+ * no existía, así que tras la primera vez el diálogo era inalcanzable — y con
+ * él, el diagnóstico de por qué la app no abre sin conexión.
  */
 
 import { useEffect, useState } from "react";
@@ -29,11 +32,29 @@ import {
   OFFLINE_AVAILABLE,
   OFFLINE_UNAVAILABLE,
 } from "@/lib/offline/capabilities";
+import { OfflineStatusPanel } from "./offline-status-panel";
 
 const SEEN_KEY = "symvora_offline_intro_seen";
 
+/** Mismo patrón que `CASH_REGISTER_CHANGED_EVENT`: un evento del navegador
+ *  evita tener que subir el estado hasta el shell del panel. */
+export const EVENTO_ABRIR_OFFLINE = "symvora-abrir-ayuda-offline";
+
+export function abrirAyudaOffline() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(EVENTO_ABRIR_OFFLINE));
+  }
+}
+
 export function OfflineCapabilitiesDialog() {
   const [open, setOpen] = useState(false);
+
+  // Abierto a mano desde el menú: siempre, sin mirar si ya se vio.
+  useEffect(() => {
+    const abrir = () => setOpen(true);
+    window.addEventListener(EVENTO_ABRIR_OFFLINE, abrir);
+    return () => window.removeEventListener(EVENTO_ABRIR_OFFLINE, abrir);
+  }, []);
 
   useEffect(() => {
     // Solo en PWA instalada: en una pestaña normal el mensaje sobra y sería
@@ -125,6 +146,8 @@ export function OfflineCapabilitiesDialog() {
               La subida es automática y toma unos segundos.
             </p>
           </section>
+
+          <OfflineStatusPanel />
         </div>
 
         <DialogFooter>

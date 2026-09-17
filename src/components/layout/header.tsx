@@ -5,6 +5,8 @@ import { useRouter, usePathname } from "@/i18n/navigation";
 import { useTheme } from "next-themes";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { clearAppPagesCache } from "@/lib/offline/route-cache";
+import { borrarSesionOffline } from "@/lib/offline/session-snapshot";
+import { abrirAyudaOffline } from "@/components/pwa/offline-capabilities-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +14,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, Sun, Moon, Search, Menu } from "lucide-react";
+import {
+  CloudOff,
+  LogOut,
+  Menu,
+  Moon,
+  Search,
+  Settings,
+  Sun,
+  User,
+} from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
@@ -66,6 +77,9 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
     // de quien lo genero. En un mostrador compartido, el siguiente cajero
     // podria ver sin conexion el panel del anterior.
     await clearAppPagesCache();
+    // La instantánea trae el negocio y el cajero: en un mostrador
+    // compartido no puede heredarla el siguiente turno.
+    borrarSesionOffline();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
@@ -180,6 +194,16 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               <span className="text-sm">{t("layout.settings")}</span>
+            </DropdownMenuItem>
+            {/* Sin esta entrada, el diálogo de modo sin conexión (y con él
+                el diagnóstico de por qué la app no abre en modo avión) era
+                inalcanzable después de la primera vez. */}
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={abrirAyudaOffline}
+            >
+              <CloudOff className="mr-2 h-4 w-4" />
+              <span className="text-sm">Modo sin conexión</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive cursor-pointer"

@@ -34,6 +34,11 @@ export interface PosCatalogState {
 
 interface PosCache {
   products: Producto[];
+  /**
+   * Id del cajero. Sin el, una venta sin conexion se encola con `userId`
+   * vacio y revienta al sincronizar.
+   */
+  userId?: string;
   variants: VarianteProducto[];
   customers: Cliente[];
   cajaId: string | null;
@@ -90,13 +95,24 @@ export function usePosCatalog(
   const [priceLists, setPriceLists] = useState<ListaParaPos[]>([]);
 
   const refetch = useCallback(async () => {
-    if (!tenantId) return;
+    // Antes este `return` estaba ANTES del `try`, asi que el `finally` no
+    // corria y `loadingProducts` se quedaba en `true` para siempre. Pasaba
+    // justo sin conexion, cuando el contexto no lograba resolver el tenant:
+    // el Punto de Venta se quedaba cargando eternamente.
+    if (!tenantId) {
+      setLoadingProducts(false);
+      return;
+    }
     try {
       const supabase = createSupabaseBrowserClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      // `getUser()` va a la red. Sin conexión no siempre lanza: a veces
+      // devuelve `user: null` sin más. Con un `return` aquí el POS se quedaba
+      // sin catálogo Y sin caché, porque la rama de respaldo vive en el
+      // `catch`. Lanzar es lo que la lleva a ejecutarse.
+      if (!user) throw new Error("Sesión no disponible sin conexión");
       setUserId(user.id);
 
       const [
@@ -127,6 +143,7 @@ export function usePosCatalog(
         customers: customersResult,
         cajaId: activeCajaId,
         priceLists: priceListsResult,
+        userId: user.id,
       });
     } catch (error) {
       console.error("[pos] catalog fetch failed:", error);
@@ -138,6 +155,8 @@ export function usePosCatalog(
         // Sin red el cajero sigue pudiendo elegir lista: los precios ya
         // estan guardados y el servidor los revalidara al sincronizar.
         setPriceLists(cached.priceLists ?? []);
+        // Sin esto la venta encolada sale sin cajero.
+        if (cached.userId) setUserId(cached.userId);
         setCajaId(cached.cajaId);
         setIsOfflineCatalog(true);
       }

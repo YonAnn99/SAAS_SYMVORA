@@ -5,6 +5,8 @@ import type { UserRole } from "@/lib/types/database";
 
 interface TenantInfo {
   tenantId: string;
+  /** Id del cajero, necesario para encolar ventas sin conexion. */
+  userId: string;
   tenantName: string;
   tenantLogo: string | null;
   /** Domicilio del negocio. Lo imprime el pie del ticket del POS. */
@@ -17,6 +19,7 @@ interface TenantInfo {
 export function useCurrentTenant(): TenantInfo {
   const {
     tenantId,
+    userId,
     tenantName,
     tenantLogo,
     tenantAddress,
@@ -26,6 +29,7 @@ export function useCurrentTenant(): TenantInfo {
   } = useTenantContext();
   return {
     tenantId,
+    userId,
     tenantName,
     tenantLogo,
     tenantAddress,

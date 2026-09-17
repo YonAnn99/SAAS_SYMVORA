@@ -24,19 +24,16 @@ import { OpenRegisterRequiredDialog } from "@/features/cash-register";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { enqueueSale } from "@/lib/offline/queue";
+import {
+  esErrorDeRed,
+  hayConexionReal,
+} from "@/lib/offline/connectivity";
+import {
+  motivoBloqueoCobro,
+  OFFLINE_PAYMENT_METHODS,
+} from "@/features/pos/venta-bloqueada";
 import { requestPersistentStorage } from "@/lib/offline/persist";
 
-/**
- * Métodos de pago permitidos sin conexión.
- *
- * Se dejan fuera a propósito:
- *  - TARJETA_TERMINAL: MercadoPago Point necesita red por definición.
- *  - CREDITO: hay que validar `saldo_pendiente` del cliente contra el
- *    servidor; hacerlo con datos cacheados permitiría pasarse del límite
- *    de crédito sin que nada lo detecte hasta sincronizar.
- *  - TRANSFERENCIA: el cajero no puede confirmar que el dinero llegó.
- */
-const OFFLINE_PAYMENT_METHODS = new Set(["EFECTIVO", "TARJETA"]);
 import { completeSale } from "@/features/pos/services/pos-service";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
@@ -323,18 +320,57 @@ export default function POSPage() {
       return;
     }
 
+    const clienteId = selectedCustomer === "none" ? null : selectedCustomer;
+    // Se manda el ID de la lista, NUNCA el precio: el servidor lo relee de
+    // `precios_lista`. Mandar el precio desde aqui es el bug #5.
+    const listaPrecioId =
+      selectedPriceList === SIN_LISTA ? null : selectedPriceList;
+
+    const encolarVenta = async (): Promise<string> => {
+      // `crypto.randomUUID()` genera la clave de idempotencia, que es lo que
+      // garantiza que un reintento no cree una venta duplicada. Esa misma
+      // clave es la referencia del ticket: aquí todavía no existe fila en
+      // `ventas`, y como el servidor deduplica por ella, el número impreso
+      // seguirá apuntando a esta venta cuando termine de subir.
+      const claveIdempotencia = crypto.randomUUID();
+      await enqueueSale({
+        idempotencyKey: claveIdempotencia,
+        tenantId,
+        userId,
+        cajaId,
+        clienteId,
+        metodoPago: selectedPayment as MetodoPagoDirecto,
+        items,
+        includeIva,
+        notas: null,
+        montoRecibido: isEfectivo ? montoRecibidoNum : null,
+        // El total que se le cobró al cliente. Al sincronizar, el servidor
+        // recalcula desde el catálogo y marca la venta para revisión si el
+        // precio cambió mientras estábamos sin red.
+        totalCobrado: totals.total,
+        // Sin la lista, al sincronizar el servidor recalcularía a precio
+        // base y `p_total_cobrado <> v_total` marcaría para revisión TODAS
+        // las ventas offline hechas con lista.
+        listaPrecioId,
+        createdAt: new Date().toISOString(),
+      });
+      await saleSync.refresh();
+      return claveIdempotencia;
+    };
+
     setProcessingSale(true);
     try {
-      const clienteId = selectedCustomer === "none" ? null : selectedCustomer;
-      // Se manda el ID de la lista, NUNCA el precio: el servidor lo relee de
-      // `precios_lista`. Mandar el precio desde aqui es el bug #5.
-      const listaPrecioId =
-        selectedPriceList === SIN_LISTA ? null : selectedPriceList;
 
       // Referencia que el ticket imprime como número de operación.
       let referenciaTicket: string | null = null;
 
-      if (isOnline) {
+
+      // No basta con `navigator.onLine`: con el módem caído sigue diciendo que
+      // sí, y la venta acababa en el `catch` genérico, sin cobrar y sin
+      // encolar. Se confirma con una petición real antes de decidir.
+      const hayRed = isOnline && (await hayConexionReal());
+
+      if (hayRed) {
         // El retorno del RPC se descartaba. Trae la fila completa de `ventas`,
         // y su `id` es lo que hace falta para el ticket.
         const venta = (await completeSale({
@@ -348,38 +384,16 @@ export default function POSPage() {
           listaPrecioId,
         })) as { id?: string } | null;
         referenciaTicket = venta?.id ?? null;
+      } else if (!isOnline || !OFFLINE_PAYMENT_METHODS.has(selectedPayment)) {
+        // La red se cayó entre la comprobación y aquí, o el método elegido
+        // necesita servidor. No se puede cobrar a ciegas.
+        toast.error(
+          "Se perdió la conexión. Cobra en efectivo o con tarjeta manual para poder guardar la venta."
+        );
+        return;
       } else {
-        // Sin red: la venta se guarda en IndexedDB y se sube sola al volver la
-        // conexión. `crypto.randomUUID()` genera la clave de idempotencia, que
-        // es lo que garantiza que un reintento no cree una venta duplicada.
-        //
-        // Esa misma clave es la referencia del ticket: aquí todavía no existe
-        // fila en `ventas`, y como el servidor deduplica por ella, el número
-        // impreso seguirá apuntando a esta venta cuando termine de subir.
-        const claveIdempotencia = crypto.randomUUID();
-        referenciaTicket = claveIdempotencia;
-        await enqueueSale({
-          idempotencyKey: claveIdempotencia,
-          tenantId,
-          userId,
-          cajaId,
-          clienteId,
-          metodoPago: selectedPayment as MetodoPagoDirecto,
-          items,
-          includeIva,
-          notas: null,
-          montoRecibido: isEfectivo ? montoRecibidoNum : null,
-          // El total que se le cobró al cliente. Al sincronizar, el servidor
-          // recalcula desde el catálogo y marca la venta para revisión si el
-          // precio cambió mientras estábamos sin red.
-          totalCobrado: totals.total,
-          // Sin la lista, al sincronizar el servidor recalcularia a precio
-          // base y `p_total_cobrado <> v_total` marcaria para revision TODAS
-          // las ventas offline hechas con lista.
-          listaPrecioId,
-          createdAt: new Date().toISOString(),
-        });
-        await saleSync.refresh();
+        // Sin red: se guarda en el dispositivo y se sube sola.
+        referenciaTicket = await encolarVenta();
       }
 
       setSaleReceipt({
@@ -406,11 +420,68 @@ export default function POSPage() {
       setMobileCartOpen(false);
       if (isOnline) void refetch();
     } catch (error) {
+      // RED DE SEGURIDAD. Antes, un fallo de red aquí mostraba "Error al
+      // procesar la venta" y la venta SE PERDÍA: ni cobrada ni encolada. Si el
+      // fallo fue de red y el método se puede cobrar sin conexión, se encola.
+      // Encolar de más es recuperable — el servidor deduplica por clave de
+      // idempotencia —; perder una venta ya cobrada, no.
+      if (esErrorDeRed(error) && OFFLINE_PAYMENT_METHODS.has(selectedPayment)) {
+        try {
+          const referencia = await encolarVenta();
+          setSaleReceipt({
+            items: [...items],
+            total: totals.total,
+            paymentMethod: selectedPayment,
+            customerName,
+            customerPhone: selectedCustomerObj?.telefono ?? null,
+            montoRecibido: isEfectivo ? montoRecibidoNum : null,
+            cambio: isEfectivo ? cambio : null,
+            reference: referencia,
+          });
+          toast.success(
+            `Se cayó la conexión: la venta de $${totals.total.toFixed(2)} quedó guardada y se subirá sola`
+          );
+          clearCart();
+          setSelectedCustomer("none");
+          setSelectedPayment("");
+          setSelectedPriceList(SIN_LISTA);
+          setMontoRecibido("");
+          setShowConfirmDialog(false);
+          setMobileCartOpen(false);
+          return;
+        } catch {
+          toast.error(
+            "Se cayó la conexión y no se pudo guardar la venta en este dispositivo. Anótala antes de continuar."
+          );
+          return;
+        }
+      }
       toast.error(error instanceof Error ? error.message : "Error al procesar la venta");
     } finally {
       setProcessingSale(false);
     }
   };
+
+  // Una sola fuente para las dos instancias del panel de cobro (escritorio y
+  // hoja movil). Estaban escritas por separado, y por eso el bloqueo por
+  // `!isOnline` sobrevivio a la llegada de la cola de ventas offline.
+  const motivoBloqueo = useMemo(
+    () =>
+      motivoBloqueoCobro({
+        items: items.length,
+        metodoPago: selectedPayment,
+        procesando: processingSale,
+        montoInsuficiente: montoRecibidoInsuficiente,
+        isOnline,
+      }),
+    [
+      items.length,
+      selectedPayment,
+      processingSale,
+      montoRecibidoInsuficiente,
+      isOnline,
+    ]
+  );
 
   const paymentMethods = [
     { key: "EFECTIVO", label: t("pos.paymentMethods.CASH"), icon: Banknote },
@@ -508,14 +579,9 @@ export default function POSPage() {
           onMontoRecibidoChange={setMontoRecibido}
           cambio={cambio}
           isOnline={isOnline}
+          motivoBloqueo={motivoBloqueo}
           processingSale={processingSale}
-          disabledComplete={
-            items.length === 0 ||
-            !selectedPayment ||
-            processingSale ||
-            montoRecibidoInsuficiente ||
-            !isOnline
-          }
+          disabledComplete={motivoBloqueo !== null}
           onCompleteSale={() => setShowConfirmDialog(true)}
           onClearCart={clearCart}
         />
@@ -551,14 +617,9 @@ export default function POSPage() {
               onMontoRecibidoChange={setMontoRecibido}
               cambio={cambio}
               isOnline={isOnline}
+              motivoBloqueo={motivoBloqueo}
               processingSale={processingSale}
-              disabledComplete={
-                items.length === 0 ||
-                !selectedPayment ||
-                processingSale ||
-                montoRecibidoInsuficiente ||
-                !isOnline
-              }
+              disabledComplete={motivoBloqueo !== null}
               onCompleteSale={() => setShowConfirmDialog(true)}
               onClearCart={clearCart}
             />

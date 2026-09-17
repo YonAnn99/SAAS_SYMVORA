@@ -9,6 +9,7 @@ import { PosCart } from "./pos-cart";
 import { cn } from "@/lib/utils";
 import type { Cliente } from "@/lib/types/database";
 import type { CartItem, SaleTotals } from "../types/pos.types";
+import type { MotivoBloqueo } from "../venta-bloqueada";
 
 interface CheckoutPanelProps {
   customers: Cliente[];
@@ -35,6 +36,8 @@ interface CheckoutPanelProps {
   cambio: number | null;
 
   isOnline: boolean;
+  /** Por que no se puede cobrar ahora mismo, o `null` si si se puede. */
+  motivoBloqueo?: MotivoBloqueo | null;
   processingSale: boolean;
   disabledComplete: boolean;
   onCompleteSale: () => void;
@@ -64,6 +67,7 @@ export function CheckoutPanel({
   onMontoRecibidoChange,
   cambio,
   isOnline,
+  motivoBloqueo = null,
   processingSale,
   disabledComplete,
   onCompleteSale,
@@ -96,6 +100,7 @@ export function CheckoutPanel({
         selectedPayment={selectedPayment}
         onSelect={onSelectPayment}
         mpReady={mpReady}
+        isOnline={isOnline}
       />
 
       {isEfectivo && (
@@ -124,9 +129,14 @@ export function CheckoutPanel({
         </div>
       )}
 
+      {/* El mensaje anterior decia que sin conexion no se podia cobrar. Era
+          falso desde que existe la cola de ventas offline: se cobra, se guarda
+          en el dispositivo y se sube sola al volver la red. */}
       {!isOnline && (
         <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-          Sin conexión: no se pueden completar ventas hasta reconectarte.
+          {motivoBloqueo === "metodo-no-disponible-sin-conexion"
+            ? "Sin conexión solo puedes cobrar en efectivo o con tarjeta manual."
+            : "Sin conexión: la venta se guarda en este dispositivo y se sube sola al volver el internet."}
         </p>
       )}
 

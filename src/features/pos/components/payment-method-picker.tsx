@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { metodoDisponible } from "../venta-bloqueada";
 
 export interface PaymentMethodOption {
   key: string;
@@ -14,6 +15,8 @@ interface PaymentMethodPickerProps {
   selectedPayment: string;
   onSelect: (key: string) => void;
   mpReady: boolean | null;
+  /** Sin conexion, los metodos que necesitan servidor se apagan. */
+  isOnline?: boolean;
 }
 
 export function PaymentMethodPicker({
@@ -21,21 +24,27 @@ export function PaymentMethodPicker({
   selectedPayment,
   onSelect,
   mpReady,
+  isOnline = true,
 }: PaymentMethodPickerProps) {
   return (
     <div className="mt-3 grid grid-cols-2 gap-1.5">
       {methods.map((method) => {
         const terminalDisabled =
           method.key === "TARJETA_TERMINAL" && mpReady !== true;
+        // Apagarlo es mejor que dejar elegirlo y contestar con un error:
+        // el cajero ve de un vistazo con que SI puede cobrar.
+        const sinRed = !metodoDisponible(method.key, isOnline);
         return (
           <Button
             key={method.key}
             variant={selectedPayment === method.key ? "default" : "outline"}
             className="w-full h-8 text-xs"
             size="sm"
-            disabled={terminalDisabled}
+            disabled={terminalDisabled || sinRed}
             title={
-              terminalDisabled
+              sinRed
+                ? "Sin conexión no se puede cobrar con este método"
+                : terminalDisabled
                 ? "Configura Mercado Pago Point en Métodos de pago"
                 : undefined
             }
