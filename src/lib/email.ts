@@ -842,3 +842,80 @@ export async function sendTrialEndedEmail(params: {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/**
+ * Notificación de seguridad al cambiar la contraseña.
+ * Se envía al usuario afectado y/o al Super Admin del negocio.
+ */
+export async function sendPasswordChangedAlertEmail(params: {
+  to: string;
+  businessName: string;
+  userEmail: string;
+  userRole?: string;
+  isSelf: boolean;
+  dateStr?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite el aviso de cambio de contraseña");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const { to, businessName, userEmail, userRole, isSelf } = params;
+  const dateStr =
+    params.dateStr ||
+    new Date().toLocaleString("es-MX", {
+      timeZone: "America/Mexico_City",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+  const subject = isSelf
+    ? "Seguridad: Tu contraseña de SYMVORA fue actualizada"
+    : `Alerta de seguridad: Cambio de contraseña en ${businessName}`;
+
+  const preheader = isSelf
+    ? `La contraseña de tu cuenta ${userEmail} ha sido actualizada.`
+    : `El usuario ${userEmail} actualizó su contraseña en ${businessName}.`;
+
+  const heading = isSelf
+    ? "Contraseña actualizada"
+    : "Alerta de seguridad: Contraseña modificada";
+
+  const intro = isSelf
+    ? `Te confirmamos que la contraseña de acceso para tu cuenta <strong>${userEmail}</strong> en <strong>${businessName}</strong> fue modificada el <strong>${dateStr}</strong>.`
+    : `Te informamos como Super Administrador que el usuario <strong>${userEmail}</strong>${
+        userRole ? ` (${userRole})` : ""
+      } actualizó su contraseña de acceso en <strong>${businessName}</strong> el <strong>${dateStr}</strong>.`;
+
+  const highlight = isSelf
+    ? "<strong>¿No fuiste tú?</strong> Si no realizaste este cambio, alguien podría tener acceso no autorizado a tu cuenta. Restablece tu contraseña de inmediato desde la pantalla de acceso o contacta a soporte."
+    : "<strong>Monitoreo de seguridad:</strong> Si este cambio no fue autorizado o necesitas revisar los accesos de tu equipo, puedes gestionarlos en el panel de usuarios.";
+
+  const ctaLabel = isSelf ? "Ir a mi cuenta" : "Gestionar usuarios";
+  const ctaHref = isSelf ? `${BRAND.appUrl}/es/dashboard` : `${BRAND.appUrl}/es/users`;
+
+  const html = buildNoticeHtml({
+    preheader,
+    heading,
+    intro,
+    highlight,
+    ctaLabel,
+    ctaHref,
+  });
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to,
+      subject,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de cambio de contraseña:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+

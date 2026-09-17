@@ -856,3 +856,138 @@ Sistema completo de autenticación por clave para empleados (CAJERO/ORG_ADMIN), 
 - `supabase` CLI no instalado globalmente (solo via npx)
 - Base UI `DropdownMenuTrigger` en `src/components/ui/dropdown-menu.tsx:18` defaulta `nativeButton={true}` — el padre NO debe pasar `nativeButton={false}`
 - RLS requiere `tenant_id` en todos los INSERTs; falta causa fallos silenciosos
+
+---
+
+## Plan Pendiente: Historial de Ventas y Reimpresión de Tickets (2026-09-17)
+
+### Por qué
+
+Cobrada una venta en el POS **no hay forma de volver a verla**: el ticket existe solo el
+instante posterior al cobro. Si el cliente lo pierde o hay que revisar qué se vendió, no
+hay dónde mirar.
+
+Los **datos ya están todos**: `ventas` guarda cajero (`usuario_id`), fecha, importes,
+método de pago, monto recibido y cambio; `detalle_ventas` guarda cada renglón con su
+`variante_id`. Esto es sacar a la superficie lo que ya se registra, no capturar nada nuevo.
+
+### Decisiones tomadas con el dueño (no volver a preguntar)
+
+| | |
+|---|---|
+| Dónde vive | Dentro de **`/reports`**, reutilizando sus filtros de periodo. Sin ruta nueva → sin tocar `navigation.ts` ni sus tests |
+| Qué ve un CAJERO | **Solo sus propias ventas.** Dueño y ORG_ADMIN ven todas y pueden filtrar por cajero |
+| Alcance de esa regla | **Solo el historial.** Los agregados de Reportes/Dashboard siguen como hoy (un cajero sigue viendo la facturación total del negocio en las tarjetas — incoherencia aceptada a conciencia) |
+| Reimpresión | Marcada **"REIMPRESIÓN"** en el papel + registrada en `activity_logs` |
+| Nombre de producto | Del catálogo **actual**; si se borró → "Producto eliminado". Sin snapshot histórico |
+
+### Fase 1 — Base de datos ✅ HECHA Y VERIFICADA
+
+`supabase/migrations/070_historial_ventas.sql`, aplicada a producción.
+
+1. **Cerrada una fuga de datos entre negocios** (anterior a este trabajo).
+   `get_tenant_members` es `SECURITY DEFINER`, la llamaba cualquier autenticado y solo
+   filtraba por el tenant recibido **sin comprobar pertenencia**. Comprobado antes: un
+   cajero de otro negocio obtenía 3 correos del personal de Pruebas SYMVORA. Ahora, 0.
+2. **Permiso `sales.view_all`** para SUPER_ADMIN y ORG_ADMIN.
+   `role_permissions.permission` es `text` sin restricción; el `CHECK` de
+   `user_permission_overrides` sí es lista cerrada y se amplió, para poder concederlo a
+   un encargado.
+3. **`listar_ventas(tenant, desde, hasta, cajero_id, limite, desplazamiento)`** —
+   `SECURITY DEFINER`. Valida pertenencia, aplica la regla de visibilidad, **pagina en
+   servidor** y devuelve `total_filas` con `COUNT(*) OVER ()`.
+4. **`detalle_venta(venta_id)`** — `SECURITY DEFINER`, devuelve `jsonb` con la venta y
+   sus renglones (nombre, talla, color). Misma regla: un cajero no puede abrir por id
+   una venta ajena.
+
+> ⚠️ **No se tocó la política RLS de `ventas`** (sigue siendo solo por tenant). Por eso
+> la regla vive en los RPC: filtrar solo en pantalla sería un adorno, bastaría una
+> petición a mano para sacar las ventas ajenas.
+
+Verificado con sondeos revertidos: cajero ve sus 3 y **0 ajenas**; dueño ve las 27;
+cajero filtrando por el dueño → 0; otro negocio → rechazado; venta ajena por id →
+rechazado; página de 5 con `total_filas` 27.
+
+### Fase 2 — Extraer el periodo a lógica pura
+
+`src/lib/periodo.ts` (NUEVO). Hoy el cálculo del rango vive **dentro de un
+`useCallback`** en `reports/page.tsx:255-288`, con siete helpers de fecha sin exportar
+(`startOfDay`, `endOfDay`, `formatShortDate`, `isSameDay`, `isDateAfterOrEqual`,
+`getDaysInMonth`, `getFirstDayOfMonth`).
+
+- `export type Periodo = "dia" | "semana" | "mes" | "trimestre" | "ano"` — hoy es un
+  `string` suelto cuyos valores solo existen en el JSX (`reports/page.tsx:610-625`).
+- `rangoDePeriodo(periodo, fechaElegida, ahora)` → `{ desde, hasta }`.
+- `reports/page.tsx` pasa a importar de aquí. Duplicarlo sería el cuarto sitio.
+
+### Fase 3 — Servicio, hook y reconstrucción del ticket
+
+`src/features/sales/` (NUEVO):
+
+- `services/sales-history-service.ts` — envuelve los dos RPC.
+- `hooks/use-sales-history.ts` — lista, paginación y filtros. Usar el `setTimeout(…, 0)`
+  del repo para el refetch (convención por `react-hooks/set-state-in-effect`).
+- `sale-receipt-builder.ts` — **lógica pura**: `construirReceiptDesdeVenta(venta,
+  renglones)` → `SaleReceipt`. Testeable sin red.
+
+### Fase 4 — El ticket
+
+- `SaleReceipt` (`src/features/pos/types/pos.types.ts:55-74`) gana `fecha?`, `cajero?` y
+  `esReimpresion?`.
+- `ticket-receipt.tsx:58` — hoy `const fecha = fechaTicket();` usa **siempre la fecha de
+  hoy**. `fechaTicket(fecha: Date = new Date())` ya acepta parámetro: basta pasárselo.
+  Es el único bloqueador real para reimprimir una venta vieja.
+- Añadir línea de cajero (el ticket **no la tiene hoy**) y el distintivo "REIMPRESIÓN".
+- `TicketReceipt` **no depende del carrito** (no importa `usePosCart`), recibe un objeto
+  plano → reutilizable tal cual. El CSS de impresión (`globals.css:842-891`, `@page 58mm`
+  + portal a `#ticket-impresion`) tampoco se toca.
+- **Arreglar `src/lib/types/database.ts`**: al `Row` de `detalle_ventas` le falta
+  `variante_id`, que existe en la base desde la migración 056. Sin eso el ticket
+  reimpreso saldría sin talla ni color.
+
+### Fase 5 — La sección en Reportes
+
+`Card` nueva en `reports/page.tsx` (977 líneas, un único componente cliente sin
+pestañas), debajo de los agregados: tabla con fecha, nº de operación
+(`numeroOperacion()` de `ticket-format.ts`), cajero, método de pago y total; selector de
+cajero **solo si tiene `sales.view_all`**; paginación; y al pulsar una fila, diálogo con
+el desglose y botón de reimprimir.
+
+Plantilla visual: `src/features/cash-register/components/movements-table.tsx`.
+
+### Fase 6 — Registro de la reimpresión
+
+Escribir en `activity_logs` (tabla de la Bitácora: `tenant_id, user_id, user_email,
+action, entity, entity_id, entity_name, details, ip_address, created_at`). La entidad
+`venta` ya está contemplada en `activity/page.tsx:59`. Un ticket reimpreso sirve para
+justificar una devolución falsa: tiene que dejar rastro.
+
+### Tests nuevos (lógica pura, títulos en español)
+
+- `periodo.test.ts` — cada periodo da su rango; "día" sin fecha elegida no revienta; el
+  rango cubre el día completo de inicio y fin.
+- `sale-receipt-builder.test.ts` — reconstruye desde venta + renglones; producto borrado
+  → "Producto eliminado"; la variante sale con talla y color; efectivo conserva monto
+  recibido y cambio.
+
+### Trampas encontradas al explorar (ahorran tiempo)
+
+- **El CAJERO ya tiene `sales.view_reports`** — por eso hizo falta `sales.view_all`.
+- `reports/page.tsx:297` — el `select` de ventas **no trae `usuario_id`**.
+- `MAX_VENTAS_REPORTE = 5000` (`reports/page.tsx:57`): los agregados ya se truncan y
+  avisan. El historial **no** debe usar ese array; para eso pagina el RPC.
+- **No hay `src/features/reports/`**: todo son consultas inline en el componente, y
+  `dashboard/page.tsx:77-110` ya las duplica parcialmente.
+- El calendario de "día específico" (`reports/page.tsx:645-716`) está maquetado a mano;
+  no existe `src/components/ui/calendar.tsx`.
+- `/reports` **no está en `ADMIN_ONLY_PATHS`** del middleware (hueco preexistente, ya
+  documentado). No compromete esto: la regla de visibilidad vive en los RPC, así que
+  entrar por URL sin permiso no devuelve datos ajenos.
+- Reutilizables tal cual: `src/features/pos/ticket-format.ts` (íntegro), `src/lib/profit.ts`,
+  el CSS de impresión, y `get_tenant_members` (ya corregida).
+
+### Líneas base al empezar
+
+`npx tsc --noEmit` limpio · `npx vitest run` **496 tests** · `npx eslint .` **8 errores /
+283 avisos** (los 8 son preexistentes y ajenos a esto; los avisos incluyen ~97 de
+`public/sw.js`, que es salida generada y está en `.gitignore`).
