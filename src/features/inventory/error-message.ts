@@ -18,8 +18,11 @@
 function textoDelError(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
-  if (typeof error === "object" && error !== null && "message" in error) {
-    return String((error as { message: unknown }).message ?? "");
+  if (typeof error === "object" && error !== null) {
+    const obj = error as Record<string, unknown>;
+    const msg = typeof obj.message === "string" ? obj.message : "";
+    const det = typeof obj.details === "string" ? obj.details : "";
+    return `${msg} ${det}`.trim();
   }
   return "";
 }
@@ -27,6 +30,18 @@ function textoDelError(error: unknown): string {
 export function mensajeDeError(error: unknown): string {
   const crudo = textoDelError(error);
 
+  if (
+    crudo.includes("uq_productos_tenant_codigo_barras") ||
+    (crudo.includes("23505") && crudo.includes("codigo_barras"))
+  ) {
+    return "Ya existe un producto con este código de barras";
+  }
+  if (
+    crudo.includes("uq_productos_tenant_sku") ||
+    (crudo.includes("23505") && crudo.includes("sku"))
+  ) {
+    return "Ya existe un producto con este SKU";
+  }
   if (crudo.includes("Stock cannot be negative")) {
     return "El stock no puede quedar en negativo";
   }

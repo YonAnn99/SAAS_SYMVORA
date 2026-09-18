@@ -749,6 +749,17 @@
   margin-bottom: 2mm;
 }
 
+/* Distintivo de copia. Centrado y en negrita para que se vea de un vistazo
+   en un papel de 58 mm, sin depender del color: la impresora es termica y
+   solo imprime negro. */
+.ticket-reimpresion {
+  margin: 0 0 2mm;
+  text-align: center;
+  font-size: 9pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .ticket-tabla {
   width: 100%;
   border-collapse: collapse;

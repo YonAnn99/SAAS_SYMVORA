@@ -1,6 +1,13 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type ActivityAction = "CREATE" | "UPDATE" | "DELETE";
+/**
+ * `REIMPRIMIR` se anadio con el historial de ventas (migracion 072).
+ *
+ * No se reutilizo `CREATE` a proposito: la Bitacora habria dicho que alguien
+ * creo una venta cuando solo volvio a sacar su ticket, y es el unico sitio
+ * al que se acude cuando algo huele mal.
+ */
+type ActivityAction = "CREATE" | "UPDATE" | "DELETE" | "REIMPRIMIR";
 type ActivityEntity = "producto" | "venta" | "compra" | "cliente" | "proveedor" | "usuario" | "caja" | "config" | "orden_compra" | "movimiento_caja";
 
 interface LogActivityParams {

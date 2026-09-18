@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import {
+  clavePagoI18n,
   fechaTicket,
   formatearImporte,
   muestraEfectivo,
@@ -24,14 +25,6 @@ import {
   totalArticulos,
 } from "../ticket-format";
 import type { SaleReceipt } from "../types/pos.types";
-
-const PAYMENT_LABEL_KEY: Record<string, string> = {
-  EFECTIVO: "CASH",
-  TARJETA: "CARD",
-  TRANSFERENCIA: "TRANSFER",
-  CREDITO: "CREDIT",
-  TARJETA_TERMINAL: "TERMINAL",
-};
 
 interface TicketReceiptProps {
   open: boolean;
@@ -57,7 +50,10 @@ export function TicketReceipt({
 
   if (!receipt) return null;
 
-  const fecha = fechaTicket();
+  // Una REIMPRESION trae la fecha de la venta; el cobro normal la omite y
+  // usa la de ahora, que es la correcta. Sin esto, el ticket de una venta
+  // de la semana pasada saldria fechado hoy.
+  const fecha = fechaTicket(receipt.fecha ?? undefined);
   const operacion = numeroOperacion(receipt.reference);
   const articulos = totalArticulos(receipt.items);
   const conEfectivo = muestraEfectivo(
@@ -65,7 +61,7 @@ export function TicketReceipt({
     receipt.montoRecibido
   );
   const paymentLabel = t(
-    `pos.paymentMethods.${PAYMENT_LABEL_KEY[receipt.paymentMethod] ?? receipt.paymentMethod}`
+    clavePagoI18n(receipt.paymentMethod)
   );
 
   // El contenido del ticket se usa DOS veces: dentro del diálogo como vista
@@ -94,7 +90,15 @@ export function TicketReceipt({
       <div className="ticket-meta">
         {operacion && <span>Operación #{operacion}</span>}
         <span>{fecha}</span>
+        {receipt.cajero && <span>Atendió: {receipt.cajero}</span>}
       </div>
+
+      {/* Distintivo de copia. Un ticket reimpreso sin marcar sirve para
+          justificar una devolución falsa, así que se separa del original de un
+          vistazo. */}
+      {receipt.esReimpresion && (
+        <p className="ticket-reimpresion">*** REIMPRESIÓN ***</p>
+      )}
 
       <table className="ticket-tabla">
         <thead>

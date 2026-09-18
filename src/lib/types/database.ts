@@ -442,6 +442,14 @@ export type Database = {
           id: string;
           venta_id: string;
           producto_id: string;
+          /**
+           * Variante vendida (talla/color). `null` = venta "general".
+           *
+           * Existe en la base desde la migración 056 pero faltaba aquí: el
+           * tipo generado se quedó atrás. Sin esta columna no se puede saber
+           * qué talla se vendió, y el ticket reimpreso saldría sin ella.
+           */
+          variante_id: string | null;
           cantidad: number;
           precio_unitario: number;
           costo_unitario: number | null;
@@ -452,6 +460,7 @@ export type Database = {
           id?: string;
           venta_id: string;
           producto_id: string;
+          variante_id?: string | null;
           cantidad: number;
           precio_unitario: number;
           costo_unitario?: number | null;
@@ -462,6 +471,7 @@ export type Database = {
           id?: string;
           venta_id?: string;
           producto_id?: string;
+          variante_id?: string | null;
           cantidad?: number;
           precio_unitario?: number;
           costo_unitario?: number | null;

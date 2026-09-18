@@ -56,7 +56,8 @@
     "customer": "Customer",
     "supplier": "Supplier",
     "cashRegister": "Cash register",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "reprint": "Reprint"
   },
   "search": {
     "placeholder": "Search products, customers, routes...",

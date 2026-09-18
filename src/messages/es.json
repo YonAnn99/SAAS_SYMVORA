@@ -56,7 +56,8 @@
     "customer": "Cliente",
     "supplier": "Proveedor",
     "cashRegister": "Caja",
-    "sending": "Enviando..."
+    "sending": "Enviando...",
+    "reprint": "Reimprimir"
   },
   "search": {
     "placeholder": "Buscar productos, clientes, rutas...",

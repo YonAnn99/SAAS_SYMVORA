@@ -38,6 +38,28 @@ describe("mensajeDeError", () => {
     );
   });
 
+  it("traduce violación de unicidad en código de barras", () => {
+    const errorPostgres = {
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "uq_productos_tenant_codigo_barras"',
+      details: "Key (tenant_id, codigo_barras)=(123, 7501234567890) already exists.",
+    };
+    expect(mensajeDeError(errorPostgres)).toBe(
+      "Ya existe un producto con este código de barras"
+    );
+  });
+
+  it("traduce violación de unicidad en SKU", () => {
+    const errorPostgres = {
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "uq_productos_tenant_sku"',
+      details: "Key (tenant_id, sku)=(123, SKU-001) already exists.",
+    };
+    expect(mensajeDeError(errorPostgres)).toBe(
+      "Ya existe un producto con este SKU"
+    );
+  });
+
   it("nunca devuelve cadena vacía ni 'undefined'", () => {
     // Un toast en blanco es peor que un mensaje impreciso.
     for (const v of [null, undefined, {}, { message: null }, 42]) {

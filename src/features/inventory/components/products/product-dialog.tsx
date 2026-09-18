@@ -1,13 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { calcularMargenProducto } from "@/lib/profit";
 import { FileUpload } from "@/components/ui/file-upload";
 import { cropToSquareWebP } from "@/lib/image";
@@ -59,6 +60,8 @@ export function ProductDialog({
     defaultProductFormData
   );
   const [generating, setGenerating] = useState(false);
+  const [autoBarcode, setAutoBarcode] = useState(true);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [imagenPreview, setImagenPreview] = useState<string | null>(null);
   const [imagenRemoved, setImagenRemoved] = useState(false);
@@ -105,12 +108,33 @@ export function ProductDialog({
     }
   };
 
+  const handleAutoBarcodeToggle = async (enabled: boolean) => {
+    setAutoBarcode(enabled);
+    if (!enabled) {
+      updateField("codigo_barras", "");
+      setTimeout(() => {
+        barcodeInputRef.current?.focus();
+      }, 50);
+    } else {
+      setGenerating(true);
+      try {
+        const barcode = await generateNextBarcode(tenantId);
+        updateField("codigo_barras", barcode);
+      } catch (error) {
+        console.error("Error generating barcode:", error);
+      } finally {
+        setGenerating(false);
+      }
+    }
+  };
+
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setFormData(defaultProductFormData);
       setImagenFile(null);
       setImagenPreview(null);
       setImagenRemoved(false);
+      setAutoBarcode(true);
     }
     onOpenChange(next);
   };
@@ -120,6 +144,7 @@ export function ProductDialog({
     const timeout = window.setTimeout(() => {
       syncFromEditing(editingProduct);
       if (!editingProduct) {
+        setAutoBarcode(true);
         generateCodes();
       }
     }, 0);
@@ -260,23 +285,52 @@ export function ProductDialog({
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Código de barras {(!editingProduct && formData.codigo_barras) && <span className="text-emerald-500 ml-1 text-[10px]">(auto)</span>}</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">
+                  Código de barras
+                  {!editingProduct && autoBarcode && formData.codigo_barras && (
+                    <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
+                  )}
+                </Label>
+                {!editingProduct && (
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      id="auto-barcode"
+                      checked={autoBarcode}
+                      onCheckedChange={(checked) => handleAutoBarcodeToggle(Boolean(checked))}
+                    />
+                    <label
+                      htmlFor="auto-barcode"
+                      className="text-[11px] text-muted-foreground cursor-pointer select-none"
+                    >
+                      Automático
+                    </label>
+                  </div>
+                )}
+              </div>
               <Input
-                placeholder="EAN-13"
+                ref={barcodeInputRef}
+                placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : "EAN-13"}
                 value={formData.codigo_barras}
                 onChange={(e) => updateField("codigo_barras", e.target.value)}
                 className="h-8 text-sm font-mono"
-                readOnly={!editingProduct && !!formData.codigo_barras}
+                readOnly={!editingProduct && autoBarcode}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">SKU {(!editingProduct && formData.sku) && <span className="text-emerald-500 ml-1 text-[10px]">(auto)</span>}</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">
+                  SKU
+                  {!editingProduct && formData.sku && (
+                    <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
+                  )}
+                </Label>
+              </div>
               <Input
                 placeholder="SKU-001"
                 value={formData.sku}
                 onChange={(e) => updateField("sku", e.target.value)}
                 className="h-8 text-sm font-mono"
-                readOnly={!editingProduct && !!formData.sku}
               />
             </div>
           </div>

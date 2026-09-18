@@ -908,59 +908,115 @@ Verificado con sondeos revertidos: cajero ve sus 3 y **0 ajenas**; dueño ve las
 cajero filtrando por el dueño → 0; otro negocio → rechazado; venta ajena por id →
 rechazado; página de 5 con `total_filas` 27.
 
-### Fase 2 — Extraer el periodo a lógica pura
+### Fase 2 — Extraer el periodo a lógica pura ✅ HECHA
 
-`src/lib/periodo.ts` (NUEVO). Hoy el cálculo del rango vive **dentro de un
-`useCallback`** en `reports/page.tsx:255-288`, con siete helpers de fecha sin exportar
-(`startOfDay`, `endOfDay`, `formatShortDate`, `isSameDay`, `isDateAfterOrEqual`,
-`getDaysInMonth`, `getFirstDayOfMonth`).
+`src/lib/periodo.ts` (NUEVO) + `src/__tests__/periodo.test.ts` (18 tests).
 
-- `export type Periodo = "dia" | "semana" | "mes" | "trimestre" | "ano"` — hoy es un
-  `string` suelto cuyos valores solo existen en el JSX (`reports/page.tsx:610-625`).
-- `rangoDePeriodo(periodo, fechaElegida, ahora)` → `{ desde, hasta }`.
-- `reports/page.tsx` pasa a importar de aquí. Duplicarlo sería el cuarto sitio.
+- `export type Periodo = "dia" | "semana" | "mes" | "trimestre" | "ano"` — antes era un
+  `string` suelto cuyos valores solo existían escritos a mano en el JSX.
+- `rangoDePeriodo(periodo, fechaElegida, ahora)` → `{ desde, hasta } | null`. Devuelve
+  `null` con periodo "dia" y sin fecha elegida; antes esa rama hacía
+  `setLoading(false); return;` **desde dentro del cálculo**, que es lo que lo hacía
+  intestable. `ahora` se inyecta para que los test no dependan del reloj.
+- `PERIODOS` (valor + etiqueta) y `esPeriodo()`: el desplegable se pinta desde la lista
+  y valida lo que recibe, en vez de castear a ciegas.
+- Los ocho ayudantes de fecha se exportan desde aquí; `reports/page.tsx` los importa y
+  **bajó de 977 a 928 líneas**.
 
-### Fase 3 — Servicio, hook y reconstrucción del ticket
+**Equivalencia comprobada**: se ejecutó la implementación vieja (copiada literal del
+`switch`) contra la nueva sobre **90 combinaciones** de periodo × fecha, incluyendo
+bordes (fin de mes, 29-feb bisiesto, cambio de año, día 31 con `setMonth` desbordando).
+**0 diferencias.** La extracción no cambió ningún comportamiento.
+
+### Fase 3 — Servicio, hook y reconstrucción del ticket ✅ HECHA
 
 `src/features/sales/` (NUEVO):
 
-- `services/sales-history-service.ts` — envuelve los dos RPC.
-- `hooks/use-sales-history.ts` — lista, paginación y filtros. Usar el `setTimeout(…, 0)`
-  del repo para el refetch (convención por `react-hooks/set-state-in-effect`).
-- `sale-receipt-builder.ts` — **lógica pura**: `construirReceiptDesdeVenta(venta,
-  renglones)` → `SaleReceipt`. Testeable sin red.
+- `sale-receipt-builder.ts` — **lógica pura**. `construirReceiptDesdeVenta(venta)` →
+  `SaleReceipt`. Convierte los `DECIMAL` que PostgREST entrega como texto ("116.00"),
+  pone "Cliente general" si no había cliente, arma la etiqueta de variante y marca
+  `esReimpresion: true` siempre. **15 tests** en `sale-receipt-builder.test.ts`.
+- `services/sales-history-service.ts` — envuelve los dos RPC. **Nunca consulta `ventas`
+  directamente**: la regla de visibilidad vive en los RPC y filtrar aquí sería un adorno.
+- `hooks/use-sales-history.ts` — `useSalesHistory` (lista + paginación de servidor, 25
+  por página, vuelve a la página 0 al cambiar de filtro) y `useSaleDetail` (pide el
+  desglose solo al abrir una venta, no las 25 de la página).
 
-### Fase 4 — El ticket
+**Firmas comprobadas contra los RPC reales**: se llamó a `listar_ventas` y
+`detalle_venta` con los nombres de parámetro exactos que manda el servicio; los dos
+resuelven (no hay `PGRST202`) y responden con sus comprobaciones de negocio.
 
-- `SaleReceipt` (`src/features/pos/types/pos.types.ts:55-74`) gana `fecha?`, `cajero?` y
-  `esReimpresion?`.
-- `ticket-receipt.tsx:58` — hoy `const fecha = fechaTicket();` usa **siempre la fecha de
-  hoy**. `fechaTicket(fecha: Date = new Date())` ya acepta parámetro: basta pasárselo.
-  Es el único bloqueador real para reimprimir una venta vieja.
-- Añadir línea de cajero (el ticket **no la tiene hoy**) y el distintivo "REIMPRESIÓN".
-- `TicketReceipt` **no depende del carrito** (no importa `usePosCart`), recibe un objeto
-  plano → reutilizable tal cual. El CSS de impresión (`globals.css:842-891`, `@page 58mm`
-  + portal a `#ticket-impresion`) tampoco se toca.
-- **Arreglar `src/lib/types/database.ts`**: al `Row` de `detalle_ventas` le falta
-  `variante_id`, que existe en la base desde la migración 056. Sin eso el ticket
-  reimpreso saldría sin talla ni color.
+⚠️ `etiquetaVariante()` repite a propósito `variantLabel()` de
+`variant-picker-dialog.tsx`, que es un componente cliente y arrastraría React al módulo
+puro. Hay un test que compara las dos salidas para que no se separen.
 
-### Fase 5 — La sección en Reportes
+### Fase 4 — El ticket ✅ HECHA (se adelantó con la 3)
 
-`Card` nueva en `reports/page.tsx` (977 líneas, un único componente cliente sin
-pestañas), debajo de los agregados: tabla con fecha, nº de operación
-(`numeroOperacion()` de `ticket-format.ts`), cajero, método de pago y total; selector de
-cajero **solo si tiene `sales.view_all`**; paginación; y al pulsar una fila, diálogo con
-el desglose y botón de reimprimir.
+- `SaleReceipt` ganó `fecha?`, `cajero?` y `esReimpresion?`. Los tres son opcionales: el
+  cobro normal del POS no los pasa y su ticket sale exactamente igual que antes.
+- `ticket-receipt.tsx` — `fechaTicket(receipt.fecha ?? undefined)`. Era el único
+  bloqueador real: antes usaba siempre la hora actual y una venta de la semana pasada
+  salía fechada hoy.
+- Línea "Atendió: …" con el cajero (el ticket no la tenía) y distintivo
+  `*** REIMPRESIÓN ***` con estilo propio en `globals.css` (`.ticket-reimpresion`,
+  centrado y en negrita: la impresora térmica solo imprime negro).
+- **`detalle_ventas.variante_id` añadido** a `Row`/`Insert`/`Update` en
+  `src/lib/types/database.ts`. Existía en la base desde la 056 y faltaba en el tipo.
 
-Plantilla visual: `src/features/cash-register/components/movements-table.tsx`.
+### Fase 5 — La sección en Reportes ✅ HECHA (falta comprobación visual)
 
-### Fase 6 — Registro de la reimpresión
+- `src/features/sales/components/sales-history-card.tsx` — tabla con fecha, nº de
+  operación, cajero, cliente, forma de pago y total. Selector de cajero **solo si
+  `can("sales.view_all")`** (sin ese permiso el servidor ya devuelve solo las propias, y
+  el selector no tendría nada que filtrar). Paginación de 25, contra el servidor.
+- `src/features/sales/components/sale-detail-dialog.tsx` — desglose por renglón con
+  talla/color, totales, aviso si la venta quedó marcada para revisión, y botón
+  "Reimprimir ticket" que monta el **mismo** `TicketReceipt` del POS.
+- Montada al final de `reports/page.tsx`, después de los agregados. Comparte el selector
+  de periodo de arriba.
+- `PAYMENT_LABEL_KEY` se movió de `ticket-receipt.tsx` a `ticket-format.ts` (+
+  `clavePagoI18n()`): la tabla y el ticket tenían que nombrar igual la misma venta.
 
-Escribir en `activity_logs` (tabla de la Bitácora: `tenant_id, user_id, user_email,
-action, entity, entity_id, entity_name, details, ip_address, created_at`). La entidad
-`venta` ya está contemplada en `activity/page.tsx:59`. Un ticket reimpreso sirve para
-justificar una devolución falsa: tiene que dejar rastro.
+**Camino de datos comprobado con datos reales** (Pruebas SYMVORA, periodo "este mes"):
+17 ventas; cada columna de la tabla llega con valor (fecha, operación `#E2FD9FE4`,
+cajero, cliente, pago, total, `total_filas`), y el desglose trae su renglón con la fecha
+original y el cajero.
+
+⏳ **Pendiente**: comprobación en pantalla. La extensión de Chrome no estaba conectada.
+Falta ver la tabla renderizada, abrir una venta, reimprimir y confirmar que el ticket
+sale con la fecha original y el distintivo; y entrar con un cajero para verificar que no
+le aparece el selector.
+
+### Fase 6 — Registro de la reimpresión ✅ HECHA
+
+`supabase/migrations/072_bitacora_reimpresion.sql` (aplicada) + cliente.
+
+- **Acción `REIMPRIMIR` nueva.** El `CHECK` de `activity_logs.action` solo admitía
+  CREATE/UPDATE/DELETE. **No se reutilizó `CREATE`**: la Bitácora habría dicho que
+  alguien *creó una venta* cuando solo volvió a sacar su ticket, y es el único sitio al
+  que se acude cuando algo huele mal. Un registro que miente es peor que no tenerlo.
+- `activity-logger.ts` admite la acción; `activity/page.tsx` la pinta con icono de
+  impresora y **color ámbar** (no verde: no es un alta, es algo que conviene mirar dos
+  veces). Clave i18n `common.reprint` en los dos idiomas.
+- El registro sale del diálogo con la venta completa a mano: guarda total, fecha de la
+  venta y quién la cobró originalmente. **No se espera al registro para abrir el
+  ticket**: que falle la Bitácora no puede impedir atender al cliente que está enfrente.
+
+Verificado contra la base: `REIMPRIMIR` aceptada, una acción inventada rechazada, y
+`CREATE` sigue funcionando (no se rompió lo anterior).
+
+---
+
+## Estado del plan: fases 1-6 completas
+
+Lo único pendiente es **verlo en pantalla**: la extensión de Chrome no conectó en
+ninguno de los intentos. Falta comprobar la tabla renderizada, abrir una venta,
+reimprimir (fecha original + `*** REIMPRESIÓN ***`), que la reimpresión aparezca en la
+Bitácora, y que a un cajero no le salga el selector de cajero.
+
+**Los filtros de periodo funcionan** — comprobado consultando con el rango exacto de
+cada uno en Pruebas SYMVORA: día 0, semana 6, mes 17, trimestre 24, año 24. La tabla
+comparte `rangoDePeriodo` con las gráficas, así que responde al mismo selector.
 
 ### Tests nuevos (lógica pura, títulos en español)
 
@@ -986,8 +1042,15 @@ justificar una devolución falsa: tiene que dejar rastro.
 - Reutilizables tal cual: `src/features/pos/ticket-format.ts` (íntegro), `src/lib/profit.ts`,
   el CSS de impresión, y `get_tenant_members` (ya corregida).
 
-### Líneas base al empezar
+### Líneas base (actualizadas tras la fase 2)
 
-`npx tsc --noEmit` limpio · `npx vitest run` **496 tests** · `npx eslint .` **8 errores /
-283 avisos** (los 8 son preexistentes y ajenos a esto; los avisos incluyen ~97 de
-`public/sw.js`, que es salida generada y está en `.gitignore`).
+`npx tsc --noEmit` limpio · `npx vitest run` **536 tests en 43 archivos** · `npx eslint .`
+**9 errores / 284 avisos** (sin cambios: 0 problemas en los archivos de las fases 2-4).
+
+Los 9 errores son todos preexistentes y ajenos a este trabajo (`public/sw.js`, que es
+salida generada e ignorada por git, más ocho `react-hooks` repartidos). Ojo: el de
+`reports/page.tsx` se movió de la línea 526 a la 477 al encoger el archivo — es el
+mismo, no uno nuevo. El noveno (`profile-dialog.tsx:70`) llegó con el commit de perfil.
+
+⚠️ Si `vitest` reporta menos archivos de los esperados y "N errors" con
+`Failed to start forks worker`, es la máquina cargada, no fallos: volver a lanzarlo.

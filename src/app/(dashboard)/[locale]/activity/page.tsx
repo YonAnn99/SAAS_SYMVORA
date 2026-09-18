@@ -40,6 +40,7 @@ import {
   Trash2,
   ClipboardList,
   Banknote,
+  Printer,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -72,18 +73,23 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   CREATE: Plus,
   UPDATE: Pencil,
   DELETE: Trash2,
+  REIMPRIMIR: Printer,
 };
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
   UPDATE: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
   DELETE: "bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400",
+  // Ambar, no verde: no es una alta, es algo que conviene mirar dos veces.
+  REIMPRIMIR:
+    "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
 };
 
 const ACTION_KEYS: Record<string, string> = {
   CREATE: "common.create",
   UPDATE: "common.update",
   DELETE: "common.delete",
+  REIMPRIMIR: "common.reprint",
 };
 
 const ENTITY_KEYS: Record<string, string> = {

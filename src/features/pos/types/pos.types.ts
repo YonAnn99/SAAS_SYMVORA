@@ -69,6 +69,23 @@ export interface SaleReceipt {
    * sincronizar — asi que sigue apuntando a la misma venta cuando suba.
    */
   reference?: string | null;
+  /**
+   * Cuando se cobro. Solo lo trae una REIMPRESION.
+   *
+   * En el cobro normal se omite y el ticket usa la hora actual, que es la
+   * correcta. Al reimprimir una venta vieja hay que pasarla, o el papel
+   * mentiria diciendo que se cobro hoy.
+   */
+  fecha?: Date | null;
+  /** Quien cobro. El ticket del POS no lo traia; la reimpresion si. */
+  cajero?: string | null;
+  /**
+   * Marca el papel como copia.
+   *
+   * Un ticket reimpreso sin distintivo sirve para justificar una devolucion
+   * falsa: es practica estandar en punto de venta diferenciarlo del original.
+   */
+  esReimpresion?: boolean;
 }
 
 /** Variante tal como la necesita el POS (subconjunto de `variantes_producto`). */

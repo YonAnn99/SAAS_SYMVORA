@@ -73,3 +73,23 @@ export function fechaTicket(fecha: Date = new Date()): string {
     hour12: true,
   });
 }
+
+/**
+ * De la forma de pago guardada a la clave de traduccion.
+ *
+ * Vivia dentro de `ticket-receipt.tsx`. Se movio aqui porque el historial de
+ * ventas tambien tiene que leer el metodo de pago, y una segunda copia haria
+ * que la tabla y el ticket pudieran nombrar distinto la misma venta.
+ */
+export const PAYMENT_LABEL_KEY: Record<string, string> = {
+  EFECTIVO: "CASH",
+  TARJETA: "CARD",
+  TRANSFERENCIA: "TRANSFER",
+  CREDITO: "CREDIT",
+  TARJETA_TERMINAL: "TERMINAL",
+};
+
+/** La clave i18n del metodo, con respaldo si llega uno desconocido. */
+export function clavePagoI18n(metodoPago: string): string {
+  return `pos.paymentMethods.${PAYMENT_LABEL_KEY[metodoPago] ?? metodoPago}`;
+}

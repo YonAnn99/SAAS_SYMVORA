@@ -23,6 +23,20 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Link } from "@/i18n/navigation";
+import {
+  esPeriodo,
+  formatMonthYear,
+  formatShortDate,
+  getDaysInMonth,
+  getFirstDayOfMonth,
+  isDateAfterOrEqual,
+  isSameDay,
+  PERIODOS,
+  rangoDePeriodo,
+  startOfDay,
+  type Periodo,
+} from "@/lib/periodo";
+import { SalesHistoryCard } from "@/features/sales/components/sales-history-card";
 import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 
 interface ReportData {
@@ -50,7 +64,10 @@ interface ReportData {
   };
 }
 
-const DIA_LABEL = "Día específico";
+// La etiqueta sale de la lista compartida para que el desplegable y el
+// resumen del disparador no puedan decir cosas distintas.
+const DIA_LABEL =
+  PERIODOS.find((p) => p.valor === "dia")?.etiqueta ?? "Día específico";
 const WEEKDAY_LABELS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
 
 /**
@@ -68,50 +85,6 @@ const MAX_VENTAS_REPORTE = 5000;
  */
 const DETALLE_BATCH_SIZE = 200;
 
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-
-function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function getFirstDayOfMonth(year: number, month: number): number {
-  const day = new Date(year, month, 1).getDay();
-  return day === 0 ? 6 : day - 1;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function isDateAfterOrEqual(a: Date, b: Date): boolean {
-  return startOfDay(a).getTime() >= startOfDay(b).getTime();
-}
-
-function formatMonthYear(date: Date): string {
-  return date.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
-}
-
-function formatShortDate(date: Date): string {
-  return date.toLocaleDateString("es-MX", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function generateHourSlots(): string[] {
   const slots: string[] = [];
@@ -242,7 +215,7 @@ export default function ReportsPage() {
   // truncado en silencio se lee como si fueran las cifras completas del
   // negocio, que es peor que no mostrarlo.
   const [reporteTruncado, setReporteTruncado] = useState(false);
-  const [periodo, setPeriodo] = useState("mes");
+  const [periodo, setPeriodo] = useState<Periodo>("mes");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
@@ -254,39 +227,18 @@ export default function ReportsPage() {
     setLoading(true);
     const supabase = createSupabaseBrowserClient();
 
-    const now = new Date();
-    let startDate: Date;
-    let endDate: Date;
-
-    switch (periodo) {
-      case "semana":
-        endDate = endOfDay(now);
-        startDate = startOfDay(now);
-        startDate.setDate(startDate.getDate() - 6);
-        break;
-      case "trimestre":
-        endDate = endOfDay(now);
-        startDate = startOfDay(now);
-        startDate.setMonth(startDate.getMonth() - 3);
-        break;
-      case "ano":
-        endDate = endOfDay(now);
-        startDate = startOfDay(now);
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      case "dia":
-        if (!selectedDate) {
-          setLoading(false);
-          return;
-        }
-        startDate = startOfDay(selectedDate);
-        endDate = endOfDay(selectedDate);
-        break;
-      default: // mes
-        endDate = endOfDay(now);
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        startDate = startOfDay(startDate);
+    // El rango lo decide `rangoDePeriodo`, compartido con el historial de
+    // ventas: si cada pantalla lo calculara por su cuenta acabarian mostrando
+    // periodos distintos sin que nada avisara.
+    //
+    // Devuelve null con periodo "dia" y sin fecha elegida: el usuario todavia
+    // no ha escogido el dia en el calendario.
+    const rango = rangoDePeriodo(periodo, selectedDate);
+    if (!rango) {
+      setLoading(false);
+      return;
     }
+    const { desde: startDate, hasta: endDate } = rango;
 
     const [
       { data: ventas, error: ventasError },
@@ -607,7 +559,7 @@ export default function ReportsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={periodo} onValueChange={(v) => v && setPeriodo(v)}>
+          <Select value={periodo} onValueChange={(v) => v && esPeriodo(v) && setPeriodo(v)}>
             <SelectTrigger className="w-[160px] h-8">
               <CalendarIcon className="h-3.5 w-3.5 mr-2" />
               {periodo === "dia" && selectedDate ? (
@@ -617,11 +569,11 @@ export default function ReportsPage() {
               )}
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="semana">Última semana</SelectItem>
-              <SelectItem value="mes">Este mes</SelectItem>
-              <SelectItem value="trimestre">Último trimestre</SelectItem>
-              <SelectItem value="ano">Último año</SelectItem>
-              <SelectItem value="dia">{DIA_LABEL}</SelectItem>
+              {PERIODOS.map((p) => (
+                <SelectItem key={p.valor} value={p.valor}>
+                  {p.etiqueta}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -972,6 +924,16 @@ export default function ReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* El historial de ventas individuales. Va al final, despues de los
+          agregados: primero el resumen del periodo, luego el detalle. Comparte
+          el selector de periodo de arriba, asi que responde al mismo filtro que
+          las graficas. */}
+      <SalesHistoryCard
+        tenantId={tenantId}
+        periodo={periodo}
+        fechaElegida={selectedDate}
+      />
     </div>
   );
 }

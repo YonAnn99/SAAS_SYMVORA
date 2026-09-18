@@ -99,11 +99,7 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
         setShowDialog(false);
         void refetch();
       } catch (error: unknown) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Error al guardar el producto"
-        );
+        toast.error(mensajeDeError(error));
       } finally {
         setSaving(false);
       }
