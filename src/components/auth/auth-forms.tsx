@@ -109,6 +109,19 @@ export function AuthForms({
   const [keyValue, setKeyValue] = useState("");
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyLoading, setKeyLoading] = useState(false);
+  // Su propio "Recordarme": este formulario no comparte NADA con el de
+  // contrasena, y el correo recordado tampoco. En el mostrador conviven el
+  // dueno y el cajero, y un hueco compartido haria que se pisaran.
+  const [rememberKeyMe, setRememberKeyMe] = useState(true);
+
+  // Mismo patron diferido que el del login normal: en el servidor no hay
+  // localStorage, y un setState sincrono dentro de un efecto encadena renders.
+  useEffect(() => {
+    const remembered = loadRememberedEmail("clave");
+    if (!remembered) return;
+    const timeout = window.setTimeout(() => setKeyEmail(remembered), 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   // Signup state
   const [nombre, setNombre] = useState("");
@@ -299,11 +312,15 @@ export function AuthForms({
 
       setKeyCaptchaToken(null);
       turnstileKeyRef.current?.reset();
+      // Solo despues de que el servidor acepte la clave: recordar un correo con
+      // el que no se pudo entrar no le sirve a nadie. Se guarda el CORREO, y el
+      // ambito "clave" lo mantiene aparte del correo del dueno.
+      applyRememberChoice(keyEmail, rememberKeyMe, "clave");
       // Se olvida el candado del precalentado: al entrar conviene dejar el
-    // dispositivo listo para trabajar sin red cuanto antes, sin esperar a
-    // que caduque la ventana de seis horas de la sesion anterior.
-    reiniciarCandadoPrecalentado();
-    router.push(`/${locale}/dashboard`);
+      // dispositivo listo para trabajar sin red cuanto antes, sin esperar a
+      // que caduque la ventana de seis horas de la sesion anterior.
+      reiniciarCandadoPrecalentado();
+      router.push(`/${locale}/dashboard`);
       router.refresh();
     } catch (err) {
       console.error("[key-login] Connection error:", err);
@@ -1003,6 +1020,20 @@ export function AuthForms({
               required
               style={{ letterSpacing: "2px", textTransform: "uppercase" }}
             />
+
+            {/* Mismo marcado que el del login normal: un checkbox nativo oculto
+                y un span que dibuja la píldora por CSS (`.auth-remember-me` en
+                auth-toggle.css, ya importado). Recuerda el CORREO, nunca la
+                clave de invitación. */}
+            <label className="auth-remember-me">
+              <span>{t("auth.rememberMe")}</span>
+              <input
+                type="checkbox"
+                checked={rememberKeyMe}
+                onChange={(e) => setRememberKeyMe(e.target.checked)}
+              />
+              <span className="auth-remember-switch" aria-hidden="true" />
+            </label>
 
             {turnstileSiteKey && (
               <div style={{ width: "100%", marginBottom: "12px" }}>

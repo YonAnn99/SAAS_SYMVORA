@@ -4,6 +4,7 @@ import {
   forgetRememberedEmail,
   loadRememberedEmail,
   rememberEmail,
+  CLAVES_RECORDADAS,
 } from "@/lib/auth/remembered-account";
 
 describe("recordar cuenta", () => {
@@ -73,5 +74,81 @@ describe("recordar cuenta", () => {
     });
     expect(loadRememberedEmail()).toBeNull();
     expect(() => applyRememberChoice("cajero@tienda.mx", true)).not.toThrow();
+  });
+});
+
+/**
+ * El acceso con clave (cajeros y colaboradores) tiene su propio "Recordarme".
+ *
+ * El fallo que previenen estos test: con un único hueco compartido, en un
+ * mostrador donde alternan el dueño y el cajero, cada uno le borraba el correo
+ * recordado al otro — y el correo del cajero acababa prerrellenado en el
+ * formulario de contraseña, que es donde no le sirve de nada.
+ */
+describe("recordar cuenta: dos ámbitos", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("sin indicar ámbito se usa el del login normal", () => {
+    // Retrocompatibilidad: las llamadas que ya existían no cambiaron.
+    rememberEmail("dueno@tienda.mx");
+    expect(loadRememberedEmail("password")).toBe("dueno@tienda.mx");
+  });
+
+  it("cada formulario recuerda su propio correo", () => {
+    rememberEmail("dueno@tienda.mx", "password");
+    rememberEmail("cajero@tienda.mx", "clave");
+    expect(loadRememberedEmail("password")).toBe("dueno@tienda.mx");
+    expect(loadRememberedEmail("clave")).toBe("cajero@tienda.mx");
+  });
+
+  it("guardar en uno no toca el otro", () => {
+    rememberEmail("dueno@tienda.mx", "password");
+    rememberEmail("cajero@tienda.mx", "clave");
+    rememberEmail("otro@tienda.mx", "clave");
+    expect(loadRememberedEmail("password")).toBe("dueno@tienda.mx");
+  });
+
+  it("el cajero apagando su switch NO borra el correo del dueño", () => {
+    // El escenario del mostrador compartido. Con un hueco único, este
+    // `applyRememberChoice(_, false)` se llevaba por delante al dueño.
+    applyRememberChoice("dueno@tienda.mx", true, "password");
+    applyRememberChoice("cajero@tienda.mx", false, "clave");
+    expect(loadRememberedEmail("password")).toBe("dueno@tienda.mx");
+    expect(loadRememberedEmail("clave")).toBeNull();
+  });
+
+  it("olvidar uno no olvida el otro", () => {
+    rememberEmail("dueno@tienda.mx", "password");
+    rememberEmail("cajero@tienda.mx", "clave");
+    forgetRememberedEmail("clave");
+    expect(loadRememberedEmail("password")).toBe("dueno@tienda.mx");
+    expect(loadRememberedEmail("clave")).toBeNull();
+  });
+
+  it("con los dos ámbitos usados solo existen esas dos claves", () => {
+    // Amplía el guardián anterior al ámbito nuevo: aquí no puede colarse una
+    // clave de invitación, una contraseña ni un token.
+    applyRememberChoice("dueno@tienda.mx", true, "password");
+    applyRememberChoice("cajero@tienda.mx", true, "clave");
+    const guardadas = Object.keys(window.localStorage);
+    expect(guardadas.sort()).toEqual([...CLAVES_RECORDADAS].sort());
+  });
+
+  it("todo lo guardado parece un correo, nunca un secreto", () => {
+    applyRememberChoice("dueno@tienda.mx", true, "password");
+    applyRememberChoice("cajero@tienda.mx", true, "clave");
+    for (const clave of Object.keys(window.localStorage)) {
+      expect(window.localStorage.getItem(clave)).toContain("@");
+    }
+  });
+
+  it("una clave de invitación guardada por error no se prerrellena", () => {
+    // Defensa en profundidad: aunque algo escribiera "ABC123XY" bajo esa clave,
+    // no acabaría en un campo de inicio de sesión.
+    window.localStorage.setItem("symvora_remembered_key_email", "ABC123XY");
+    expect(loadRememberedEmail("clave")).toBeNull();
   });
 });
