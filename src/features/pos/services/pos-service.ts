@@ -24,18 +24,20 @@ export interface CompleteSaleParams {
   notas?: string;
   montoRecibido?: number | null;
   /**
-   * Campos de sincronización offline (migración 051). Solo los manda la cola
-   * al subir una venta diferida; una venta online normal los omite y el RPC
-   * se comporta exactamente igual que antes.
+   * Parametros opcionales de la firma del RPC (migración 051). Nacieron para
+   * que la cola de ventas offline pudiera subir una venta diferida con su
+   * fecha, su caja y su clave de deduplicacion. La cola se retiró con el modo
+   * sin conexión (2026-09-20), pero se mantienen aquí porque la FIRMA del RPC
+   * no cambia y `idempotencyKey` sigue siendo la vía para que un reintento no
+   * duplique un cobro.
    */
   idempotencyKey?: string | null;
-  /** Fecha real de la venta, no la de sincronización. */
+  /** Fecha real de la venta. Se omite y el servidor pone la de ahora. */
   fechaVenta?: string | null;
-  /** Caja abierta cuando se vendió, no la que esté abierta al sincronizar. */
+  /** Caja abierta cuando se vendió. */
   cajaId?: string | null;
   /** Total del ticket entregado al cliente, para detectar cambios de precio. */
   totalCobrado?: number | null;
-  origen?: "online" | "offline";
   /**
    * Lista de precios con la que se cobra. Se manda el ID, jamas el precio:
    * el servidor lo relee de `precios_lista` (migracion 068).
@@ -76,7 +78,6 @@ export async function completeSale(params: CompleteSaleParams) {
     fechaVenta,
     cajaId,
     totalCobrado,
-    origen,
     listaPrecioId,
   } = params;
 
@@ -104,7 +105,8 @@ export async function completeSale(params: CompleteSaleParams) {
     p_fecha_venta: fechaVenta ?? null,
     p_caja_id: cajaId ?? null,
     p_total_cobrado: totalCobrado ?? null,
-    p_origen: origen ?? "online",
+    // Ya no hay otro origen posible: el modo sin conexión se retiró.
+    p_origen: "online",
     p_lista_precio_id: listaPrecioId ?? null,
   });
 

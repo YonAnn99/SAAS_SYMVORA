@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -11,28 +11,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
-import { useOnlineStatus } from "@/hooks/use-online-status";
-import { useSaleSync } from "@/features/pos/hooks/use-sale-sync";
 import {
   VariantPickerDialog,
   variantLabel,
   variantPrice,
 } from "@/features/pos/components/variant-picker-dialog";
-import { PendingSalesBanner } from "@/features/pos/components/pending-sales-banner";
 import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
 import { OpenRegisterRequiredDialog } from "@/features/cash-register";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { enqueueSale } from "@/lib/offline/queue";
-import {
-  esErrorDeRed,
-  hayConexionReal,
-} from "@/lib/offline/connectivity";
-import {
-  motivoBloqueoCobro,
-  OFFLINE_PAYMENT_METHODS,
-} from "@/features/pos/venta-bloqueada";
-import { requestPersistentStorage } from "@/lib/offline/persist";
+import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 
 import { completeSale } from "@/features/pos/services/pos-service";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
@@ -82,22 +70,13 @@ export default function POSPage() {
     priceLists,
     userId,
     loadingProducts,
-    isOfflineCatalog,
     cajaId,
     refetch,
   } = usePosCatalog(tenantId, tenantLoading);
-  const isOnline = useOnlineStatus();
-  const saleSync = useSaleSync(tenantId);
   // El middleware ya redirige si no hay caja, pero no corre en la navegacion
   // de cliente ni cuando la PWA abre el POS desde su cache sin conexion.
   const { hasOpenRegister, loading: loadingRegister } = useOpenRegister(tenantId);
   const [variantPickerFor, setVariantPickerFor] = useState<Producto | null>(null);
-
-  // Pedir almacenamiento persistente al entrar al POS: es lo que reduce el
-  // riesgo de que el navegador desaloje la cola de ventas sin subir.
-  useEffect(() => {
-    void requestPersistentStorage();
-  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPriceList, setSelectedPriceList] =
@@ -292,15 +271,6 @@ export default function POSPage() {
       toast.error("Selecciona un método de pago");
       return;
     }
-    // Sin red solo se permiten los métodos que el cajero puede confirmar por
-    // sí mismo (ver OFFLINE_PAYMENT_METHODS).
-    if (!isOnline && !OFFLINE_PAYMENT_METHODS.has(selectedPayment)) {
-      toast.error(
-        "Sin conexión solo puedes cobrar en efectivo o con tarjeta manual"
-      );
-      return;
-    }
-
     if (selectedPayment === "CREDITO" && selectedCustomer === "none") {
       toast.error("Selecciona un cliente para la venta a crédito");
       return;
@@ -326,75 +296,21 @@ export default function POSPage() {
     const listaPrecioId =
       selectedPriceList === SIN_LISTA ? null : selectedPriceList;
 
-    const encolarVenta = async (): Promise<string> => {
-      // `crypto.randomUUID()` genera la clave de idempotencia, que es lo que
-      // garantiza que un reintento no cree una venta duplicada. Esa misma
-      // clave es la referencia del ticket: aquí todavía no existe fila en
-      // `ventas`, y como el servidor deduplica por ella, el número impreso
-      // seguirá apuntando a esta venta cuando termine de subir.
-      const claveIdempotencia = crypto.randomUUID();
-      await enqueueSale({
-        idempotencyKey: claveIdempotencia,
+    setProcessingSale(true);
+    try {
+      // El retorno del RPC trae la fila completa de `ventas`; su `id` es el
+      // numero de operacion que imprime el ticket.
+      const venta = (await completeSale({
         tenantId,
         userId,
-        cajaId,
         clienteId,
         metodoPago: selectedPayment as MetodoPagoDirecto,
         items,
         includeIva,
-        notas: null,
         montoRecibido: isEfectivo ? montoRecibidoNum : null,
-        // El total que se le cobró al cliente. Al sincronizar, el servidor
-        // recalcula desde el catálogo y marca la venta para revisión si el
-        // precio cambió mientras estábamos sin red.
-        totalCobrado: totals.total,
-        // Sin la lista, al sincronizar el servidor recalcularía a precio
-        // base y `p_total_cobrado <> v_total` marcaría para revisión TODAS
-        // las ventas offline hechas con lista.
         listaPrecioId,
-        createdAt: new Date().toISOString(),
-      });
-      await saleSync.refresh();
-      return claveIdempotencia;
-    };
-
-    setProcessingSale(true);
-    try {
-
-      // Referencia que el ticket imprime como número de operación.
-      let referenciaTicket: string | null = null;
-
-
-      // No basta con `navigator.onLine`: con el módem caído sigue diciendo que
-      // sí, y la venta acababa en el `catch` genérico, sin cobrar y sin
-      // encolar. Se confirma con una petición real antes de decidir.
-      const hayRed = isOnline && (await hayConexionReal());
-
-      if (hayRed) {
-        // El retorno del RPC se descartaba. Trae la fila completa de `ventas`,
-        // y su `id` es lo que hace falta para el ticket.
-        const venta = (await completeSale({
-          tenantId,
-          userId,
-          clienteId,
-          metodoPago: selectedPayment as MetodoPagoDirecto,
-          items,
-          includeIva,
-          montoRecibido: isEfectivo ? montoRecibidoNum : null,
-          listaPrecioId,
-        })) as { id?: string } | null;
-        referenciaTicket = venta?.id ?? null;
-      } else if (!isOnline || !OFFLINE_PAYMENT_METHODS.has(selectedPayment)) {
-        // La red se cayó entre la comprobación y aquí, o el método elegido
-        // necesita servidor. No se puede cobrar a ciegas.
-        toast.error(
-          "Se perdió la conexión. Cobra en efectivo o con tarjeta manual para poder guardar la venta."
-        );
-        return;
-      } else {
-        // Sin red: se guarda en el dispositivo y se sube sola.
-        referenciaTicket = await encolarVenta();
-      }
+      })) as { id?: string } | null;
+      const referenciaTicket = venta?.id ?? null;
 
       setSaleReceipt({
         items: [...items],
@@ -406,11 +322,7 @@ export default function POSPage() {
         cambio: isEfectivo ? cambio : null,
         reference: referenciaTicket,
       });
-      toast.success(
-        isOnline
-          ? `Venta completada: $${totals.total.toFixed(2)}`
-          : `Venta guardada sin conexión: $${totals.total.toFixed(2)} — se subirá sola`
-      );
+      toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
       clearCart();
       setSelectedCustomer("none");
       setSelectedPayment("");
@@ -418,43 +330,23 @@ export default function POSPage() {
       setMontoRecibido("");
       setShowConfirmDialog(false);
       setMobileCartOpen(false);
-      if (isOnline) void refetch();
+      void refetch();
     } catch (error) {
-      // RED DE SEGURIDAD. Antes, un fallo de red aquí mostraba "Error al
-      // procesar la venta" y la venta SE PERDÍA: ni cobrada ni encolada. Si el
-      // fallo fue de red y el método se puede cobrar sin conexión, se encola.
-      // Encolar de más es recuperable — el servidor deduplica por clave de
-      // idempotencia —; perder una venta ya cobrada, no.
-      if (esErrorDeRed(error) && OFFLINE_PAYMENT_METHODS.has(selectedPayment)) {
-        try {
-          const referencia = await encolarVenta();
-          setSaleReceipt({
-            items: [...items],
-            total: totals.total,
-            paymentMethod: selectedPayment,
-            customerName,
-            customerPhone: selectedCustomerObj?.telefono ?? null,
-            montoRecibido: isEfectivo ? montoRecibidoNum : null,
-            cambio: isEfectivo ? cambio : null,
-            reference: referencia,
-          });
-          toast.success(
-            `Se cayó la conexión: la venta de $${totals.total.toFixed(2)} quedó guardada y se subirá sola`
-          );
-          clearCart();
-          setSelectedCustomer("none");
-          setSelectedPayment("");
-          setSelectedPriceList(SIN_LISTA);
-          setMontoRecibido("");
-          setShowConfirmDialog(false);
-          setMobileCartOpen(false);
-          return;
-        } catch {
-          toast.error(
-            "Se cayó la conexión y no se pudo guardar la venta en este dispositivo. Anótala antes de continuar."
-          );
-          return;
-        }
+      // Un fallo de red aqui deja la venta EN DUDA: la peticion pudo llegar al
+      // servidor y confirmarse, y perderse solo la respuesta. Antes daba igual
+      // porque la venta se encolaba; sin cola, volver a cobrar a ciegas es
+      // duplicar el cargo al cliente. Por eso se distingue del error de
+      // validacion, que si es inequivoco (el servidor rechazo y no guardo nada).
+      const pareceFalloDeRed =
+        error instanceof TypeError ||
+        (error instanceof Error && /fetch|network|failed to fetch|load failed/i.test(error.message));
+
+      if (pareceFalloDeRed) {
+        toast.error(
+          "No se pudo confirmar la venta por un problema de conexión. Búscala en Reportes antes de volver a cobrarla: puede que sí haya quedado registrada.",
+          { duration: 12000 }
+        );
+        return;
       }
       toast.error(error instanceof Error ? error.message : "Error al procesar la venta");
     } finally {
@@ -463,8 +355,8 @@ export default function POSPage() {
   };
 
   // Una sola fuente para las dos instancias del panel de cobro (escritorio y
-  // hoja movil). Estaban escritas por separado, y por eso el bloqueo por
-  // `!isOnline` sobrevivio a la llegada de la cola de ventas offline.
+  // hoja movil). Estaban escritas por separado, y esa duplicacion es la que
+  // dejo sobrevivir un bloqueo obsoleto durante semanas.
   const motivoBloqueo = useMemo(
     () =>
       motivoBloqueoCobro({
@@ -472,14 +364,12 @@ export default function POSPage() {
         metodoPago: selectedPayment,
         procesando: processingSale,
         montoInsuficiente: montoRecibidoInsuficiente,
-        isOnline,
       }),
     [
       items.length,
       selectedPayment,
       processingSale,
       montoRecibidoInsuficiente,
-      isOnline,
     ]
   );
 
@@ -507,22 +397,6 @@ export default function POSPage() {
       >
       {/* Left: Products grid / search */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
-        <PendingSalesBanner
-          pendingCount={saleSync.pendingCount}
-          failedCount={saleSync.failedCount}
-          syncing={saleSync.syncing}
-          needsReauth={saleSync.needsReauth}
-          oldestPendingAt={saleSync.oldestPendingAt}
-          onSyncNow={() => void saleSync.syncNow()}
-        />
-
-        {isOfflineCatalog && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-            Sin conexión: mostrando el catálogo guardado de la última vez que hubo
-            internet. Las existencias que ves pueden estar desactualizadas.
-          </div>
-        )}
-
         <PosSearchBar
           search={search}
           onSearchChange={setSearch}
@@ -578,8 +452,6 @@ export default function POSPage() {
           montoRecibido={montoRecibido}
           onMontoRecibidoChange={setMontoRecibido}
           cambio={cambio}
-          isOnline={isOnline}
-          motivoBloqueo={motivoBloqueo}
           processingSale={processingSale}
           disabledComplete={motivoBloqueo !== null}
           onCompleteSale={() => setShowConfirmDialog(true)}
@@ -616,9 +488,7 @@ export default function POSPage() {
               montoRecibido={montoRecibido}
               onMontoRecibidoChange={setMontoRecibido}
               cambio={cambio}
-              isOnline={isOnline}
-              motivoBloqueo={motivoBloqueo}
-              processingSale={processingSale}
+                  processingSale={processingSale}
               disabledComplete={motivoBloqueo !== null}
               onCompleteSale={() => setShowConfirmDialog(true)}
               onClearCart={clearCart}

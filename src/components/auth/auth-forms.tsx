@@ -25,7 +25,6 @@ import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
 import { convertToWebP } from "@/lib/image";
 import { toast } from "sonner";
 import "@/styles/auth-toggle.css";
-import { reiniciarCandadoPrecalentado } from "@/lib/offline/route-cache";
 
 function GoogleIcon() {
   return (
@@ -259,10 +258,6 @@ export function AuthForms({
     // Solo despues de que el servidor acepte las credenciales: recordar un
     // correo con el que no se pudo entrar no le sirve a nadie.
     applyRememberChoice(loginEmail, rememberMe);
-    // Se olvida el candado del precalentado: al entrar conviene dejar el
-    // dispositivo listo para trabajar sin red cuanto antes, sin esperar a
-    // que caduque la ventana de seis horas de la sesion anterior.
-    reiniciarCandadoPrecalentado();
     router.push(`/${locale}/dashboard`);
     router.refresh();
   };
@@ -316,10 +311,6 @@ export function AuthForms({
       // el que no se pudo entrar no le sirve a nadie. Se guarda el CORREO, y el
       // ambito "clave" lo mantiene aparte del correo del dueno.
       applyRememberChoice(keyEmail, rememberKeyMe, "clave");
-      // Se olvida el candado del precalentado: al entrar conviene dejar el
-      // dispositivo listo para trabajar sin red cuanto antes, sin esperar a
-      // que caduque la ventana de seis horas de la sesion anterior.
-      reiniciarCandadoPrecalentado();
       router.push(`/${locale}/dashboard`);
       router.refresh();
     } catch (err) {
@@ -593,10 +584,6 @@ export function AuthForms({
         });
         const promoData = await promoRes.json();
         if (promoRes.ok && promoData.ok) {
-          // Se olvida el candado del precalentado: al entrar conviene dejar el
-    // dispositivo listo para trabajar sin red cuanto antes, sin esperar a
-    // que caduque la ventana de seis horas de la sesion anterior.
-    reiniciarCandadoPrecalentado();
     router.push(`/${locale}/dashboard`);
           router.refresh();
           return;
@@ -611,10 +598,6 @@ export function AuthForms({
     // complete_onboarding) — entra directo al sistema en vez de forzar el
     // pago en Conekta. El pago real se ofrece desde /billing cuando el
     // usuario decida pagar o cuando el trial esté por vencer.
-    // Se olvida el candado del precalentado: al entrar conviene dejar el
-    // dispositivo listo para trabajar sin red cuanto antes, sin esperar a
-    // que caduque la ventana de seis horas de la sesion anterior.
-    reiniciarCandadoPrecalentado();
     router.push(`/${locale}/dashboard`);
     router.refresh();
   };

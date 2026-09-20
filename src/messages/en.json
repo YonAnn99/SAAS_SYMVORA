@@ -676,12 +676,6 @@
         "title": "Migrate your catalog easily",
         "description": "Upload your catalog as CSV or Excel and map the columns yourself. Detects barcode duplicates and lets you decide: skip, update or generate a new one.",
         "stats": "CSV & Excel · Duplicate detection · Batch import"
-      },
-      "pwa": {
-        "title": "Works offline",
-        "description": "Install SYMVORA as an app on your phone or computer. The point-of-sale catalog stays available even if the store's wifi drops.",
-        "offlineLabel": "Offline mode",
-        "stats": "Installable · Offline mode · Faster loading"
       }
     },
     "businessTypes": {
@@ -852,8 +846,7 @@
         "reports": "Reports and charts",
         "users": "Up to 3 users",
         "support": "Spanish support",
-        "catalogImport": "Import your catalog from Excel/CSV",
-        "pwa": "Installable app, works offline"
+        "catalogImport": "Import your catalog from Excel/CSV"
       },
       "primary": "Try {dias} days free (No credit card)",
       "secondary": "Chat on WhatsApp",

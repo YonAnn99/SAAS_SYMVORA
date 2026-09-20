@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
-  metodoDisponible,
   motivoBloqueoCobro,
   type EstadoCobro,
 } from "@/features/pos/venta-bloqueada";
 
 /**
- * El fallo que previenen estos test: el boton de cobrar estaba deshabilitado
- * con `!isOnline`, asi que sin conexion no se podia vender. La cola de ventas
- * offline existia entera (IndexedDB, clave de idempotencia, sincronizacion
- * automatica) pero era inalcanzable desde la pantalla.
+ * Estos test cubren la unica fuente de verdad sobre cuando el boton de cobrar
+ * debe estar apagado. Existe porque la condicion vivia duplicada en linea (una
+ * vez para escritorio y otra para la hoja movil), y esa duplicacion dejo
+ * sobrevivir durante semanas un bloqueo obsoleto sin que nadie lo notara.
+ *
+ * Los casos de "sin conexion" se retiraron con el modo sin conexion
+ * (2026-09-20): cobrar exige internet, asi que no hay nada que decidir.
  */
 
 const BASE: EstadoCobro = {
@@ -17,43 +19,26 @@ const BASE: EstadoCobro = {
   metodoPago: "EFECTIVO",
   procesando: false,
   montoInsuficiente: false,
-  isOnline: true,
 };
 
 describe("motivoBloqueoCobro", () => {
-  it("con todo en orden y conexion, deja cobrar", () => {
+  it("deja cobrar cuando no hay ningun impedimento", () => {
     expect(motivoBloqueoCobro(BASE)).toBeNull();
   });
 
-  it("sin conexion deja cobrar en efectivo", () => {
-    expect(
-      motivoBloqueoCobro({ ...BASE, isOnline: false, metodoPago: "EFECTIVO" })
-    ).toBeNull();
-  });
-
-  it("sin conexion deja cobrar con tarjeta manual", () => {
-    expect(
-      motivoBloqueoCobro({ ...BASE, isOnline: false, metodoPago: "TARJETA" })
-    ).toBeNull();
-  });
-
-  it.each(["TRANSFERENCIA", "CREDITO", "TARJETA_TERMINAL"])(
-    "sin conexion bloquea %s, que necesita servidor",
-    (metodo) => {
-      expect(
-        motivoBloqueoCobro({ ...BASE, isOnline: false, metodoPago: metodo })
-      ).toBe("metodo-no-disponible-sin-conexion");
+  it("deja cobrar con cualquier metodo de pago", () => {
+    // Ya no hay metodos vetados: el veto existia solo sin conexion, porque el
+    // cajero no podia confirmar terminal, credito ni transferencia.
+    for (const metodo of [
+      "EFECTIVO",
+      "TARJETA",
+      "TRANSFERENCIA",
+      "CREDITO",
+      "TARJETA_TERMINAL",
+    ]) {
+      expect(motivoBloqueoCobro({ ...BASE, metodoPago: metodo })).toBeNull();
     }
-  );
-
-  it.each(["TRANSFERENCIA", "CREDITO", "TARJETA_TERMINAL"])(
-    "con conexion NO bloquea %s",
-    (metodo) => {
-      expect(
-        motivoBloqueoCobro({ ...BASE, isOnline: true, metodoPago: metodo })
-      ).toBeNull();
-    }
-  );
+  });
 
   it("bloquea con el carrito vacio", () => {
     expect(motivoBloqueoCobro({ ...BASE, items: 0 })).toBe("sin-productos");
@@ -77,34 +62,7 @@ describe("motivoBloqueoCobro", () => {
     // El orden importa para el mensaje: decirle al cajero "elige un metodo de
     // pago" con el carrito vacio seria confuso.
     expect(
-      motivoBloqueoCobro({
-        ...BASE,
-        items: 0,
-        metodoPago: "",
-        isOnline: false,
-      })
+      motivoBloqueoCobro({ ...BASE, items: 0, metodoPago: "" })
     ).toBe("sin-productos");
-  });
-});
-
-describe("metodoDisponible", () => {
-  it("con conexion todos los metodos estan disponibles", () => {
-    for (const metodo of [
-      "EFECTIVO",
-      "TARJETA",
-      "TRANSFERENCIA",
-      "CREDITO",
-      "TARJETA_TERMINAL",
-    ]) {
-      expect(metodoDisponible(metodo, true)).toBe(true);
-    }
-  });
-
-  it("sin conexion solo efectivo y tarjeta manual", () => {
-    expect(metodoDisponible("EFECTIVO", false)).toBe(true);
-    expect(metodoDisponible("TARJETA", false)).toBe(true);
-    expect(metodoDisponible("TRANSFERENCIA", false)).toBe(false);
-    expect(metodoDisponible("CREDITO", false)).toBe(false);
-    expect(metodoDisponible("TARJETA_TERMINAL", false)).toBe(false);
   });
 });

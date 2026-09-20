@@ -23,7 +23,6 @@ const featureKeys = [
   "users",
   "support",
   "catalogImport",
-  "pwa",
 ] as const;
 
 const WHATSAPP_NUMBER =

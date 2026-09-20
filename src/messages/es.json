@@ -753,12 +753,6 @@
         "title": "Migra tu catálogo fácil",
         "description": "Sube tu catálogo en CSV o Excel y mapea las columnas tú mismo. Detecta duplicados por código de barras y te deja decidir: omitir, actualizar o generar uno nuevo.",
         "stats": "CSV y Excel · Detección de duplicados · Importación por lotes"
-      },
-      "pwa": {
-        "title": "Funciona sin conexión",
-        "description": "Instala SYMVORA como app en tu celular o computadora. El catálogo del punto de venta sigue disponible aunque se caiga el wifi de la tienda.",
-        "offlineLabel": "Modo sin conexión",
-        "stats": "Instalable · Modo offline · Carga más rápida"
       }
     },
     "businessTypes": {
@@ -929,8 +923,7 @@
         "reports": "Reportes y gráficas",
         "users": "Hasta 3 usuarios",
         "support": "Soporte en español",
-        "catalogImport": "Importa tu catálogo desde Excel/CSV",
-        "pwa": "Instálala como app, funciona sin conexión"
+        "catalogImport": "Importa tu catálogo desde Excel/CSV"
       },
       "primary": "Probar {dias} días gratis (Sin tarjeta)",
       "secondary": "Hablar por WhatsApp",

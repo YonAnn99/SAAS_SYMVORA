@@ -165,11 +165,6 @@ export function SalesHistoryCard({
             >
               <TableCell className="whitespace-nowrap text-xs">
                 {horaCorta(v.fecha_venta)}
-                {v.origen === "offline" && (
-                  <span className="ml-1.5 text-[10px] uppercase text-muted-foreground">
-                    offline
-                  </span>
-                )}
               </TableCell>
               <TableCell className="font-mono text-xs">
                 #{numeroOperacion(v.id)}

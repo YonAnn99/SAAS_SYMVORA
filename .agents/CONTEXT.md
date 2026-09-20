@@ -361,72 +361,36 @@ Se encontraron **dos causas raíz independientes**, ambas corregidas y **verific
 
 ---
 
-### POS Offline con sincronización automática (2026-09-11)
+### Modo sin conexión — RETIRADO (2026-09-20)
 
-El POS puede cobrar sin internet y las ventas se suben solas al volver la conexión. **Alcance deliberado: solo ventas.** Las otras 48 operaciones de escritura del sistema siguen necesitando red — ampliarlo es un proyecto aparte (ver el pendiente correspondiente).
+Aquí había dos secciones largas documentando el POS offline (cola de ventas en IndexedDB,
+sincronización automática, clave de idempotencia) y el arranque sin conexión (precalentado
+de rutas, instantánea de sesión, `offline.html` como respaldo del service worker). **Todo
+eso se eliminó**: unas 1.900 líneas entre `src/lib/offline/*`, `src/components/pwa/*`, el
+service worker y la captura de ventas del Punto de Venta.
 
-**Migración `051`** (aplicada en producción como `051a/051b/051c`, ver nota en el propio archivo). Columnas nuevas en `ventas`:
+**Por qué.** Nunca funcionó en la PWA instalada, pese a varios intentos en sesiones
+distintas. El dato que zanjó la discusión: en producción, de las **57 ventas** existentes
+las **57 tenían `origen = 'online'`** y ninguna quedó marcada para revisión. El modo
+offline no produjo ni un solo cobro en toda la vida del sistema, así que retirarlo no podía
+perder ventas de nadie.
 
-| Columna | Para qué |
-|---|---|
-| `idempotency_key` UUID | UNIQUE parcial. Ancla anti-duplicados: si la red se corta después de que el servidor insertó pero antes de que el cliente reciba la respuesta, el reintento devuelve la venta existente en vez de duplicarla. |
-| `origen` | `'online'` / `'offline'`, con CHECK. |
-| `requiere_revision` | Marca las ventas que necesitan mirada humana. Índice parcial para la bandeja. |
-| `total_cobrado` | El total del ticket que se le entregó al cliente. |
+**Qué se conserva, y no es negociable:**
 
-`complete_sale` y `_crear_venta_desde_items` recibieron 5 parámetros nuevos (`p_idempotency_key`, `p_fecha_venta`, `p_caja_id`, `p_total_cobrado`, `p_origen`).
+- **La PWA sigue siendo instalable.** `src/app/manifest.ts` intacto y `src/app/sw.ts`
+  reducido a `defaultCache` (estáticos). El service worker **no se borra**: Chrome exige uno
+  con manejador de `fetch` para ofrecer "Instalar app", y quitarlo rompería la instalación
+  en silencio, sin ningún error.
+- **`public/offline.html`** existe, pero ya no promete trabajar sin red: dice que hace falta
+  conexión y ofrece reintentar. Es lo que ve quien abre la app instalada sin datos, que no
+  tiene barra de direcciones para recargar.
+- **`ventas.origen` y `ventas.requiere_revision`** siguen en la base. Describen filas reales
+  y borrar columnas es irreversible a cambio de nada. El cliente ya solo escribe `'online'`.
 
-**Cuatro decisiones de diseño que hay que entender antes de tocar esto:**
+**No reintroducir.** Trabajar sin conexión se replanteará con una **app nativa de Android**
+(y quizá iOS), no volviendo a intentarlo sobre la PWA. Decisión del dueño, no un hueco
+pendiente.
 
-1. **Stock negativo permitido en offline** (decisión de negocio del usuario). Dos cajeros sin red venden la última unidad: al sincronizar, ambas ventas entran, el stock queda negativo y las dos se marcan `requiere_revision`. Rechazar la segunda dejaría dinero cobrado sin registrar y la caja descuadrada — la venta ya ocurrió y no se puede deshacer. **La ruta online sigue abortando con "Stock insuficiente" exactamente como antes**; hay un test de regresión para eso.
-2. **El precio se sigue recalculando desde `productos.precio_venta`** — la protección del bug #5 no se relajó ni siquiera offline. Si el precio cambió durante la ventana sin red, el total recalculado no coincidirá con el ticket físico: se guarda `total_cobrado` aparte y la diferencia marca `requiere_revision` en vez de desaparecer.
-3. **`p_caja_id` es obligatorio conceptualmente para ventas offline.** La función buscaba la caja abierta *en el momento de ejecutarse*; una venta sincronizada horas después se habría colgado de la caja equivocada, o de la del día siguiente. El POS captura la caja al vender y la cachea. Si la caja no existe o es de otro tenant, la venta **no se pierde**: se registra y se marca para revisión.
-4. **Sincronización en primer plano, NO con Background Sync**, ni siquiera en Android donde sí existe. El RPC necesita un JWT válido y los tokens de Supabase caducan (~1h); el service worker no puede refrescar la sesión de forma fiable porque el cliente de Supabase y su refresh token viven en el contexto de la página. Un reintento desde el SW fallaría con 401 y gastaría un intento. Se dispara con el evento `online`, al volver a la pestaña y al montar el POS.
-
-**Cliente**: `src/lib/offline/queue.ts` (IndexedDB — `localStorage` no sirve: es síncrono, ~5 MB y volátil, y aquí se guarda dinero cobrado), `src/lib/offline/persist.ts` (`storage.persist()` + detección de PWA/iOS), `src/features/pos/hooks/use-sale-sync.ts` (orquestador) y `pending-sales-banner.tsx`.
-
-**Reglas del cliente que no se deben relajar:**
-- Una venta **solo** se borra de la cola cuando el servidor la confirma. Un fallo la conserva y suma un intento; al agotar `MAX_SYNC_ATTEMPTS` pasa a `failed` pero **sigue guardada**.
-- Subida **secuencial y en orden de `createdAt`**, nunca `Promise.all`: cada venta descuenta stock y el histórico debe corresponder con lo que pasó en el mostrador. Si una falla, se corta en seco y se retoma en el siguiente disparo.
-- **`navigator.onLine` no basta** — devuelve `true` con WiFi sin salida a internet, que es justo el caso de un local con el módem caído. Antes de vaciar la cola se confirma con un `HEAD` real a un estático propio.
-- Si la sesión caducó offline, **no se descarta nada**: la cola queda intacta y el banner pide volver a iniciar sesión.
-
-**Restricciones de UX**: sin red solo se cobra `EFECTIVO` y `TARJETA` (`OFFLINE_PAYMENT_METHODS` en `pos/page.tsx`). Quedan fuera `TARJETA_TERMINAL` (MercadoPago Point necesita red), `CREDITO` (hay que validar `saldo_pendiente` contra el servidor) y `TRANSFERENCIA` (el cajero no puede confirmar que el dinero llegó). Además **no se puede cerrar la caja con ventas sin subir** (`use-cash-register.ts`): el saldo esperado estaría incompleto y el corte no cuadraría nunca.
-
-**Límite real en iOS que no se puede resolver con código**: Safari no soporta Background Sync y puede desalojar IndexedDB tras ~7 días sin uso. Instalar la PWA y `storage.persist()` lo mitigan pero **no lo garantizan**. Por eso el banner de pendientes no se puede descartar: es lo único que le dice a una persona "todavía no cierres el día". Si se toca la UI del POS, no esconderlo.
-
-### Arranque sin conexión (2026-09-11)
-
-Que el POS funcione sin red no sirve de nada si la app **no abre** sin red. Son dos
-problemas distintos y el segundo se descubrió tarde (bug #35).
-
-- **`src/lib/offline/route-cache.ts`** — fuente única de qué rutas deben abrir sin
-  conexión (`OFFLINE_ROUTES`) y del patrón que usa el service worker
-  (`APP_PAGE_PATH`, derivado de la misma constante). Viven juntos **a propósito**:
-  si el cliente precalienta una ruta que el service worker manda a otra caché, lo
-  precalentado no se usa nunca y el fallo es invisible hasta que alguien se queda
-  sin conexión. Un test vigila la invariante.
-- **`src/components/pwa/offline-route-warmer.tsx`** — montado en `dashboard-shell`
-  para que corra en cualquier pantalla: alguien puede pasar días sin entrar al POS
-  y aun así debe poder abrirlo en modo avión. Se reintenta al volver la conexión
-  (`force: true`), que es justo cuando lo guardado empieza a envejecer.
-- **Caché `symvora-app-pages`**, separada de las de serwist: 30 días y huecos
-  propios. En `others` caducaba a las 24 h compitiendo con todo lo demás.
-
-**Reglas que no hay que invertir:**
-
-1. El matcher del service worker filtra **por ruta**, nunca por
-   `request.mode === "navigate"`. El precalentado usa un `fetch()` normal, que no
-   es una navegación.
-2. Nunca guardar una respuesta **redirigida** bajo la URL del panel. Con la sesión
-   caducada el servidor manda un 307 a `/login` y `fetch` lo sigue: llega un 200
-   válido con el login dentro (bug #36). Se comprueba en el cliente **y** en el
-   service worker, a propósito.
-3. `clearAppPagesCache()` al cerrar sesión. El HTML guardado del dashboard lleva
-   dentro los datos de quien lo generó.
-4. Si se añade una ruta a `OFFLINE_ROUTES`, tiene que funcionar **entera en el
-   cliente**. Guardar el HTML de una pantalla que necesita el servidor para
-   mostrar algo útil solo cambia un error por una pantalla vacía.
 
 ### Recordar la cuenta en el login (2026-09-11)
 
@@ -1042,10 +1006,21 @@ comparte `rangoDePeriodo` con las gráficas, así que responde al mismo selector
 - Reutilizables tal cual: `src/features/pos/ticket-format.ts` (íntegro), `src/lib/profit.ts`,
   el CSS de impresión, y `get_tenant_members` (ya corregida).
 
-### Líneas base (actualizadas tras la fase 2)
+### Líneas base (actualizadas el 2026-09-20)
 
-`npx tsc --noEmit` limpio · `npx vitest run` **536 tests en 43 archivos** · `npx eslint .`
-**9 errores / 284 avisos** (sin cambios: 0 problemas en los archivos de las fases 2-4).
+`npx tsc --noEmit` limpio · `npx vitest run` **488 tests en 39 archivos** · `npx eslint .`
+**8 errores / 187 avisos**.
+
+⚠️ Esa cifra de eslint es **sin `public/sw.js`**, el bundle que genera el build. Ese archivo
+no esta versionado pero eslint lo analiza cuando existe, y el solo aporta **1 error y 97
+avisos**. Tras cualquier `npm run build` la cuenta vuelve a subir a 9/284: no es una
+regresion. Los 8 errores de verdad son todos `set-state-in-effect` preexistentes en
+`activity`, `reports`, `users` y compañia.
+
+La cuenta de tests bajó de 553/44 a 488/39 al retirar el modo sin conexión: se borraron los cinco
+archivos de test que lo cubrían (`offline-capabilities`, `offline-queue`, `offline-warm`,
+`route-cache`, `offline-html`) y se recortó `venta-bloqueada.test.ts`. No hay ningún test
+roto ni omitido.
 
 Los 9 errores son todos preexistentes y ajenos a este trabajo (`public/sw.js`, que es
 salida generada e ignorada por git, más ocho `react-hooks` repartidos). Ojo: el de

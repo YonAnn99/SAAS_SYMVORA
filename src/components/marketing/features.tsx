@@ -10,8 +10,6 @@ import {
   ArrowRight,
   AlertTriangle,
   Upload,
-  Smartphone,
-  WifiOff,
 } from "lucide-react";
 import {
   easeOutLong,
@@ -202,9 +200,9 @@ export function Features() {
           </motion.div>
         </motion.div>
 
-        {/* Feature 3 - Purchases (Small - 4 cols) */}
+        {/* Feature 3 - Purchases (Medium - 6 cols) */}
         <motion.div
-          className="lg:col-span-4 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
+          className="lg:col-span-6 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
@@ -260,9 +258,9 @@ export function Features() {
           </motion.svg>
         </motion.div>
 
-        {/* Feature 4 - Catalog Import (Small - 4 cols) */}
+        {/* Feature 4 - Catalog Import (Medium - 6 cols) */}
         <motion.div
-          className="lg:col-span-4 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
+          className="lg:col-span-6 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
           variants={fadeInUp}
           transition={easeOutLong}
           whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
@@ -315,62 +313,7 @@ export function Features() {
           </motion.div>
         </motion.div>
 
-        {/* Feature 5 - PWA (Small - 4 cols) */}
-        <motion.div
-          className="lg:col-span-4 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
-          variants={fadeInUp}
-          transition={easeOutLong}
-          whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-        >
-          <motion.div
-            className="w-12 h-12 bg-teal-50 dark:bg-teal-500/10 text-teal-600 rounded-lg flex items-center justify-center mb-2"
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, ...springIcon }}
-          >
-            <Smartphone className="w-6 h-6" aria-hidden="true" />
-          </motion.div>
-          <motion.h3
-            className="text-xl font-bold text-black dark:text-neutral-50"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, ...easeOutShort }}
-          >
-            {t("landing.features.pwa.title")}
-          </motion.h3>
-          <motion.p
-            className="text-neutral-500 dark:text-neutral-400 flex-grow leading-relaxed"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, ...easeOutShort }}
-          >
-            {t("landing.features.pwa.description")}
-          </motion.p>
-          <motion.span
-            className="text-xs font-medium text-teal-600 bg-teal-50 dark:bg-teal-500/10 px-3 py-1 rounded-full self-start"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, ...easeOutShort }}
-          >
-            {t("landing.features.pwa.stats")}
-          </motion.span>
-          <motion.div
-            className="mt-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 flex items-center justify-between"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, ...easeOutShort }}
-          >
-            <div className="flex items-center gap-2">
-              <WifiOff className="w-4 h-4 text-teal-500" aria-hidden="true" />
-              <span className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">
-                {t("landing.features.pwa.offlineLabel")}
-              </span>
-            </div>
-            <span className="text-sm font-bold text-black dark:text-neutral-50">✓</span>
-          </motion.div>
-        </motion.div>
-
-        {/* Feature 6 - Finances (Large - full width) */}
+        {/* Feature 5 - Finances (Large - full width) */}
         <motion.div
           className="lg:col-span-12 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-shadow"
           variants={fadeInUp}

@@ -4,9 +4,6 @@ import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { useTheme } from "next-themes";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { clearAppPagesCache } from "@/lib/offline/route-cache";
-import { borrarSesionOffline } from "@/lib/offline/session-snapshot";
-import { abrirAyudaOffline } from "@/components/pwa/offline-capabilities-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  CloudOff,
   LogOut,
   Menu,
   Moon,
@@ -80,13 +76,6 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
 
   const cerrarSesion = async () => {
     const supabase = createSupabaseBrowserClient();
-    // Antes de cerrar sesion: el HTML guardado del panel lleva dentro los datos
-    // de quien lo genero. En un mostrador compartido, el siguiente cajero
-    // podria ver sin conexion el panel del anterior.
-    await clearAppPagesCache();
-    // La instantánea trae el negocio y el cajero: en un mostrador
-    // compartido no puede heredarla el siguiente turno.
-    borrarSesionOffline();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
@@ -210,16 +199,6 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
                 <span className="text-sm">{t("layout.settings")}</span>
               </DropdownMenuItem>
             )}
-            {/* Sin esta entrada, el diálogo de modo sin conexión (y con él
-                el diagnóstico de por qué la app no abre en modo avión) era
-                inalcanzable después de la primera vez. */}
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={abrirAyudaOffline}
-            >
-              <CloudOff className="mr-2 h-4 w-4" />
-              <span className="text-sm">Modo sin conexión</span>
-            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive cursor-pointer"
               onClick={handleLogout}

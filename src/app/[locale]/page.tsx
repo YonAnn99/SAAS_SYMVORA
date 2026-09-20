@@ -83,7 +83,6 @@ export default async function LocalePage() {
     t("features.purchases.title"),
     t("features.finances.title"),
     t("features.catalogImport.title"),
-    t("features.pwa.title"),
   ];
 
   const faqs = FAQ_KEYS.map((key) => ({

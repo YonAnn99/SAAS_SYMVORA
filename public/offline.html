@@ -1,225 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sin conexión — SYMVORA</title>
-    <link rel="icon" href="/icons/icon-192.png" />
+    <!--
+      Pantalla que el service worker sirve cuando una navegación no llega al
+      servidor. NO es modo sin conexión: el modo sin conexión se retiró del
+      producto el 2026-09-20 y SYMVORA necesita internet para funcionar.
+
+      Existe porque quien abre la app instalada sin datos no tiene barra de
+      direcciones ni botón de recargar: sin esta página vería el error del
+      navegador dentro de una ventana muda. Todo va embebido (sin CSS ni JS
+      externos) porque por definición aquí no hay red para pedir nada.
+    -->
     <style>
-      html,
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
-        height: 100%;
-        background: #0a0a0a;
-        color: #f0efed;
-        font-family:
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          Roboto,
-          sans-serif;
-      }
-      body {
+        min-height: 100dvh;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 16px;
         padding: 24px;
+        background: #0a0a0a;
+        color: #fafafa;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
         text-align: center;
       }
-      img {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-      }
-      h1 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0;
-      }
-      p {
-        max-width: 320px;
-        font-size: 0.875rem;
-        color: #a1a1aa;
-        margin: 0;
-      }
-      .actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: center;
-      }
-      button,
-      #pos-link {
-        margin-top: 8px;
-        border: none;
-        border-radius: 8px;
-        background: #1e3a8a;
-        color: #eff6ff;
-        font-size: 0.875rem;
-        font-weight: 500;
-        padding: 10px 20px;
-        cursor: pointer;
-        font-family: inherit;
-      }
-      /* El enlace al Punto de Venta arranca oculto y solo se muestra si esa
-         pagina esta de verdad en cache (lo decide el script del final). */
-      #pos-link {
-        display: none;
-        background: #f0efed;
-        color: #111;
-        text-decoration: none;
-        margin-top: 0;
-      }
-      #pos-hint {
-        display: none;
+      .caja { max-width: 22rem; }
+      .marca {
         font-size: 0.75rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #a3a3a3;
+        margin: 0 0 1.5rem;
       }
-      details {
-        margin-top: 20px;
-        max-width: 340px;
+      h1 { font-size: 1.375rem; line-height: 1.3; margin: 0 0 0.75rem; }
+      p { color: #a3a3a3; line-height: 1.6; margin: 0 0 1.75rem; font-size: 0.9375rem; }
+      button {
         width: 100%;
-        text-align: left;
-        font-size: 0.7rem;
-        color: #71717a;
-      }
-      summary {
+        padding: 0.75rem 1.25rem;
+        font: inherit;
+        font-weight: 600;
+        color: #0a0a0a;
+        background: #fafafa;
+        border: 0;
+        border-radius: 999px;
         cursor: pointer;
-        text-align: center;
-        color: #a1a1aa;
       }
-      pre {
-        white-space: pre-wrap;
-        word-break: break-all;
-        background: #141414;
-        border-radius: 8px;
-        padding: 10px;
-        margin-top: 8px;
-        line-height: 1.5;
-      }
+      button:active { transform: scale(0.98); }
     </style>
   </head>
   <body>
-    <img src="/icons/icon-192.png" alt="SYMVORA" />
-    <h1>Sin conexión</h1>
-    <p>
-      No pudimos cargar esta página porque no hay conexión a internet.
-      Verifica tu wifi o datos móviles e inténtalo de nuevo.
-    </p>
-    <div class="actions">
-      <button onclick="location.reload()">Reintentar</button>
-      <a id="pos-link" href="#" role="button">Abrir Punto de Venta</a>
-      <p id="pos-hint">Puedes seguir cobrando sin conexion.</p>
-      <p id="sin-guardar" style="display: none">
-        Esta app todavia no ha guardado el Punto de Venta en este dispositivo.
-        Conectate a internet una vez y abrelo; despues funcionara en modo avion.
+    <main class="caja">
+      <p class="marca">SYMVORA</p>
+      <h1>Necesitas conexión a internet</h1>
+      <p>
+        No pudimos conectar con SYMVORA. Revisa tu WiFi o tus datos móviles y
+        vuelve a intentarlo.
       </p>
-    </div>
-    <details id="diagnostico" style="display: none">
-      <summary>Detalles tecnicos</summary>
-      <pre id="diagnostico-texto">Leyendo...</pre>
-    </details>
-
-    <script>
-      /*
-       * Sin esto la pagina es un callejon sin salida: el Punto de Venta
-       * funciona entero en el cliente (catalogo en localStorage, ventas en
-       * IndexedDB), pero si la URL que se pidio no estaba en cache no habia
-       * forma de llegar a el.
-       *
-       * QUE SE CORRIGIO AQUI. La version anterior recorria TODAS las caches y
-       * comparaba por `pathname`, que descarta la query. Los payloads RSC que
-       * guarda serwist en `pages-rsc` viven bajo `/es/pos?_rsc=...`, cuyo
-       * pathname es `/es/pos`. Resultado: el boton se encendia aunque el
-       * DOCUMENTO no estuviera guardado, y al pulsarlo la navegacion volvia a
-       * caer aqui. Un bucle cerrado, que es justo lo que se reporto en Android.
-       *
-       * Ahora se mira SOLO la cache del panel y se exige una respuesta HTML de
-       * verdad.
-       *
-       * Estos dos valores estan duplicados a proposito respecto a
-       * `src/lib/offline/route-cache.ts`: este archivo es estatico y no pasa
-       * por el bundler. Hay un test (`offline-html.test.ts`) que vigila que no
-       * se separen.
-       */
-      var APP_PAGES_CACHE = "symvora-app-pages";
-      var POS_PATH = /^\/[a-z]{2}\/pos$/;
-
-      (async function () {
-        var diag = { cache: APP_PAGES_CACHE, entradas: [], caches: [] };
-
-        try {
-          if (!("caches" in window)) throw new Error("sin Cache Storage");
-
-          var cache = await caches.open(APP_PAGES_CACHE);
-          var claves = await cache.keys();
-          var destino = null;
-
-          for (var i = 0; i < claves.length; i++) {
-            var url = new URL(claves[i].url);
-            diag.entradas.push(url.pathname + url.search);
-            if (destino) continue;
-            if (!POS_PATH.test(url.pathname) || url.search) continue;
-
-            // Que la clave exista no basta: hay que confirmar que devuelve una
-            // respuesta y que es HTML. Una entrada rota seria otro callejon.
-            var respuesta = await cache.match(claves[i]);
-            if (!respuesta) continue;
-            var tipo = respuesta.headers.get("content-type") || "";
-            if (tipo.indexOf("text/html") === -1) continue;
-            destino = url.pathname;
-          }
-
-          if (destino) {
-            var link = document.getElementById("pos-link");
-            link.href = destino;
-            link.style.display = "inline-block";
-            document.getElementById("pos-hint").style.display = "block";
-
-            /*
-             * Cerrojo de un solo uso. Si por lo que sea la navegacion volviera
-             * a caer en esta pagina, sin el cerrojo tendriamos un bucle
-             * infinito de redirecciones en el telefono del cliente: mucho peor
-             * que el callejon sin salida que estamos arreglando.
-             */
-            try {
-              if (!sessionStorage.getItem("symvora_offline_redirect")) {
-                sessionStorage.setItem("symvora_offline_redirect", "1");
-                location.replace(destino);
-                return;
-              }
-            } catch (e) {
-              /* Sin sessionStorage se queda el enlace manual, que es seguro. */
-            }
-          } else {
-            document.getElementById("sin-guardar").style.display = "block";
-          }
-        } catch (error) {
-          diag.error = String(error);
-          document.getElementById("sin-guardar").style.display = "block";
-        }
-
-        // Diagnostico: solo visible si alguien lo despliega, y solo cuando ya
-        // fallo. Es la unica forma de saber que paso en un telefono ajeno.
-        try {
-          if ("caches" in window) {
-            var nombres = await caches.keys();
-            for (var j = 0; j < nombres.length; j++) {
-              var c = await caches.open(nombres[j]);
-              diag.caches.push(nombres[j] + ": " + (await c.keys()).length);
-            }
-          }
-          diag.ultimoPrecalentado =
-            localStorage.getItem("symvora_offline_warm_report") || "(ninguno)";
-        } catch (e) {
-          /* Sin acceso, el diagnostico sale incompleto. */
-        }
-
-        document.getElementById("diagnostico").style.display = "block";
-        document.getElementById("diagnostico-texto").textContent =
-          JSON.stringify(diag, null, 2);
-      })();
-    </script>
+      <button type="button" onclick="location.reload()">Reintentar</button>
+    </main>
   </body>
 </html>

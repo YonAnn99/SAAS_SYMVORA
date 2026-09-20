@@ -103,17 +103,13 @@ export function SaleDetailDialog({
                     {t(clavePagoI18n(venta.metodo_pago))}
                   </p>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Origen</span>
-                  <p className="font-medium">
-                    {venta.origen === "offline" ? "Sin conexión" : "En línea"}
-                  </p>
-                </div>
               </div>
 
               {/* Una venta marcada para revisión se cobró con un total que no
-                  coincide con lo que recalculó el servidor: casi siempre una
-                  venta offline cuyo precio cambió mientras no había red. */}
+                  coincide con lo que recalculó el servidor. Quedan las que se
+                  marcaron cuando existía la cola de ventas diferidas; el flujo
+                  actual no puede producir nuevas, pero el aviso se conserva
+                  para que las viejas no pasen desapercibidas. */}
               {venta.requiere_revision && (
                 <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
                   Esta venta quedó marcada para revisión: el total cobrado no
