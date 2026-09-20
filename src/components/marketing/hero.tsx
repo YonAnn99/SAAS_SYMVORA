@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Play } from "lucide-react";
 import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./animations";
 import { PosMockup } from "./pos-mockup";
+import { PromoBadgeEnLinea } from "./promo-badge";
 
 export function Hero() {
   const t = useTranslations();
@@ -27,6 +28,10 @@ export function Hero() {
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
       >
+        {/* El sello de la promocion en movil. En escritorio no se dibuja: alli
+            vive flotando en el marco (ver `promo-badge.tsx`). */}
+        <PromoBadgeEnLinea />
+
         {/* Headline */}
         <motion.h1
           className="text-4xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-neutral-50 max-w-3xl leading-[1.05] tracking-tighter"
