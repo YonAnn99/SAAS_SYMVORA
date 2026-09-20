@@ -1,16 +1,27 @@
 import { conektaPlansApi, CONEKTA_PLAN_IDS, CONEKTA_PLAN_AMOUNTS } from "./config";
+import type { ClavePlan } from "../../promocion";
 
-export async function ensurePlanExists(
-  period: "monthly" | "yearly"
-): Promise<string> {
-  const planId = CONEKTA_PLAN_IDS[period];
+// Nombre e intervalo por plan. Antes se derivaban de `period === "yearly"`, que
+// dejo de servir en cuanto hubo un tercer plan: el promocional tambien es
+// mensual, asi que esa comparacion le habria puesto el nombre y el intervalo
+// del anual a nada y lo habria dejado indistinguible del normal en el panel de
+// Conekta, que es donde se concilia el dinero.
+const DEFINICION: Record<ClavePlan, { nombre: string; intervalo: "month" | "year" }> = {
+  monthly: { nombre: "SYMVORA Basico Mensual", intervalo: "month" },
+  yearly: { nombre: "SYMVORA Basico Anual", intervalo: "year" },
+  monthlyPromo: { nombre: "SYMVORA Basico Mensual - Promo -50%", intervalo: "month" },
+};
+
+export async function ensurePlanExists(clave: ClavePlan): Promise<string> {
+  const planId = CONEKTA_PLAN_IDS[clave];
+  const { nombre, intervalo } = DEFINICION[clave];
   try {
     const planRequest = {
       id: planId,
-      name: period === "yearly" ? "SYMVORA Basico Anual" : "SYMVORA Basico Mensual",
-      amount: CONEKTA_PLAN_AMOUNTS[period],
+      name: nombre,
+      amount: CONEKTA_PLAN_AMOUNTS[clave],
       currency: "MXN",
-      interval: (period === "yearly" ? "year" : "month") as "year" | "month",
+      interval: intervalo,
       frequency: 1,
       // Sin trial aquí: el trial de 14 días ya lo maneja SYMVORA a nivel de
       // app (subscriptions.trial_end) antes de que el usuario llegue a
@@ -48,7 +59,7 @@ export async function ensurePlanExists(
       // fuerte en logs; el fix es bumpear CONEKTA_PLAN_IDS, no editar el plan.
       try {
         const existing = await getPlan(planId);
-        const expected = CONEKTA_PLAN_AMOUNTS[period];
+        const expected = CONEKTA_PLAN_AMOUNTS[clave];
         if (existing.amount !== expected) {
           console.error(
             `[conekta/plans] El plan "${planId}" ya existe en Conekta con amount=${existing.amount} ` +

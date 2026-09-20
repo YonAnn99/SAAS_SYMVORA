@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
-import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
+import { precioCobroCents, trasCobrar } from "@/features/payments/promocion";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -248,10 +248,102 @@ async function consumeFreeMonthCredit(
 // de un evento sin monto. Depende del periodo a propósito: un fallback mensual
 // sobre un cobro anual registraría (y en el flujo de referidos reembolsaría) una
 // cantidad equivocada.
-function fallbackAmountCents(billingPeriod: string | null | undefined): number {
-  return billingPeriod === "yearly"
-    ? SUBSCRIPTION_PRICE_CENTS.yearly
-    : SUBSCRIPTION_PRICE_CENTS.monthly;
+function fallbackAmountCents(
+  billingPeriod: string | null | undefined,
+  cobrosPromoRestantes: number = 0
+): number {
+  // El contador entra aqui porque este fallback alimenta `payment_history` Y el
+  // reembolso del credito de referido: con una promocion en curso, dar por
+  // hecho $399 haria que un mes regalado devolviera $200 de mas.
+  const periodo = billingPeriod === "yearly" ? "yearly" : "monthly";
+  return precioCobroCents(periodo, cobrosPromoRestantes);
+}
+
+/**
+ * Avanza la promocion de lanzamiento tras un cobro y, cuando se agota, pasa la
+ * suscripcion al plan normal de Conekta.
+ *
+ * SE AUTORREPARA A PROPOSITO. La condicion para pedir el cambio de plan no es
+ * "acabo de llegar a cero" sino "estoy en cero y sigo en el plan promocional".
+ * Si la llamada a Conekta falla (su API caida, un timeout), `promo_plan` se
+ * queda puesto y el siguiente cobro vuelve a intentarlo. Con la otra condicion,
+ * un unico fallo dejaria al cliente pagando $199 de por vida sin que nadie se
+ * enterara. Y una vez hecho el cambio, `promo_plan` queda en NULL y esto no
+ * vuelve a tocar nada: es idempotente frente a reenvios del webhook.
+ *
+ * Nunca lanza: Conekta reintenta el evento entero mientras no reciba un 200, y
+ * un fallo cerrando la promocion no puede hacer que se reprocese un cobro.
+ */
+async function avanzarPromocion(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  params: {
+    subscriptionId: string;
+    customerId: string | null | undefined;
+    /** Suscripcion recurrente de Conekta, o null si se paga en efectivo. */
+    conektaSubscriptionId: string | null | undefined;
+    cobrosRestantes: number;
+    promoPlan: string | null;
+    huboCobroReal: boolean;
+  }
+): Promise<void> {
+  const {
+    subscriptionId,
+    customerId,
+    conektaSubscriptionId,
+    cobrosRestantes,
+    promoPlan,
+    huboCobroReal,
+  } = params;
+  if (!promoPlan) return;
+
+  const { restantes } = trasCobrar(cobrosRestantes, huboCobroReal);
+
+  if (restantes !== cobrosRestantes) {
+    await supabase
+      .from("subscriptions")
+      .update({ promo_cobros_restantes: restantes, updated_at: new Date().toISOString() })
+      .eq("id", subscriptionId);
+  }
+
+  if (restantes > 0) return;
+
+  // Efectivo/transferencia no tiene suscripcion en Conekta: cada pago es una
+  // orden suelta y el precio se calcula en `create-checkout`. No hay plan que
+  // cambiar, solo hay que cerrar la promocion para que la siguiente ficha salga
+  // a precio normal. Llamar a Conekta aqui daria 404 en bucle.
+  if (!conektaSubscriptionId) {
+    await supabase
+      .from("subscriptions")
+      .update({ promo_plan: null, updated_at: new Date().toISOString() })
+      .eq("id", subscriptionId);
+    return;
+  }
+
+  if (!customerId) {
+    console.error(
+      `[conekta/webhook] Promocion agotada en la suscripcion ${subscriptionId} pero no hay ` +
+        `conekta_customer_id: no se puede devolver al plan normal y seguira cobrando el precio promocional.`
+    );
+    return;
+  }
+
+  try {
+    const { cambiarPlan } = await import("@/features/payments/services/conekta/subscriptions");
+    const { CONEKTA_PLAN_IDS } = await import("@/features/payments/services/conekta/config");
+    await cambiarPlan(customerId, CONEKTA_PLAN_IDS.monthly);
+
+    await supabase
+      .from("subscriptions")
+      .update({ promo_plan: null, updated_at: new Date().toISOString() })
+      .eq("id", subscriptionId);
+  } catch (error) {
+    // Se deja `promo_plan` puesto para que el proximo cobro lo reintente.
+    console.error(
+      `[conekta/webhook] No se pudo devolver la suscripcion ${subscriptionId} al plan normal ` +
+        `tras agotar la promocion; se reintentara en el proximo cobro:`,
+      error
+    );
+  }
 }
 
 // Email de bienvenida al dueño del tenant que acaba de pagar su membresia.
@@ -406,11 +498,14 @@ export async function POST(request: Request) {
         // Lee el estado ANTES de actualizar para saber si es el primer pago.
         const { data: preSub } = await supabase
           .from("subscriptions")
-          .select("id, tenant_id, last_payment_at, billing_period")
+          .select(
+            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_customer_id"
+          )
           .eq("conekta_customer_id", customerId)
           .maybeSingle();
 
         const isFirstPayment = !preSub?.last_payment_at;
+        const promoRestantes = preSub?.promo_cobros_restantes ?? 0;
 
         // Mismo cuidado que en subscription.created: solo se incluyen las
         // fechas de periodo cuando el evento las trae, para no borrarlas con
@@ -454,7 +549,9 @@ export async function POST(request: Request) {
           preSub && !alreadyProcessed
             ? supabase.from("payment_history").insert({
                 subscription_id: preSub.id,
-                amount: (data.amount || fallbackAmountCents(preSub.billing_period)) / 100,
+                amount:
+                  (data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes)) /
+                  100,
                 payment_method: "card",
                 status: "completed",
                 conekta_order_id: data.last_billing_cycle_order_id,
@@ -469,19 +566,35 @@ export async function POST(request: Request) {
             : Promise.resolve(),
         ]);
 
+        let creditoConsumido = false;
         if (preSub && !alreadyProcessed) {
           if (isFirstPayment) {
             // Primer pago real de la cuenta => conversion del referido (si aplica).
             await convertReferralOnFirstPayment(supabase, preSub.tenant_id);
           } else if (data.last_billing_cycle_order_id) {
             // Cobro recurrente real => aplicar mes gratis acumulado.
-            await consumeFreeMonthCredit(supabase, {
-              subscriptionId: preSub.id,
-              tenantId: preSub.tenant_id,
-              conektaOrderId: data.last_billing_cycle_order_id,
-              amountCents: data.amount || fallbackAmountCents(preSub.billing_period),
-            });
+            creditoConsumido = (
+              await consumeFreeMonthCredit(supabase, {
+                subscriptionId: preSub.id,
+                tenantId: preSub.tenant_id,
+                conektaOrderId: data.last_billing_cycle_order_id,
+                amountCents:
+                  data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes),
+              })
+            ).consumed;
           }
+
+          // Un mes regalado por referido se reembolsa entero: el cliente no
+          // pago, asi que no gasta cobro promocional. Gastarselo seria cobrarle
+          // dos veces el mismo beneficio.
+          await avanzarPromocion(supabase, {
+            subscriptionId: preSub.id,
+            customerId: preSub.conekta_customer_id,
+            conektaSubscriptionId: subscriptionId,
+            cobrosRestantes: promoRestantes,
+            promoPlan: preSub.promo_plan,
+            huboCobroReal: !creditoConsumido,
+          });
 
           // Correo de "Pago confirmado" en cada cobro (primero o recurrente),
           // no solo en el primer pago de la cuenta — así un cambio de plan
@@ -494,7 +607,8 @@ export async function POST(request: Request) {
           // confirmacion y reintentara el evento entero. El envio sigue
           // ocurriendo, solo que despues de contestar.
           const periodo = preSub.billing_period === "yearly" ? "yearly" : "monthly";
-          const montoCents = data.amount || fallbackAmountCents(preSub.billing_period);
+          const montoCents =
+            data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes);
           const tenantId = preSub.tenant_id;
           after(async () => {
             await sendWelcomeEmailToOwner(supabase, tenantId, periodo, montoCents);
@@ -578,7 +692,9 @@ export async function POST(request: Request) {
 
         const { data: subData } = await supabase
           .from("subscriptions")
-          .select("id, tenant_id, last_payment_at, billing_period")
+          .select(
+            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_subscription_id"
+          )
           .eq("conekta_customer_id", customerId)
           .single();
 
@@ -641,13 +757,18 @@ export async function POST(request: Request) {
           // El checkout hosted es el pago real del flujo: el primer pago
           // dispara la conversion del referido y el email de bienvenida;
           // los pagos siguientes consumen un mes gratis acumulado (si aplica).
+          let creditoOrden = false;
           if (!subData.last_payment_at) {
             await convertReferralOnFirstPayment(supabase, subData.tenant_id);
             // Fuera de la ruta critica: ver la nota en subscription.paid.
             const periodoOrden =
               subData.billing_period === "yearly" ? "yearly" : "monthly";
             const montoOrden =
-              data.amount || fallbackAmountCents(subData.billing_period);
+              data.amount ||
+              fallbackAmountCents(
+                subData.billing_period,
+                subData.promo_cobros_restantes ?? 0
+              );
             const tenantOrden = subData.tenant_id;
             after(async () => {
               await sendWelcomeEmailToOwner(
@@ -657,14 +778,34 @@ export async function POST(request: Request) {
                 montoOrden
               );
             });
+            creditoOrden = false;
           } else {
-            await consumeFreeMonthCredit(supabase, {
-              subscriptionId: subData.id,
-              tenantId: subData.tenant_id,
-              conektaOrderId: data.id,
-              amountCents: data.amount || fallbackAmountCents(subData.billing_period),
-            });
+            creditoOrden = (
+              await consumeFreeMonthCredit(supabase, {
+                subscriptionId: subData.id,
+                tenantId: subData.tenant_id,
+                conektaOrderId: data.id,
+                amountCents:
+                  data.amount ||
+                  fallbackAmountCents(
+                    subData.billing_period,
+                    subData.promo_cobros_restantes ?? 0
+                  ),
+              })
+            ).consumed;
           }
+
+          // Efectivo tambien consume promocion: son tres fichas de $199 y la
+          // cuarta ya sale a $399. Sin esto, quien paga en OXXO se quedaria con
+          // el precio promocional indefinidamente.
+          await avanzarPromocion(supabase, {
+            subscriptionId: subData.id,
+            customerId,
+            conektaSubscriptionId: subData.conekta_subscription_id,
+            cobrosRestantes: subData.promo_cobros_restantes ?? 0,
+            promoPlan: subData.promo_plan,
+            huboCobroReal: !creditoOrden,
+          });
         }
 
         break;

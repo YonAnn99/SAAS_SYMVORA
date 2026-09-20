@@ -34,7 +34,13 @@ import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { generateReferralCode, getReferralSignupUrl } from "@/lib/referrals";
 import { toast } from "sonner";
-import { Clock, CheckCircle, Calendar, History, Gift, Copy, Check, MessageCircle, Users, Info, Link2 } from "lucide-react";
+import { Clock, CheckCircle, Calendar, History, Gift, Copy, Check, MessageCircle, Users, Info, Link2, Tag } from "lucide-react";
+import {
+  PRECIO_PROMO_MXN,
+  precioListaMXN,
+  promoAplica,
+} from "@/features/payments/promocion";
+import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 
 interface Subscription {
   id: string;
@@ -48,6 +54,8 @@ interface Subscription {
   conekta_customer_id: string | null;
   creditos_mes_gratis: number;
   billing_period: "monthly" | "yearly";
+  promo_cobros_restantes: number | null;
+  promo_plan: string | null;
 }
 
 interface ReferralRecord {
@@ -146,6 +154,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       fetchSubscription();
     }
   }, [tenantLoading, tenantId]);
+
+  // Dos preguntas distintas: si al checkout de AHORA le toca promocion (manda
+  // la constante, y solo si la cuenta aun no paga), y cuantos cobros
+  // promocionales le quedan a esta suscripcion (manda la base, aunque la
+  // oferta ya se haya retirado).
+  const promoEnCheckout =
+    promoAplica(selectedPeriod) && !subscription?.last_payment_at;
+  const cobrosPromoRestantes = subscription?.promo_cobros_restantes ?? 0;
 
   const getDaysLeft = () => {
     if (!subscription?.trial_end) return 0;
@@ -453,6 +469,19 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               </div>
             )}
 
+            {cobrosPromoRestantes > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Tag className="h-4 w-4 text-red-500" />
+                <span>
+                  {t("billing.promoRestante", {
+                    cobros: cobrosPromoRestantes,
+                    promo: `$${PRECIO_PROMO_MXN}`,
+                    normal: `$${precioListaMXN("monthly")}`,
+                  })}
+                </span>
+              </div>
+            )}
+
             {subscription?.current_period_end && (
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -508,13 +537,36 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               <span className="text-sm text-muted-foreground">
                 {t("billing.plan")}:
               </span>
-              <span className="text-sm font-medium">
+              <span className="flex items-center gap-1.5 text-sm font-medium">
                 SYMVORA Basico -{" "}
-                {selectedPeriod === "yearly"
-                  ? t("landing.cta.priceYearly")
-                  : t("landing.cta.priceMonthly")}
+                {/* El mismo numero que anuncia la landing. Si aqui apareciera
+                    $399 despues de haber visto $199 en la portada, el checkout
+                    se abandonaria antes de empezar. */}
+                {promoEnCheckout ? (
+                  <>
+                    <span className="text-muted-foreground line-through">
+                      ${precioListaMXN("monthly")}
+                    </span>
+                    <span className="font-semibold text-red-600 dark:text-red-400">
+                      ${PRECIO_PROMO_MXN}
+                    </span>
+                  </>
+                ) : selectedPeriod === "yearly" ? (
+                  t("landing.cta.priceYearly")
+                ) : (
+                  t("landing.cta.priceMonthly")
+                )}
               </span>
             </div>
+
+            {promoEnCheckout && (
+              <p className="-mt-2 text-xs text-red-600 dark:text-red-400">
+                {t("landing.cta.promoNota", {
+                  meses: PROMO_LANZAMIENTO.cobros,
+                  normal: `$${precioListaMXN("monthly")}`,
+                })}
+              </p>
+            )}
 
             <div
               role="radiogroup"

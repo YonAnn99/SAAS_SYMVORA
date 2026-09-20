@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
 import { Check, Rocket } from "lucide-react";
+import { PRECIO_PROMO_MXN, precioListaMXN, promoAplica } from "@/features/payments/promocion";
+import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 import {
   easeOutLong,
   easeOutShort,
@@ -39,8 +41,25 @@ export function CTA() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
   const isYearly = billing === "yearly";
-  const price = isYearly ? t("landing.cta.priceYearly") : t("landing.cta.priceMonthly");
   const period = isYearly ? t("landing.cta.periodYearly") : t("landing.cta.periodMonthly");
+
+  // La promocion solo toca el mensual. El precio sale de la constante y no de
+  // una cadena de i18n para que no pueda desincronizarse de lo que cobra
+  // Conekta: ese desajuste ya costo dos cambios de precio silenciosos.
+  // Dos usos distintos: `hayPromo` decide el PRECIO que se muestra (depende de
+  // la pestana elegida), y `hayPromoMensual` decide la pildora del boton
+  // "Mensual", que tiene que verse tambien desde la pestana Anual — igual que
+  // el "Ahorra 25%" del boton Anual se ve desde Mensual. Si dependiera de la
+  // pestana activa, quien abriera Anual no sabria que el mensual esta a mitad
+  // de precio.
+  const hayPromo = promoAplica(billing);
+  const hayPromoMensual = promoAplica("monthly");
+  const precioLista = `$${precioListaMXN("monthly")}`;
+  const price = hayPromo
+    ? `$${PRECIO_PROMO_MXN}`
+    : isYearly
+      ? t("landing.cta.priceYearly")
+      : t("landing.cta.priceMonthly");
 
   return (
     <motion.section
@@ -119,7 +138,7 @@ export function CTA() {
             role="radio"
             aria-checked={!isYearly}
             onClick={() => setBilling("monthly")}
-            className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
               !isYearly ? "text-white dark:text-neutral-900" : "text-neutral-600 hover:text-black dark:text-neutral-300 dark:hover:text-white"
             }`}
           >
@@ -131,6 +150,17 @@ export function CTA() {
               />
             )}
             <span className="relative">{t("landing.cta.monthly")}</span>
+            {hayPromoMensual && (
+              <span
+                className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  !isYearly
+                    ? "bg-red-500 text-white"
+                    : "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300"
+                }`}
+              >
+                {t("landing.cta.promoBadge")}
+              </span>
+            )}
           </button>
           <button
             type="button"
@@ -166,9 +196,31 @@ export function CTA() {
           transition={easeOutShort}
           className="flex items-baseline gap-2 mt-2"
         >
+          {hayPromo && (
+            <span className="text-2xl font-semibold text-neutral-400 line-through dark:text-neutral-500">
+              {precioLista}
+            </span>
+          )}
           <span className="text-5xl font-bold text-black dark:text-neutral-50">{price}</span>
           <span className="text-sm text-neutral-500 dark:text-neutral-400 max-w-[200px] text-left">{period}</span>
         </motion.div>
+
+        {/* Decir desde el principio cuando sube el precio. Un cliente que se
+            entera por el cuarto recibo se da de baja, y con razon. */}
+        {hayPromo && (
+          <motion.p
+            key={`promo-${billing}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={easeOutShort}
+            className="-mt-3 text-xs font-medium text-red-600 dark:text-red-400"
+          >
+            {t("landing.cta.promoNota", {
+              meses: PROMO_LANZAMIENTO.cobros,
+              normal: `$${precioListaMXN("monthly")}`,
+            })}
+          </motion.p>
+        )}
 
         <motion.div
           className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-lg mt-4 text-left"

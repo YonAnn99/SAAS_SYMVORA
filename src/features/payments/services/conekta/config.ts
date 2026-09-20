@@ -1,6 +1,6 @@
 import { CustomersApi, Configuration, PlansApi, SubscriptionsApi } from "conekta";
 import https from "https";
-import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
+import { SUBSCRIPTION_PRICE_CENTS, PROMO_LANZAMIENTO } from "@/lib/pricing";
 import { TIMEOUTS } from "@/lib/http/timeout";
 
 const apiKey = process.env.CONEKTA_PRIVATE_KEY;
@@ -45,8 +45,24 @@ export const conektaSubscriptionsApi = new SubscriptionsApi(config);
 //   v1  -> $400 / $3,840, con el bug de trial_period_days duplicado
 //   v2  -> $400 / $3,840, trial corregido
 //   v3  -> $399 / $3,588 (25% de ahorro anual)
+//
+// `monthlyPromo` es la promocion de lanzamiento: $199 los tres primeros cobros.
+// No es una version nueva del plan mensual, es un plan PARALELO — las dos
+// suscripciones conviven, y al agotarse los tres cobros la suscripcion se pasa
+// del promocional al normal con `cambiarPlan()`. Si algun dia cambia el precio
+// de la promocion, este id tambien tiene que versionarse (-v2): igual que los
+// demas, su monto es inmutable una vez creado en Conekta.
+//   promo50-v1 -> $199, tres cobros, luego symvora-basic-monthly-v3
 export const CONEKTA_PLAN_IDS = {
   monthly: "symvora-basic-monthly-v3",
   yearly: "symvora-basic-yearly-v3",
+  monthlyPromo: "symvora-basic-monthly-promo50-v1",
 } as const;
-export const CONEKTA_PLAN_AMOUNTS = SUBSCRIPTION_PRICE_CENTS;
+
+// Monto de cada plan, en centavos. Los dos normales salen de la fuente unica de
+// precio; el promocional, de la constante de la promocion — los tres viven en
+// `lib/pricing.ts` para que no puedan separarse.
+export const CONEKTA_PLAN_AMOUNTS = {
+  ...SUBSCRIPTION_PRICE_CENTS,
+  monthlyPromo: PROMO_LANZAMIENTO.precioCents,
+} as const;

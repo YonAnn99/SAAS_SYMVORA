@@ -462,6 +462,7 @@
     "expired": "Expired",
     "canceled": "Canceled",
     "trialEndsIn": "Your trial ends in {days} days",
+    "promoRestante": "Promotional price: {cobros} charges of {promo} left; then {normal}/month.",
     "nextBilling": "Next billing",
     "lastPayment": "Last payment",
     "paymentMethod": "Payment Method",
@@ -620,6 +621,10 @@
         },
         "added": "Item added"
       }
+    },
+    "promo": {
+      "badge": "−50% OFF",
+      "aria": "Promotion: 50% off. See pricing."
     },
     "compatibility": {
       "ariaLabel": "Available on any device with internet",
@@ -835,6 +840,8 @@
       "monthly": "Monthly",
       "yearly": "Yearly",
       "saveBadge": "Save 25%",
+      "promoBadge": "−50%",
+      "promoNota": "Promotional price for the first {meses} months. Then {normal} MXN/month.",
       "priceMonthly": "$399",
       "priceYearly": "$299",
       "periodMonthly": "MXN / month",

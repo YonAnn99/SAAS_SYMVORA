@@ -3,7 +3,11 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { getAppUrl } from "@/lib/site";
-import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
+import {
+  claveDePlanNuevo,
+  cobrosPromoIniciales,
+  precioCobroCents,
+} from "@/features/payments/promocion";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -49,7 +53,7 @@ export async function POST(request: Request) {
     // Get subscription
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("id, conekta_customer_id, status")
+      .select("id, conekta_customer_id, status, last_payment_at")
       .eq("tenant_id", tenant_id)
       .single();
 
@@ -60,9 +64,33 @@ export async function POST(request: Request) {
       );
     }
 
+    // El periodo y la promocion se guardan en el MISMO update: el CHECK de la
+    // migracion 073 exige que el contador y el plan promocional sean coherentes,
+    // y en dos updates separados la fila queda un instante en un estado que la
+    // base rechaza.
+    //
+    // La promocion solo se siembra en una cuenta que aun no paga. Sin esa
+    // condicion, un cliente de un año que entra a /billing a cambiar de tarjeta
+    // se regalaria tres meses a mitad de precio con cada clic.
+    const clavePlan = claveDePlanNuevo(period);
+    const esPromo = clavePlan === "monthlyPromo";
+    const yaPaga = Boolean(subscription.last_payment_at);
+
+    const cambios: Record<string, unknown> = { billing_period: period };
+    if (!yaPaga) {
+      // Import dinamico como el resto de Conekta en este archivo: `config.ts`
+      // instancia el SDK al cargarse, y este route corta antes por permisos o
+      // por tenant demo en la mayoria de las llamadas.
+      const { CONEKTA_PLAN_IDS } = await import(
+        "@/features/payments/services/conekta/config"
+      );
+      cambios.promo_cobros_restantes = esPromo ? cobrosPromoIniciales(period) : 0;
+      cambios.promo_plan = esPromo ? CONEKTA_PLAN_IDS.monthlyPromo : null;
+    }
+
     await supabase
       .from("subscriptions")
-      .update({ billing_period: period })
+      .update(cambios)
       .eq("id", subscription.id);
 
     // Get tenant info
@@ -180,9 +208,17 @@ export async function POST(request: Request) {
     // que usa el plan de Conekta para que tarjeta y efectivo nunca cobren
     // distinto: esta rama (efectivo/transferencia) arma line_items a mano,
     // mientras que la de tarjeta delega el monto al plan.
-    const amount = SUBSCRIPTION_PRICE_CENTS[period];
+    // Efectivo/transferencia arma el monto a mano, asi que tiene que aplicar la
+    // promocion por su cuenta: si no, la landing anunciaria $199 y el cliente
+    // que elige OXXO se encontraria una ficha de $399.
+    const cobrosPromo = esPromo && !yaPaga ? cobrosPromoIniciales(period) : 0;
+    const amount = precioCobroCents(period, cobrosPromo);
     const description =
-      period === "yearly" ? "SYMVORA Basico - Anual" : "SYMVORA Basico - Mensual";
+      period === "yearly"
+        ? "SYMVORA Basico - Anual"
+        : cobrosPromo > 0
+          ? "SYMVORA Basico - Mensual (promo -50%)"
+          : "SYMVORA Basico - Mensual";
 
     // Tarjeta = cobro recurrente real (Conekta solo soporta suscripciones con
     // tarjeta): en vez de una orden de una sola exhibición, se crea el checkout
@@ -195,7 +231,7 @@ export async function POST(request: Request) {
       if (isCardSubscription) {
         const { ensurePlanExists } = await import("@/features/payments/services/conekta/plans");
         const { createSubscriptionCheckout } = await import("@/features/payments/services/conekta/orders");
-        const planId = await ensurePlanExists(period);
+        const planId = await ensurePlanExists(clavePlan);
         order = await createSubscriptionCheckout({
           customerId: customerId!,
           planId,

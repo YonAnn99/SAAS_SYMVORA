@@ -462,6 +462,7 @@
     "expired": "Vencida",
     "canceled": "Cancelada",
     "trialEndsIn": "Tu prueba termina en {days} días",
+    "promoRestante": "Precio promocional: te quedan {cobros} cobros de {promo}; después {normal}/mes.",
     "nextBilling": "Próximo cobro",
     "lastPayment": "Último pago",
     "paymentMethod": "Método de Pago",
@@ -698,6 +699,10 @@
         "added": "Producto agregado"
       }
     },
+    "promo": {
+      "badge": "−50% OFF",
+      "aria": "Promoción: 50% de descuento. Ver precios."
+    },
     "compatibility": {
       "ariaLabel": "Disponible en cualquier dispositivo con internet",
       "mobile": {
@@ -912,6 +917,8 @@
       "monthly": "Mensual",
       "yearly": "Anual",
       "saveBadge": "Ahorra 25%",
+      "promoBadge": "−50%",
+      "promoNota": "Precio promocional los primeros {meses} meses. Después {normal} MXN/mes.",
       "priceMonthly": "$399",
       "priceYearly": "$299",
       "periodMonthly": "MXN / mes",

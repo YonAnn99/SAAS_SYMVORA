@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
+import { PromoBadge } from "@/components/marketing/promo-badge";
 
 // BubbleMenu arrastra gsap entero, y AppFrame envuelve TODA la landing: sin
 // esto, cada visita descarga gsap solo por el menu movil. VoiceNarrator vive
@@ -97,6 +98,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           {children}
         </main>
 
+        {/* Hermano del contenedor de scroll, no hijo: asi se queda quieto
+            mientras la landing se desplaza. Ver la nota del componente. */}
+        <PromoBadge />
         <ThemeToggleFab />
         <VoiceNarrator />
       </div>
