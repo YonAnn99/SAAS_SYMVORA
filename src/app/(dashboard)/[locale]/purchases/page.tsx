@@ -31,6 +31,9 @@ export default function PurchasesPage() {
     handleUpdateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
+    handleCancelPurchase,
+    products,
+    variants,
   } = usePurchases(tenantId, tenantLoading);
 
   if (loading) {
@@ -71,6 +74,7 @@ export default function PurchasesPage() {
             onEdit={openEditPurchase}
             onUpdateStatus={handleUpdatePurchaseStatus}
             onDelete={handleDeletePurchase}
+            onCancel={handleCancelPurchase}
           />
         </TabsContent>
 
@@ -88,11 +92,13 @@ export default function PurchasesPage() {
         open={showNewPurchaseDialog}
         onOpenChange={setShowNewPurchaseDialog}
         suppliers={suppliers}
+        products={products}
+        variants={variants}
         editingPurchase={editingPurchase}
-        onConfirm={(input) =>
+        onConfirm={(input, renglones) =>
           editingPurchase
             ? handleUpdatePurchase(editingPurchase.id, input)
-            : handleCreatePurchase(input)
+            : handleCreatePurchase(input, renglones)
         }
       />
 

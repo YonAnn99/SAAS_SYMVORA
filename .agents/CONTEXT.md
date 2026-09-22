@@ -1006,9 +1006,51 @@ comparte `rangoDePeriodo` con las gráficas, así que responde al mismo selector
 - Reutilizables tal cual: `src/features/pos/ticket-format.ts` (íntegro), `src/lib/profit.ts`,
   el CSS de impresión, y `get_tenant_members` (ya corregida).
 
-### Líneas base (actualizadas el 2026-09-20)
+### Compras: de apunte muerto a compra directa (2026-09-21)
 
-`npx tsc --noEmit` limpio · `npx vitest run` **488 tests en 39 archivos** · `npx eslint .`
+**La pregunta que lo destapó**: "¿cuál es la funcionalidad de Compras?". La respuesta era
+que no tenía ninguna clara. `compras` nació en la migración **001 (8 ago)**; dos días
+después la **005** creó `ordenes_compra` con el comentario *"Purchase orders (replaces
+simple purchase tracking)"*. Órdenes nació para SUSTITUIR a Compras, la sustitución nunca
+se completó y la pantalla vieja se quedó en el menú.
+
+**Medido antes de arreglarlo**: de 12 compras, 7 venían de una orden (con sus 7 renglones y
+$248 de IVA) y **5 eran cabeceras a mano por $7,500 con cero renglones y cero IVA**. Casi la
+mitad del dinero registrado no movía una sola unidad de inventario. El formulario pedía solo
+proveedor, número de factura y total.
+
+**Migración 074** (aplicada en tres partes por el MCP):
+
+- `detalle_compras.variante_id`. Sin ella no se puede revertir una compra: el renglón
+  guardaba siempre el producto PADRE aunque el stock hubiera ido a una variante, y producto
+  y variante son buckets separados. Relleno de lo existente solo donde no había ambigüedad;
+  acertó la única fila afectada (la compra del 16-sep de "sueter").
+- `registrar_compra_directa(...)`: compra sin orden que SÍ suma stock, escribe renglones,
+  fija el último costo y calcula importes **en el servidor**. El `costo_unitario` sí viaja
+  desde el cliente (lo cobró el proveedor); `subtotal`/`impuesto`/`total` no.
+- `cancelar_compra(...)`: le da su trabajo al valor `CANCELADA` del enum, que existía desde
+  la 001 y **ningún botón producía**. Revierte el stock al cubo correcto. No revierte el
+  costo (es "último costo" y no hay histórico) y se niega ante un renglón ambiguo.
+- `recibir_orden_compra` retocada para anotar también la variante (misma firma, sin tocar
+  grants).
+
+**En la interfaz**: el borrado duro queda solo para las cabeceras heredadas (las que no
+movieron nada, marcadas "sin desglose" en la tabla); todo lo que movió inventario se cancela.
+El diálogo reutiliza `construirOpciones`/`descomponerValor` de `purchase-order-items.ts` y
+`totalesOrdenCompra` de `purchase-order-totals.ts` — la misma maquinaria que las órdenes.
+
+⚠️ Las dos pantallas siguen siendo dos entradas de menú con **un solo permiso y un solo
+switch** (`purchases.manage`, `src/lib/modules.ts`). Fusionarlas se evaluó y se descartó.
+
+⚠️ Los RPC comprueban el permiso contra `role_permissions` y **no** contra las excepciones
+por usuario. Es la misma limitación que ya tenía `recibir_orden_compra` y se copió a
+propósito: dos RPC del mismo permiso comportándose distinto sería peor.
+
+---
+
+### Líneas base (actualizadas el 2026-09-21)
+
+`npx tsc --noEmit` limpio · `npx vitest run` **501 tests en 40 archivos** · `npx eslint .`
 **8 errores / 187 avisos**.
 
 ⚠️ Esa cifra de eslint es **sin `public/sw.js`**, el bundle que genera el build. Ese archivo
@@ -1017,7 +1059,8 @@ avisos**. Tras cualquier `npm run build` la cuenta vuelve a subir a 9/284: no es
 regresion. Los 8 errores de verdad son todos `set-state-in-effect` preexistentes en
 `activity`, `reports`, `users` y compañia.
 
-La cuenta de tests bajó de 553/44 a 488/39 al retirar el modo sin conexión: se borraron los cinco
+La cuenta de tests subió a 501/40 con la compra directa (2026-09-21). Antes bajó de
+553/44 a 488/39 al retirar el modo sin conexión: se borraron los cinco
 archivos de test que lo cubrían (`offline-capabilities`, `offline-queue`, `offline-warm`,
 `route-cache`, `offline-html`) y se recortó `venta-bloqueada.test.ts`. No hay ningún test
 roto ni omitido.

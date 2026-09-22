@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type {
   Proveedor,
   PurchaseWithRelations,
 } from "../types/inventory.types";
+import { MENSAJES_RENGLON, validarCompraDirecta, type RenglonCompraForm } from "../compra-directa";
 import {
+  cancelPurchase,
   createPurchase,
   createSupplier,
   deletePurchase,
@@ -20,10 +21,21 @@ import {
   updatePurchaseStatus,
   updateSupplier,
 } from "../services/purchase-service";
+// El selector de productos de la compra directa es el MISMO que el de las
+// ordenes, asi que se reusan sus consultas en vez de duplicarlas.
+import {
+  fetchOrderProducts,
+  fetchOrderVariants,
+  type VarianteDeCompra,
+} from "../services/purchase-order-service";
 
 export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const [purchases, setPurchases] = useState<PurchaseWithRelations[]>([]);
   const [suppliers, setSuppliers] = useState<Proveedor[]>([]);
+  const [products, setProducts] = useState<
+    { id: string; nombre: string; costo_compra: number }[]
+  >([]);
+  const [variants, setVariants] = useState<VarianteDeCompra[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
@@ -37,12 +49,17 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
       return;
     }
     setLoading(true);
-    const [purchasesData, suppliersData] = await Promise.all([
-      fetchPurchases(tenantId),
-      fetchSuppliers(tenantId),
-    ]);
+    const [purchasesData, suppliersData, productsData, variantsData] =
+      await Promise.all([
+        fetchPurchases(tenantId),
+        fetchSuppliers(tenantId),
+        fetchOrderProducts(tenantId),
+        fetchOrderVariants(tenantId),
+      ]);
     setPurchases(purchasesData);
     setSuppliers(suppliersData);
+    setProducts(productsData);
+    setVariants(variantsData);
     setLoading(false);
   }, [tenantId]);
 
@@ -53,29 +70,32 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   }, [tenantLoading, refetch]);
 
   const handleCreatePurchase = useCallback(
-    async (input: PurchaseInput) => {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user || !input.proveedorId || !tenantId) {
+    async (input: PurchaseInput, renglones: RenglonCompraForm[]) => {
+      if (!input.proveedorId || !tenantId) {
         toast.error("Faltan datos requeridos");
         return;
       }
 
-      if (!(input.total > 0)) {
-        toast.error("El total debe ser mayor a 0");
+      // El servidor valida lo mismo y es quien manda; esto es para decirlo
+      // antes del viaje y señalando el renglón concreto.
+      const validacion = validarCompraDirecta(renglones);
+      if (!validacion.ok && validacion.motivo) {
+        const donde = validacion.renglon ? ` (renglón ${validacion.renglon})` : "";
+        toast.error(`${MENSAJES_RENGLON[validacion.motivo]}${donde}`);
         return;
       }
 
       try {
-        await createPurchase(tenantId, user.id, input);
+        await createPurchase(tenantId, input);
         await logActivity({
           action: "CREATE",
           entity: "compra",
           entityName: `Compra ${input.numeroFactura || ""}`,
-          details: { proveedor_id: input.proveedorId, total: input.total },
+          details: {
+            proveedor_id: input.proveedorId,
+            renglones: input.items.length,
+            iva: input.incluyeIva,
+          },
         });
         toast.success("Compra creada correctamente");
         setShowNewPurchaseDialog(false);
@@ -103,11 +123,6 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
         return;
       }
 
-      if (!(input.total > 0)) {
-        toast.error("El total debe ser mayor a 0");
-        return;
-      }
-
       try {
         await updatePurchase(purchaseId, input);
         await logActivity({
@@ -115,7 +130,7 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entity: "compra",
           entityId: purchaseId,
           entityName: `Compra ${input.numeroFactura || ""}`,
-          details: { proveedor_id: input.proveedorId, total: input.total },
+          details: { proveedor_id: input.proveedorId },
         });
         toast.success("Compra actualizada correctamente");
         setShowNewPurchaseDialog(false);
@@ -240,6 +255,29 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     [refetch]
   );
 
+  const handleCancelPurchase = useCallback(
+    async (purchaseId: string) => {
+      try {
+        await cancelPurchase(purchaseId);
+        await logActivity({
+          action: "UPDATE",
+          entity: "compra",
+          entityId: purchaseId,
+          details: { estado: "CANCELADA", stock: "revertido" },
+        });
+        toast.success("Compra cancelada. El inventario volvió a su valor anterior.");
+        void refetch();
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Error al cancelar la compra"
+        );
+      }
+    },
+    [refetch]
+  );
+
   const handlePurchaseDialogOpenChange = useCallback((open: boolean) => {
     setShowNewPurchaseDialog(open);
     if (!open) setEditingPurchase(null);
@@ -253,6 +291,8 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   return {
     purchases,
     suppliers,
+    products,
+    variants,
     loading,
     showNewPurchaseDialog,
     setShowNewPurchaseDialog: handlePurchaseDialogOpenChange,
@@ -268,6 +308,7 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     handleUpdateSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
+    handleCancelPurchase,
     refetch,
   };
 }

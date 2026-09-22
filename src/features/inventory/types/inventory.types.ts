@@ -176,6 +176,19 @@ export const defaultOrdenFormData: OrdenFormData = {
 export interface PurchaseWithRelations extends Compra {
   proveedor?: { nombre: string } | null;
   usuario?: { email: string } | null;
+  /**
+   * Desglose de la compra. Vacio en las cabeceras heredadas: las que la
+   * pantalla vieja creaba pidiendo solo un total, que no movieron inventario.
+   * Es lo que decide si una compra se cancela (devolviendo stock) o se borra.
+   */
+  renglones?: {
+    id: string;
+    cantidad: number;
+    costo_unitario: number;
+    subtotal: number;
+    variante_id: string | null;
+    producto?: { nombre: string } | null;
+  }[];
 }
 
 export interface SupplierFormData {

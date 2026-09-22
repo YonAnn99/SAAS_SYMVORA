@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ShoppingCart, CheckCircle, Trash2, Pencil } from "lucide-react";
+import { ShoppingCart, CheckCircle, Trash2, Pencil, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -28,6 +28,7 @@ interface PurchasesTableProps {
   onEdit: (purchase: PurchaseWithRelations) => void;
   onUpdateStatus: (id: string, estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA") => void;
   onDelete: (id: string) => void;
+  onCancel: (id: string) => void;
 }
 
 export function PurchasesTable({
@@ -36,12 +37,21 @@ export function PurchasesTable({
   onEdit,
   onUpdateStatus,
   onDelete,
+  onCancel,
 }: PurchasesTableProps) {
   const t = useTranslations();
 
   const canEdit = (estado: string) => estado === "PENDIENTE";
   const canMarkAsReceived = (estado: string) => estado === "PENDIENTE";
-  const canCancel = (estado: string) => estado !== "CANCELADA";
+
+  /**
+   * Una compra con renglones MOVIO INVENTARIO, asi que se cancela (devolviendo
+   * el stock) en vez de borrarse. El borrado duro queda para las cabeceras
+   * heredadas, que la pantalla vieja creaba sin desglose y que por tanto no
+   * sumaron nada.
+   */
+  const movioInventario = (p: PurchaseWithRelations) =>
+    (p.renglones?.length ?? 0) > 0;
 
   return (
     <Card>
@@ -107,7 +117,15 @@ export function PurchasesTable({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      ${purchase.total.toFixed(2)}
+                      ${Number(purchase.total).toFixed(2)}
+                      {!movioInventario(purchase) && (
+                        <span
+                          className="ml-1.5 font-sans text-[10px] uppercase tracking-wider text-muted-foreground"
+                          title="Registrada antes de que las compras movieran inventario: no tiene desglose y no sumó existencias."
+                        >
+                          sin desglose
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -133,17 +151,28 @@ export function PurchasesTable({
                             <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
                           </Button>
                         )}
-                        {canCancel(purchase.estado) && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => onDelete(purchase.id)}
-                            title={t("purchases.deletePurchase")}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                          </Button>
-                        )}
+                        {purchase.estado !== "CANCELADA" &&
+                          (movioInventario(purchase) ? (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => onCancel(purchase.id)}
+                              title="Cancelar y devolver el stock al inventario"
+                            >
+                              <Undo2 className="h-3.5 w-3.5 text-amber-600" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => onDelete(purchase.id)}
+                              title={t("purchases.deletePurchase")}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                            </Button>
+                          ))}
                       </div>
                     </TableCell>
                   </TableRow>
