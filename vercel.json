@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/trial-notices",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/auto-close-registers",
+      "schedule": "59 5 * * *"
     }
   ]
 }

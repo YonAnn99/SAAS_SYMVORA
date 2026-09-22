@@ -78,6 +78,13 @@ export function ProductDialog({
    */
   const [imagenOriginal, setImagenOriginal] = useState<File | null>(null);
   const [quitandoFondo, setQuitandoFondo] = useState(false);
+  /**
+   * Si la imagen se proceso con la llave de SANDBOX, que marca todas las
+   * imagenes con marca de agua. Lo dice el servidor en una cabecera, deducido de
+   * la propia llave. Sin este aviso el comerciante guardaria en su catalogo una
+   * foto marcada sin que nada se lo dijera.
+   */
+  const [conMarcaDeAgua, setConMarcaDeAgua] = useState(false);
 
   const syncFromEditing = (product: Producto | null) => {
     setImagenFile(null);
@@ -167,9 +174,31 @@ export function ProductDialog({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  /**
+   * Marcar un producto como servicio arrastra dos cosas más.
+   *
+   * La unidad pasa a SERVICIO porque la edición en línea YA lo exige
+   * (`unidadesPermitidas` en `inline-edit.ts`), y su propio comentario admitía
+   * la incoherencia: quedaban servicios en PIEZA por haber usado el diálogo.
+   *
+   * El stock se pone a 0 porque los campos desaparecen de la pantalla: dejar
+   * ahí el 5 del valor por defecto guardaría un número que nadie puede ver ni
+   * corregir.
+   */
+  const alternarServicio = (esServicio: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      es_servicio: esServicio,
+      ...(esServicio
+        ? { unidad_medida: "SERVICIO" as const, stock_actual: "0", stock_minimo: "0" }
+        : {}),
+    }));
+  };
+
   const handleImagenSelect = (file: File) => {
     setImagenFile(file);
     setImagenOriginal(null);
+    setConMarcaDeAgua(false);
     setImagenRemoved(false);
     setImagenPreview(URL.createObjectURL(file));
   };
@@ -177,6 +206,7 @@ export function ProductDialog({
   const handleImagenRemove = () => {
     setImagenFile(null);
     setImagenOriginal(null);
+    setConMarcaDeAgua(false);
     setImagenPreview(null);
     setImagenRemoved(true);
   };
@@ -202,6 +232,8 @@ export function ProductDialog({
         return;
       }
 
+      setConMarcaDeAgua(res.headers.get("X-Photoroom-Modo") === "sandbox");
+
       const recorte = await res.blob();
       const recortada = new File([recorte], "producto-sin-fondo.webp", {
         type: "image/webp",
@@ -219,6 +251,7 @@ export function ProductDialog({
 
   const handleRestaurarOriginal = () => {
     if (!imagenOriginal) return;
+    setConMarcaDeAgua(false);
     setImagenFile(imagenOriginal);
     setImagenPreview(URL.createObjectURL(imagenOriginal));
     setImagenOriginal(null);
@@ -365,12 +398,23 @@ export function ProductDialog({
                   {quitandoFondo ? "Quitando fondo..." : "Quitar fondo"}
                 </Button>
               )}
-              {imagenOriginal && (
+              {imagenOriginal && !conMarcaDeAgua && (
                 <span className="text-xs text-muted-foreground">
                   Fondo eliminado
                 </span>
               )}
             </div>
+          )}
+
+          {/* La llave de sandbox marca TODAS las imágenes. Se avisa en el
+              momento y con "Restaurar original" a un clic, en vez de dejar que
+              el comerciante guarde una foto marcada sin enterarse. Desaparece
+              solo el día que se use la llave live. */}
+          {conMarcaDeAgua && (
+            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              Imagen de prueba: lleva marca de agua. No la guardes en tu
+              catálogo — usa &quot;Restaurar original&quot;.
+            </p>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -505,50 +549,76 @@ export function ProductDialog({
               )}
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Stock actual</Label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="0"
-                value={formData.stock_actual}
-                onChange={(e) => updateField("stock_actual", e.target.value)}
-                className="h-8 text-sm font-mono"
-              />
+          {/* En un servicio los campos de stock DESAPARECEN, no se deshabilitan:
+              dejarlos en gris seguiría sugiriendo que importan, y no importan —
+              la venta de un servicio ya no descuenta existencias. */}
+          {!formData.es_servicio && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Stock actual</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.stock_actual}
+                  onChange={(e) => updateField("stock_actual", e.target.value)}
+                  className="h-8 text-sm font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Stock mínimo</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.stock_minimo}
+                  onChange={(e) => updateField("stock_minimo", e.target.value)}
+                  className="h-8 text-sm font-mono"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Stock mínimo</Label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="5"
-                value={formData.stock_minimo}
-                onChange={(e) => updateField("stock_minimo", e.target.value)}
-                className="h-8 text-sm font-mono"
+          )}
+          {/* Los tres llevan una línea que dice QUÉ cambia al activarlos. Sin
+              ella el usuario movía el interruptor, no veía nada distinto y
+              concluía —con razón— que no servían para nada. */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={formData.es_servicio}
+                onCheckedChange={(v) => alternarServicio(v)}
               />
+              <Label className="text-xs">Es servicio (no maneja stock)</Label>
             </div>
+            <p className="ml-11 text-[11px] text-muted-foreground">
+              Se vende sin descontar existencias: asesorías, instalación, envío
+              a domicilio.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={formData.es_servicio}
-              onCheckedChange={(v) => updateField("es_servicio", v)}
-            />
-            <Label className="text-xs">Es servicio (no maneja stock)</Label>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={formData.permite_lotes}
+                onCheckedChange={(v) => updateField("permite_lotes", v)}
+              />
+              <Label className="text-xs">Maneja lotes y fecha de caducidad</Label>
+            </div>
+            <p className="ml-11 text-[11px] text-muted-foreground">
+              Al guardar, el producto aparece en la pestaña Lotes para
+              registrar sus caducidades.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={formData.permite_lotes}
-              onCheckedChange={(v) => updateField("permite_lotes", v)}
-            />
-            <Label className="text-xs">Maneja lotes y fecha de caducidad</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={formData.permite_variantes}
-              onCheckedChange={(v) => updateField("permite_variantes", v)}
-            />
-            <Label className="text-xs">Maneja variantes (talla/color)</Label>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={formData.permite_variantes}
+                onCheckedChange={(v) => updateField("permite_variantes", v)}
+              />
+              <Label className="text-xs">Maneja variantes (talla/color)</Label>
+            </div>
+            <p className="ml-11 text-[11px] text-muted-foreground">
+              Al guardar, el producto aparece en la pestaña Variantes para dar
+              de alta tallas y colores con su propio stock.
+            </p>
           </div>
         </div>
         <DialogFooter>

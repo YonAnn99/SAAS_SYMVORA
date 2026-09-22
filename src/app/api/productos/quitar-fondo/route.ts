@@ -94,15 +94,24 @@ export async function POST(request: Request) {
 
     const envio = new FormData();
     envio.append("image_file", imagen);
-    // WEBP y no PNG: los dos conservan la transparencia, pero webp pesa bastante
-    // menos y ademas es el formato en el que acabaremos guardando la imagen, asi
-    // que evita una conversion de ida y vuelta.
-    //
-    // Transparencia y NO fondo blanco: el alfa sobrevive al webp final, y asi la
-    // misma imagen se ve bien sobre la tarjeta clara del catalogo y sobre la
-    // oscura del Punto de Venta. Un fondo blanco quemado seria un parche en el
-    // tema oscuro.
+
+    // WEBP y no PNG: pesa bastante menos y es el formato en el que acabaremos
+    // guardando la imagen, asi que evita una conversion de ida y vuelta.
     envio.append("format", "webp");
+
+    // FONDO BLANCO SOLIDO. Es el estandar de catalogo —Amazon y Google Shopping
+    // lo exigen— y es lo que hace que veinte fotos tomadas con teléfonos
+    // distintos, sobre mostradores distintos, se vean como UN MISMO catalogo.
+    // Esa uniformidad era el objetivo de toda esta funcion.
+    //
+    // `bg_color` viene en el plan Basic que ya pagamos ($0.02 por imagen): es un
+    // campo mas en la misma llamada, sin costo adicional. La iluminacion y la
+    // sombra de estudio existen, pero viven en el Image Editing API a $0.10 —
+    // cinco veces mas— y se pospusieron a proposito: la descripcion de su
+    // "AI Relight" esta escrita para fotos de PERSONAS (quitar imperfecciones,
+    // blanquear dientes), asi que su beneficio sobre mercancia no esta
+    // demostrado y no se paga 5x por algo sin comprobar.
+    envio.append("bg_color", "FFFFFF");
 
     let respuesta: Response;
     try {
@@ -144,6 +153,19 @@ export async function POST(request: Request) {
         "Content-Type": "image/webp",
         // Es una imagen de un solo uso, atada a una sesión de alta de producto.
         "Cache-Control": "no-store",
+        // EN QUE MODO SE PROCESO. El sandbox marca TODAS las imagenes con marca
+        // de agua, y esa llave puede estar tambien en produccion mientras se
+        // prueba. Sin este aviso, un comerciante guardaria en su catalogo una
+        // foto con la marca de PhotoRoom encima sin que nada se lo dijera.
+        //
+        // Se deduce de la propia llave (las de sandbox empiezan por `sandbox_`)
+        // y NO de una segunda variable de entorno: una sola fuente, imposible
+        // de desincronizar. El dia que se pegue la llave live, el aviso de la
+        // pantalla desaparece solo.
+        //
+        // Viaja como cabecera y no como endpoint aparte para no añadir una
+        // peticion: acompaña a la imagen que ya se estaba pidiendo.
+        "X-Photoroom-Modo": apiKey.startsWith("sandbox_") ? "sandbox" : "live",
       },
     });
   } catch (error) {

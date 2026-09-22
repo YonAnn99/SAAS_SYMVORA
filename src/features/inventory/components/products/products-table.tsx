@@ -209,13 +209,20 @@ export function ProductsTable({
                       <ProductMarginCell product={product} />
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      <EditableTextCell
-                        {...celda("stock_actual")}
-                        numerico
-                        className="text-right font-mono tabular-nums"
-                      >
-                        {product.stock_actual}
-                      </EditableTextCell>
+                      {/* Un servicio no tiene existencias, así que no se muestra
+                          un número ni se deja editar: teclear ahí no cambiaría
+                          nada, porque la venta ya no le descuenta stock. */}
+                      {product.es_servicio ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <EditableTextCell
+                          {...celda("stock_actual")}
+                          numerico
+                          className="text-right font-mono tabular-nums"
+                        >
+                          {product.stock_actual}
+                        </EditableTextCell>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StockBadge product={product} />
@@ -295,19 +302,30 @@ function ProductMarginCell({
 }
 
 /**
- * Etiqueta de stock, en TRES estados.
+ * Etiqueta de stock, en CUATRO estados.
  *
  * Antes eran dos (`stock <= minimo ? "Stock bajo" : "OK"`), lo que mostraba un
  * producto agotado como "Stock bajo" — y el filtro del diálogo lo clasificaba
  * como "Agotado". Ahora ambos leen de `stockStatus()`, así que no pueden
  * contradecirse.
+ *
+ * El cuarto es "Servicio": una asesoría o un envío a domicilio salían con la
+ * etiqueta roja de "Agotado" porque nadie miraba `es_servicio`.
  */
 function StockBadge({
   product,
 }: {
-  product: { stock_actual: number; stock_minimo: number };
+  product: { stock_actual: number; stock_minimo: number; es_servicio?: boolean };
 }) {
   const status = stockStatus(product);
+
+  if (status === "servicio") {
+    return (
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+        Servicio
+      </Badge>
+    );
+  }
 
   if (status === "agotado") {
     return (

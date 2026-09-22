@@ -201,7 +201,8 @@ export default function POSPage() {
         return;
       }
 
-      if (product.stock_actual <= 0) {
+      // Un servicio se cobra sin existencias: no hay nada que se acabe.
+      if (!product.es_servicio && product.stock_actual <= 0) {
         toast.error("Sin stock disponible");
         return;
       }

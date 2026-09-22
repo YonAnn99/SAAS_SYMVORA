@@ -919,3 +919,139 @@ export async function sendPasswordChangedAlertEmail(params: {
   }
 }
 
+// =============================================
+// Cierre automático de caja
+// ---------------------------------------------
+// Notificaciones cuando el sistema cierra una caja automáticamente a las 23:59
+// =============================================
+
+/**
+ * Notifica al usuario cuya caja fue cerrada automáticamente.
+ */
+export async function sendAutoCloseToUserEmail(params: {
+  to: string;
+  userName: string;
+  businessName: string;
+  cajaId: string;
+  fechaApertura: string;
+  totalVentas: number;
+  totalEntradas: number;
+  totalSalidas: number;
+  saldoEsperado: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite aviso de cierre automático al usuario");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const formatMXN = (n: number) =>
+    n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+
+  const fecha = new Date(params.fechaApertura).toLocaleString("es-MX", {
+    timeZone: "America/Mexico_City",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const html = buildNoticeHtml({
+    preheader: `Tu caja fue cerrada automáticamente — ${params.businessName}`,
+    heading: `Cierre automático de caja, ${params.userName}`,
+    intro:
+      `Tu caja del día ${fecha} fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). A continuación el resumen del corte:`,
+    highlight: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Fondo inicial: <strong>${formatMXN(params.saldoEsperado - params.totalVentas - params.totalEntradas + params.totalSalidas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Ventas: <strong style="color:#2563eb;">+${formatMXN(params.totalVentas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Entradas: <strong style="color:#16a34a;">+${formatMXN(params.totalEntradas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Salidas: <strong style="color:#dc2626;">-${formatMXN(params.totalSalidas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.ink};font-weight:700;padding:8px 0 4px;border-top:1px solid ${BRAND.border};">Saldo esperado: <strong>${formatMXN(params.saldoEsperado)}</strong></td></tr>
+      </table>
+      <p style="font-size:13px;color:${BRAND.muted};margin:8px 0 0;">El sistema cerró la caja con saldo real = saldo esperado (diferencia $0.00). Si necesitas ajustar, contacta a tu administrador.</p>
+    `,
+    ctaLabel: "Ver mis cajas",
+    ctaHref: `${BRAND.appUrl}/es/finances`,
+  });
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: params.to,
+      subject: `Tu caja fue cerrada automáticamente — ${params.businessName}`,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de cierre automático al usuario:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * Notifica al SUPER_ADMIN cuando se cierra automáticamente la caja de un usuario.
+ */
+export async function sendAutoCloseToSuperAdminEmail(params: {
+  to: string;
+  businessName: string;
+  userName: string;
+  userRole: string;
+  userEmail: string;
+  cajaId: string;
+  fechaApertura: string;
+  totalVentas: number;
+  totalEntradas: number;
+  totalSalidas: number;
+  saldoEsperado: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite aviso de cierre automático al super admin");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const formatMXN = (n: number) =>
+    n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+
+  const fecha = new Date(params.fechaApertura).toLocaleString("es-MX", {
+    timeZone: "America/Mexico_City",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const roleLabel = params.userRole === "SUPER_ADMIN" ? "Super Administrador" : params.userRole === "ORG_ADMIN" ? "Administrador" : "Cajero";
+
+  const html = buildNoticeHtml({
+    preheader: `Caja de ${params.userName} (${roleLabel}) cerrada automáticamente — ${params.businessName}`,
+    heading: `Caja cerrada automáticamente: ${params.userName}`,
+    intro:
+      `La caja de <strong>${params.userName}</strong> (${params.userEmail}, ${roleLabel}) del día ${fecha} fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). Resumen del corte:`,
+    highlight: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Fondo inicial: <strong>${formatMXN(params.saldoEsperado - params.totalVentas - params.totalEntradas + params.totalSalidas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Ventas: <strong style="color:#2563eb;">+${formatMXN(params.totalVentas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Entradas: <strong style="color:#16a34a;">+${formatMXN(params.totalEntradas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Salidas: <strong style="color:#dc2626;">-${formatMXN(params.totalSalidas)}</strong></td></tr>
+        <tr><td style="font-size:14px;color:${BRAND.ink};font-weight:700;padding:8px 0 4px;border-top:1px solid ${BRAND.border};">Saldo esperado: <strong>${formatMXN(params.saldoEsperado)}</strong></td></tr>
+      </table>
+      <p style="font-size:13px;color:${BRAND.muted};margin:8px 0 0;">El sistema cerró la caja con saldo real = saldo esperado (diferencia $0.00). Si el usuario necesita ajustar, puede hacerlo desde Finanzas.</p>
+    `,
+    ctaLabel: "Ver cajas del negocio",
+    ctaHref: `${BRAND.appUrl}/es/finances`,
+  });
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: params.to,
+      subject: `Caja de ${params.userName} (${roleLabel}) cerrada automáticamente — ${params.businessName}`,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de cierre automático al super admin:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+

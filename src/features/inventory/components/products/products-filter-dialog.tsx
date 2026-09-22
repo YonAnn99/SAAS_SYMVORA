@@ -46,7 +46,9 @@ interface ProductsFilterDialogProps {
   sinCategoriaCount: number;
 }
 
-const STOCK_ORDER: StockStatus[] = ["ok", "bajo", "agotado"];
+// "servicio" al final: es el grupo que menos se consulta, pero tenerlo
+// permite listar de un vistazo lo que se cobra sin inventario.
+const STOCK_ORDER: StockStatus[] = ["ok", "bajo", "agotado", "servicio"];
 
 export function ProductsFilterDialog({
   open,

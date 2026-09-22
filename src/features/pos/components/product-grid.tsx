@@ -3,10 +3,11 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Package, Palette, ShoppingCart, Star } from "lucide-react";
+import { Heart, Package, Palette, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn, getInitials } from "@/lib/utils";
+import { stockStatus } from "@/features/inventory/stock-status";
 import type { Producto, VarianteProducto } from "../types/pos.types";
 import { variantLabel, variantPrice } from "./variant-picker-dialog";
 import type { PosViewMode } from "./pos-search-bar";
@@ -150,7 +151,7 @@ export function ProductGrid({
         <div className="flex flex-col items-center justify-center gap-3 h-full">
           {isFavoritesFilter ? (
             <>
-              <Star className="h-10 w-10 text-amber-500/40 fill-amber-500/20" />
+              <Heart className="h-10 w-10 text-rose-500/50 fill-rose-500/20" />
               <div className="text-center space-y-1">
                 <p className="text-sm font-medium text-foreground">
                   No tienes productos marcados como favoritos
@@ -402,14 +403,20 @@ export function ProductGrid({
                     <span className="text-[13px] text-muted-foreground font-mono">
                       ${precioEfectivo.toFixed(2)}
                     </span>
-                    {product.es_servicio ? (
+                    {/* `stockStatus()` en vez de la regla a mano que habia
+                        aqui (`stock_actual <= stock_minimo`): es la misma
+                        divergencia que el modulo de stock dice haber eliminado
+                        ya una vez, y la que hacia que un agotado se anunciara
+                        como "stock bajo". */}
+                    {stockStatus(product) === "servicio" ? (
                       <Badge
                         variant="outline"
                         className="text-[10px] px-1.5 py-0"
                       >
                         Servicio
                       </Badge>
-                    ) : product.stock_actual <= product.stock_minimo ? (
+                    ) : stockStatus(product) === "bajo" ||
+                      stockStatus(product) === "agotado" ? (
                       <Badge
                         variant="destructive"
                         className="text-[10px] px-1.5 py-0"

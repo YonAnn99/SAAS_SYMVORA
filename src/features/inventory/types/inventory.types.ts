@@ -69,7 +69,12 @@ export const defaultProductFormData: ProductFormData = {
   precio_venta: "",
   costo_compra: "",
   stock_actual: "0",
-  stock_minimo: "5",
+  // CERO, igual que el DEFAULT de la columna en la base (migracion 001). Antes
+  // era "5" y todo producto creado desde la interfaz nacia con un umbral que su
+  // dueño nunca eligio, y con alertas de "stock bajo" inventadas. El umbral lo
+  // pone el cliente. `src/__tests__/stock-minimo-default.test.ts` impide que los
+  // dos valores vuelvan a separarse.
+  stock_minimo: "0",
   es_servicio: false,
   categoria: "",
   permite_lotes: false,

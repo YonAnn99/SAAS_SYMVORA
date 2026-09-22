@@ -54,17 +54,76 @@ describe("stockStatus", () => {
     expect(stockStatus({ stock_actual: 0, stock_minimo: 0 })).toBe("agotado");
   });
 
-  it("los tres grupos no se solapan y cubren todo", () => {
+  it("los cuatro grupos no se solapan y cubren todo", () => {
     const productos = [
       { stock_actual: 0, stock_minimo: 5 },
       { stock_actual: 3, stock_minimo: 5 },
       { stock_actual: 9, stock_minimo: 5 },
       { stock_actual: -1, stock_minimo: 2 },
       { stock_actual: 7, stock_minimo: 0 },
+      { stock_actual: 0, stock_minimo: 0, es_servicio: true },
     ];
     const counts = countByStatus(productos);
-    expect(counts.agotado + counts.bajo + counts.ok).toBe(productos.length);
-    expect(counts).toEqual({ agotado: 2, bajo: 1, ok: 2 });
+    // La invariante que sostiene los contadores de los chips: cada producto cae
+    // en EXACTAMENTE un grupo, así que la suma es el total. "servicio" se pudo
+    // añadir sin romperla porque parte el catálogo en dos limpiamente.
+    expect(counts.servicio + counts.agotado + counts.bajo + counts.ok).toBe(
+      productos.length
+    );
+    expect(counts).toEqual({ servicio: 1, agotado: 2, bajo: 1, ok: 2 });
+  });
+});
+
+describe("los servicios no tienen stock que agotar", () => {
+  it("un servicio nunca sale agotado, aunque esté en cero", () => {
+    // EL FALLO QUE EVITA: una asesoría o un envío a domicilio salían con la
+    // etiqueta roja "Agotado" en el catálogo. Peor: el Punto de Venta los
+    // escondía al llegar a cero, así que el servicio no se podía cobrar.
+    expect(stockStatus({ stock_actual: 0, stock_minimo: 0, es_servicio: true })).toBe(
+      "servicio"
+    );
+  });
+
+  it("sus existencias son irrelevantes, se hayan quedado en el número que sea", () => {
+    // En producción quedó un servicio con stock 5/5 porque su dueño le puso
+    // un número a mano para que apareciera en el POS. Ese 5 no debe cambiar
+    // nada, ni hacia "bajo" ni hacia "ok".
+    for (const stock of [-2, 0, 5, 999]) {
+      expect(
+        stockStatus({ stock_actual: stock, stock_minimo: 5, es_servicio: true })
+      ).toBe("servicio");
+    }
+  });
+
+  it("no se le reclama un mínimo que no tiene sentido", () => {
+    // `sinMinimoDefinido` alimenta la lista de "productos que hay que
+    // arreglar". Un servicio ahí sería ruido permanente e inarreglable.
+    expect(sinMinimoDefinido({ stock_actual: 0, stock_minimo: 0, es_servicio: true })).toBe(
+      false
+    );
+    expect(sinMinimoDefinido({ stock_actual: 0, stock_minimo: 0 })).toBe(true);
+  });
+
+  it("no cae en los filtros por grupo de stock", () => {
+    // Filtrar por "agotado" no debe devolver los servicios: no lo están, y
+    // mezclarlos convertiría ese filtro en inútil.
+    const servicio = p({ stock_actual: 0, stock_minimo: 0, es_servicio: true });
+    const agotado = p({ stock_actual: 0, stock_minimo: 5 });
+    const filtrados = applyProductFilters([servicio, agotado], {
+      ...EMPTY_FILTERS,
+      stock: ["agotado"],
+    });
+    expect(filtrados).toHaveLength(1);
+    expect(filtrados[0].id).toBe(agotado.id);
+  });
+
+  it("un producto normal no se ve afectado por el campo ausente", () => {
+    // `es_servicio` es opcional en el tipo: los productos que llegan de
+    // consultas que no lo traen tienen que seguir clasificándose igual.
+    expect(stockStatus({ stock_actual: 0, stock_minimo: 5 })).toBe("agotado");
+    expect(stockStatus({ stock_actual: 0, stock_minimo: 5, es_servicio: false })).toBe(
+      "agotado"
+    );
   });
 });
 

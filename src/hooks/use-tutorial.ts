@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useIsDemo } from "@/hooks/use-is-demo";
 
 const STORAGE_KEY_COMPLETED = "symvora_tutorial_completed";
 const STORAGE_KEY_STEP = "symvora_tutorial_step";
@@ -23,9 +24,48 @@ export function useTutorial(totalSteps: number) {
   const [waitingForRoute, setWaitingForRoute] = useState(false);
   const [minimized, setMinimized] = useState(false);
 
+  /**
+   * EN EL DEMO EL TUTORIAL NO EXISTE.
+   *
+   * Recorre 16 pasos por modulos que en el demo estan restringidos: `/billing`
+   * devuelve el aviso de demo en vez de la pantalla, y el paso de Configuracion
+   * apunta a un selector que puede no existir, con lo que el `MutationObserver`
+   * reintenta para siempre y la flecha nunca se coloca. El boton "Siguiente"
+   * queda muerto mientras se espera la ruta, asi que el visitante se atasca
+   * justo cuando esta evaluando el producto.
+   */
+  const isDemo = useIsDemo();
+
+  /**
+   * Si ESTE arranque automatico escribio la clave de progreso.
+   *
+   * Hace falta por una carrera real: `useIsDemo()` no tiene bandera de carga y
+   * su fuente definitiva —el correo del usuario— es asincrona. Quien entra al
+   * demo por una URL directa, sin `?demo=1` ni la marca de sesion, ve `isDemo`
+   * en `false` durante el primer render, que es justo cuando corre este efecto.
+   *
+   * Sin deshacer esa escritura, la clave quedaria puesta y CONTAMINARIA la
+   * sesion real posterior en el mismo navegador: el usuario no volveria a ver
+   * el tutorial nunca.
+   */
+  const autoarrancado = useRef(false);
+
   // Hydration-safe: read localStorage only after mount to avoid SSR/client mismatch
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
+    if (isDemo) {
+      // Puede llegar aqui DESPUES de haber autoarrancado, si la comprobacion
+      // asincrona resolvio tarde. Se deshace lo que hizo este arranque y nada
+      // mas: `STORAGE_KEY_COMPLETED` no se toca jamas, porque es de un usuario
+      // real que ya lo termino y borrarlo se lo repetiria.
+      if (autoarrancado.current) {
+        setIsActive(false);
+        localStorage.removeItem(STORAGE_KEY_STEP);
+        autoarrancado.current = false;
+      }
+      return;
+    }
+
     if (isCompleted()) {
       setCompleted(true);
       // Se restaura el paso solo para que el progreso siga siendo coherente si
@@ -48,9 +88,13 @@ export function useTutorial(totalSteps: number) {
       // entra al sistema, así que se activa solo.
       setIsActive(true);
       localStorage.setItem(STORAGE_KEY_STEP, "0");
+      autoarrancado.current = true;
     }
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
+    // `isDemo` en las dependencias NO es opcional: es lo que hace que el efecto
+    // se reevalue cuando la comprobacion asincrona resuelve. Con `[]` el corte
+    // por demo solo funcionaria en quien llega con `?demo=1`.
+  }, [isDemo]);
 
   const start = useCallback(() => {
     setCurrentStep(0);

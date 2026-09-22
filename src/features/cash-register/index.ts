@@ -7,4 +7,5 @@ export * from "./components/register-summary-cards";
 export * from "./hooks/use-cash-register";
 export * from "./hooks/use-open-register";
 export * from "./services/cash-register-service";
+export * from "./services/cash-register-server-service";
 export * from "./types/cash-register.types";

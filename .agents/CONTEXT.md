@@ -1132,8 +1132,12 @@ MODNet (Apache-2.0) pesa 6 MB pero recorta **personas**, no objetos.
 - `POST /api/productos/quitar-fondo` → `https://sdk.photoroom.com/v1/segment`, header
   `x-api-key`, campo `image_file`. Se pide **`format=webp`**: conserva transparencia como el
   PNG pero pesa menos y es el formato en el que se acaba guardando.
-- **Transparencia, no fondo blanco**: el alfa sobrevive al webp final, así la imagen se ve
-  bien sobre la tarjeta clara del catálogo Y la oscura del Punto de Venta.
+- **Fondo blanco sólido** (`bg_color=FFFFFF`). Es el estándar de catálogo —Amazon y Google
+  Shopping lo exigen— y es lo que hace que veinte fotos tomadas con teléfonos distintos se
+  vean como UN MISMO catálogo, que era el objetivo. Viene **incluido en el plan Basic**: un
+  campo más en la misma llamada, sin costo adicional.
+  (Antes se pedía transparencia "para que se viera bien en los dos temas"; se cambió el
+  2026-09-21 y esa razón ya no aplica.)
 - ⚠️ El permiso es **`inventory.manage`**, NO el del catálogo. `/products` es
   `permission: null` a propósito (todo el equipo consulta productos), pero este endpoint
   **cuesta dinero**: dejarlo con el permiso del catálogo permitiría a cualquier cajero
@@ -1152,15 +1156,132 @@ acepta HEIC de entrada, así que la foto de iPhone va tal cual. Nuestro tope de 
 15 MB, o sea que por peso no se llega nunca. Solo se pasaría un teléfono disparando a 50 MP
 reales (8160 px), que no es el modo por defecto de casi ningún móvil.
 
+**Precios verificados en su documentación** (2026-09-21):
+
+| API | Precio | Qué incluye |
+|---|---|---|
+| Remove Background (**Basic**, la que usamos) | **$0.02** / imagen | quitar fondo + `bg_color` |
+| Image Editing (**Plus**) | **$0.10** / llamada | + `lighting.mode=ai.auto`, `shadow.mode=ai.soft` |
+
+El retoque de iluminación y sombra **se evaluó y se pospuso**: es 5× el precio, y la
+descripción de su "AI Relight" está escrita para fotos de PERSONAS ("removing blemishes,
+subtle teeth whitening, preserving freckles"), así que su beneficio sobre fotos de mercancía
+no está demostrado. Ventaja del Plus si algún día se adopta: una sola llamada puede incluir
+todas las ediciones sin cambiar el precio. PhotoRoom **no tiene caché** todavía.
+
+**Aviso de marca de agua**: el route devuelve `X-Photoroom-Modo: sandbox | live`, deducido
+del prefijo de la propia llave (`sandbox_`) y NO de una segunda variable que podría
+desincronizarse. En sandbox el diálogo muestra un aviso ámbar de "imagen de prueba" junto a
+"Restaurar original" — sin él, un comerciante guardaría una foto marcada sin enterarse. El
+aviso desaparece solo al pegar la llave live.
+
 ⚠️ **`PHOTOROOM_API_KEY`** va en `.env.local` **sin** `NEXT_PUBLIC_`. Empezar con la llave de
 **sandbox**: pone marca de agua y no gasta crédito real. Al pasar a `live` hay que añadir la
 variable en Vercel **y volver a desplegar** para que aplique.
 
 ---
 
+### "Es servicio" por fin significa algo (2026-09-21)
+
+**El síntoma reportado**: los tres interruptores del diálogo de producto "no funcionan", y
+un servicio no aparece en el Punto de Venta.
+
+**Lo que pasaba de verdad**: los interruptores SÍ guardaban (comprobado en la base:
+`es_servicio = true`, `unidad_medida = SERVICIO`). Lo roto era que **no hacían nada
+visible** — el formulario seguía pidiendo stock — y que `es_servicio` se leía en 12 sitios
+del código con **uno solo haciendo algo**: pintar un badge en la rejilla del POS.
+
+⚠️ **El diagnóstico del usuario era casi correcto pero no del todo**, y eso cambió el
+arreglo: "Sitio web" no tenía stock 0 sino **5/5**, puestos a mano para sortear el filtro
+del POS. Así que sí aparecía — pero tras 5 ventas habría desaparecido para siempre, porque
+el RPC le descontaba existencias.
+
+**Cinco capas arregladas:**
+
+1. `stock-status.ts` — **la fuente única**. `StockStatus` gana el valor `"servicio"`. Se
+   pudo añadir al enum sin romper la invariante documentada (grupos excluyentes que suman
+   el total) porque **no cruza** los otros grupos, a diferencia de `sinMinimoDefinido`. Eso
+   arregla de un golpe la etiqueta de la tabla, los chips y los filtros.
+2. `product-dialog.tsx` — con "Es servicio" activo **desaparecen** los campos de stock (no
+   se deshabilitan: en gris seguirían sugiriendo que importan) y la unidad pasa a SERVICIO,
+   que es lo que la edición en línea ya exigía (`unidadesPermitidas`). Los tres switches
+   ganan una línea que dice qué cambian.
+3. `pos-service.ts` — `.gt("stock_actual", 0)` pasa a
+   `.or("stock_actual.gt.0,es_servicio.eq.true")`. Mismo criterio que `fetchPosVariants`.
+4. `pos/page.tsx` — el guard "Sin stock disponible" exceptúa servicios.
+5. `product-grid.tsx` — deja de reimplementar `stock_actual <= stock_minimo` y usa
+   `stockStatus()`.
+
+**Migración 075** — el RPC `_crear_venta_desde_items` deja de tratar un servicio como
+mercancía. Se reescribe **desde `pg_get_functiondef`** con seis sustituciones verificadas en
+vez de copiar 350 líneas a mano; si alguna no casa, aborta. También pone a 0/0 el stock de
+los servicios existentes.
+
+⚠️ **La sonda salvó un despliegue roto**: la primera versión aplicó "con éxito" y rompía
+**todas** las ventas (`record "v_line" has no field "es_servicio"`), porque el bucle de
+descuento lleva una lista explícita de columnas y no `SELECT *`. Sin la sonda en transacción
+revertida, eso llega a producción.
+
+**Lo verificado con sonda**: servicio con stock 0 → se vende y sigue en 0; producto normal
+con stock 0 → **sigue bloqueado**; producto normal 10−4 → 6; variante 7−2 → 5 con el padre
+intacto. La excepción es solo para servicios, no un permiso general para vender sin stock.
+
+⚠️ **Pendiente, no arreglado**: el formulario pone `stock_minimo: "5"` por defecto cuando la
+base pone 0. Afecta a **todos** los productos, no solo a los servicios.
+
+---
+
+### Stock mínimo en 0 y tutorial fuera del demo (2026-09-21)
+
+**Dos cambios pequeños con una trampa cada uno.**
+
+**1. El formulario de producto ponía `stock_minimo: "5"` mientras la base pone 0.** Todo
+producto creado desde la interfaz nacía con un umbral que su dueño nunca eligió, y con
+alertas de "stock bajo" inventadas. Ahora es 0 y lo configura el cliente.
+
+Efecto esperado, **no una regresión**: el chip "Stock indefinido" del catálogo
+(`sinMinimoDefinido`) pasa de estar casi vacío a contar todos los productos nuevos. Ese chip
+existe justamente para marcar a qué productos el sistema no puede avisarles, así que pasa de
+lista muerta a recordatorio útil.
+
+Nuevo `src/__tests__/stock-minimo-default.test.ts`: lee el `DEFAULT` de la columna en
+`001_initial_schema.sql` y lo compara con `defaultProductFormData`. **Mismo patrón que
+`trial.test.ts`**, y por el mismo motivo — la divergencia ya ocurrió y nadie la notó en
+meses, porque los dos valores son plausibles por separado. Comprobado que el test falla al
+reintroducir el "5".
+
+**2. El tutorial ya no arranca en el demo.** Sus 16 pasos recorren módulos restringidos:
+`/billing` devuelve el aviso de demo en vez de la pantalla, y el paso de Configuración apunta
+a un selector que puede no existir, con lo que el `MutationObserver` reintenta para siempre.
+El atasco concreto es `tutorial-dialog.tsx:74` (`if (showWaiting) return;`), que deja
+"Siguiente" muerto.
+
+⚠️ **La trampa, y por qué un `if (isDemo) return` a secas no bastaba.** `useIsDemo()` no
+tiene bandera de carga y su fuente definitiva —el correo del usuario— es asíncrona. Quien
+entra por URL directa sin `?demo=1` ni `demo_active` ve `isDemo` en `false` durante el primer
+render, que es exactamente cuando corre el `useEffect` de arranque. La solución tiene dos
+mitades:
+
+- `isDemo` **en las dependencias**, para que el efecto se reevalúe al resolver.
+- Un `useRef` que recuerda si ESTE arranque escribió la clave, y la **borra** cuando `isDemo`
+  vira a true. Sin eso, `symvora_tutorial_step` quedaba escrita y contaminaba la sesión real
+  posterior en el mismo navegador: el usuario no volvería a ver el tutorial nunca.
+
+`symvora_tutorial_completed` **no se toca jamás**: es de un usuario real que ya lo terminó.
+
+Por la misma razón **no** se limpian las claves al salir del demo
+(`demo-banner.tsx:34-49`): le quitaría la marca de "ya lo completé" a un usuario real que
+hubiera pasado por el demo.
+
+El botón "Iniciar tutorial" del header se **oculta** en demo (`header.tsx:134`), sin
+`DemoRestrictedNotice`: es una ayuda opcional y anunciar su ausencia llamaría la atención
+sobre algo que nadie iba a echar en falta.
+
+---
+
 ### Líneas base (actualizadas el 2026-09-21)
 
-`npx tsc --noEmit` limpio · `npx vitest run` **522 tests en 42 archivos** · `npx eslint .`
+`npx tsc --noEmit` limpio · `npx vitest run` **534 tests en 44 archivos** · `npx eslint .`
 **8 errores / 187 avisos**.
 
 ⚠️ Esa cifra de eslint es **sin `public/sw.js`**, el bundle que genera el build. Ese archivo
@@ -1169,7 +1290,7 @@ avisos**. Tras cualquier `npm run build` la cuenta vuelve a subir a 9/284: no es
 regresion. Los 8 errores de verdad son todos `set-state-in-effect` preexistentes en
 `activity`, `reports`, `users` y compañia.
 
-La cuenta de tests subió a 522/42 con el quitafondos, a 513/41 con la cámara de producto y a 501/40 con la compra directa (ambas del 2026-09-21). Antes bajó de
+La cuenta de tests subió a 534/44 con el default de stock mínimo, a 531/43 con los servicios, a 522/42 con el quitafondos, a 513/41 con la cámara de producto y a 501/40 con la compra directa (ambas del 2026-09-21). Antes bajó de
 553/44 a 488/39 al retirar el modo sin conexión: se borraron los cinco
 archivos de test que lo cubrían (`offline-capabilities`, `offline-queue`, `offline-warm`,
 `route-cache`, `offline-html`) y se recortó `venta-bloqueada.test.ts`. No hay ningún test

@@ -11,14 +11,30 @@
  * cae en exactamente uno, así los conteos suman el total.
  */
 
-export type StockStatus = "agotado" | "bajo" | "ok";
+export type StockStatus = "servicio" | "agotado" | "bajo" | "ok";
 
 interface StockFields {
   stock_actual: number;
   stock_minimo: number;
+  /** Un servicio no tiene existencias que agotar. Ver `stockStatus`. */
+  es_servicio?: boolean;
 }
 
 export function stockStatus(product: StockFields): StockStatus {
+  // UN SERVICIO NO TIENE STOCK, y antes esto no se miraba: una asesoria o un
+  // envio a domicilio salian con la etiqueta roja "Agotado" en el catalogo y
+  // engordaban el contador de "stock bajo". Peor aun, el Punto de Venta los
+  // escondia al llegar a cero, asi que el servicio dejaba de poder cobrarse.
+  //
+  // Va PRIMERO a proposito: sus existencias son irrelevantes, se hayan quedado
+  // en el numero que se hayan quedado.
+  //
+  // `"servicio"` puede sumarse al enum sin romper nada porque NO CRUZA los
+  // otros grupos — ser o no ser servicio parte el catalogo en dos limpiamente.
+  // Esa es la diferencia con `sinMinimoDefinido`, que si los cruza y por eso
+  // vive aparte (ver su nota).
+  if (product.es_servicio) return "servicio";
+
   const actual = Number(product.stock_actual);
   const minimo = Number(product.stock_minimo);
 
@@ -31,6 +47,7 @@ export function stockStatus(product: StockFields): StockStatus {
 }
 
 export const STOCK_STATUS_LABEL: Record<StockStatus, string> = {
+  servicio: "Servicio",
   agotado: "Stock agotado",
   bajo: "Stock bajo",
   ok: "Con stock",
@@ -50,6 +67,9 @@ export const STOCK_STATUS_LABEL: Record<StockStatus, string> = {
  * total, que `countByStatus` y su test dan por buena.
  */
 export function sinMinimoDefinido(product: StockFields): boolean {
+  // Un servicio nunca "le falta" un umbral: no hay nada que se acabe. Sin esta
+  // linea los servicios llenarian la lista de "productos que hay que arreglar".
+  if (product.es_servicio) return false;
   return Number(product.stock_minimo) <= 0;
 }
 
@@ -217,7 +237,12 @@ export function applyProductFilters<T extends FilterableProduct>(
 export function countByStatus<T extends StockFields>(
   products: T[]
 ): Record<StockStatus, number> {
-  const counts: Record<StockStatus, number> = { agotado: 0, bajo: 0, ok: 0 };
+  const counts: Record<StockStatus, number> = {
+    servicio: 0,
+    agotado: 0,
+    bajo: 0,
+    ok: 0,
+  };
   for (const p of products) counts[stockStatus(p)]++;
   return counts;
 }

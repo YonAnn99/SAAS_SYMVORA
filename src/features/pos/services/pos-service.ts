@@ -122,7 +122,14 @@ export async function fetchPosProducts(tenantId: string): Promise<Producto[]> {
     .from("productos")
     .select("*")
     .eq("tenant_id", tenantId)
-    .gt("stock_actual", 0)
+    // LOS SERVICIOS ENTRAN AUNQUE NO TENGAN EXISTENCIAS. Antes esto era un
+    // `.gt("stock_actual", 0)` a secas, y como un servicio vive siempre en 0
+    // (una asesoria, un envio a domicilio) nunca llegaba al mostrador: quedaba
+    // dado de alta en el catalogo y era imposible cobrarlo.
+    //
+    // Mismo criterio que `fetchPosVariants` justo debajo, que tampoco filtra
+    // por stock a proposito.
+    .or("stock_actual.gt.0,es_servicio.eq.true")
     .order("nombre");
 
   if (error) throw error;

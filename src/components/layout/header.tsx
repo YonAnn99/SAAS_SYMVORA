@@ -23,6 +23,7 @@ import {
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
+import { useIsDemo } from "@/hooks/use-is-demo";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { moduleLabelKeyForPath } from "@/lib/navigation";
@@ -49,6 +50,7 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { tenantId, tenantName, tenantLogo, role } = useCurrentTenant();
   const { can } = usePermissions();
+  const isDemo = useIsDemo();
   const [mounted, setMounted] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -125,8 +127,12 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Tutorial trigger */}
-        <TutorialTrigger />
+        {/* En el demo no se ofrece el tutorial: recorre módulos restringidos y
+            se atasca. Se OCULTA en vez de poner un aviso de "no disponible" —
+            es una ayuda opcional, y anunciar su ausencia llamaría la atención
+            sobre algo que nadie iba a echar en falta. Mismo criterio que el
+            resto del cliente en demo (ver `demo-restricted-notice.tsx`). */}
+        {!isDemo && <TutorialTrigger />}
 
         {/* Search trigger */}
         <Button

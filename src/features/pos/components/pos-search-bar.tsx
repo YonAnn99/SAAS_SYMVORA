@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Layers, LayoutGrid, Search, Star, Tag } from "lucide-react";
+import { Heart, Layers, LayoutGrid, Search, Tag } from "lucide-react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import {
@@ -80,7 +80,14 @@ export function PosSearchBar({
               {/* Con render function: evita que @base-ui muestre 'all' crudo al recargar */}
               {(value: unknown) => {
                 if (value === "all") return "Todas";
-                if (value === "favorites") return `Favoritos (${favoritosCount})`;
+                if (value === "favorites") {
+                  return (
+                    <span className="flex items-center gap-1.5">
+                      <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500" />
+                      Favoritos ({favoritosCount})
+                    </span>
+                  );
+                }
                 return (value as string) || "Categoría";
               }}
             </SelectValue>
@@ -89,7 +96,7 @@ export function PosSearchBar({
             <SelectItem value="all">Todas</SelectItem>
             <SelectItem value="favorites">
               <span className="flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500" />
                 Favoritos ({favoritosCount})
               </span>
             </SelectItem>
