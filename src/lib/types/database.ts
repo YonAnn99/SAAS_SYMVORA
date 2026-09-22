@@ -372,6 +372,31 @@ export type Database = {
           creado_en?: string;
         };
       };
+      sucursales: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          nombre: string;
+          direccion: string | null;
+          /** Una sucursal que cierra se desactiva; NO se borra, porque sus
+              ventas históricas la siguen apuntando. */
+          activa: boolean;
+          creado_en: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          nombre: string;
+          direccion?: string | null;
+          activa?: boolean;
+          creado_en?: string;
+        };
+        Update: {
+          nombre?: string;
+          direccion?: string | null;
+          activa?: boolean;
+        };
+      };
       ventas: {
         Row: {
           id: string;
@@ -393,6 +418,9 @@ export type Database = {
           requiere_revision: boolean;
           total_cobrado: number | null;
           cambio: number | null;
+          /** La hereda de la caja en la que se cobró. `null` si no había caja
+              abierta: que falte la sucursal nunca impide cobrar. */
+          sucursal_id: string | null;
         };
         Insert: {
           id?: string;
@@ -570,6 +598,9 @@ export type Database = {
           fecha_cierre: string | null;
           notas_apertura: string | null;
           notas_cierre: string | null;
+          /** El local donde está este mostrador. Se elige al abrir la caja y
+              todas las ventas del turno la heredan. */
+          sucursal_id: string | null;
         };
         Insert: {
           id?: string;
@@ -587,6 +618,7 @@ export type Database = {
           fecha_cierre?: string | null;
           notas_apertura?: string | null;
           notas_cierre?: string | null;
+          sucursal_id?: string | null;
         };
         Update: {
           id?: string;

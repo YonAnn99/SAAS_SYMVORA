@@ -31,7 +31,10 @@ export interface CashRegisterHookState {
   setShowMovementDialog: (open: boolean) => void;
   setShowCloseDialog: (open: boolean) => void;
   refetch: () => Promise<void>;
-  handleOpenRegister: (fondoInicial: number) => Promise<Caja | null>;
+  handleOpenRegister: (
+    fondoInicial: number,
+    sucursalId?: string | null
+  ) => Promise<Caja | null>;
   handleAddMovement: (
     tipo: "ENTRADA" | "SALIDA",
     monto: number,
@@ -79,7 +82,10 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
   }, [refetch]);
 
   const handleOpenRegister = useCallback(
-    async (fondoInicial: number): Promise<Caja | null> => {
+    async (
+      fondoInicial: number,
+      sucursalId: string | null = null
+    ): Promise<Caja | null> => {
       if (!tenantId) {
         toast.error("No se pudo identificar el tenant");
         return null;
@@ -95,12 +101,17 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
           return null;
         }
 
-        const register = await openRegister(userId, tenantId, fondoInicial);
+        const register = await openRegister(
+          userId,
+          tenantId,
+          fondoInicial,
+          sucursalId
+        );
         await logActivity({
           action: "CREATE",
           entity: "caja",
           entityId: register.id,
-          details: { fondo_inicial: fondoInicial },
+          details: { fondo_inicial: fondoInicial, sucursal_id: sucursalId },
         });
         setActiveRegister(register);
         setShowOpenDialog(false);

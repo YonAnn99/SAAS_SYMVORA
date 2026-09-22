@@ -8,6 +8,7 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useSucursal } from "@/contexts/sucursal-context";
 import {
   fetchLastClosedRegister,
   getCurrentUserId,
@@ -24,7 +25,7 @@ import {
 interface OpenRegisterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (fondoInicial: number) => void;
+  onConfirm: (fondoInicial: number, sucursalId: string | null) => void;
 }
 
 export function OpenRegisterDialog({
@@ -34,8 +35,10 @@ export function OpenRegisterDialog({
 }: OpenRegisterDialogProps) {
   const t = useTranslations();
   const { tenantId } = useCurrentTenant();
+  const { activas, hayVarias } = useSucursal();
   const [initialFund, setInitialFund] = useState("");
   const [lastClosedAmount, setLastClosedAmount] = useState<number | null>(null);
+  const [sucursalId, setSucursalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -43,6 +46,11 @@ export function OpenRegisterDialog({
       setLastClosedAmount(null);
       return;
     }
+
+    // Con un solo local se elige solo: el cajero no tiene por qué contestar una
+    // pregunta que solo admite una respuesta. Con varios arranca vacío para que
+    // sea una decisión consciente y no un valor heredado del turno anterior.
+    setSucursalId(activas.length === 1 ? activas[0].id : null);
 
     let isCancelled = false;
     async function loadLastClosed() {
@@ -64,7 +72,7 @@ export function OpenRegisterDialog({
     return () => {
       isCancelled = true;
     };
-  }, [open, tenantId]);
+  }, [open, tenantId, activas]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,6 +84,30 @@ export function OpenRegisterDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          {hayVarias && (
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="caja-sucursal">
+                Sucursal
+              </Label>
+              <select
+                id="caja-sucursal"
+                value={sucursalId ?? ""}
+                onChange={(e) => setSucursalId(e.target.value || null)}
+                className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">Selecciona una sucursal…</option>
+                {activas.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                Todas las ventas de este turno se contarán en esta sucursal.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs">{t("pos.initialFund")}</Label>
             <Input
@@ -117,7 +149,8 @@ export function OpenRegisterDialog({
           <SpecularActionButton
             tone="add"
             className="h-8"
-            onClick={() => onConfirm(parseFloat(initialFund) || 0)}
+            disabled={hayVarias && !sucursalId}
+            onClick={() => onConfirm(parseFloat(initialFund) || 0, sucursalId)}
           >
             {t("common.confirm")}
           </SpecularActionButton>

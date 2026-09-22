@@ -125,6 +125,24 @@ export const MODULES: ModuleDefinition[] = [
     permission: "org.manage_settings",
     grantable: true,
   },
+  {
+    // `paths: []` A PROPOSITO: no es una pantalla, es una TARJETA dentro de
+    // /settings. Declarar aqui "/settings" la robaria al modulo de arriba —
+    // `permissionForPath` resuelve por prefijo y dos modulos no pueden
+    // reclamar la misma ruta (hay un test que lo impide). Configuracion sigue
+    // rigiendose por `org.manage_settings`; lo que este permiso gobierna es
+    // solo quien ve y usa esa tarjeta.
+    //
+    // De fabrica lo tiene SOLO el SUPER_ADMIN (migracion 077), pero es
+    // `grantable` porque dar de alta un local no reparte poder como si lo hacen
+    // Usuarios o Facturacion: el dueño puede cederselo a un encargado.
+    key: "branches",
+    label: "Sucursales",
+    description: "Dar de alta y cerrar locales del negocio",
+    paths: [],
+    permission: "org.manage_branches",
+    grantable: true,
+  },
   // --- No concedibles: reparten poder ---
   {
     key: "users",
@@ -152,8 +170,14 @@ export const MODULES: ModuleDefinition[] = [
 export const GRANTABLE_MODULES = MODULES.filter((m) => m.grantable);
 
 /**
- * Permisos concedibles. Debe coincidir con el CHECK de la migración 055 —
- * si se añade uno aquí sin añadirlo allí, la base de datos lo rechazará.
+ * Permisos concedibles. Debe coincidir con el CHECK de
+ * `user_permission_overrides`, que hoy define la migración **077** (antes la
+ * 055 y luego la 070; lo redefine entero quien lo toca).
+ *
+ * Si se añade uno aquí sin añadirlo allí, la base de datos lo rechaza y el
+ * switch falla al guardar. Ya pasó con `cash.manage`, que estuvo roto desde la
+ * migración 062 hasta la 077 sin que nadie se enterara. Lo vigila
+ * `src/__tests__/modules.test.ts`.
  */
 export const GRANTABLE_PERMISSIONS = new Set(
   GRANTABLE_MODULES.map((m) => m.permission).filter((p): p is string => p !== null)

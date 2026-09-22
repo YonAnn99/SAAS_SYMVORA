@@ -15,6 +15,8 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/charts/dynamic-charts";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { toast } from "sonner";
 import { calcularGanancia } from "@/lib/profit";
 
@@ -38,6 +40,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { seleccionada: sucursalId } = useSucursal();
   const [stats, setStats] = useState<DashboardStats>({
     ventasHoy: 0,
     ventasMes: 0,
@@ -69,24 +72,37 @@ export default function DashboardPage() {
 
     // Fetch current month sales + last month sales (comparison) in parallel —
     // independent queries, no reason to await them sequentially.
+    // El filtro por sucursal se aplica SOLO a las consultas de `ventas`.
+    // `detalle_ventas` no lo necesita: ya va acotado por los `venta_id` que
+    // salen de la primera, así que filtrarlo otra vez sería redundante — y de
+    // hecho imposible, porque esa tabla no tiene la columna.
+    let qMes = supabase
+      .from("ventas")
+      .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
+      .eq("tenant_id", tenantId)
+      .gte("fecha_venta", firstDayOfMonth.toISOString())
+      .eq("estado", "COMPLETADA");
+
+    let qMesAnterior = supabase
+      .from("ventas")
+      .select("total")
+      .eq("tenant_id", tenantId)
+      .gte("fecha_venta", firstDayOfLastMonth.toISOString())
+      .lte("fecha_venta", lastDayOfLastMonth.toISOString())
+      .eq("estado", "COMPLETADA");
+
+    // `null` = "Todas": no se filtra y sale el consolidado del negocio, que es
+    // exactamente lo que este panel mostraba antes de que existieran las
+    // sucursales.
+    if (sucursalId) {
+      qMes = qMes.eq("sucursal_id", sucursalId);
+      qMesAnterior = qMesAnterior.eq("sucursal_id", sucursalId);
+    }
+
     const [
       { data: ventas, error: queryError },
       { data: ventasAnteriores },
-    ] = await Promise.all([
-      supabase
-        .from("ventas")
-        .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
-        .eq("tenant_id", tenantId)
-        .gte("fecha_venta", firstDayOfMonth.toISOString())
-        .eq("estado", "COMPLETADA"),
-      supabase
-        .from("ventas")
-        .select("total")
-        .eq("tenant_id", tenantId)
-        .gte("fecha_venta", firstDayOfLastMonth.toISOString())
-        .lte("fecha_venta", lastDayOfLastMonth.toISOString())
-        .eq("estado", "COMPLETADA"),
-    ]);
+    ] = await Promise.all([qMes, qMesAnterior]);
 
     // Products sold count, scoped to this month's completed sales via their
     // venta_id — detalle_ventas has no tenant_id/fecha_venta column of its
@@ -185,7 +201,7 @@ export default function DashboardPage() {
     }
 
     setLoading(false);
-  }, [tenantId]);
+  }, [tenantId, sucursalId]);
 
   useEffect(() => {
     if (!tenantLoading && tenantId) {
@@ -230,15 +246,17 @@ export default function DashboardPage() {
             {t("dashboard.welcome")}
           </p>
         </div>
-        <SpecularActionButton
-          tone="neutral"
-          onClick={fetchDashboardData}
-          disabled={loading}
-          className="h-9 gap-2 self-start"
-        >
-
-          Actualizar
-        </SpecularActionButton>
+        <div className="flex items-center gap-2 self-start">
+          <SucursalSelector />
+          <SpecularActionButton
+            tone="neutral"
+            onClick={fetchDashboardData}
+            disabled={loading}
+            className="h-9 gap-2"
+          >
+            Actualizar
+          </SpecularActionButton>
+        </div>
       </div>
 
       {/* Error state */}

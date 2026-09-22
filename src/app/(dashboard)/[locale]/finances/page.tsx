@@ -89,8 +89,8 @@ export default function FinancesPage() {
       <OpenRegisterDialog
         open={cash.showOpenDialog}
         onOpenChange={cash.setShowOpenDialog}
-        onConfirm={async (fondoInicial) => {
-          const reg = await cash.handleOpenRegister(fondoInicial);
+        onConfirm={async (fondoInicial, sucursalId) => {
+          const reg = await cash.handleOpenRegister(fondoInicial, sucursalId);
           if (reg) {
             router.push("/pos");
           }

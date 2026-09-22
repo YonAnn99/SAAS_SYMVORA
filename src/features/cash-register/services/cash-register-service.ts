@@ -73,10 +73,19 @@ export async function fetchVentasTotal(
   return (data ?? []).reduce((sum, v) => sum + v.total, 0);
 }
 
+/**
+ * Abre la caja del turno.
+ *
+ * `sucursalId` es el LOCAL donde esta este mostrador, y se pregunta aqui —una
+ * sola vez por turno— en vez de en cada venta: todas las ventas que se cobren
+ * mientras la caja siga abierta la heredan, dentro de
+ * `_crear_venta_desde_items`. Va como `null` en un negocio de un solo local.
+ */
 export async function openRegister(
   userId: string,
   tenantId: string,
-  fondoInicial: number
+  fondoInicial: number,
+  sucursalId: string | null = null
 ): Promise<Caja> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
@@ -85,6 +94,7 @@ export async function openRegister(
       usuario_id: userId,
       tenant_id: tenantId,
       fondo_inicial: fondoInicial,
+      sucursal_id: sucursalId,
     })
     .select()
     .single();

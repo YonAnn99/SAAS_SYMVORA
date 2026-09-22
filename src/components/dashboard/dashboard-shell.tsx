@@ -12,6 +12,7 @@ import { PolicyUpdateBanner } from "@/components/compliance/policy-update-banner
 import { DemoBanner } from "@/components/demo/demo-banner";
 import { OpenRegisterPrompt } from "@/features/cash-register/components/open-register-prompt";
 import { TenantProvider } from "@/contexts/tenant-context";
+import { SucursalProvider } from "@/contexts/sucursal-context";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -20,6 +21,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TenantProvider>
+      {/* Dentro de TenantProvider a la fuerza: necesita el tenantId para
+          saber qué sucursales cargar. */}
+      <SucursalProvider>
       <TutorialProvider>
         <DemoBanner />
         <PolicyUpdateBanner />
@@ -50,6 +54,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TutorialMinimized />
         </div>
       </TutorialProvider>
+      </SucursalProvider>
     </TenantProvider>
   );
 }

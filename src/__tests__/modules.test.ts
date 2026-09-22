@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -157,6 +157,87 @@ describe("GRANTABLE_MODULES", () => {
     for (const mod of GRANTABLE_MODULES) {
       expect(mod.permission, `${mod.key} concedible sin permiso`).toBeTruthy();
     }
+  });
+});
+
+describe("los permisos concedibles caben en el CHECK de la base", () => {
+  // EL DEFECTO QUE EVITA, y que estuvo vivo meses sin que nadie lo notara:
+  // `modules.ts` dice qué switches se pueden tocar, pero quien decide si la
+  // fila entra es un CHECK en `user_permission_overrides`. Si un permiso está
+  // en uno y no en el otro, el switch aparece en el diálogo y **revienta al
+  // guardar** — no falla al pintar, falla al usarlo, que es cuando el dueño ya
+  // creía haberlo concedido.
+  //
+  // Pasó con `cash.manage`: la migración 062 cambió el módulo "Finanzas" de
+  // `finances.manage` a `cash.manage` y nadie tocó el CHECK. Estuvo roto desde
+  // entonces hasta la 077.
+  //
+  // Se lee el CHECK de los ficheros de migración y se toma el del número MÁS
+  // ALTO que lo defina, porque se redefine entero cada vez que se toca (055 ->
+  // 070 -> 077). Así el test no caduca la próxima vez.
+  const CONSTRAINT = "user_permission_overrides_permission_check";
+  const dir = join(process.cwd(), "supabase", "migrations");
+
+  function permisosDelCheck(): string[] {
+    const ficheros = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .sort()
+      .reverse();
+
+    for (const fichero of ficheros) {
+      const sql = readFileSync(join(dir, fichero), "utf8");
+      // Solo la DEFINICIÓN (ADD CONSTRAINT), nunca el DROP, que también nombra
+      // la restricción y dejaría el test leyendo una lista vacía.
+      const i = sql.indexOf(`ADD CONSTRAINT ${CONSTRAINT}`);
+      if (i === -1) continue;
+      const bloque = sql.slice(i, sql.indexOf(";", i));
+      return [...bloque.matchAll(/'([a-z_]+\.[a-z_]+)'/g)].map((m) => m[1]);
+    }
+    throw new Error(`Ninguna migración define ${CONSTRAINT}`);
+  }
+
+  it("la lectura del SQL funciona de verdad y no devuelve una lista vacía", () => {
+    // Sin esto, un cambio de formato en la migración haría que el regex dejara
+    // de casar y el test de abajo pasaría comparando contra nada.
+    const permisos = permisosDelCheck();
+    expect(permisos.length).toBeGreaterThan(10);
+    expect(permisos).toContain("org.manage_settings");
+  });
+
+  it("TODO permiso concedible está admitido por el CHECK", () => {
+    const admitidos = new Set(permisosDelCheck());
+    for (const permiso of GRANTABLE_PERMISSIONS) {
+      expect(
+        admitidos.has(permiso),
+        `"${permiso}" es concedible en modules.ts pero el CHECK de la base lo rechaza: su switch fallaría al guardar`
+      ).toBe(true);
+    }
+  });
+
+  it("los dos que se arreglaron o añadieron en la 077 siguen dentro", () => {
+    const admitidos = new Set(permisosDelCheck());
+    expect(admitidos.has("cash.manage"), "cash.manage: el switch de Finanzas").toBe(true);
+    expect(admitidos.has("org.manage_branches"), "org.manage_branches: Sucursales").toBe(true);
+  });
+});
+
+describe("el módulo de Sucursales", () => {
+  it("es del SUPER_ADMIN por defecto, pero cedible", () => {
+    // La decisión (2026-09-22): dar de alta locales no reparte poder como
+    // Usuarios o Facturación, así que el dueño puede cederlo a un encargado.
+    // Lo que lo hace exclusivo de fábrica es `role_permissions` (migración
+    // 077), no este flag.
+    const mod = MODULES.find((m) => m.key === "branches")!;
+    expect(mod.permission).toBe("org.manage_branches");
+    expect(mod.grantable).toBe(true);
+  });
+
+  it("no reclama ninguna ruta, para no robarle /settings a Configuración", () => {
+    // `permissionForPath` resuelve por prefijo. Si este módulo declarara
+    // "/settings", Configuración pasaría a exigir `org.manage_branches` y
+    // ningún ORG_ADMIN podría entrar a editar los datos del negocio.
+    expect(MODULES.find((m) => m.key === "branches")!.paths).toEqual([]);
+    expect(permissionForPath("/settings")).toBe("org.manage_settings");
   });
 });
 

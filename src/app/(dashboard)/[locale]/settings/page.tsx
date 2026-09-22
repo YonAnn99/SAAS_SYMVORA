@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
 import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
+import { SucursalesCard } from "@/features/sucursales/components/sucursales-card";
 
 export default function SettingsPage() {
   const t = useTranslations();
@@ -310,6 +311,8 @@ export default function SettingsPage() {
                 )}
               </CardContent>
             </Card>
+
+            <SucursalesCard />
           </div>
         </TabsContent>
 
