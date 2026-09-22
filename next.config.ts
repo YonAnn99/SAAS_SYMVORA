@@ -33,7 +33,13 @@ function securityHeaders() {
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     {
       key: "Permissions-Policy",
-      value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+      // `camera=(self)` y no `camera=()`: desde el movil se puede tomar la foto
+      // del producto. Ese flujo usa `<input capture>`, que delega en la app de
+      // camara del sistema y seguramente no lo gobierna esta cabecera — pero si
+      // algun navegador si la aplicara, el boton abriria el explorador de
+      // archivos sin decir por que. Vetarnos a nosotros mismos no protege de
+      // nada: `self` sigue excluyendo a cualquier iframe de terceros.
+      value: "camera=(self), microphone=(), geolocation=(), browsing-topics=()",
     },
     { key: "X-DNS-Prefetch-Control", value: "on" },
   ];

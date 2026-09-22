@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { cropToSquareWebP } from "@/lib/image";
 import type { Producto } from "../types/inventory.types";
 
 export interface ProductInput {
@@ -110,4 +111,41 @@ export async function deleteProduct(productId: string): Promise<void> {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase.from("productos").delete().eq("id", productId);
   if (error) throw error;
+}
+/**
+ * Convierte la imagen elegida y la sube, devolviendo su URL publica.
+ *
+ * POR QUE ESTA AQUI Y NO EN EL DIALOGO. Vivia incrustada dentro del
+ * `handleSubmit` de `product-dialog.tsx`: convertir, subir a Storage y armar la
+ * URL, todo dentro del manejador del formulario. Sacarla deja UN SOLO punto por
+ * el que una imagen se convierte en URL, que es donde entrara el quitafondos
+ * (PhotoRoom) cuando se decida — llamando a una ruta de servidor, porque esa
+ * llave no puede pisar el navegador. Sin este paso habria que desmontar el
+ * `handleSubmit` en ese momento.
+ *
+ * Lo que hace es exactamente lo de antes: recorte cuadrado a 800x800 en webp,
+ * bucket `product-images`, ruta `{tenant_id}/{uuid}.webp`.
+ *
+ * ⚠️ La imagen anterior NO se borra al reemplazarla: cada subida usa un UUID
+ * nuevo y queda huerfana en Storage. Es un fallo preexistente, anotado aparte.
+ */
+export async function subirImagenProducto(
+  file: File,
+  tenantId: string
+): Promise<string> {
+  const supabase = createSupabaseBrowserClient();
+
+  // La conversion es tambien lo que hace que el limite del bucket (2 MB) no se
+  // pueda incumplir: entra una foto de 6 MB del celular y sale un webp de ~150 KB.
+  const webpFile = await cropToSquareWebP(file);
+  const filePath = `${tenantId}/${crypto.randomUUID()}.webp`;
+
+  const { error } = await supabase.storage
+    .from("product-images")
+    .upload(filePath, webpFile, { contentType: "image/webp" });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from("product-images").getPublicUrl(filePath);
+  return data.publicUrl;
 }

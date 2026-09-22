@@ -33,6 +33,7 @@ import { MobileCartBar } from "@/features/pos/components/mobile-cart-bar";
 import {
   PosSearchBar,
   SIN_LISTA,
+  type PosViewMode,
 } from "@/features/pos/components/pos-search-bar";
 import {
   construirMapaLista,
@@ -68,6 +69,8 @@ export default function POSPage() {
     variantsByProduct,
     customers,
     priceLists,
+    favoritos,
+    favoritosCount,
     userId,
     loadingProducts,
     cajaId,
@@ -79,6 +82,21 @@ export default function POSPage() {
   const [variantPickerFor, setVariantPickerFor] = useState<Producto | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<PosViewMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("pos_view_mode");
+      if (saved === "unbundled" || saved === "grouped") return saved;
+    }
+    return "grouped";
+  });
+
+  const handleViewModeChange = useCallback((mode: PosViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pos_view_mode", mode);
+    }
+  }, []);
+
   const [selectedPriceList, setSelectedPriceList] =
     useState<string>(SIN_LISTA);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("none");
@@ -227,14 +245,37 @@ export default function POSPage() {
 
   const filteredProducts = useMemo(
     () =>
-      productosDeLista.filter(
-        (p) =>
-          (selectedCategory === "all" || p.categoria === selectedCategory) &&
-          (p.nombre.toLowerCase().includes(search.toLowerCase()) ||
-            p.codigo_barras?.toLowerCase().includes(search.toLowerCase()) ||
-            p.sku?.toLowerCase().includes(search.toLowerCase()))
-      ),
-    [productosDeLista, selectedCategory, search]
+      productosDeLista.filter((p) => {
+        const matchesCategory =
+          selectedCategory === "all"
+            ? true
+            : selectedCategory === "favorites"
+            ? favoritos.has(p.id)
+            : p.categoria === selectedCategory;
+
+        if (!matchesCategory) return false;
+
+        if (!search) return true;
+
+        const term = search.toLowerCase();
+        // Coincidencia directa en el producto
+        if (
+          p.nombre.toLowerCase().includes(term) ||
+          p.codigo_barras?.toLowerCase().includes(term) ||
+          p.sku?.toLowerCase().includes(term)
+        ) {
+          return true;
+        }
+
+        // Coincidencia en alguna de sus variantes (talla / color)
+        const variants = variantsByProduct[p.id] ?? [];
+        return variants.some(
+          (v) =>
+            v.talla?.toLowerCase().includes(term) ||
+            v.color?.toLowerCase().includes(term)
+        );
+      }),
+    [productosDeLista, selectedCategory, search, favoritos, variantsByProduct]
   );
 
   // Las categorias salen de lo que la lista deja ver, no del catalogo entero:
@@ -404,6 +445,9 @@ export default function POSPage() {
           categories={categories}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
+          favoritosCount={favoritosCount}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
           onSearchSubmit={handleSearch}
           priceLists={priceLists}
           selectedPriceList={selectedPriceList}
@@ -414,9 +458,24 @@ export default function POSPage() {
           products={filteredProducts}
           loading={loadingProducts}
           hasSearch={Boolean(search)}
+          viewMode={viewMode}
+          isFavoritesFilter={selectedCategory === "favorites"}
           onAddProduct={handleAddProduct}
+          onAddVariant={(product, variant) => {
+            if (idsDeLista && !idsDeLista.has(product.id)) {
+              toast.error(
+                `"${product.nombre}" no está en ${nombreListaElegida}. Cambia a precios normales para venderlo.`
+              );
+              return;
+            }
+            addResolved(product, variant);
+          }}
+          variantsByProduct={variantsByProduct}
           variantCountByProduct={variantCountByProduct}
-          precioDe={(p) => precioConLista(p.precio_venta, mapaLista, p.id, null)}
+          precioDe={(p, v) => {
+            const precioBase = v ? variantPrice(v, p) : p.precio_venta;
+            return precioConLista(precioBase, mapaLista, p.id, v?.id ?? null);
+          }}
         />
 
         <MobileCartBar

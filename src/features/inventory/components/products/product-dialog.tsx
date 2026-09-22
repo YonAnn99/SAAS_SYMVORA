@@ -11,8 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { calcularMargenProducto } from "@/lib/profit";
 import { FileUpload } from "@/components/ui/file-upload";
-import { cropToSquareWebP } from "@/lib/image";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { IMAGEN_PRODUCTO } from "@/lib/imagen-validacion";
+import { Sparkles, Undo2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,10 @@ import {
   defaultProductFormData,
   type ProductFormData,
 } from "../../types/inventory.types";
-import type { ProductInput } from "../../services/product-service";
+import {
+  subirImagenProducto,
+  type ProductInput,
+} from "../../services/product-service";
 import { generateNextBarcode, generateNextSku } from "../../services/product-service";
 
 interface ProductDialogProps {
@@ -66,6 +69,15 @@ export function ProductDialog({
   const [imagenPreview, setImagenPreview] = useState<string | null>(null);
   const [imagenRemoved, setImagenRemoved] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  /**
+   * La foto tal y como la eligió el cliente, antes de quitarle el fondo.
+   *
+   * Guardarla es lo que permite el "Restaurar original", y de paso es la dedupe:
+   * mientras exista, el botón ya no dice "Quitar fondo", así que sobre la misma
+   * imagen no se puede pagar dos veces.
+   */
+  const [imagenOriginal, setImagenOriginal] = useState<File | null>(null);
+  const [quitandoFondo, setQuitandoFondo] = useState(false);
 
   const syncFromEditing = (product: Producto | null) => {
     setImagenFile(null);
@@ -157,14 +169,59 @@ export function ProductDialog({
 
   const handleImagenSelect = (file: File) => {
     setImagenFile(file);
+    setImagenOriginal(null);
     setImagenRemoved(false);
     setImagenPreview(URL.createObjectURL(file));
   };
 
   const handleImagenRemove = () => {
     setImagenFile(null);
+    setImagenOriginal(null);
     setImagenPreview(null);
     setImagenRemoved(true);
+  };
+
+  const handleQuitarFondo = async () => {
+    if (!imagenFile || !tenantId) return;
+    setQuitandoFondo(true);
+    try {
+      const envio = new FormData();
+      // Se manda la foto SIN recortar: recortarla a cuadrado antes de quitar el
+      // fondo podría cortar parte del producto. El recorte ocurre al subir.
+      envio.append("imagen", imagenFile);
+      envio.append("tenant_id", tenantId);
+
+      const res = await fetch("/api/productos/quitar-fondo", {
+        method: "POST",
+        body: envio,
+      });
+
+      if (!res.ok) {
+        const cuerpo = await res.json().catch(() => null);
+        toast.error(cuerpo?.error ?? "No se pudo mejorar la imagen.");
+        return;
+      }
+
+      const recorte = await res.blob();
+      const recortada = new File([recorte], "producto-sin-fondo.webp", {
+        type: "image/webp",
+      });
+      setImagenOriginal(imagenFile);
+      setImagenFile(recortada);
+      setImagenPreview(URL.createObjectURL(recortada));
+      toast.success("Fondo eliminado");
+    } catch {
+      toast.error("No se pudo mejorar la imagen. Revisa tu conexión.");
+    } finally {
+      setQuitandoFondo(false);
+    }
+  };
+
+  const handleRestaurarOriginal = () => {
+    if (!imagenOriginal) return;
+    setImagenFile(imagenOriginal);
+    setImagenPreview(URL.createObjectURL(imagenOriginal));
+    setImagenOriginal(null);
   };
 
   const handleSave = async () => {
@@ -186,26 +243,13 @@ export function ProductDialog({
     if (imagenFile) {
       setUploadingImage(true);
       try {
-        const supabase = createSupabaseBrowserClient();
-        const webpFile = await cropToSquareWebP(imagenFile);
-        const filePath = `${tenantId}/${crypto.randomUUID()}.webp`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("product-images")
-          .upload(filePath, webpFile, {
-            contentType: "image/webp",
-          });
-
-        if (uploadError) {
-          toast.error("Error al subir la imagen: " + uploadError.message);
-          return;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from("product-images")
-          .getPublicUrl(filePath);
-
-        imagen_url = urlData.publicUrl;
+        imagen_url = await subirImagenProducto(imagenFile, tenantId);
+      } catch (error) {
+        toast.error(
+          "Error al subir la imagen: " +
+            (error instanceof Error ? error.message : "inténtalo de nuevo")
+        );
+        return;
       } finally {
         setUploadingImage(false);
       }
@@ -275,14 +319,59 @@ export function ProductDialog({
               className="text-sm min-h-[60px]"
             />
           </div>
+          {/* `allowCamera` dibuja "Tomar foto" solo en móvil. El texto de ayuda
+              ya no habla de 2MB ni de formatos: entra cualquier foto de celular
+              y sale un webp cuadrado, y decía "JPG, PNG" mientras aceptaba SVG. */}
           <FileUpload
             label="Imagen del producto"
             preview={imagenPreview}
             onFileSelect={handleImagenSelect}
             onFileRemove={handleImagenRemove}
             dragDropText="Arrastra una foto del producto o haz clic para seleccionar"
-            maxSizeText="Máximo 2MB · JPG, PNG"
+            maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
+            opciones={IMAGEN_PRODUCTO}
+            accept="image/*"
+            allowCamera
           />
+
+          {/* Quitar el fondo es OPCIONAL y cuesta dinero por imagen, así que
+              solo aparece cuando hay una foto recién elegida y solo actúa si el
+              cliente lo pide. Sobre la imagen ya guardada de un producto que se
+              está editando no se ofrece: ya está en Storage y reprocesarla sería
+              pagar por algo que nadie pidió. */}
+          {imagenFile && (
+            <div className="flex items-center gap-2">
+              {imagenOriginal ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleRestaurarOriginal}
+                >
+                  <Undo2 className="mr-1.5 h-3.5 w-3.5" />
+                  Restaurar original
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={quitandoFondo}
+                  onClick={() => void handleQuitarFondo()}
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  {quitandoFondo ? "Quitando fondo..." : "Quitar fondo"}
+                </Button>
+              )}
+              {imagenOriginal && (
+                <span className="text-xs text-muted-foreground">
+                  Fondo eliminado
+                </span>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">

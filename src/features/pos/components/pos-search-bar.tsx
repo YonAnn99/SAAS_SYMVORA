@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Search, Tag } from "lucide-react";
+import { Layers, LayoutGrid, Search, Star, Tag } from "lucide-react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,6 +15,8 @@ import {
 /** Valor del desplegable cuando no hay lista elegida: precios normales. */
 export const SIN_LISTA = "none";
 
+export type PosViewMode = "grouped" | "unbundled";
+
 export interface OpcionListaPrecios {
   id: string;
   nombre: string;
@@ -27,6 +29,9 @@ interface PosSearchBarProps {
   categories: string[];
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
+  favoritosCount?: number;
+  viewMode: PosViewMode;
+  onViewModeChange: (mode: PosViewMode) => void;
   onSearchSubmit: () => void;
   priceLists: OpcionListaPrecios[];
   /** `SIN_LISTA` o el id de la lista elegida. */
@@ -41,12 +46,17 @@ export function PosSearchBar({
   categories,
   selectedCategory,
   onCategoryChange,
+  favoritosCount = 0,
+  viewMode,
+  onViewModeChange,
   onSearchSubmit,
   priceLists,
   selectedPriceList,
   onPriceListChange,
 }: PosSearchBarProps) {
   const t = useTranslations();
+
+  const showCategorySelect = categories.length > 0 || favoritosCount > 0;
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 animate-fade-in-up stagger-1">
@@ -60,16 +70,29 @@ export function PosSearchBar({
           className="pl-8 h-9"
         />
       </div>
-      {categories.length > 0 && (
+      {showCategorySelect && (
         <Select
           value={selectedCategory}
           onValueChange={(v) => onCategoryChange(v ?? "all")}
         >
-          <SelectTrigger className="w-full sm:w-40 h-9">
-            <SelectValue placeholder="Categoría" />
+          <SelectTrigger className="w-full sm:w-44 h-9">
+            <SelectValue placeholder="Categoría">
+              {/* Con render function: evita que @base-ui muestre 'all' crudo al recargar */}
+              {(value: unknown) => {
+                if (value === "all") return "Todas";
+                if (value === "favorites") return `Favoritos (${favoritosCount})`;
+                return (value as string) || "Categoría";
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="favorites">
+              <span className="flex items-center gap-1.5">
+                <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                Favoritos ({favoritosCount})
+              </span>
+            </SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -115,6 +138,36 @@ export function PosSearchBar({
           </SelectContent>
         </Select>
       )}
+
+      {/* Selector de modo de vista: Agrupado vs Desglosado */}
+      <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => onViewModeChange("grouped")}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all ${
+            viewMode === "grouped"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+          title="Vista agrupada: Productos con selector de variantes"
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">Agrupado</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onViewModeChange("unbundled")}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all ${
+            viewMode === "unbundled"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+          title="Vista desglosada: Cada variante como tarjeta individual"
+        >
+          <LayoutGrid className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">Desglosado</span>
+        </button>
+      </div>
 
       <SpecularActionButton tone="add" className="h-9" onClick={onSearchSubmit}>
         {t("pos.addItem")}

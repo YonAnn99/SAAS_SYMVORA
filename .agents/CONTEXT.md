@@ -992,6 +992,19 @@ comparte `rangoDePeriodo` con las gráficas, así que responde al mismo selector
 
 ### Trampas encontradas al explorar (ahorran tiempo)
 
+- **Turbopack entra en bucle de `FATAL: An unexpected Turbopack error occurred`** tras
+  cambios estructurales en el grafo de módulos: borrar archivos o **quitar un import que ya
+  no se usa**. El mensaje habla de una celda `EcmascriptMergedChunkVersion` que "no longer
+  exists"; si todas las repeticiones llevan el MISMO `TaskId`, es una sola suscripción de
+  HMR colgada reintentándose, no una cascada. **Cura**: parar el dev server y borrar
+  `.next/cache/turbopack` — un reinicio a secas NO basta, porque esa caché es persistente y
+  recarga el estado corrupto desde disco (la que causó el incidente del 2026-09-21 era del
+  16 de septiembre y había sobrevivido al borrado de `src/lib/offline/` entero). No hace
+  falta tocar `.next/cache/webpack`, que es la que acelera los builds. **Producción no se
+  ve afectada**: `npm run build` usa `--webpack`. Si se repite mucho, el plan B es pasar el
+  script `dev` a `next dev --webpack`. Pariente de la trampa ya conocida de Turbopack
+  sirviendo mensajes i18n obsoletos (ver línea ~715).
+
 - **El CAJERO ya tiene `sales.view_reports`** — por eso hizo falta `sales.view_all`.
 - `reports/page.tsx:297` — el `select` de ventas **no trae `usuario_id`**.
 - `MAX_VENTAS_REPORTE = 5000` (`reports/page.tsx:57`): los agregados ya se truncan y
@@ -1048,9 +1061,106 @@ propósito: dos RPC del mismo permiso comportándose distinto sería peor.
 
 ---
 
+### Foto del producto con la cámara del celular (2026-09-21)
+
+Se añadió un botón "Tomar foto" en el diálogo de producto, visible solo por debajo de `md`.
+Usa `<input type="file" accept="image/*" capture="environment">`, que delega en la app de
+cámara del sistema — **no** `getUserMedia`: una cámara dentro de la página exigiría permisos,
+un `<video>` y manejo de orientación para el mismo resultado y peor foto.
+
+**Dos fallos preexistentes que habrían hecho que la cámara nunca funcionara**, y que fueron
+el grueso del trabajo:
+
+1. **El límite de 2 MB se medía sobre el archivo CRUDO**, antes de convertirlo. La conversión
+   a webp 800×800 (`cropToSquareWebP`) ocurre al guardar, no al elegir. Una foto de celular
+   pesa 3-8 MB → **toda foto tomada se rechazaba** con "El archivo excede 2MB", aunque el
+   webp final pesara ~150 KB.
+2. **El iPhone entrega HEIC** con "Alta eficiencia" (el ajuste por defecto) y la lista solo
+   admitía JPEG/PNG/SVG → "Formato no válido". Safari sí decodifica HEIC en canvas.
+
+Y un tercero más sutil: `accept=".jpg,.jpeg,.png,.svg"` usaba **extensiones en vez de MIME**,
+que es justo lo que hace que Android no ofrezca la cámara en el selector.
+
+**Cambios**: la validación salió de `FileUpload` a `src/lib/imagen-validacion.ts`
+(`validarImagenElegida` + los perfiles `IMAGEN_PRODUCTO` de 15 MB e `IMAGEN_LOGO` de 2 MB).
+`FileUpload` lo comparten **cuatro pantallas** (producto y tres del logo), así que todo entró
+como props **con los valores de hoy por defecto**: los logos no cambiaron. La cámara usa un
+**input aparte**, no `capture` en el de siempre — ponérselo mandaría directo a la cámara y se
+perdería la galería.
+
+`next.config.ts`: `camera=()` → **`camera=(self)`**. Esa cabecera gobierna `getUserMedia` y
+probablemente no afecta a `<input capture>`, pero si algún navegador la aplicara el botón
+abriría el explorador de archivos sin decir por qué.
+
+**Hueco para PhotoRoom**: la subida salió del `handleSubmit` de `product-dialog.tsx` a
+`subirImagenProducto()` en `product-service.ts`. Ahí entrará el quitafondos cuando se decida,
+llamando a una ruta de servidor — la llave no puede pisar el navegador y **no existe ninguna
+ruta de API que toque imágenes**. Decisión tomada: lo elige el cliente por foto, no automático.
+Ojo al integrarlo: el sandbox de PhotoRoom pone **marca de agua** y el plan de pago **cobra por
+imagen**, lo que en un SaaS multi-negocio escala con los clientes.
+
+⚠️ **Pendiente, no arreglado**: al reemplazar la imagen de un producto **la anterior queda
+huérfana** en Storage (UUID nuevo, sin `upsert` ni borrado). Con la cámara se subirán más
+fotos, así que crecerá más rápido.
+
+⚠️ **Promesa incumplida en la landing**: `src/messages/es.json:876` dice que "la cámara de tu
+celular funciona como escáner desde la app". **No está implementado** — el lector de códigos
+es un keyboard-wedge (`use-barcode-scanner.ts`), no usa cámara.
+
+---
+
+### Quitar el fondo de la foto del producto — PhotoRoom (2026-09-21)
+
+Botón "Quitar fondo" junto a la vista previa del diálogo de producto. **Solo bajo demanda**:
+nada es automático, porque cada llamada se factura.
+
+**Por qué NO se hace en el navegador con WASM/WebGPU.** Se evaluó `@imgly/background-removal-js`
+y se descartó por dos razones comprobadas, no por preferencia:
+
+- Es **AGPL-3.0** (su README ofrece licencia comercial aparte). Empaquetarla en el bundle que
+  se manda al navegador es una obra combinada: obligaría a publicar el código de SYMVORA.
+- Son **~54 MB** de descarga antes del primer recorte (11,3 MB de runtime WASM + 42,3 MB del
+  modelo cuantizado; fp16 84 MB, completo 168 MB), sobre datos móviles y en mitad del alta.
+
+Y el camino "libre" tiene su propia trampa: los runtimes sí son permisivos (onnxruntime-web
+MIT, transformers.js Apache-2.0) pero **los pesos no**. Los BRIA RMBG —los de casi todos los
+tutoriales— son de licencia no comercial. De los permisivos, BiRefNet (MIT) pesa 109 MB y
+MODNet (Apache-2.0) pesa 6 MB pero recorta **personas**, no objetos.
+
+**Cómo quedó:**
+
+- `POST /api/productos/quitar-fondo` → `https://sdk.photoroom.com/v1/segment`, header
+  `x-api-key`, campo `image_file`. Se pide **`format=webp`**: conserva transparencia como el
+  PNG pero pesa menos y es el formato en el que se acaba guardando.
+- **Transparencia, no fondo blanco**: el alfa sobrevive al webp final, así la imagen se ve
+  bien sobre la tarjeta clara del catálogo Y la oscura del Punto de Venta.
+- ⚠️ El permiso es **`inventory.manage`**, NO el del catálogo. `/products` es
+  `permission: null` a propósito (todo el equipo consulta productos), pero este endpoint
+  **cuesta dinero**: dejarlo con el permiso del catálogo permitiría a cualquier cajero
+  quemar créditos.
+- **Freno al gasto**: `consumirRateLimit("quitar-fondo:<tenant>", 40, 3600)`. No es antiabuso,
+  es presupuesto.
+- **Dedupe**: tras procesar, el botón pasa a "Restaurar original" y guarda la foto previa en
+  estado. Sobre la misma imagen no se puede pagar dos veces. No hay caché entre sesiones.
+- Errores traducidos en `src/features/inventory/photoroom-errores.ts`, con tests que
+  comprueban que **no se filtra el cuerpo de la respuesta de PhotoRoom** ni el nombre del
+  proveedor, y que 402 (sin créditos, lo arregla el dueño) se distingue de 401/403 (llave
+  mala, lo arregla quien despliega).
+
+**Límites de PhotoRoom, comprobados**: 50 MB de archivo y 6.000 px en el lado más largo;
+acepta HEIC de entrada, así que la foto de iPhone va tal cual. Nuestro tope de entrada son
+15 MB, o sea que por peso no se llega nunca. Solo se pasaría un teléfono disparando a 50 MP
+reales (8160 px), que no es el modo por defecto de casi ningún móvil.
+
+⚠️ **`PHOTOROOM_API_KEY`** va en `.env.local` **sin** `NEXT_PUBLIC_`. Empezar con la llave de
+**sandbox**: pone marca de agua y no gasta crédito real. Al pasar a `live` hay que añadir la
+variable en Vercel **y volver a desplegar** para que aplique.
+
+---
+
 ### Líneas base (actualizadas el 2026-09-21)
 
-`npx tsc --noEmit` limpio · `npx vitest run` **501 tests en 40 archivos** · `npx eslint .`
+`npx tsc --noEmit` limpio · `npx vitest run` **522 tests en 42 archivos** · `npx eslint .`
 **8 errores / 187 avisos**.
 
 ⚠️ Esa cifra de eslint es **sin `public/sw.js`**, el bundle que genera el build. Ese archivo
@@ -1059,7 +1169,7 @@ avisos**. Tras cualquier `npm run build` la cuenta vuelve a subir a 9/284: no es
 regresion. Los 8 errores de verdad son todos `set-state-in-effect` preexistentes en
 `activity`, `reports`, `users` y compañia.
 
-La cuenta de tests subió a 501/40 con la compra directa (2026-09-21). Antes bajó de
+La cuenta de tests subió a 522/42 con el quitafondos, a 513/41 con la cámara de producto y a 501/40 con la compra directa (ambas del 2026-09-21). Antes bajó de
 553/44 a 488/39 al retirar el modo sin conexión: se borraron los cinco
 archivos de test que lo cubrían (`offline-capabilities`, `offline-queue`, `offline-warm`,
 `route-cache`, `offline-html`) y se recortó `venta-bloqueada.test.ts`. No hay ningún test

@@ -11,6 +11,7 @@ import {
   fetchPosPriceLists,
   type ListaParaPos,
 } from "@/features/inventory/services/price-list-service";
+import { fetchFavoritos } from "@/features/inventory/services/favorites-service";
 
 export interface PosCatalogState {
   products: Producto[];
@@ -19,6 +20,9 @@ export interface PosCatalogState {
   customers: Cliente[];
   /** Listas de precios activas, con sus renglones ya cargados. */
   priceLists: ListaParaPos[];
+  /** Ids de los productos favoritos del usuario actual. */
+  favoritos: ReadonlySet<string>;
+  favoritosCount: number;
   userId: string;
   loadingProducts: boolean;
   /** Caja abierta al cargar el POS. */
@@ -37,6 +41,7 @@ export function usePosCatalog(
   const [cajaId, setCajaId] = useState<string | null>(null);
   const [variants, setVariants] = useState<VarianteProducto[]>([]);
   const [priceLists, setPriceLists] = useState<ListaParaPos[]>([]);
+  const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set());
 
   const refetch = useCallback(async () => {
     // Antes este `return` estaba ANTES del `try`, asi que el `finally` no
@@ -65,12 +70,14 @@ export function usePosCatalog(
         customersResult,
         activeRegister,
         priceListsResult,
+        favoritosResult,
       ] = await Promise.all([
         fetchPosProducts(tenantId),
         fetchPosVariants(tenantId),
         fetchCustomers(tenantId),
         fetchActiveRegister(user.id),
         fetchPosPriceLists(tenantId),
+        fetchFavoritos(tenantId),
       ]);
 
       const activeCajaId = activeRegister?.id ?? null;
@@ -79,6 +86,7 @@ export function usePosCatalog(
       setVariants(variantsResult);
       setCustomers(customersResult);
       setPriceLists(priceListsResult);
+      setFavoritos(favoritosResult);
       setCajaId(activeCajaId);
     } catch (error) {
       // Ya no hay catalogo guardado al que caer: servir precios viejos solo
@@ -105,11 +113,18 @@ export function usePosCatalog(
     return map;
   }, [variants]);
 
+  const favoritosCount = useMemo(
+    () => products.filter((p) => favoritos.has(p.id)).length,
+    [products, favoritos]
+  );
+
   return {
     products,
     variantsByProduct,
     customers,
     priceLists,
+    favoritos,
+    favoritosCount,
     userId,
     loadingProducts,
     cajaId,
