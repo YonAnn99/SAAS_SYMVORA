@@ -111,7 +111,33 @@ export async function POST(request: Request) {
     // "AI Relight" esta escrita para fotos de PERSONAS (quitar imperfecciones,
     // blanquear dientes), asi que su beneficio sobre mercancia no esta
     // demostrado y no se paga 5x por algo sin comprobar.
-    envio.append("bg_color", "FFFFFF");
+    //
+    // EL `#` NO ES OPCIONAL. Esta API documenta el valor como "a hex code
+    // (`#FF00FF`) or a HTML color (`red`, `green`...)". Sin la almohadilla
+    // responde 400 con `The value set for bg_color=FFFFFF is not valid`, que es
+    // exactamente lo que rompio esta funcion en produccion el 2026-09-22.
+    //
+    // La trampa: el Image Editing API expresa LO MISMO como `background.color`
+    // y ahi SI va sin `#`. Son dos APIs distintas con dos formatos distintos
+    // para el mismo concepto, y su documentacion esta en paginas separadas. Si
+    // algun dia se migra a ese otro endpoint, hay que quitar el `#`.
+    envio.append("bg_color", "#FFFFFF");
+
+    // Solo los pixeles que vamos a usar. Por defecto devuelve `full` (36 MP) y
+    // despues `cropToSquareWebP` lo deja en 800x800 = 0,64 MP: estariamos
+    // esperando —y bajando por datos moviles— unas 56 veces mas imagen de la
+    // que acaba guardada. `medium` son 1,5 MP, que en 4:3 (1414x1060) y en 16:9
+    // (1632x918) sobran para el recorte cuadrado.
+    //
+    // NO ABARATA la llamada: se factura por peticion, no por tamaño. Lo que
+    // recorta es la espera del comerciante con el telefono en el mostrador,
+    // que es donde de verdad se usa esto. Si alguna vez se ve blando, `hd`
+    // (4 MP) sigue siendo 9 veces menos que `full`.
+    envio.append("size", "medium");
+
+    // `crop` (el tercer parametro de esta API) se queda en su `false` por
+    // defecto a proposito: recorta hasta el borde del objeto y dejaria el
+    // producto pegado a los cuatro lados. El encuadre lo hacemos nosotros.
 
     let respuesta: Response;
     try {
@@ -134,6 +160,14 @@ export async function POST(request: Request) {
     if (!respuesta.ok) {
       // El cuerpo se registra pero NO se devuelve: puede traer datos de la
       // cuenta o pistas sobre la llave.
+      //
+      // LEE ESTE LOG ANTES DE CULPAR A LA FOTO. Al usuario le llega "No se pudo
+      // procesar esa foto. Intenta con otra", pero un 400 tambien lo provoca un
+      // parametro NUESTRO mal formado, y entonces ninguna foto va a funcionar.
+      // Ya paso con `bg_color` sin `#`: el comerciante estuvo probando fotos
+      // distintas contra un fallo que no estaba en ninguna de ellas. El detalle
+      // que PhotoRoom manda aqui dice cual es el parametro; el mensaje de la
+      // pantalla no puede.
       const detalle = await respuesta.text().catch(() => "");
       console.error(
         `[quitar-fondo] PhotoRoom respondió ${respuesta.status}:`,
