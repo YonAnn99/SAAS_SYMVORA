@@ -162,7 +162,14 @@
     "inviteKeyPlaceholder": "Clave de invitación (ej. ABC123XY)",
     "enterWithKey": "Ingresar",
     "employeeLogin": "¿Eres empleado o colaborador? Ingresa tu clave",
-    "or": "o"
+    "or": "o",
+    "completeSignup": {
+      "title": "Completa tu registro",
+      "subtitle": "Entraste como {email}. Solo faltan los datos de tu negocio.",
+      "yourName": "Tu nombre",
+      "submit": "Crear mi negocio",
+      "notYou": "¿No eres tú? Usar otra cuenta"
+    }
   },
   "referrals": {
     "title": "Programa de Referidos",

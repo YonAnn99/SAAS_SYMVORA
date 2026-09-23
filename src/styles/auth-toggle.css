@@ -582,6 +582,55 @@
   font-family: inherit;
 }
 
+/* "Completa tu registro" (entrada con Google sin negocio): una sola tarjeta,
+   sin el panel deslizante de login/registro. */
+.auth-container.auth-completar {
+  width: 520px;
+  min-height: auto;
+}
+
+.auth-completar form {
+  padding: 36px 40px;
+  height: auto;
+  text-align: center;
+}
+
+.auth-completar-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.auth-completar-campos {
+  width: 100%;
+  margin-top: 16px;
+  text-align: left;
+}
+
+.auth-completar-campos .auth-field-label {
+  margin-top: 8px;
+}
+
+.auth-completar-terminos {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.auth-container .auth-completar-terminos input {
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
   .auth-container {
     min-height: 100vh;

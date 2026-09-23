@@ -106,7 +106,8 @@ export async function fetchOpenRegistersFromPreviousDays(): Promise<RegisterToCl
       supabase,
       caja.tenant_id,
       caja.usuario_id,
-      caja.fecha_apertura
+      caja.fecha_apertura,
+      caja.sucursal_id ?? null
     );
 
     const movements = await fetchMovementsForAutoClose(supabase, caja.id);
@@ -134,9 +135,12 @@ async function fetchVentasTotalForAutoClose(
   supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
   tenantId: string,
   userId: string,
-  desde: string
+  desde: string,
+  sucursalId: string | null
 ): Promise<number> {
-  const { data } = await supabase
+  // Por sucursal, igual que `fetchVentasTotal`: el usuario puede tener una caja
+  // abierta en cada local y cada cierre cuenta solo lo suyo (migracion 086).
+  let query = supabase
     .from("ventas")
     .select("total")
     .eq("tenant_id", tenantId)
@@ -144,6 +148,8 @@ async function fetchVentasTotalForAutoClose(
     .eq("estado", "COMPLETADA")
     .neq("metodo_pago", "CREDITO")
     .gte("fecha_venta", desde);
+  if (sucursalId) query = query.eq("sucursal_id", sucursalId);
+  const { data } = await query;
 
   return (data ?? []).reduce((sum, v) => sum + v.total, 0);
 }

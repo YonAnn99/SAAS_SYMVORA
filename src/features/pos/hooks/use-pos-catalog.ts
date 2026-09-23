@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Cliente, Producto } from "@/lib/types/database";
 import type { VarianteProducto } from "../types/pos.types";
@@ -27,20 +27,34 @@ export interface PosCatalogState {
   favoritosCount: number;
   userId: string;
   loadingProducts: boolean;
-  /** Caja abierta al cargar el POS. */
+  /** Caja abierta al cargar el POS (la de `sucursalId`, si se pidio una). */
   cajaId: string | null;
+  /** Local de esa caja: el que el mostrador esta atendiendo. */
+  cajaSucursalId: string | null;
   refetch: () => Promise<void>;
 }
 
+/**
+ * `sucursalId`: el local donde se quiere cobrar (el dueño que cambia de
+ * sucursal, ver `sucursalDelPos`). Con el, la caja es la del usuario EN ESE
+ * local —o ninguna, y el POS ofrece abrirla— y las existencias son las de ahi.
+ * Con `null`, la caja abierta mas reciente, como siempre.
+ */
 export function usePosCatalog(
   tenantId: string | null,
-  tenantLoading: boolean
+  tenantLoading: boolean,
+  sucursalId: string | null = null
 ): PosCatalogState {
   const [products, setProducts] = useState<Producto[]>([]);
   const [customers, setCustomers] = useState<Cliente[]>([]);
   const [userId, setUserId] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [cajaId, setCajaId] = useState<string | null>(null);
+  const [cajaSucursalId, setCajaSucursalId] = useState<string | null>(null);
+  // Cambiar de sucursal lanza otra carga: si la anterior llega despues, no debe
+  // pisar la caja ni las existencias del local nuevo.
+  const peticion = useRef(0);
+  const sucursalCargada = useRef<string | null | undefined>(undefined);
   const [variants, setVariants] = useState<VarianteProducto[]>([]);
   const [priceLists, setPriceLists] = useState<ListaParaPos[]>([]);
   const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set());
@@ -53,6 +67,16 @@ export function usePosCatalog(
     if (!tenantId) {
       setLoadingProducts(false);
       return;
+    }
+    const id = ++peticion.current;
+    // Solo al CAMBIAR de local (no en la recarga tras cada venta): se suelta la
+    // caja anterior en el acto para que nada se cobre en el cajon de Principal
+    // mientras llega la de Norte.
+    if (sucursalCargada.current !== sucursalId) {
+      sucursalCargada.current = sucursalId;
+      setCajaId(null);
+      setCajaSucursalId(null);
+      setLoadingProducts(true);
     }
     try {
       const supabase = createSupabaseBrowserClient();
@@ -70,10 +94,11 @@ export function usePosCatalog(
       // sucursal decide QUE existencias se ven. Un mostrador de Norte tiene que
       // enseñar lo que hay en Norte, no el total del negocio — si no, ofrece
       // productos que la venta luego rechaza por falta de stock en el local.
-      const activeRegister = await fetchActiveRegister(user.id);
-      const stockLocal = activeRegister?.sucursal_id
-        ? await fetchStockSucursal(activeRegister.sucursal_id)
-        : null;
+      const activeRegister = await fetchActiveRegister(user.id, sucursalId);
+      // Sin caja en el local pedido se enseña igualmente SU stock detras del
+      // aviso de abrir caja: es lo que se va a vender en cuanto la abra.
+      const sucursalStock = activeRegister?.sucursal_id ?? sucursalId;
+      const stockLocal = sucursalStock ? await fetchStockSucursal(sucursalStock) : null;
 
       const [
         productsResult,
@@ -90,6 +115,7 @@ export function usePosCatalog(
       ]);
 
       const activeCajaId = activeRegister?.id ?? null;
+      if (id !== peticion.current) return;
 
       setProducts(productsResult);
       setVariants(variantsResult);
@@ -97,15 +123,16 @@ export function usePosCatalog(
       setPriceLists(priceListsResult);
       setFavoritos(favoritosResult);
       setCajaId(activeCajaId);
+      setCajaSucursalId(activeRegister?.sucursal_id ?? null);
     } catch (error) {
       // Ya no hay catalogo guardado al que caer: servir precios viejos solo
       // servia para poder vender sin red, y cobrar con un precio desactualizado
       // es peor que pedir al cajero que reintente.
       console.error("[pos] catalog fetch failed:", error);
     } finally {
-      setLoadingProducts(false);
+      if (id === peticion.current) setLoadingProducts(false);
     }
-  }, [tenantId]);
+  }, [tenantId, sucursalId]);
 
   useEffect(() => {
     if (tenantLoading) return;
@@ -148,6 +175,7 @@ export function usePosCatalog(
     userId,
     loadingProducts,
     cajaId,
+    cajaSucursalId,
     refetch,
   };
 }

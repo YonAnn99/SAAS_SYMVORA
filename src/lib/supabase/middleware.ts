@@ -137,7 +137,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.includes("/login") ||
     request.nextUrl.pathname.includes("/signup") ||
     request.nextUrl.pathname.includes("/auth") ||
-    request.nextUrl.pathname.includes("/reset-password");
+    request.nextUrl.pathname.includes("/reset-password") ||
+    // Quien entra con Google por primera vez tiene sesion pero no negocio, y
+    // aqui lo da de alta. No puede pasar por el chequeo de negocio de abajo:
+    // ese chequeo es justo el que lo manda aqui.
+    request.nextUrl.pathname.includes("/completar-registro");
 
   const isLegalRoute = ["/aviso-privacidad", "/terminos", "/politica-cookies"].some(
     (segment) => request.nextUrl.pathname.endsWith(segment)
@@ -186,7 +190,7 @@ export async function updateSession(request: NextRequest) {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
-      const { data: contexto } = await supabaseAdmin
+      const { data: contexto, error: errorContexto } = await supabaseAdmin
         .rpc("get_middleware_context", { p_user_id: user.id })
         .maybeSingle<{
           tenant_id: string;
@@ -196,6 +200,22 @@ export async function updateSession(request: NextRequest) {
           permisos: string[];
           tiene_caja_abierta: boolean;
         }>();
+
+      // SIN NEGOCIO -> a terminar el registro. Pasa con la primera entrada con
+      // Google: Supabase crea el usuario al volver, pero el negocio solo lo
+      // crea el formulario. Antes se le dejaba pasar y veia un panel sin
+      // nombre, sin rol y con medio menu.
+      //
+      // Solo si la consulta RESPONDIO sin negocio. Con un error (red, pool
+      // lleno) no se sabe, y redirigir haria un bucle: la pagina de registro
+      // comprueba la membresia por su cuenta y lo devolveria al dashboard.
+      if (!contexto && !errorContexto) {
+        const locale = request.nextUrl.pathname.split("/")[1] || "es";
+        const completarUrl = request.nextUrl.clone();
+        completarUrl.pathname = `/${locale === "en" ? "en" : "es"}/completar-registro`;
+        completarUrl.search = "";
+        return NextResponse.redirect(completarUrl);
+      }
 
       // Se conserva la forma de `membership` para no tocar el resto del bloque.
       const membership = contexto

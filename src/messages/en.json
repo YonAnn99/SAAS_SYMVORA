@@ -162,7 +162,14 @@
     "inviteKeyPlaceholder": "Invite key (e.g. ABC123XY)",
     "enterWithKey": "Enter",
     "employeeLogin": "Are you an employee or collaborator? Enter your key",
-    "or": "or"
+    "or": "or",
+    "completeSignup": {
+      "title": "Complete your sign-up",
+      "subtitle": "You signed in as {email}. We just need your business details.",
+      "yourName": "Your name",
+      "submit": "Create my business",
+      "notYou": "Not you? Use another account"
+    }
   },
   "referrals": {
     "title": "Referral Program",
@@ -573,6 +580,83 @@
     "certificateKey": "Private key",
     "certificatePassword": "Certificate password"
   },
+  "tutorial": {
+    "startHelp": "Start tutorial",
+    "replayHelp": "View tutorial",
+    "skip": "Skip",
+    "finish": "Done!",
+    "progress": "{current} of {total}",
+    "stepOf": "Step {current} of {total}",
+    "waitingDescription": "Go to {module} to continue with this step.",
+    "goToModule": "Go to {module}",
+    "continueTutorial": "Continue tutorial",
+    "steps": {
+      "scanner": {
+        "title": "Scan your products to sell faster",
+        "description": "Connect a barcode scanner to add products to your sale in seconds."
+      },
+      "welcome": {
+        "title": "Welcome to SYMVORA!",
+        "description": "This tutorial will guide you through setting up and using your point of sale system. Follow each step in order so everything works correctly."
+      },
+      "business": {
+        "title": "Set up your business",
+        "description": "Start by setting up your business details: name, logo, brand color and tax information. They are used on receipts and in the look of the system."
+      },
+      "users": {
+        "title": "Invite your team",
+        "description": "If more people will use the system (cashiers, another administrator), add them here before you start selling. That way every sale records who made it."
+      },
+      "suppliers": {
+        "title": "Add your suppliers",
+        "description": "This step is required: you can't record purchases without a supplier. Add your main suppliers here before continuing."
+      },
+      "products": {
+        "title": "Build your product catalog",
+        "description": "This is the most important module. Here you define each product with its name, price, cost, unit of measure and barcode. Sales, purchases and inventory all depend on it."
+      },
+      "createProduct": {
+        "title": "Create your first product",
+        "description": "Click 'Add product' to create one. Set the name, sale price, purchase cost, unit of measure and barcode. You can turn on variants (size/color) or batches (expiration) if your business needs them."
+      },
+      "openCash": {
+        "title": "Open the cash register",
+        "description": "Before selling, open a cash register with a starting float. Without an open register, sales are not recorded as cash movements and the end-of-day count won't match."
+      },
+      "firstSale": {
+        "title": "Make your first sale",
+        "description": "Search for a product by name or barcode, add it to the cart, choose a payment method (cash, card, transfer or credit) and complete the sale. Stock is deducted automatically."
+      },
+      "closeCash": {
+        "title": "Close the register at the end of the day",
+        "description": "When your shift ends, enter the actual counted balance. The system compares it with the expected balance and shows you the difference, if any."
+      },
+      "reports": {
+        "title": "Check your reports",
+        "description": "On the dashboard you can see today's and this month's sales, average ticket, best-selling products and payment methods. You can export to CSV or PDF."
+      },
+      "activity": {
+        "title": "Activity log",
+        "description": "Here you can see who did what and when: creations, edits and deletions. It's your audit tool to check whether something went differently than expected."
+      },
+      "billing": {
+        "title": "Manage your subscription",
+        "description": "Check your subscription status, add payment methods and review your payment history. Your plan is SYMVORA Basic at $399 MXN/month with a {dias}-day trial."
+      },
+      "advancedSettings": {
+        "title": "Advanced settings",
+        "description": "In the \"Modules\" tab of Settings you turn features on or off for your business: variants, batches, shrinkage, credit and more. You can change this at any time."
+      },
+      "shortcuts": {
+        "title": "Keyboard shortcuts",
+        "description": "Use Cmd+K (or Ctrl+K) to open quick search. You can go to any module, search for products and run actions without using the mouse."
+      },
+      "complete": {
+        "title": "Tutorial complete!",
+        "description": "You now know SYMVORA's main modules. Remember the right order: Settings → Suppliers → Products → Open register → Sell. If you need help, click 'Need help?' in the top bar."
+      }
+    }
+  },
   "landing": {
     "nav": {
       "features": "Features",
@@ -904,6 +988,7 @@
       "legal": "Legal",
       "privacy": "Privacy",
       "terms": "Terms",
+      "cookiesPolicy": "Cookie policy",
       "copyright": "© 2026 SYMVORA. All rights reserved."
     }
   },

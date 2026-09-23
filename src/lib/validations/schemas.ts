@@ -42,6 +42,21 @@ export const signupSchema = z
     path: ["password_confirm"],
   });
 
+/**
+ * "Completa tu registro": quien entro con Google ya tiene correo y sesion, asi
+ * que solo se piden su nombre y los datos del negocio. Mismas reglas que el
+ * registro con correo para lo que comparten.
+ */
+export const completarRegistroSchema = z.object({
+  nombre: z.string().trim().min(1, "El nombre es requerido"),
+  nombre_establecimiento: z.string().trim().min(2, "El nombre del establecimiento es requerido"),
+  giro_comercial: signupSchema.shape.giro_comercial,
+  acceptTerms: z.literal(true, {
+    message:
+      "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
+  }),
+});
+
 export const tenantSchema = z.object({
   nombre_comercial: z
     .string()

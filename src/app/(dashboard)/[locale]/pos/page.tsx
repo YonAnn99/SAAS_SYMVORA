@@ -17,7 +17,10 @@ import {
   variantPrice,
 } from "@/features/pos/components/variant-picker-dialog";
 import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
-import { OpenRegisterRequiredDialog } from "@/features/cash-register";
+import { OpenRegisterDialog, OpenRegisterRequiredDialog, abrirCaja } from "@/features/cash-register";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { sucursalDelPos } from "@/features/sucursales/seleccion";
+import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
@@ -61,7 +64,16 @@ import type {
 export default function POSPage() {
   const t = useTranslations();
   const router = useRouter();
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
+  const { activas, hayVarias, seleccionada, setSeleccionada } = useSucursal();
+  // Solo el dueño cambia de sucursal desde aqui (ver `sucursalDelPos`).
+  const modoDueno = role === "SUPER_ADMIN" && hayVarias;
+  const sucursalPos = sucursalDelPos({
+    esDueno: role === "SUPER_ADMIN",
+    hayVarias,
+    seleccionada,
+    activas,
+  });
   const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
     usePosCart(tenantId);
   const {
@@ -74,8 +86,11 @@ export default function POSPage() {
     userId,
     loadingProducts,
     cajaId,
+    cajaSucursalId,
     refetch,
-  } = usePosCatalog(tenantId, tenantLoading);
+  } = usePosCatalog(tenantId, tenantLoading, sucursalPos);
+  // El local que se esta atendiendo: el elegido o, en "Todas", el de su caja.
+  const sucursalMostrador = sucursalPos ?? cajaSucursalId;
   // El middleware ya redirige si no hay caja, pero no corre en la navegacion
   // de cliente ni cuando la PWA abre el POS desde su cache sin conexion.
   const { hasOpenRegister, loading: loadingRegister } = useOpenRegister(tenantId);
@@ -215,6 +230,30 @@ export default function POSPage() {
     products,
     handleAddProduct
   );
+
+  // Cambiar de local vacia la venta en curso: esos productos quiza no existen
+  // en el otro, y la venta se rechazaria al cobrar por falta de stock.
+  const cambiarSucursal = useCallback(
+    (id: string) => {
+      if (id === sucursalMostrador) return;
+      if (itemCount > 0) {
+        clearCart();
+        toast.info("Se vació la venta en curso al cambiar de sucursal");
+      }
+      setSeleccionada(id);
+    },
+    [sucursalMostrador, itemCount, clearCart, setSeleccionada]
+  );
+
+  // Si no abre caja en el local elegido: vuelve a la que ya tiene abierta, o al
+  // panel si no tiene ninguna.
+  const cancelarAperturaDueno = useCallback(() => {
+    if (hasOpenRegister && seleccionada) {
+      setSeleccionada(null);
+      return;
+    }
+    router.push("/dashboard");
+  }, [hasOpenRegister, seleccionada, setSeleccionada, router]);
 
   const finalizeSale = useCallback(() => {
     clearCart();
@@ -425,7 +464,12 @@ export default function POSPage() {
 
   // Sin caja abierta no se vende: las ventas no generarian movimiento y el
   // corte del dia no cuadraria.
-  const isRegisterOpen = hasOpenRegister === true || Boolean(cajaId);
+  // Para el dueño con varias sucursales cuenta SOLO la caja del local elegido:
+  // tener abierta la de Principal no le deja cobrar en Norte, porque el dinero
+  // caeria en el cajon equivocado.
+  const isRegisterOpen = modoDueno
+    ? Boolean(cajaId)
+    : hasOpenRegister === true || Boolean(cajaId);
   const isRegisterResolved = !tenantLoading && !loadingRegister && !loadingProducts;
   const showRegisterBlocked = isRegisterResolved && !isRegisterOpen;
 
@@ -453,6 +497,15 @@ export default function POSPage() {
           priceLists={priceLists}
           selectedPriceList={selectedPriceList}
           onPriceListChange={setSelectedPriceList}
+          sucursalSlot={
+            modoDueno ? (
+              <PosSucursalSelector
+                sucursales={activas}
+                value={sucursalMostrador}
+                onChange={cambiarSucursal}
+              />
+            ) : null
+          }
         />
 
         <ProductGrid
@@ -636,8 +689,24 @@ export default function POSPage() {
       />
     </div>
 
+    {/* El dueño abre la caja del local aqui mismo, sin ir a Finanzas. */}
+    <OpenRegisterDialog
+      open={showRegisterBlocked && modoDueno}
+      sucursalInicial={sucursalPos}
+      onOpenChange={(open) => {
+        if (!open) cancelarAperturaDueno();
+      }}
+      onCancel={cancelarAperturaDueno}
+      onConfirm={async (fondoInicial, sucursalId) => {
+        const caja = await abrirCaja(tenantId, fondoInicial, sucursalId);
+        // `abrirCaja` avisa y el catalogo se recarga solo. Se fija ademas la
+        // sucursal elegida para que el POS se quede en ese local.
+        if (caja?.sucursal_id) setSeleccionada(caja.sucursal_id);
+      }}
+    />
+
     <OpenRegisterRequiredDialog
-      open={showRegisterBlocked}
+      open={showRegisterBlocked && !modoDueno}
       onOpenChange={(open) => {
         if (!open) {
           router.push("/dashboard");

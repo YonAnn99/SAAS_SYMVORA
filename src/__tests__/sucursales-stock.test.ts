@@ -8,7 +8,7 @@ import {
   vendiblesEnLocal,
   type FilaStockSucursal,
 } from "@/features/sucursales/stock";
-import { destinoPorDefecto, seleccionEfectiva } from "@/features/sucursales/seleccion";
+import { destinoPorDefecto, seleccionEfectiva, sucursalDelPos } from "@/features/sucursales/seleccion";
 import { resumenPorSucursal } from "@/features/sucursales/resumen";
 import { opcionesDeTraspaso } from "@/features/sucursales/traspaso";
 
@@ -261,5 +261,41 @@ describe("«Todas» de un usuario restringido: la suma de SUS locales", () => {
       ]
     );
     expect(m.stock_actual).toBe(7);
+  });
+});
+
+describe("en qué local cobra el punto de venta", () => {
+  const activas = [{ id: "principal" }, { id: "norte" }];
+
+  it("ESTE es el importante: el dueño que elige Norte cobra en Norte", () => {
+    expect(
+      sucursalDelPos({ esDueno: true, hayVarias: true, seleccionada: "norte", activas })
+    ).toBe("norte");
+  });
+
+  it("el dueño en «Todas»: la caja que tenga abierta, como siempre", () => {
+    expect(
+      sucursalDelPos({ esDueno: true, hayVarias: true, seleccionada: null, activas })
+    ).toBeNull();
+  });
+
+  it("un cajero mirando Norte en Productos sigue cobrando en SU caja", () => {
+    // Si el filtro de otra pantalla moviera el cajón, el dinero caería en un
+    // corte que no es el suyo.
+    expect(
+      sucursalDelPos({ esDueno: false, hayVarias: true, seleccionada: "norte", activas })
+    ).toBeNull();
+  });
+
+  it("a una sucursal cerrada no se le vende", () => {
+    expect(
+      sucursalDelPos({ esDueno: true, hayVarias: true, seleccionada: "cerrada", activas })
+    ).toBeNull();
+  });
+
+  it("con un solo local no hay nada que cambiar", () => {
+    expect(
+      sucursalDelPos({ esDueno: true, hayVarias: false, seleccionada: "principal", activas: [{ id: "principal" }] })
+    ).toBeNull();
   });
 });

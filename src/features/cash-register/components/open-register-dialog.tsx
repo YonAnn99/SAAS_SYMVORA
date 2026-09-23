@@ -26,16 +26,25 @@ interface OpenRegisterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (fondoInicial: number, sucursalId: string | null) => void;
+  /**
+   * Local ya elegido: el dueño que cambia de sucursal en el POS, o la que se
+   * esta mirando en Finanzas. Solo se acepta si es una de las que puede usar.
+   */
+  sucursalInicial?: string | null;
+  /** Cancelar sin cerrar por fuera (el POS decide a donde volver). */
+  onCancel?: () => void;
 }
 
 export function OpenRegisterDialog({
   open,
   onOpenChange,
   onConfirm,
+  sucursalInicial = null,
+  onCancel,
 }: OpenRegisterDialogProps) {
   const t = useTranslations();
   const { tenantId } = useCurrentTenant();
-  const { activas, hayVarias } = useSucursal();
+  const { activas, hayVarias, loading: loadingSucursales } = useSucursal();
   const [initialFund, setInitialFund] = useState("");
   const [lastClosedAmount, setLastClosedAmount] = useState<number | null>(null);
   const [sucursalId, setSucursalId] = useState<string | null>(null);
@@ -50,7 +59,13 @@ export function OpenRegisterDialog({
     // Con un solo local se elige solo: el cajero no tiene por qué contestar una
     // pregunta que solo admite una respuesta. Con varios arranca vacío para que
     // sea una decisión consciente y no un valor heredado del turno anterior.
-    setSucursalId(activas.length === 1 ? activas[0].id : null);
+    setSucursalId(
+      sucursalInicial && activas.some((s) => s.id === sucursalInicial)
+        ? sucursalInicial
+        : activas.length === 1
+          ? activas[0].id
+          : null
+    );
 
     let isCancelled = false;
     async function loadLastClosed() {
@@ -72,7 +87,7 @@ export function OpenRegisterDialog({
     return () => {
       isCancelled = true;
     };
-  }, [open, tenantId, activas]);
+  }, [open, tenantId, activas, sucursalInicial]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -142,14 +157,17 @@ export function OpenRegisterDialog({
             variant="outline"
             size="sm"
             className="h-8"
-            onClick={() => onOpenChange(false)}
+            onClick={() => (onCancel ? onCancel() : onOpenChange(false))}
           >
             {t("common.cancel")}
           </Button>
           <SpecularActionButton
             tone="add"
             className="h-8"
-            disabled={hayVarias && !sucursalId}
+            // Mientras cargan las sucursales `hayVarias` aun es false: sin esperar,
+            // se podia abrir una caja SIN sucursal en un negocio de varias (paso
+            // el 2026-09-23; la base ya lo rechaza, migracion 086).
+            disabled={loadingSucursales || (hayVarias && !sucursalId)}
             onClick={() => onConfirm(parseFloat(initialFund) || 0, sucursalId)}
           >
             {t("common.confirm")}

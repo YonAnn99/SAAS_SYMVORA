@@ -21,9 +21,7 @@ import {
 } from "@/lib/auth/remembered-account";
 import { getAppUrl } from "@/lib/site";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
-import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
-import { convertToWebP } from "@/lib/image";
-import { toast } from "sonner";
+import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import "@/styles/auth-toggle.css";
 
 function GoogleIcon() {
@@ -357,6 +355,13 @@ export function AuthForms({
     setOauthLoading(provider);
 
     try {
+      // El regreso de Google cae en /api/auth/callback, que no sabe desde que
+      // idioma se salio y antes adivinaba por el navegador: un usuario en /es
+      // con Chrome en ingles acababa en /en. Se le deja dicho en una cookie
+      // corta (ver `LOCALE_OAUTH_COOKIE` en el callback). Cookie y no `?next=`
+      // en `redirectTo`: un parametro ahi puede no coincidir con las URLs de
+      // retorno permitidas en Supabase, y Google volveria a la URL del sitio.
+      document.cookie = `oauth_locale=${locale}; path=/; max-age=600; samesite=lax`;
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -449,149 +454,24 @@ export function AuthForms({
       return;
     }
 
-    // Validar el código promocional ANTES de crear el tenant: si es inválido
-    // el usuario puede corregirlo y reintentar sin dejar registros huérfanos.
-    const promoTrimmed = promoCode.trim();
-    if (promoTrimmed) {
-      const { data: promoCheck } = await supabase.rpc("validar_codigo_promo", {
-        p_codigo: promoTrimmed,
-      });
-      const check = promoCheck as { valido: boolean; razon?: string } | null;
-      if (!check?.valido) {
-        setSignupError(
-          check?.razon === "usado"
-            ? t("auth.promoUsed")
-            : check?.razon === "expirado"
-              ? t("auth.promoExpired")
-              : t("auth.promoInvalid")
-        );
-        setSignupLoading(false);
-        return;
-      }
-    }
-
-    // Registrar la aceptación de documentos legales como evidencia de auditoría.
-    // Si falla, no bloqueamos el signup — el consentimiento ya quedó registrado en el click
-    // del checkbox y la existencia de la cuenta; el registro en BD es solo evidencia adicional.
-    try {
-      await fetch("/api/legal/accept", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          termsVersion: LEGAL_DOCUMENT_VERSIONS.terms,
-          privacyVersion: LEGAL_DOCUMENT_VERSIONS.privacy,
-          cookiesVersion: LEGAL_DOCUMENT_VERSIONS.cookies,
-        }),
-      });
-    } catch (err) {
-      console.error("Failed to record legal acceptance:", err);
-    }
-
-    // Upload logo if provided
-    let logoUrl: string | null = null;
-    if (logoFile) {
-      const webpFile = await convertToWebP(logoFile);
-      const filePath = `${authData.user.id}/logo.webp`;
-      const { error: uploadError } = await supabase.storage
-        .from("logos")
-        .upload(filePath, webpFile, { contentType: "image/webp" });
-
-      if (uploadError) {
-        console.error("Logo upload failed:", uploadError);
-        toast.warning(
-          "No se pudo subir el logo. Podrás agregarlo después desde Configuración."
-        );
-      } else {
-        const { data: urlData } = supabase.storage
-          .from("logos")
-          .getPublicUrl(filePath);
-        logoUrl = urlData.publicUrl;
-
-        await supabase.auth.updateUser({
-          data: { logo_url: logoUrl },
-        });
-      }
-    }
-
-    // Create tenant via complete_onboarding RPC
-    const configuracionJson = {
-      giro_comercial: giroComercial,
-      modulos_activos: {
-        permite_granel: false,
-        permite_variantes: false,
-        permite_lotes_caducidad: true,
-        permite_mermas: true,
-        permite_servicios: false,
-        permite_credito_fiado: true,
+    const resultado = await crearNegocio({
+      userId: authData.user.id,
+      nombreEstablecimiento,
+      giroComercial,
+      logoFile,
+      promoCode,
+      referralCode,
+      mensajesPromo: {
+        usado: t("auth.promoUsed"),
+        expirado: t("auth.promoExpired"),
+        invalido: t("auth.promoInvalid"),
       },
-      pos_config: {
-        teclado_rapido: true,
-        lector_barras: true,
-        impresion_automatica: true,
-      },
-    };
+    });
 
-    const subdominio = nombreEstablecimiento
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "-")
-      .replace(/-+/g, "-")
-      .slice(0, 30);
-
-    const { data: tenant, error: rpcError } = await supabase.rpc(
-      "complete_onboarding",
-      {
-        p_user_id: authData.user.id,
-        p_nombre_comercial: nombreEstablecimiento,
-        p_subdominio: subdominio,
-        p_giro_comercial: giroComercial,
-        p_configuracion_json: configuracionJson,
-        p_logo_url: logoUrl,
-        p_referral_code: referralCode || null,
-      }
-    );
-
-    if (rpcError) {
-      setSignupError(rpcError.message);
+    if (!resultado.ok) {
+      setSignupError(resultado.error);
       setSignupLoading(false);
       return;
-    }
-
-    if (!tenant?.id) {
-      setSignupError("Error al crear el negocio");
-      setSignupLoading(false);
-      return;
-    }
-
-    // Email de bienvenida (fire-and-forget): nunca bloquea ni rompe el signup.
-    fetch("/api/email/welcome", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenant_id: tenant.id }),
-      keepalive: true,
-    }).catch((err) => console.error("Welcome email failed:", err));
-
-    // La suscripción trial (14 días) se crea server-side dentro de
-    // complete_onboarding (migración 028) — no insertar aquí.
-
-    // Aplicar código promocional: consume el código y extiende el trial.
-    // Si aplica, entra directo al sistema sin pasar por el checkout de Conekta.
-    if (promoTrimmed) {
-      try {
-        const promoRes = await fetch("/api/promo/apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tenant_id: tenant.id, codigo: promoTrimmed }),
-        });
-        const promoData = await promoRes.json();
-        if (promoRes.ok && promoData.ok) {
-    router.push(`/${locale}/dashboard`);
-          router.refresh();
-          return;
-        }
-        console.error("Promo apply failed:", promoData.error);
-      } catch (err) {
-        console.error("Error applying promo:", err);
-      }
     }
 
     // Toda cuenta nueva ya tiene su trial de 14 días (creado dentro de

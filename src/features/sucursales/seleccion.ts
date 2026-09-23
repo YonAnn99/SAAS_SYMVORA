@@ -68,3 +68,27 @@ export function seleccionEfectiva(estado: {
   if (!estado.hayVarias) return null;
   return estado.seleccionada;
 }
+
+/**
+ * En que local cobra el punto de venta, o `null` para "el de la caja abierta
+ * mas reciente del usuario" (lo de siempre).
+ *
+ * Solo el DUEÑO (SUPER_ADMIN) cambia de local desde el POS: es quien va a otra
+ * sucursal a echar una mano. Tiene una caja por local (migracion 086), asi que
+ * elegir Norte es cobrar con SU caja de Norte. El resto del equipo cobra en la
+ * caja que abrio, aunque en otras pantallas este mirando otra sucursal: que el
+ * filtro de Productos cambiase el cajon donde cae el dinero seria un susto.
+ *
+ * Una sucursal cerrada nunca: se puede consultar su historico, no venderle.
+ */
+export function sucursalDelPos(estado: {
+  esDueno: boolean;
+  hayVarias: boolean;
+  seleccionada: string | null;
+  activas: readonly { id: string }[];
+}): string | null {
+  if (!estado.esDueno || !estado.hayVarias || !estado.seleccionada) return null;
+  return estado.activas.some((s) => s.id === estado.seleccionada)
+    ? estado.seleccionada
+    : null;
+}

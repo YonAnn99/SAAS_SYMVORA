@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Caja, MovimientoCaja } from "../types/cash-register.types";
@@ -43,7 +43,67 @@ export interface CashRegisterHookState {
   handleCloseRegister: (saldoReal: number, notasCierre: string) => Promise<void>;
 }
 
-export function useCashRegister(tenantId: string | null): CashRegisterHookState {
+/**
+ * Abre la caja del usuario, con los avisos y el registro de actividad. Fuera
+ * del hook para que el punto de venta la abra sin cargar todo el estado de
+ * Finanzas (el dueño que cambia de sucursal la abre desde el propio POS).
+ * Avisa a quien escuche (`notifyCashRegisterChanged`) para que recargue.
+ */
+export async function abrirCaja(
+  tenantId: string | null,
+  fondoInicial: number,
+  sucursalId: string | null = null
+): Promise<Caja | null> {
+  if (!tenantId) {
+    toast.error("No se pudo identificar el tenant");
+    return null;
+  }
+  if (!(fondoInicial >= 0)) {
+    toast.error("El fondo inicial no puede ser negativo");
+    return null;
+  }
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      toast.error("No se pudo identificar el usuario");
+      return null;
+    }
+
+    const register = await openRegister(userId, tenantId, fondoInicial, sucursalId);
+    await logActivity({
+      action: "CREATE",
+      entity: "caja",
+      entityId: register.id,
+      details: { fondo_inicial: fondoInicial, sucursal_id: sucursalId },
+    });
+    toast.success("Caja abierta correctamente. ¡Listo para vender!");
+    notifyCashRegisterChanged();
+    return register;
+  } catch (error) {
+    // Postgres 23505: ya tiene una caja abierta en ese local (migracion 086).
+    const code = (error as { code?: string } | null)?.code;
+    toast.error(
+      code === "23505"
+        ? "Ya tienes una caja abierta en esa sucursal"
+        : error instanceof Error
+          ? error.message
+          : (error as { message?: string } | null)?.message ?? "Error al abrir la caja"
+    );
+    return null;
+  }
+}
+
+/**
+ * La caja del usuario que se muestra y se opera.
+ *
+ * `sucursalId`: el usuario puede tener una caja abierta en cada local
+ * (migracion 086). Con un local elegido se trabaja con la de ese local; con
+ * `null` ("Todas", o un negocio de un solo local), con la mas reciente.
+ */
+export function useCashRegister(
+  tenantId: string | null,
+  sucursalId: string | null = null
+): CashRegisterHookState {
   const [activeRegister, setActiveRegister] = useState<Caja | null>(null);
   const [movements, setMovements] = useState<MovimientoCaja[]>([]);
   const [totalVentas, setTotalVentas] = useState(0);
@@ -52,29 +112,46 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
   const [showMovementDialog, setShowMovementDialog] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
 
+  // Al cambiar de sucursal rapido, la respuesta de la anterior puede llegar
+  // despues: solo se aplica la de la ultima peticion.
+  const peticion = useRef(0);
+  const sucursalCargada = useRef<string | null | undefined>(undefined);
+
   const refetch = useCallback(async () => {
+    const id = ++peticion.current;
+    // Al cambiar de local no se deja a la vista (ni con "Cerrar caja" a mano)
+    // la caja del anterior mientras llega la nueva.
+    if (sucursalCargada.current !== sucursalId) {
+      sucursalCargada.current = sucursalId;
+      setLoading(true);
+    }
     const userId = await getCurrentUserId();
     if (!userId) return;
 
-    const register = await fetchActiveRegister(userId);
+    const register = await fetchActiveRegister(userId, sucursalId);
     if (register) {
+      const [movementData, ventasTotal] = await Promise.all([
+        fetchMovements(register.id),
+        fetchVentasTotal(
+          register.tenant_id,
+          userId,
+          register.fecha_apertura,
+          register.sucursal_id ?? null
+        ),
+      ]);
+      if (id !== peticion.current) return;
       setActiveRegister(register);
-      const movementData = await fetchMovements(register.id);
       setMovements(movementData);
-      const ventasTotal = await fetchVentasTotal(
-        register.tenant_id,
-        userId,
-        register.fecha_apertura
-      );
       setTotalVentas(ventasTotal);
     } else {
+      if (id !== peticion.current) return;
       setActiveRegister(null);
       setMovements([]);
       setTotalVentas(0);
     }
 
     setLoading(false);
-  }, []);
+  }, [sucursalId]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void refetch(), 0);
@@ -86,45 +163,13 @@ export function useCashRegister(tenantId: string | null): CashRegisterHookState 
       fondoInicial: number,
       sucursalId: string | null = null
     ): Promise<Caja | null> => {
-      if (!tenantId) {
-        toast.error("No se pudo identificar el tenant");
-        return null;
-      }
-      if (!(fondoInicial >= 0)) {
-        toast.error("El fondo inicial no puede ser negativo");
-        return null;
-      }
-      try {
-        const userId = await getCurrentUserId();
-        if (!userId) {
-          toast.error("No se pudo identificar el usuario");
-          return null;
-        }
-
-        const register = await openRegister(
-          userId,
-          tenantId,
-          fondoInicial,
-          sucursalId
-        );
-        await logActivity({
-          action: "CREATE",
-          entity: "caja",
-          entityId: register.id,
-          details: { fondo_inicial: fondoInicial, sucursal_id: sucursalId },
-        });
+      const register = await abrirCaja(tenantId, fondoInicial, sucursalId);
+      if (register) {
         setActiveRegister(register);
         setShowOpenDialog(false);
-        toast.success("Caja abierta correctamente. ¡Listo para vender!");
-        notifyCashRegisterChanged();
         void refetch();
-        return register;
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Error al abrir la caja"
-        );
-        return null;
       }
+      return register;
     },
     [tenantId, refetch]
   );

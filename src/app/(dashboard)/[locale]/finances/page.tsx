@@ -13,12 +13,24 @@ import { MovementsTable } from "@/features/cash-register/components/movements-ta
 import { OpenRegisterDialog } from "@/features/cash-register/components/open-register-dialog";
 import { RegisterSummaryCards } from "@/features/cash-register/components/register-summary-cards";
 import { OpenSinceTooltip } from "@/features/cash-register/components/open-since-tooltip";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
+import { destinoPorDefecto, sucursalDelPos } from "@/features/sucursales/seleccion";
 
 export default function FinancesPage() {
   const t = useTranslations();
   const router = useRouter();
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const cash = useCashRegister(tenantId);
+  const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
+  const { sucursales, activas, hayVarias, seleccionada } = useSucursal();
+  // El dueño tiene una caja por local (migracion 086) y aqui ve la del que
+  // elija; con "Todas", la mas reciente. El resto, su caja de siempre: misma
+  // regla que el punto de venta, para que Finanzas y el POS hablen de la misma.
+  const esDueno = role === "SUPER_ADMIN";
+  const sucursalCaja = sucursalDelPos({ esDueno, hayVarias, seleccionada, activas });
+  const cash = useCashRegister(tenantId, sucursalCaja);
+  const nombreSucursalCaja = hayVarias
+    ? sucursales.find((s) => s.id === cash.activeRegister?.sucursal_id)?.nombre
+    : undefined;
   const autoOpenedRef = useRef(false);
 
   // Abre automáticamente la ventana de fondo inicial al entrar a Finanzas sin caja abierta
@@ -45,9 +57,13 @@ export default function FinancesPage() {
             {t("finances.title")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Control de caja y movimientos financieros
+            {nombreSucursalCaja
+              ? `Caja de ${nombreSucursalCaja}`
+              : "Control de caja y movimientos financieros"}
           </p>
         </OpenSinceTooltip>
+        <div className="flex items-center gap-2">
+        {esDueno && <SucursalSelector />}
         {!cash.activeRegister ? (
           <span id="tutorial-open-cash-btn">
             <SpecularActionButton
@@ -70,6 +86,7 @@ export default function FinancesPage() {
             </SpecularActionButton>
           </span>
         )}
+        </div>
       </div>
 
       <RegisterSummaryCards
@@ -88,6 +105,7 @@ export default function FinancesPage() {
 
       <OpenRegisterDialog
         open={cash.showOpenDialog}
+        sucursalInicial={destinoPorDefecto(seleccionada, activas)}
         onOpenChange={cash.setShowOpenDialog}
         onConfirm={async (fondoInicial, sucursalId) => {
           const reg = await cash.handleOpenRegister(fondoInicial, sucursalId);

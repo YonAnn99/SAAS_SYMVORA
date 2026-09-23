@@ -21,7 +21,14 @@ function isSafeRedirectPath(value: string | null): value is string {
   return value.startsWith("/");
 }
 
+/** Idioma desde el que se pulso "Continuar con Google" (lo fija `handleOAuth`). */
+const LOCALE_OAUTH_COOKIE = "oauth_locale";
+
 function resolveDefaultLocale(request: Request): string {
+  const cookie = request.headers.get("cookie") ?? "";
+  const elegido = cookie.match(/(?:^|;\s*)oauth_locale=(es|en)(?:;|$)/)?.[1];
+  if (elegido) return elegido;
+
   const acceptLanguage = request.headers.get("accept-language") ?? "";
   const primary = acceptLanguage.split(",")[0]?.trim().toLowerCase() ?? "";
   if (primary.startsWith("en")) return "en";
@@ -39,7 +46,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       const safeNext = isSafeRedirectPath(next) ? next : defaultNext;
-      return NextResponse.redirect(`${origin}${safeNext}`);
+      // Si aun no tiene negocio (primera vez con Google), el middleware lo
+      // manda a /completar-registro desde el dashboard.
+      const respuesta = NextResponse.redirect(`${origin}${safeNext}`);
+      respuesta.cookies.delete(LOCALE_OAUTH_COOKIE);
+      return respuesta;
     }
   }
 

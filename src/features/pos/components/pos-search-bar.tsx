@@ -37,6 +37,8 @@ interface PosSearchBarProps {
   /** `SIN_LISTA` o el id de la lista elegida. */
   selectedPriceList: string;
   onPriceListChange: (value: string) => void;
+  /** Selector de sucursal del dueño (ver `PosSucursalSelector`). */
+  sucursalSlot?: React.ReactNode;
 }
 
 export function PosSearchBar({
@@ -53,6 +55,7 @@ export function PosSearchBar({
   priceLists,
   selectedPriceList,
   onPriceListChange,
+  sucursalSlot,
 }: PosSearchBarProps) {
   const t = useTranslations();
 
@@ -70,6 +73,7 @@ export function PosSearchBar({
           className="pl-8 h-9"
         />
       </div>
+      {sucursalSlot}
       {showCategorySelect && (
         <Select
           value={selectedCategory}

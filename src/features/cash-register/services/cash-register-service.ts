@@ -9,18 +9,29 @@ export async function getCurrentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
+/**
+ * La caja abierta del usuario.
+ *
+ * Un usuario puede tener UNA abierta por sucursal (migracion 086): el dueño que
+ * va a cobrar a Norte abre alli la suya sin cerrar la de Principal. Con
+ * `sucursalId` se pide la de ese local; sin el, la mas reciente (el caso de
+ * siempre: un solo local, o el cajero que solo abre una).
+ */
 export async function fetchActiveRegister(
-  userId: string
+  userId: string,
+  sucursalId: string | null = null
 ): Promise<Caja | null> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
+  let query = supabase
     .from("cajas")
     .select("*")
     .eq("usuario_id", userId)
-    .eq("estado", "ABIERTA")
+    .eq("estado", "ABIERTA");
+  if (sucursalId) query = query.eq("sucursal_id", sucursalId);
+  const { data } = await query
     .order("fecha_apertura", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   return data ?? null;
 }
 
@@ -55,13 +66,19 @@ export async function fetchMovements(cajaId: string): Promise<MovimientoCaja[]> 
   return data ?? [];
 }
 
+/**
+ * Lo cobrado en una caja: ventas del usuario desde la apertura EN SU SUCURSAL.
+ * Sin el filtro por sucursal, con dos cajas abiertas a la vez (una por local,
+ * migracion 086) cada corte sumaba tambien las ventas de la otra.
+ */
 export async function fetchVentasTotal(
   tenantId: string,
   userId: string,
-  desde: string
+  desde: string,
+  sucursalId: string | null = null
 ): Promise<number> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
+  let query = supabase
     .from("ventas")
     .select("total")
     .eq("tenant_id", tenantId)
@@ -69,6 +86,8 @@ export async function fetchVentasTotal(
     .eq("estado", "COMPLETADA")
     .neq("metodo_pago", "CREDITO")
     .gte("fecha_venta", desde);
+  if (sucursalId) query = query.eq("sucursal_id", sucursalId);
+  const { data } = await query;
 
   return (data ?? []).reduce((sum, v) => sum + v.total, 0);
 }
