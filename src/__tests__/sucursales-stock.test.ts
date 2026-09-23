@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   conStockDeSucursal,
   conStockDeSucursalVariantes,
+  conStockSumado,
+  conStockSumadoVariantes,
   destinoDeEdicionDeStock,
   vendiblesEnLocal,
   type FilaStockSucursal,
 } from "@/features/sucursales/stock";
-import { destinoPorDefecto } from "@/features/sucursales/seleccion";
+import { destinoPorDefecto, seleccionEfectiva } from "@/features/sucursales/seleccion";
 import { resumenPorSucursal } from "@/features/sucursales/resumen";
 import { opcionesDeTraspaso } from "@/features/sucursales/traspaso";
 
@@ -204,5 +206,60 @@ describe("qué se puede traspasar desde un local", () => {
   it("la opción de variante lleva su id para que el servidor mueva la talla correcta", () => {
     const sueter = opcionesDeTraspaso(productos, variantes, filas).find((o) => o.varianteId);
     expect(sueter).toMatchObject({ productoId: "sueter", varianteId: "m" });
+  });
+});
+
+describe("qué sucursal se aplica según lo que el usuario tiene asignado", () => {
+  const norte = { id: "norte" };
+  const centro = { id: "centro" };
+
+  it("ESTE es el importante: restringido a un solo local, siempre ese — nunca «Todas»", () => {
+    // En Productos, «Todas» es el total del negocio. Un cajero de Norte no debe
+    // ver las existencias de Principal, ni aunque tuviera guardado «Todas».
+    expect(
+      seleccionEfectiva({ seleccionada: null, activas: [norte], hayVarias: false, restringido: true })
+    ).toBe("norte");
+  });
+
+  it("sin restricción y con un solo local, «Todas» (como siempre)", () => {
+    expect(
+      seleccionEfectiva({ seleccionada: "norte", activas: [norte], hayVarias: false, restringido: false })
+    ).toBeNull();
+  });
+
+  it("con varias disponibles, lo que el usuario eligió", () => {
+    expect(
+      seleccionEfectiva({ seleccionada: "centro", activas: [norte, centro], hayVarias: true, restringido: true })
+    ).toBe("centro");
+  });
+});
+
+describe("«Todas» de un usuario restringido: la suma de SUS locales", () => {
+  it("suma el stock suelto de los locales recibidos y no mezcla las variantes", () => {
+    const filas: FilaStockSucursal[] = [
+      { producto_id: "coca", variante_id: null, cantidad: 3, se_vende: true },
+      { producto_id: "coca", variante_id: null, cantidad: 4, se_vende: true },
+      { producto_id: "sueter", variante_id: "m", cantidad: 9, se_vende: true },
+    ];
+    const [coca, sueter] = conStockSumado(
+      [
+        { id: "coca", stock_actual: 100 },
+        { id: "sueter", stock_actual: 100 },
+      ],
+      filas
+    );
+    expect(coca.stock_actual).toBe(7); // no los 100 del negocio
+    expect(sueter.stock_actual).toBe(0); // la talla M no es el suéter suelto
+  });
+
+  it("cada talla suma lo suyo", () => {
+    const [m] = conStockSumadoVariantes(
+      [{ id: "m", producto_id: "sueter", stock_actual: 50 }],
+      [
+        { producto_id: "sueter", variante_id: "m", cantidad: 2, se_vende: true },
+        { producto_id: "sueter", variante_id: "m", cantidad: 5, se_vende: true },
+      ]
+    );
+    expect(m.stock_actual).toBe(7);
   });
 });

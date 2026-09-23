@@ -19,6 +19,7 @@ import { useSucursal } from "@/contexts/sucursal-context";
 import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import {
   conStockDeSucursalVariantes,
+  conStockSumadoVariantes,
   destinoDeEdicionDeStock,
 } from "@/features/sucursales/stock";
 import {
@@ -42,21 +43,30 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
 
   // Mismo criterio que la pestaña de productos: con un local elegido, cada
   // talla muestra lo que hay EN ESE local.
-  const { seleccionada, hayVarias, activas } = useSucursal();
+  const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
+    const sumarSuyas = !seleccionada && restringido;
     const [variantsData, productsData, stockLocal] = await Promise.all([
       fetchVariants(tenantId),
       fetchVariantProducts(tenantId),
-      seleccionada ? fetchStockSucursal(seleccionada) : Promise.resolve(null),
+      seleccionada
+        ? fetchStockSucursal(seleccionada)
+        : sumarSuyas
+          ? fetchStockSucursal(permitidas)
+          : Promise.resolve(null),
     ]);
     setVariants(
-      stockLocal ? conStockDeSucursalVariantes(variantsData, stockLocal) : variantsData
+      !stockLocal
+        ? variantsData
+        : sumarSuyas
+          ? conStockSumadoVariantes(variantsData, stockLocal)
+          : conStockDeSucursalVariantes(variantsData, stockLocal)
     );
     setProducts(productsData);
     setLoading(false);
-  }, [tenantId, seleccionada]);
+  }, [tenantId, seleccionada, restringido, permitidas]);
 
   useEffect(() => {
     if (tenantLoading) return;

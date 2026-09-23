@@ -36,9 +36,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Shield, UserCog, Trash2, Key, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Users, Shield, UserCog, Trash2, Key, RefreshCw, SlidersHorizontal, Store } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PermissionsDialog } from "@/features/users/components/permissions-dialog";
+import { AsignarSucursalesDialog } from "@/features/users/components/asignar-sucursales-dialog";
+import { SucursalesCheckboxes } from "@/features/users/components/sucursales-checkboxes";
+import { useSucursal } from "@/contexts/sucursal-context";
 import type { UserRole } from "@/lib/types/database";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
@@ -88,6 +91,38 @@ export default function UsersPage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmRoleChange, setConfirmRoleChange] = useState<{ member: Member; newRole: string } | null>(null);
   const [changingRole, setChangingRole] = useState(false);
+
+  // SUCURSALES DE CADA USUARIO (migracion 085). Solo se enseña con 2 o mas
+  // locales: en un negocio de uno solo la pregunta no tiene sentido.
+  const { hayVarias, sucursales } = useSucursal();
+  const [inviteSucursales, setInviteSucursales] = useState<string[]>([]);
+  const [asignaciones, setAsignaciones] = useState<Record<string, string[]>>({});
+  const [sucursalesFor, setSucursalesFor] = useState<Member | null>(null);
+
+  const fetchAsignaciones = useCallback(async () => {
+    if (!tenantId) return;
+    const supabase = createSupabaseBrowserClient();
+    const { data } = await supabase
+      .from("usuario_sucursales")
+      .select("user_id, sucursal_id")
+      .eq("tenant_id", tenantId);
+    const mapa: Record<string, string[]> = {};
+    for (const f of (data ?? []) as { user_id: string; sucursal_id: string }[]) {
+      (mapa[f.user_id] ??= []).push(f.sucursal_id);
+    }
+    setAsignaciones(mapa);
+  }, [tenantId]);
+
+  useEffect(() => {
+    if (!hayVarias) return;
+    const t0 = window.setTimeout(() => void fetchAsignaciones(), 0);
+    return () => window.clearTimeout(t0);
+  }, [hayVarias, fetchAsignaciones]);
+
+  const nombresDe = (ids: string[] | undefined) =>
+    !ids || ids.length === 0
+      ? "Todas"
+      : ids.map((id) => sucursales.find((x) => x.id === id)?.nombre ?? "—").join(", ");
 
   const fetchMemberships = useCallback(async () => {
     if (!tenantId) return;
@@ -152,6 +187,8 @@ export default function UsersPage() {
           role: inviteRole,
           tenantId,
           locale,
+          // Vacio = todas. El servidor valida que sean de este negocio.
+          sucursalIds: hayVarias ? inviteSucursales : [],
         }),
       });
 
@@ -165,6 +202,7 @@ export default function UsersPage() {
       setShowInviteDialog(false);
       setInviteEmail("");
       setInviteRole("CAJERO");
+      setInviteSucursales([]);
       fetchMemberships();
       fetchInviteKeys();
     } catch (error) {
@@ -332,6 +370,9 @@ export default function UsersPage() {
                 <TableRow>
                   <TableHead className="text-xs uppercase tracking-wider">{t("common.email")}</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">{t("users.role")}</TableHead>
+                  {hayVarias && (
+                    <TableHead className="text-xs uppercase tracking-wider">Sucursales</TableHead>
+                  )}
                   <TableHead className="text-xs uppercase tracking-wider">{t("users.lastAccess")}</TableHead>
                   {canManage && (
                     <TableHead className="text-right text-xs uppercase tracking-wider">
@@ -365,6 +406,13 @@ export default function UsersPage() {
                         </Badge>
                       )}
                     </TableCell>
+                    {hayVarias && (
+                      <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+                        {membership.role === "SUPER_ADMIN"
+                          ? "Todas (dueño)"
+                          : nombresDe(asignaciones[membership.user_id])}
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(membership.creado_en).toLocaleDateString()}
                     </TableCell>
@@ -385,6 +433,19 @@ export default function UsersPage() {
                               <SlidersHorizontal className="h-3.5 w-3.5" />
                             </Button>
                           )}
+                        {/* Al dueño no: siempre ve todas (la base lo rechaza). */}
+                        {hayVarias && membership.role !== "SUPER_ADMIN" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            title="Sucursales"
+                            aria-label={`Sucursales de ${membership.user_email}`}
+                            onClick={() => setSucursalesFor(membership)}
+                          >
+                            <Store className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -468,6 +529,19 @@ export default function UsersPage() {
         </Card>
       )}
 
+      {sucursalesFor && tenantId && (
+        <AsignarSucursalesDialog
+          key={sucursalesFor.user_id}
+          open
+          onOpenChange={(o) => !o && setSucursalesFor(null)}
+          tenantId={tenantId}
+          userId={sucursalesFor.user_id}
+          email={sucursalesFor.user_email}
+          asignadas={asignaciones[sucursalesFor.user_id] ?? []}
+          onSaved={() => void fetchAsignaciones()}
+        />
+      )}
+
       {/* Invite dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent>
@@ -505,6 +579,13 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            {hayVarias && (
+              <SucursalesCheckboxes
+                value={inviteSucursales}
+                onChange={setInviteSucursales}
+                idPrefix="invitar"
+              />
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" className="h-8" onClick={() => setShowInviteDialog(false)}>

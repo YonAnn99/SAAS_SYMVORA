@@ -116,3 +116,35 @@ export function destinoDeEdicionDeStock(
   if (seleccionada) return { tipo: "sucursal", sucursalId: seleccionada };
   return { tipo: "bloqueado", motivo: MOTIVO_ELIGE_SUCURSAL };
 }
+
+/**
+ * Productos con `stock_actual` = la SUMA de varios locales.
+ *
+ * Es el "Todas" de un usuario restringido: sus sucursales juntas, no el total
+ * del negocio (que incluiria locales que no lleva). Las filas ya llegan
+ * acotadas por RLS a las suyas; esto solo las suma. La fila de variante no
+ * cuenta para el producto suelto (son cubos distintos, migracion 078).
+ */
+export function conStockSumado<T extends { id: string; stock_actual: number }>(
+  productos: readonly T[],
+  filas: readonly FilaStockSucursal[]
+): T[] {
+  const suma = new Map<string, number>();
+  for (const f of filas) {
+    if (f.variante_id !== null) continue;
+    suma.set(f.producto_id, (suma.get(f.producto_id) ?? 0) + Number(f.cantidad));
+  }
+  return productos.map((p) => ({ ...p, stock_actual: suma.get(p.id) ?? 0 }));
+}
+
+/** Lo mismo para variantes: la suma de cada talla en los locales dados. */
+export function conStockSumadoVariantes<
+  T extends { id: string; producto_id: string; stock_actual: number },
+>(variantes: readonly T[], filas: readonly FilaStockSucursal[]): T[] {
+  const suma = new Map<string, number>();
+  for (const f of filas) {
+    if (f.variante_id === null) continue;
+    suma.set(f.variante_id, (suma.get(f.variante_id) ?? 0) + Number(f.cantidad));
+  }
+  return variantes.map((v) => ({ ...v, stock_actual: suma.get(v.id) ?? 0 }));
+}

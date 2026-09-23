@@ -47,7 +47,7 @@ function fechaCorta(iso: string): string {
  * entre tanto se vendio): lo de aqui es para decirlo antes y sin viaje.
  */
 export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
-  const { activas, sucursales, seleccionada } = useSucursal();
+  const { todasActivas, sucursales, seleccionada, permitidas } = useSucursal();
   const { can } = usePermissions();
   const puedeTraspasar = can("inventory.manage");
 
@@ -108,10 +108,12 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
 
   const porValor = useMemo(() => new Map(opciones.map((o) => [o.valor, o])), [opciones]);
 
-  // El origen puede ser un local CERRADO (vaciarlo es justo para lo que sirve
-  // un traspaso); el destino no.
-  const origenes = sucursales;
-  const destinos = activas.filter((s) => s.id !== origen);
+  // ORIGEN: solo los locales del usuario (la base lo exige, migracion 085), y
+  // puede estar CERRADO: vaciarlo es justo para lo que sirve un traspaso.
+  // DESTINO: cualquier local abierto del negocio; mandar mercancia a otra
+  // tienda es normal aunque no la lleves.
+  const origenes = sucursales.filter((s) => permitidas.includes(s.id));
+  const destinos = todasActivas.filter((s) => s.id !== origen);
 
   function cambiarOrigen(id: string) {
     setOrigen(id);

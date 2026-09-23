@@ -46,3 +46,25 @@ export function destinoPorDefecto(
   if (activas.length === 1) return activas[0].id;
   return null;
 }
+
+/**
+ * La sucursal que de verdad se aplica a las consultas, a partir de la elegida.
+ *
+ * 1. RESTRINGIDO A UN SOLO LOCAL: siempre ese. No "Todas": en pantallas como
+ *    Productos, "Todas" significa el total del negocio, y un cajero de Norte no
+ *    debe ver las existencias de Principal. Ademas asi no ve ningun selector.
+ * 2. SIN SELECTOR VISIBLE (un solo local disponible): "Todas". Si no, quien
+ *    miraba Norte y luego lo cerro seguiria viendo un local cerrado sin ningun
+ *    control para cambiarlo.
+ * 3. En el resto, lo que haya elegido.
+ */
+export function seleccionEfectiva(estado: {
+  seleccionada: string | null;
+  activas: readonly { id: string }[];
+  hayVarias: boolean;
+  restringido: boolean;
+}): string | null {
+  if (estado.restringido && estado.activas.length === 1) return estado.activas[0].id;
+  if (!estado.hayVarias) return null;
+  return estado.seleccionada;
+}

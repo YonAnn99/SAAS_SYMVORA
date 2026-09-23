@@ -25,7 +25,7 @@ function generateKey(): string {
 
 export async function POST(request: Request) {
   try {
-    const { email, role, tenantId, locale: requestLocale } = await request.json();
+    const { email, role, tenantId, locale: requestLocale, sucursalIds } = await request.json();
     const locale = typeof requestLocale === "string" && /^(es|en)$/.test(requestLocale)
       ? requestLocale
       : "es";
@@ -86,6 +86,14 @@ export async function POST(request: Request) {
 
     const roleToAssign: UserRole = requestedRole;
 
+    // Sucursales asignadas desde la invitacion (migracion 085). Vacio = todas.
+    // Al SUPER_ADMIN no se le guardan: siempre ve todo, y la base rechazaria la
+    // asignacion igualmente al aceptar.
+    const sucursales: string[] =
+      roleToAssign === "SUPER_ADMIN" || !Array.isArray(sucursalIds)
+        ? []
+        : [...new Set(sucursalIds.filter((x: unknown): x is string => typeof x === "string"))];
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -98,6 +106,23 @@ export async function POST(request: Request) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Con `service_role` no hay RLS que lo impida, asi que se comprueba aqui
+    // que TODAS sean de este negocio: si no, una invitacion podria colar un
+    // local ajeno que luego `key-login` copiaria a la asignacion.
+    if (sucursales.length > 0) {
+      const { data: propias, error: sucError } = await supabase
+        .from("sucursales")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .in("id", sucursales);
+      if (sucError || (propias ?? []).length !== sucursales.length) {
+        return NextResponse.json(
+          { error: "Alguna sucursal no pertenece a este negocio" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Generate invite key
     const inviteKey = generateKey();
 
@@ -109,6 +134,7 @@ export async function POST(request: Request) {
         email: email.toLowerCase(),
         key: inviteKey,
         role: roleToAssign,
+        sucursal_ids: sucursales,
       });
 
     if (insertError) {

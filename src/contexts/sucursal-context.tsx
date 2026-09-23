@@ -9,33 +9,46 @@ import {
   useState,
 } from "react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   fetchSucursales,
   type Sucursal,
 } from "@/features/sucursales/services/sucursales-service";
-import { resolverSeleccion } from "@/features/sucursales/seleccion";
+import {
+  resolverSeleccion,
+  seleccionEfectiva,
+} from "@/features/sucursales/seleccion";
 
 /**
- * Que sucursal esta mirando el usuario ahora mismo.
+ * Que sucursal esta mirando el usuario ahora mismo, y cuales puede mirar.
  *
  * `seleccionada === null` significa **"Todas"**, y es el valor por defecto a
  * proposito: un negocio de un solo local no debe notar que esta funcion existe,
  * y el dueño de varios casi siempre quiere el consolidado al entrar.
  *
- * ESTO NO ES UN PERMISO. Elegir sucursal solo acota lo que se CONSULTA; quien
- * decide lo que se puede ver sigue siendo RLS. Cambiar aqui de local no da
- * acceso a nada nuevo: todas las sucursales de la lista son ya de un negocio
- * del que el usuario es miembro.
+ * PERMITIDAS (migracion 085). Un usuario puede tener asignadas solo algunas
+ * sucursales. Aqui se exponen solo esas para elegir y operar; "Todas", para el,
+ * son todas LAS SUYAS. Pero esto es comodidad, no la proteccion: quien decide lo
+ * que se puede leer y escribir es la base (`mis_sucursales()` en las politicas
+ * RLS y en las funciones). Si esta lista se equivocara, la base seguiria
+ * negandole lo ajeno.
  */
 
 interface SucursalContextValue {
+  /** Todas las del negocio, incluidas cerradas y ajenas: para poner nombres. */
   sucursales: Sucursal[];
-  /** Solo las que siguen abiertas: es lo que se ofrece para elegir. */
+  /** Las ABIERTAS que el usuario puede usar: lo que se ofrece para elegir. */
   activas: Sucursal[];
-  /** `null` = todas las sucursales juntas. */
+  /** Todas las abiertas del negocio. Destinos de traspaso (se puede enviar a cualquiera). */
+  todasActivas: Sucursal[];
+  /** Ids que el usuario tiene permitidos (incluye cerradas, para su historico). */
+  permitidas: string[];
+  /** `true` si tiene asignadas solo algunas sucursales del negocio. */
+  restringido: boolean;
+  /** `null` = todas las sucursales (las suyas) juntas. */
   seleccionada: string | null;
   setSeleccionada: (id: string | null) => void;
-  /** `false` en un negocio de un solo local: la interfaz se calla. */
+  /** `false` con un solo local disponible: la interfaz se calla. */
   hayVarias: boolean;
   loading: boolean;
   refetch: () => Promise<void>;
@@ -66,22 +79,38 @@ function guardar(id: string | null) {
 export function SucursalProvider({ children }: { children: React.ReactNode }) {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
+  const [permitidas, setPermitidas] = useState<string[]>([]);
   const [seleccionada, setSeleccionadaState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const cargar = useCallback(async () => {
     if (!tenantId) return;
     try {
-      const lista = await fetchSucursales(tenantId);
-      setSucursales(lista);
+      const supabase = createSupabaseBrowserClient();
+      const [lista, { data: mias, error }] = await Promise.all([
+        fetchSucursales(tenantId),
+        supabase.rpc("mis_sucursales"),
+      ]);
+      if (error) throw error;
 
-      // La elección guardada se VALIDA contra la lista recién traída: ver el
-      // porqué en `resolverSeleccion`.
-      setSeleccionadaState(resolverSeleccion(leerGuardada(), lista));
+      // `mis_sucursales` cubre todos los negocios del usuario: se acota a este.
+      const idsNegocio = new Set(lista.map((s) => s.id));
+      const propias = ((mias ?? []) as string[]).filter((id) => idsNegocio.has(id));
+
+      setSucursales(lista);
+      setPermitidas(propias);
+
+      // La eleccion guardada se VALIDA contra lo permitido: una sucursal que ya
+      // no existe, que es de otro negocio o que se le quito al usuario, cae a
+      // "Todas" (ver `resolverSeleccion`).
+      setSeleccionadaState(
+        resolverSeleccion(leerGuardada(), propias.map((id) => ({ id })))
+      );
     } catch {
       // Sin sucursales la aplicacion funciona igual que antes de que existieran:
       // todo el negocio junto. No se muestra un error por esto.
       setSucursales([]);
+      setPermitidas([]);
     } finally {
       setLoading(false);
     }
@@ -107,28 +136,28 @@ export function SucursalProvider({ children }: { children: React.ReactNode }) {
     guardar(id);
   }, []);
 
-  const activas = useMemo(
-    () => sucursales.filter((s) => s.activa),
-    [sucursales]
-  );
-
   const valor = useMemo<SucursalContextValue>(() => {
-    // Con una sola sucursal no hay nada que elegir, asi que el selector no se
-    // dibuja y el negocio de un solo local no ve ninguna friccion nueva.
+    const idsPermitidos = new Set(permitidas);
+    const activas = sucursales.filter((s) => s.activa && idsPermitidos.has(s.id));
+    const todasActivas = sucursales.filter((s) => s.activa);
+    const restringido =
+      sucursales.length > 0 && sucursales.some((s) => !idsPermitidos.has(s.id));
+    // Con un solo local disponible no hay nada que elegir, asi que el selector
+    // no se dibuja y el negocio de un solo local no ve ninguna friccion nueva.
     const hayVarias = activas.length > 1;
     return {
       sucursales,
       activas,
-      // Sin selector visible, la seleccion tiene que ser "Todas". Si no, un
-      // negocio que tuvo dos locales, miraba Norte y lo cerro, seguiria viendo
-      // las existencias de un local cerrado sin ningun control para cambiarlo.
-      seleccionada: hayVarias ? seleccionada : null,
+      todasActivas,
+      permitidas,
+      restringido,
+      seleccionada: seleccionEfectiva({ seleccionada, activas, hayVarias, restringido }),
       setSeleccionada,
       hayVarias,
       loading,
       refetch: cargar,
     };
-  }, [sucursales, activas, seleccionada, setSeleccionada, loading, cargar]);
+  }, [sucursales, permitidas, seleccionada, setSeleccionada, loading, cargar]);
 
   return (
     <SucursalContext.Provider value={valor}>{children}</SucursalContext.Provider>
@@ -149,6 +178,9 @@ export function useSucursal(): SucursalContextValue {
     ctx ?? {
       sucursales: [],
       activas: [],
+      todasActivas: [],
+      permitidas: [],
+      restringido: false,
       seleccionada: null,
       setSeleccionada: () => {},
       hayVarias: false,

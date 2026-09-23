@@ -11,15 +11,21 @@ import type { FilaStockSucursal } from "@/features/sucursales/stock";
  * el navegador: lo que decide el inventario lo decide la base.
  */
 
-/** Las existencias de un local, fila a fila (producto suelto y variantes). */
+/**
+ * Las existencias de un local (o de varios), fila a fila: producto suelto y
+ * variantes. Con varios, RLS ya descarta los locales que el usuario no tiene
+ * asignados (migracion 085).
+ */
 export async function fetchStockSucursal(
-  sucursalId: string
+  sucursalId: string | readonly string[]
 ): Promise<FilaStockSucursal[]> {
   const supabase = createSupabaseBrowserClient();
+  const ids = typeof sucursalId === "string" ? [sucursalId] : [...sucursalId];
+  if (ids.length === 0) return [];
   const { data, error } = await supabase
     .from("stock_sucursal")
     .select("producto_id, variante_id, cantidad, se_vende")
-    .eq("sucursal_id", sucursalId);
+    .in("sucursal_id", ids);
   if (error) throw error;
   return (data ?? []).map((f) => ({
     producto_id: f.producto_id as string,

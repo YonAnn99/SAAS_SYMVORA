@@ -32,6 +32,7 @@ import { useSucursal } from "@/contexts/sucursal-context";
 import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import {
   conStockDeSucursal,
+  conStockSumado,
   destinoDeEdicionDeStock,
 } from "@/features/sucursales/stock";
 import {
@@ -57,21 +58,30 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   // Con una sucursal elegida, la columna de existencias es la DE ESE LOCAL, no
   // el total del negocio. Todo lo que ya se deriva de `stock_actual` (stock
   // bajo, agotado, orden, filtros) pasa a hablar del local sin tocarlo.
-  const { seleccionada, hayVarias, activas } = useSucursal();
+  const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
     // En paralelo: son tablas distintas y esperar una para pedir la otra solo
     // suma latencia a la primera carga.
+    // "Todas" de un usuario restringido son SUS locales: se suman esos, no el
+    // total del negocio, que incluiria sucursales que no lleva.
+    const sumarSuyas = !seleccionada && restringido;
     const [data, favs, stockLocal] = await Promise.all([
       fetchProducts(tenantId),
       fetchFavoritos(tenantId),
-      seleccionada ? fetchStockSucursal(seleccionada) : Promise.resolve(null),
+      seleccionada
+        ? fetchStockSucursal(seleccionada)
+        : sumarSuyas
+          ? fetchStockSucursal(permitidas)
+          : Promise.resolve(null),
     ]);
-    setProducts(stockLocal ? conStockDeSucursal(data, stockLocal) : data);
+    setProducts(
+      !stockLocal ? data : sumarSuyas ? conStockSumado(data, stockLocal) : conStockDeSucursal(data, stockLocal)
+    );
     setFavoritos(favs);
     setLoading(false);
-  }, [tenantId, seleccionada]);
+  }, [tenantId, seleccionada, restringido, permitidas]);
 
   useEffect(() => {
     if (tenantLoading) return;

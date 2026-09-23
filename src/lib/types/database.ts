@@ -414,6 +414,17 @@ export type Database = {
         Insert: never;
         Update: never;
       };
+      usuario_sucursales: {
+        Row: {
+          tenant_id: string;
+          user_id: string;
+          sucursal_id: string;
+          creado_en: string;
+        };
+        // Se escribe solo por `asignar_sucursales_usuario` (migracion 085).
+        Insert: never;
+        Update: never;
+      };
       traspasos: {
         Row: {
           id: string;
@@ -1211,6 +1222,20 @@ export type Database = {
           p_notas?: string | null;
         };
         Returns: Json;
+      };
+      /** Sucursales que el usuario actual puede ver y operar (todos sus negocios). */
+      mis_sucursales: {
+        Args: Record<string, never>;
+        Returns: string[];
+      };
+      asignar_sucursales_usuario: {
+        Args: {
+          p_tenant_id: string;
+          p_user_id: string;
+          /** Vacio = sin restriccion (todas). */
+          p_sucursales: string[];
+        };
+        Returns: undefined;
       };
       establecer_stock_sucursal: {
         Args: {

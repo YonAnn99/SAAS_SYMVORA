@@ -159,6 +159,17 @@ export async function POST(request: Request) {
     }
 
     // Step 3: Ensure tenant membership exists
+    // Se mira ANTES si ya era miembro: las sucursales de la invitacion solo se
+    // aplican al ENTRAR POR PRIMERA VEZ. Esta ruta tambien sirve para volver a
+    // entrar con la misma clave, y reaplicarlas en cada entrada pisaria los
+    // cambios que el dueño haga despues desde Usuarios.
+    const { data: membresiaPrevia } = await supabase
+      .from("tenant_memberships")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
     const { error: membershipError } = await supabase
       .from("tenant_memberships")
       .upsert(
@@ -174,6 +185,38 @@ export async function POST(request: Request) {
       console.error("[key-login] Membership upsert error:", membershipError);
     } else {
       console.log("[key-login] Membership ensured for user:", userId, "tenant:", tenantId);
+    }
+
+    // Step 3b: sucursales asignadas en la invitacion (migracion 085).
+    if (!membershipError && !membresiaPrevia) {
+      const { data: invitacion } = await supabase
+        .from("user_invite_keys")
+        .select("sucursal_ids")
+        .eq("tenant_id", tenantId)
+        .eq("email", email.toLowerCase())
+        .eq("key", key.toUpperCase())
+        .maybeSingle();
+
+      const pedidas = (invitacion?.sucursal_ids ?? []) as string[];
+      // Solo las que siguen existiendo en este negocio. Si una se borro entre la
+      // invitacion y la entrada, el INSERT entero fallaria y la persona quedaria
+      // SIN restriccion: un fallo que deja ver de mas, no de menos.
+      const { data: vigentes } = pedidas.length
+        ? await supabase.from("sucursales").select("id").eq("tenant_id", tenantId).in("id", pedidas)
+        : { data: [] as { id: string }[] };
+      const sucursales = (vigentes ?? []).map((s) => s.id as string);
+      if (sucursales.length > 0 && role !== "SUPER_ADMIN") {
+        // Un trigger de la base comprueba que cada sucursal sea del negocio.
+        const { error: asignacionError } = await supabase
+          .from("usuario_sucursales")
+          .insert(sucursales.map((sucursal_id) => ({ tenant_id: tenantId, user_id: userId, sucursal_id })));
+        if (asignacionError) {
+          // No se bloquea la entrada por esto: sin filas, la persona puede
+          // operar en todas, y el dueño lo corrige desde Usuarios. Pero queda
+          // en el log, porque significa que la invitacion no se respeto.
+          console.error("[key-login] No se pudieron asignar las sucursales:", asignacionError);
+        }
+      }
     }
 
     // Step 4: Return credentials for client to sign in
