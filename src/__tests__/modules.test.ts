@@ -71,9 +71,17 @@ describe("permissionForPath", () => {
     // Prueba de NO REGRESIÓN: estas rutas no tienen `minRole` en el sidebar,
     // así que deben seguir sin exigir permiso. Si alguna empezara a pedirlo,
     // los cajeros perderían acceso de golpe.
-    for (const ruta of ["/dashboard", "/customers", "/activity", "/suggestions"]) {
+    for (const ruta of ["/customers", "/suggestions"]) {
       expect(permissionForPath(ruta), `${ruta} debe seguir abierta`).toBeNull();
     }
+  });
+
+  it("dashboard, reportes y bitácora piden permiso (migración 088)", () => {
+    // Antes el dashboard y la bitácora estaban abiertos a todo el equipo y el
+    // cajero veía las ventas del mes, la ganancia y quién hizo qué.
+    expect(permissionForPath("/dashboard")).toBe("sales.view_reports");
+    expect(permissionForPath("/reports")).toBe("sales.view_reports");
+    expect(permissionForPath("/activity")).toBe("activity.view");
   });
 
   it("el CATÁLOGO de productos sigue abierto a todo el equipo", () => {
@@ -263,7 +271,10 @@ describe("el middleware enciende el control de TODAS las rutas con permiso", () 
   // aquí porque hacerlo cambiaría a quién deja entrar el sistema hoy, y esa es
   // una decisión del dueño del negocio, no de un test. Queda anotado para que
   // la excepción sea deliberada y visible en vez de un descuido silencioso.
-  const EXCEPCIONES_CONOCIDAS = new Set(["/reports"]);
+  //
+  // Cerrado en la migracion 088: el dueño decidio que el cajero no ve las
+  // cifras del negocio, y `/reports` entro en la lista con `/dashboard`.
+  const EXCEPCIONES_CONOCIDAS = new Set<string>();
 
   it("cada ruta que exige permiso está en la lista del middleware", () => {
     const protegidas = MODULES.filter((m) => m.permission !== null)

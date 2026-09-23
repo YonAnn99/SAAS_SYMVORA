@@ -228,6 +228,17 @@ export function useCashRegister(
         details: { saldo_real: saldoReal, saldo_esperado: saldoEsperado, diferencia: saldoReal - saldoEsperado },
       });
 
+      // Aviso del corte al dueño (si quien cierra no es el). Sin esperar: la
+      // caja ya esta cerrada y un correo lento no debe frenar la pantalla. El
+      // servidor lee las cifras de la base, decide si toca avisar y evita
+      // duplicados (migracion 089).
+      fetch("/api/email/cierre-caja", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cajaId: activeRegister.id }),
+        keepalive: true,
+      }).catch((err) => console.error("[caja] aviso de cierre no enviado:", err));
+
       setActiveRegister(null);
       setMovements([]);
       setTotalVentas(0);

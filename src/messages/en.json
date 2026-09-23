@@ -473,6 +473,7 @@
     "trialEndsIn": "Your trial ends in {days} days",
     "promoRestante": "Promotional price: {cobros} charges of {promo} left; then {normal}/month.",
     "nextBilling": "Next billing",
+    "validUntil": "Active until",
     "lastPayment": "Last payment",
     "paymentMethod": "Payment Method",
     "plan": "Plan",

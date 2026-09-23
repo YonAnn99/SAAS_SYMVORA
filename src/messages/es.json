@@ -473,6 +473,7 @@
     "trialEndsIn": "Tu prueba termina en {days} días",
     "promoRestante": "Precio promocional: te quedan {cobros} cobros de {promo}; después {normal}/mes.",
     "nextBilling": "Próximo cobro",
+    "validUntil": "Vigente hasta",
     "lastPayment": "Último pago",
     "paymentMethod": "Método de Pago",
     "plan": "Plan",

@@ -241,20 +241,23 @@ describe("filterNavigation", () => {
   // `cash.manage` se añadio en la migracion 062: el cajero abre y cierra SU
   // propia caja. Sin el, el POS lo bloquearia para siempre, porque desde ese
   // mismo cambio vender exige tener caja abierta.
+  //
+  // Migracion 088 (decision del dueño): fuera `sales.view_reports` (dashboard y
+  // reportes), dentro `purchases.manage` (compras y ordenes de compra).
   const PERMISOS_CAJERO = [
     "billing.view",
     "cash.manage",
     "inventory.view",
+    "purchases.manage",
     "sales.create",
-    "sales.view_reports",
   ];
   const comoCajero = (permiso: string) => PERMISOS_CAJERO.includes(permiso);
 
-  it("un CAJERO ve exactamente su subconjunto de siempre", () => {
-    // NO REGRESION: este es el menu que un cajero tiene hoy. Si cambia, alguien
-    // gano o perdio acceso sin querer al tocar el orden o los permisos.
+  it("un CAJERO ve exactamente su subconjunto de fábrica", () => {
+    // NO REGRESION: este es el menu que un cajero tiene hoy (migracion 088). Si
+    // cambia, alguien gano o perdio acceso sin querer al tocar el orden o los
+    // permisos.
     expect(filterNavigation("CAJERO", comoCajero).map((i) => i.href)).toEqual([
-      "/dashboard",
       "/pos",
       "/products",
       "/customers",
@@ -262,8 +265,8 @@ describe("filterNavigation", () => {
       // la pantalla solo muestra la caja del propio usuario, y el cajero tiene
       // que entrar para abrirla o el POS no lo deja vender.
       "/finances",
-      "/reports",
-      "/activity",
+      "/purchases",
+      "/purchase-orders",
       "/suggestions",
     ]);
   });
@@ -277,8 +280,10 @@ describe("filterNavigation", () => {
       "/billing",
       "/settings",
       "/settings/payments",
-      "/purchases",
-      "/purchase-orders",
+      // Las cifras del negocio y la auditoria (migracion 088).
+      "/dashboard",
+      "/reports",
+      "/activity",
     ]) {
       expect(visibles, `${ruta} no debe verse`).not.toContain(ruta);
     }
@@ -289,6 +294,9 @@ describe("filterNavigation", () => {
     // `loading`. Se fija el comportamiento para que nadie asuma lo contrario.
     const visibles = filterNavigation(null, nada).map((i) => i.href);
     expect(visibles).not.toContain("/users");
-    expect(visibles).toContain("/dashboard");
+    // Sin permisos resueltos no se enseñan las cifras del negocio: desde la
+    // migracion 088 el dashboard pide `sales.view_reports`.
+    expect(visibles).not.toContain("/dashboard");
+    expect(visibles).toContain("/products");
   });
 });

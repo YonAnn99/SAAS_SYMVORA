@@ -52,6 +52,7 @@ interface Subscription {
   last_payment_at: string | null;
   next_payment_due: string | null;
   conekta_customer_id: string | null;
+  conekta_subscription_id: string | null;
   creditos_mes_gratis: number;
   billing_period: "monthly" | "yearly";
   promo_cobros_restantes: number | null;
@@ -486,7 +487,15 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  {t("billing.nextBilling")}:{" "}
+                  {/* "Próximo cobro" solo si de verdad se va a cobrar: tarjeta
+                      con cobro automatico (suscripcion en Conekta) y activa.
+                      Cancelada, o pagada en efectivo (pago unico), es la misma
+                      fecha pero hasta donde llega lo pagado: prometer un cobro
+                      que no va a pasar confunde justo a quien ya cancelo. */}
+                  {subscription.status === "active" && subscription.conekta_subscription_id
+                    ? t("billing.nextBilling")
+                    : t("billing.validUntil")}
+                  :{" "}
                   {new Date(
                     subscription.current_period_end
                   ).toLocaleDateString()}

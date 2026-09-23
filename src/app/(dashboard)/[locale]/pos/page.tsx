@@ -19,6 +19,7 @@ import {
 import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
 import { OpenRegisterDialog, OpenRegisterRequiredDialog, abrirCaja } from "@/features/cash-register";
 import { useSucursal } from "@/contexts/sucursal-context";
+import { usePermissions } from "@/hooks/use-permissions";
 import { sucursalDelPos } from "@/features/sucursales/seleccion";
 import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
 import { useRouter } from "@/i18n/navigation";
@@ -66,6 +67,11 @@ export default function POSPage() {
   const router = useRouter();
   const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
   const { activas, hayVarias, seleccionada, setSeleccionada } = useSucursal();
+  const { can } = usePermissions();
+  // A donde se sale del POS si no se abre caja. El dashboard solo para quien lo
+  // ve: al cajero (migracion 088) el middleware lo devolveria aqui, al mismo
+  // aviso, y cancelar no haria nada. El catalogo esta abierto a todos.
+  const salidaDelPos = can("sales.view_reports") ? "/dashboard" : "/products";
   // Solo el dueño cambia de sucursal desde aqui (ver `sucursalDelPos`).
   const modoDueno = role === "SUPER_ADMIN" && hayVarias;
   const sucursalPos = sucursalDelPos({
@@ -252,8 +258,8 @@ export default function POSPage() {
       setSeleccionada(null);
       return;
     }
-    router.push("/dashboard");
-  }, [hasOpenRegister, seleccionada, setSeleccionada, router]);
+    router.push(salidaDelPos);
+  }, [hasOpenRegister, seleccionada, setSeleccionada, router, salidaDelPos]);
 
   const finalizeSale = useCallback(() => {
     clearCart();
@@ -709,11 +715,11 @@ export default function POSPage() {
       open={showRegisterBlocked && !modoDueno}
       onOpenChange={(open) => {
         if (!open) {
-          router.push("/dashboard");
+          router.push(salidaDelPos);
         }
       }}
       onCancel={() => {
-        router.push("/dashboard");
+        router.push(salidaDelPos);
       }}
     />
   </>

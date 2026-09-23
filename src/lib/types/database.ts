@@ -656,6 +656,9 @@ export type Database = {
           /** El local donde está este mostrador. Se elige al abrir la caja y
               todas las ventas del turno la heredan. */
           sucursal_id: string | null;
+          /** Cuándo se avisó al dueño de este cierre (migración 089). Solo
+              la escribe el servidor. */
+          aviso_cierre_enviado_en: string | null;
         };
         Insert: {
           id?: string;
@@ -691,6 +694,7 @@ export type Database = {
           fecha_cierre?: string | null;
           notas_apertura?: string | null;
           notas_cierre?: string | null;
+          aviso_cierre_enviado_en?: string | null;
         };
       };
       movimientos_caja: {

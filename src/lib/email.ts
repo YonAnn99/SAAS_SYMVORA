@@ -41,6 +41,20 @@ function getFromAddress(): string {
   return process.env.RESEND_FROM_EMAIL || `SYMVORA <${NO_REPLY_EMAIL}>`;
 }
 
+/**
+ * Escapa texto que escribe el usuario (nombres, notas de cierre, sucursales)
+ * antes de meterlo en el HTML del correo. Sin esto, una nota con `<a href>`
+ * llegaria al dueño como un enlace de verdad dentro de un correo de SYMVORA.
+ */
+function esc(texto: string): string {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export type WelcomeEmailType = "signup" | "first_payment";
 
 function buildEmailHtml(params: {
@@ -684,8 +698,15 @@ function buildNoticeHtml(params: {
   highlight?: string;
   ctaLabel: string;
   ctaHref: string;
+  /**
+   * La lista de "tus datos siguen intactos / sin comisiones / cancela cuando
+   * quieras". Tiene sentido en los avisos de la suscripcion; en un corte de
+   * caja sobra, asi que esos correos la apagan.
+   */
+  mostrarBeneficios?: boolean;
 }): string {
   const { preheader, heading, intro, highlight, ctaLabel, ctaHref } = params;
+  const mostrarBeneficios = params.mostrarBeneficios ?? true;
 
   const highlightBox = highlight
     ? `
@@ -727,11 +748,11 @@ function buildNoticeHtml(params: {
                       </td>
                     </tr>
                   </table>
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px;">
+                  ${mostrarBeneficios ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px;">
                     <tr><td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">&#10003;&nbsp; Tus datos y tu catálogo siguen intactos</td></tr>
                     <tr><td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">&#10003;&nbsp; Sin comisiones por venta</td></tr>
                     <tr><td style="padding:6px 0;font-size:14px;color:${BRAND.body};line-height:1.6;">&#10003;&nbsp; Cancela cuando quieras</td></tr>
-                  </table>
+                  </table>` : ""}
                 </td>
               </tr>
               <tr>
@@ -932,6 +953,8 @@ export async function sendAutoCloseToUserEmail(params: {
   to: string;
   userName: string;
   businessName: string;
+  /** Solo con 2 o mas sucursales activas (ver `fetchSucursalParaAviso`). */
+  sucursalNombre?: string | null;
   cajaId: string;
   fechaApertura: string;
   totalVentas: number;
@@ -953,11 +976,13 @@ export async function sendAutoCloseToUserEmail(params: {
     timeStyle: "short",
   });
 
+  const enSucursal = params.sucursalNombre ? ` en ${esc(params.sucursalNombre)}` : "";
+
   const html = buildNoticeHtml({
-    preheader: `Tu caja fue cerrada automáticamente — ${params.businessName}`,
-    heading: `Cierre automático de caja, ${params.userName}`,
+    preheader: `Tu caja fue cerrada automáticamente — ${esc(params.businessName)}`,
+    heading: `Cierre automático de caja, ${esc(params.userName)}`,
     intro:
-      `Tu caja del día ${fecha} fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). A continuación el resumen del corte:`,
+      `Tu caja${enSucursal} abierta el ${fecha} fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). A continuación el resumen del corte:`,
     highlight: `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
         <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Fondo inicial: <strong>${formatMXN(params.saldoEsperado - params.totalVentas - params.totalEntradas + params.totalSalidas)}</strong></td></tr>
@@ -970,6 +995,7 @@ export async function sendAutoCloseToUserEmail(params: {
     `,
     ctaLabel: "Ver mis cajas",
     ctaHref: `${BRAND.appUrl}/es/finances`,
+    mostrarBeneficios: false,
   });
 
   const resend = new Resend(resendApiKey);
@@ -994,6 +1020,8 @@ export async function sendAutoCloseToUserEmail(params: {
 export async function sendAutoCloseToSuperAdminEmail(params: {
   to: string;
   businessName: string;
+  /** Solo con 2 o mas sucursales activas (ver `fetchSucursalParaAviso`). */
+  sucursalNombre?: string | null;
   userName: string;
   userRole: string;
   userEmail: string;
@@ -1020,11 +1048,13 @@ export async function sendAutoCloseToSuperAdminEmail(params: {
 
   const roleLabel = params.userRole === "SUPER_ADMIN" ? "Super Administrador" : params.userRole === "ORG_ADMIN" ? "Administrador" : "Cajero";
 
+  const enSucursalSA = params.sucursalNombre ? ` en <strong>${esc(params.sucursalNombre)}</strong>` : "";
+
   const html = buildNoticeHtml({
-    preheader: `Caja de ${params.userName} (${roleLabel}) cerrada automáticamente — ${params.businessName}`,
-    heading: `Caja cerrada automáticamente: ${params.userName}`,
+    preheader: `Caja de ${esc(params.userName)} (${roleLabel}) cerrada automáticamente — ${esc(params.businessName)}`,
+    heading: `Caja cerrada automáticamente: ${esc(params.userName)}`,
     intro:
-      `La caja de <strong>${params.userName}</strong> (${params.userEmail}, ${roleLabel}) del día ${fecha} fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). Resumen del corte:`,
+      `La caja de <strong>${esc(params.userName)}</strong> (${esc(params.userEmail)}, ${roleLabel})${enSucursalSA}, abierta el ${fecha}, fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). Resumen del corte:`,
     highlight: `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
         <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Fondo inicial: <strong>${formatMXN(params.saldoEsperado - params.totalVentas - params.totalEntradas + params.totalSalidas)}</strong></td></tr>
@@ -1037,6 +1067,7 @@ export async function sendAutoCloseToSuperAdminEmail(params: {
     `,
     ctaLabel: "Ver cajas del negocio",
     ctaHref: `${BRAND.appUrl}/es/finances`,
+    mostrarBeneficios: false,
   });
 
   const resend = new Resend(resendApiKey);
@@ -1045,7 +1076,7 @@ export async function sendAutoCloseToSuperAdminEmail(params: {
     await deliver(resend, {
       from: getFromAddress(),
       to: params.to,
-      subject: `Caja de ${params.userName} (${roleLabel}) cerrada automáticamente — ${params.businessName}`,
+      subject: `Caja de ${params.userName} (${roleLabel})${params.sucursalNombre ? ` en ${params.sucursalNombre}` : ""} cerrada automáticamente — ${params.businessName}`,
       html,
     });
     return { ok: true };
@@ -1055,3 +1086,113 @@ export async function sendAutoCloseToSuperAdminEmail(params: {
   }
 }
 
+
+// =============================================
+// Aviso al dueño cuando alguien de su equipo cierra una caja a mano
+// =============================================
+
+const ETIQUETA_ROL: Record<string, string> = {
+  SUPER_ADMIN: "Super Administrador",
+  ORG_ADMIN: "Administrador",
+  CAJERO: "Cajero",
+};
+
+export interface DatosCierreCaja {
+  businessName: string;
+  /** Solo con 2 o mas sucursales activas; si no, no se menciona. */
+  sucursalNombre: string | null;
+  userName: string;
+  userRole: string;
+  userEmail: string;
+  fechaApertura: string;
+  fechaCierre: string;
+  fondoInicial: number;
+  totalVentas: number;
+  totalEntradas: number;
+  totalSalidas: number;
+  saldoEsperado: number;
+  saldoReal: number;
+  diferencia: number;
+  notasCierre: string | null;
+}
+
+/**
+ * Arma el correo del corte (asunto y HTML) sin enviarlo, para poder probar lo
+ * que ve el dueño: con y sin sucursal, cuadre o faltante, texto escapado.
+ */
+export function construirCorreoCierreCaja(d: DatosCierreCaja): { subject: string; html: string } {
+  const mxn = (n: number) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+  const hora = (iso: string) =>
+    new Date(iso).toLocaleString("es-MX", {
+      timeZone: "America/Mexico_City",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  const rol = ETIQUETA_ROL[d.userRole] ?? "Usuario";
+  const enSucursal = d.sucursalNombre ? ` en ${d.sucursalNombre}` : "";
+
+  const cuadre =
+    Math.abs(d.diferencia) < 0.005
+      ? { color: "#16a34a", texto: "Cuadra" }
+      : d.diferencia < 0
+        ? { color: "#dc2626", texto: `Faltan ${mxn(Math.abs(d.diferencia))}` }
+        : { color: "#d97706", texto: `Sobran ${mxn(d.diferencia)}` };
+
+  const fila = (etiqueta: string, valor: string, estilo = "") =>
+    `<tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;${estilo}">${etiqueta}: <strong>${valor}</strong></td></tr>`;
+
+  const html = buildNoticeHtml({
+    preheader: `${esc(d.userName)} cerró su caja${esc(enSucursal)} — ${cuadre.texto}`,
+    heading: `Caja cerrada por ${esc(d.userName)}`,
+    intro:
+      `<strong>${esc(d.userName)}</strong> (${esc(d.userEmail)}, ${rol}) cerró su caja` +
+      (d.sucursalNombre ? ` en <strong>${esc(d.sucursalNombre)}</strong>` : "") +
+      ` de <strong>${esc(d.businessName)}</strong>.<br />` +
+      `Abierta: ${hora(d.fechaApertura)} &middot; Cerrada: ${hora(d.fechaCierre)} (hora CDMX).`,
+    highlight: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
+        ${fila("Fondo inicial", mxn(d.fondoInicial))}
+        ${fila("Ventas", `<span style="color:#2563eb;">+${mxn(d.totalVentas)}</span>`)}
+        ${fila("Entradas", `<span style="color:#16a34a;">+${mxn(d.totalEntradas)}</span>`)}
+        ${fila("Salidas", `<span style="color:#dc2626;">-${mxn(d.totalSalidas)}</span>`)}
+        ${fila("Saldo esperado", mxn(d.saldoEsperado), `border-top:1px solid ${BRAND.border};padding-top:8px;`)}
+        ${fila("Saldo real (contado)", mxn(d.saldoReal))}
+        <tr><td style="font-size:14px;padding:8px 0 4px;color:${cuadre.color};font-weight:700;">Diferencia: ${mxn(d.diferencia)} &middot; ${cuadre.texto}</td></tr>
+      </table>
+      ${
+        d.notasCierre
+          ? `<p style="font-size:13px;color:${BRAND.body};margin:8px 0 0;"><strong>Notas:</strong> ${esc(d.notasCierre)}</p>`
+          : ""
+      }
+    `,
+    ctaLabel: "Ver finanzas",
+    ctaHref: `${BRAND.appUrl}/es/finances`,
+    mostrarBeneficios: false,
+  });
+
+  return {
+    subject: `Corte de caja: ${d.userName} (${rol})${enSucursal} — ${cuadre.texto} — ${d.businessName}`,
+    html,
+  };
+}
+
+/** Envia al SUPER_ADMIN el corte que acaba de hacer alguien de su equipo. */
+export async function sendCierreCajaToSuperAdminEmail(
+  params: DatosCierreCaja & { to: string }
+): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite aviso de cierre de caja");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const { subject, html } = construirCorreoCierreCaja(params);
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, { from: getFromAddress(), to: params.to, subject, html });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de cierre de caja al super admin:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

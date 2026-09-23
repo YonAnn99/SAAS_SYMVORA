@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/auto-close-registers",
-      "schedule": "59 5 * * *"
+      "schedule": "0 6 * * *"
     }
   ]
 }

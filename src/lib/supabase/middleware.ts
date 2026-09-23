@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { after, type NextRequest, NextResponse } from "next/server";
 import { permissionForPath } from "@/lib/modules";
+import { inicioPara } from "@/lib/inicio";
 import type { UserRole } from "@/lib/types/database";
 
 const APP_HOST = "https://app.symvora.com.mx";
@@ -43,6 +44,12 @@ const ADMIN_ONLY_PATHS = [
   // todo el equipo a proposito — pero donde se definen los precios de venta.
   "/products/price-lists",
   "/pos",
+  // Cifras del negocio y auditoria (migracion 088). `/dashboard` ya no esta
+  // abierto a todos: el cajero va al POS (`inicioPara`). `/reports` estaba
+  // declarado en modules.ts pero faltaba aqui, asi que nadie lo comprobaba.
+  "/dashboard",
+  "/reports",
+  "/activity",
 ];
 
 // Modules temporarily disabled for everyone, regardless of role.
@@ -268,9 +275,9 @@ export async function updateSession(request: NextRequest) {
       );
       if (isDisabled) {
         const locale = request.nextUrl.pathname.split("/")[1] || "es";
-        const dashboardUrl = request.nextUrl.clone();
-        dashboardUrl.pathname = `/${locale}/dashboard`;
-        return NextResponse.redirect(dashboardUrl);
+        const inicioUrl = request.nextUrl.clone();
+        inicioUrl.pathname = `/${locale}${inicioPara(contexto?.permisos ?? [])}`;
+        return NextResponse.redirect(inicioUrl);
       }
 
       const requiresSuperAdmin = SUPER_ADMIN_ONLY_PATHS.some(
@@ -305,10 +312,12 @@ export async function updateSession(request: NextRequest) {
         }
 
         if (!allowed) {
+          // A SU inicio y no al dashboard: el cajero tampoco puede verlo, y
+          // mandarlo ahi seria otra negativa y otra redireccion (bucle).
           const locale = request.nextUrl.pathname.split("/")[1] || "es";
-          const dashboardUrl = request.nextUrl.clone();
-          dashboardUrl.pathname = `/${locale}/dashboard`;
-          return NextResponse.redirect(dashboardUrl);
+          const inicioUrl = request.nextUrl.clone();
+          inicioUrl.pathname = `/${locale}${inicioPara(contexto?.permisos ?? [])}`;
+          return NextResponse.redirect(inicioUrl);
         }
       }
     }

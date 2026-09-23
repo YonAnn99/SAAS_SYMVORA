@@ -8,14 +8,25 @@ import {
   fetchOpenRegistersFromPreviousDays,
   autoCloseRegister,
   logAutoCloseActivity,
+  getCdmxMidnight,
+  horaCierreAutomatico,
   type AutoCloseResult,
 } from "@/features/cash-register/services/cash-register-server-service";
+import { destinatariosCierreAutomatico } from "@/features/cash-register/avisos-cierre";
 
 /**
- * Cierre automático de cajas a las 23:59 (hora CDMX).
+ * Cierre automático de cajas al final del día (hora CDMX).
  *
- * Lo dispara el cron diario de Vercel (`vercel.json`) programado a las 05:59 UTC
- * (que son las 23:59 en Ciudad de México — México no tiene horario de verano).
+ * Lo dispara el cron diario de Vercel (`vercel.json`) a las 06:00 UTC, que son
+ * las 00:00 en Ciudad de México (México no tiene horario de verano).
+ *
+ * POR QUÉ A LAS 00:00 Y NO A LAS 23:59: Vercel no ejecuta el cron al minuto
+ * (se vio correr 39 minutos tarde). Programado a las 23:59 podía caer antes o
+ * después de medianoche, y la regla "abiertas antes de hoy" cambiaba de
+ * significado según el retraso. A las 00:00 siempre corre DESPUÉS, así que
+ * "antes de la medianoche que acaba de pasar" es exactamente "el día que
+ * terminó". La hora que se guarda es las 23:59:59 de ese día
+ * (`horaCierreAutomatico`), no la de ejecución.
  *
  * Cierra TODAS las cajas ABIERTA cuya fecha_apertura sea de un día anterior
  * al día actual en CDMX. Para cada caja:
@@ -24,9 +35,9 @@ import {
  *   - Crea movimiento "Cierre automático del sistema"
  *   - Registra activity_log
  *   - Envía email al usuario dueño de la caja
- *   - Envía email al SUPER_ADMIN del negocio
+ *   - Envía email al SUPER_ADMIN del negocio (uno solo si la caja es suya)
  *
- * HORARIO: `vercel.json` la programa a las 05:59 UTC.
+ * HORARIO: `vercel.json` la programa a las 06:00 UTC.
  * Los cron de Vercel SOLO entienden UTC.
  *
  * REQUIERE `CRON_SECRET` en las variables de entorno de Vercel.
@@ -91,7 +102,10 @@ export async function GET(request: Request) {
 
   const supabase = createSupabaseServiceRoleClient();
 
-  const registersToClose = await fetchOpenRegistersFromPreviousDays();
+  // Un solo instante para todo: que cajas se cierran y que hora se guarda.
+  const corte = getCdmxMidnight();
+  const fechaCierre = horaCierreAutomatico(corte);
+  const registersToClose = await fetchOpenRegistersFromPreviousDays(corte);
 
   const candidatas = registersToClose.slice(0, MAX_POR_EJECUCION);
 
@@ -109,7 +123,7 @@ export async function GET(request: Request) {
           userRole: reg.userRole,
           userName: reg.userName,
           tenantId: reg.caja.tenant_id,
-          tenantName: reg.caja.tenant_id, // se resolverá en dry-run
+          tenantName: reg.tenantName,
           success: true,
           totalVentas: reg.totalVentas,
           totalEntradas: reg.totalEntradas,
@@ -120,14 +134,20 @@ export async function GET(request: Request) {
       }
 
       // 1. Cerrar la caja en BD
-      await autoCloseRegister(reg.caja.id, {
+      const cerrada = await autoCloseRegister(reg.caja.id, {
         totalVentas: reg.totalVentas,
         totalEntradas: reg.totalEntradas,
         totalSalidas: reg.totalSalidas,
         saldoEsperado: reg.saldoEsperado,
         userId: reg.caja.usuario_id,
         tenantId: reg.caja.tenant_id,
+        fechaCierre,
       });
+      if (!cerrada) {
+        // La cerro alguien a mano mientras corria el cron: su corte manda.
+        omitidas.push({ cajaId: reg.caja.id, motivo: "ya estaba cerrada" });
+        continue;
+      }
 
       // 2. Log de actividad
       await logAutoCloseActivity(reg.caja.id, reg.caja.usuario_id, reg.caja.tenant_id, {
@@ -140,16 +160,23 @@ export async function GET(request: Request) {
       // 3. Obtener SUPER_ADMIN para notificar
       const superAdmin = await getSuperAdmin(supabase, reg.caja.tenant_id);
 
-      // 4. Enviar emails (en paralelo)
+      // 4. Enviar emails (en paralelo). Si la caja es del propio dueño, solo
+      //    su aviso: antes le llegaban dos correos del mismo cierre.
       const emailPromises: Promise<{ ok: boolean; error?: string }>[] = [];
+      const destinos = destinatariosCierreAutomatico({
+        userEmail: reg.userEmail,
+        userRole: reg.userRole,
+        superAdminEmail: superAdmin?.email ?? null,
+      });
 
-      // Email al usuario dueño de la caja
-      if (reg.userEmail) {
+      if (destinos.usuario) {
         emailPromises.push(
           sendAutoCloseToUserEmail({
-            to: reg.userEmail,
+            to: destinos.usuario,
             userName: reg.userName,
-            businessName: reg.caja.tenant_id, // será resuelto por tenantName
+            // Antes iba `reg.caja.tenant_id`: al cajero le llegaba el UUID.
+            businessName: reg.tenantName,
+            sucursalNombre: reg.sucursalNombre,
             cajaId: reg.caja.id,
             fechaApertura: reg.caja.fecha_apertura,
             totalVentas: reg.totalVentas,
@@ -160,12 +187,12 @@ export async function GET(request: Request) {
         );
       }
 
-      // Email al SUPER_ADMIN
-      if (superAdmin?.email) {
+      if (destinos.superAdmin) {
         emailPromises.push(
           sendAutoCloseToSuperAdminEmail({
-            to: superAdmin.email,
-            businessName: superAdmin.businessName,
+            to: destinos.superAdmin,
+            businessName: superAdmin?.businessName ?? reg.tenantName,
+            sucursalNombre: reg.sucursalNombre,
             userName: reg.userName,
             userRole: reg.userRole,
             userEmail: reg.userEmail,

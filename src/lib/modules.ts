@@ -32,7 +32,7 @@ export interface ModuleDefinition {
   paths: string[];
   /**
    * Permiso que exige. `null` = abierto a cualquier miembro del negocio
-   * (Dashboard, POS, catálogo de productos).
+   * (catálogo de productos, clientes, sugerencias).
    */
   permission: string | null;
   /** ¿El SUPER_ADMIN puede concederlo o quitarlo por usuario? */
@@ -110,11 +110,27 @@ export const MODULES: ModuleDefinition[] = [
     grantable: true,
   },
   {
+    // Dashboard y Reportes van JUNTOS: los dos enseñan las cifras del negocio
+    // (ventas del dia y del mes, ganancia, ticket promedio). Con dos modulos
+    // habria dos switches controlando en secreto el mismo permiso (el fallo
+    // que ya se corrigio en Compras). Desde la migracion 088 el cajero no lo
+    // tiene de fabrica: entra directo al Punto de venta (`inicioPara`).
     key: "reports",
-    label: "Reportes",
-    description: "Ventas por periodo, productos y ganancias",
-    paths: ["/reports"],
+    label: "Reportes y dashboard",
+    description: "Cifras del negocio: ventas, productos y ganancias",
+    paths: ["/reports", "/dashboard"],
     permission: "sales.view_reports",
+    grantable: true,
+  },
+  {
+    // Quien hizo que y cuando. Hasta la migracion 088 no pedia permiso y la
+    // veia cualquiera; ahora lo tienen de fabrica los administradores, y la
+    // politica de `activity_logs` exige el mismo permiso.
+    key: "activity",
+    label: "Bitácora",
+    description: "Quién creó, editó o eliminó qué y cuándo",
+    paths: ["/activity"],
+    permission: "activity.view",
     grantable: true,
   },
   {
@@ -170,8 +186,8 @@ export const GRANTABLE_MODULES = MODULES.filter((m) => m.grantable);
 
 /**
  * Permisos concedibles. Debe coincidir con el CHECK de
- * `user_permission_overrides`, que hoy define la migración **077** (antes la
- * 055 y luego la 070; lo redefine entero quien lo toca).
+ * `user_permission_overrides`, que hoy define la migración **088** (antes la
+ * 055, la 070 y la 077; lo redefine entero quien lo toca).
  *
  * Si se añade uno aquí sin añadirlo allí, la base de datos lo rechaza y el
  * switch falla al guardar. Ya pasó con `cash.manage`, que estuvo roto desde la
