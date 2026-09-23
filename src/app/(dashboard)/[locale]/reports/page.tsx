@@ -13,6 +13,8 @@ import { CalendarIcon, Download, TrendingUp, Package, Users, CreditCard, Chevron
 import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/charts/dynamic-charts";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { toast } from "sonner";
 import {
   Select,
@@ -188,6 +190,7 @@ function groupSalesByPeriod(
 export default function ReportsPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { seleccionada: sucursalId } = useSucursal();
   const [reportData, setReportData] = useState<ReportData>({
     ventasPorPeriodo: [],
     topProductos: [],
@@ -240,18 +243,25 @@ export default function ReportsPage() {
     }
     const { desde: startDate, hasta: endDate } = rango;
 
+    let qVentas = supabase
+      .from("ventas")
+      .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
+      .eq("tenant_id", tenantId)
+      .gte("fecha_venta", startDate.toISOString())
+      .lte("fecha_venta", endDate.toISOString())
+      .eq("estado", "COMPLETADA");
+
+    // Mismo criterio que el dashboard: `null` = todas las sucursales. Todo el
+    // reporte (graficas, top de productos, clientes) sale de estas ventas y del
+    // detalle de ESTAS ventas, asi que filtrar aqui acota el reporte entero.
+    if (sucursalId) qVentas = qVentas.eq("sucursal_id", sucursalId);
+
     const [
       { data: ventas, error: ventasError },
       { data: productos },
       { data: clientes },
     ] = await Promise.all([
-      supabase
-        .from("ventas")
-        .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
-        .eq("tenant_id", tenantId)
-        .gte("fecha_venta", startDate.toISOString())
-        .lte("fecha_venta", endDate.toISOString())
-        .eq("estado", "COMPLETADA")
+      qVentas
         // Tope duro: todo el reporte se agrega en el navegador, asi que sin
         // limite un negocio con un año de historial congela la pestaña del
         // comerciante. Se ordena por fecha descendente para que, si se trunca,
@@ -470,7 +480,7 @@ export default function ReportsPage() {
     }
 
     setLoading(false);
-  }, [periodo, tenantId, selectedDate]);
+  }, [periodo, tenantId, selectedDate, sucursalId]);
 
   useEffect(() => {
     if (!tenantLoading && tenantId) {
@@ -559,6 +569,7 @@ export default function ReportsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <SucursalSelector className="w-[170px] h-8" />
           <Select value={periodo} onValueChange={(v) => v && esPeriodo(v) && setPeriodo(v)}>
             <SelectTrigger className="w-[160px] h-8">
               <CalendarIcon className="h-3.5 w-3.5 mr-2" />

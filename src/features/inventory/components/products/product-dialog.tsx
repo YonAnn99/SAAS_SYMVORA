@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { productSchema } from "@/lib/validations/schemas";
+import { useSucursal } from "@/contexts/sucursal-context";
 import { toast } from "sonner";
 import type { Producto } from "../../types/inventory.types";
 import {
@@ -320,6 +321,21 @@ export function ProductDialog({
     [formData.precio_venta, formData.costo_compra]
   );
 
+  // DE QUE LOCAL HABLA EL CAMPO DE EXISTENCIAS. Con varias sucursales un
+  // "Stock actual" a secas es ambiguo: ¿el de este local o el de todo el
+  // negocio? Se dice explicitamente, y con "Todas" se bloquea la edicion
+  // (el total no tiene un local donde aplicar el cambio).
+  const { hayVarias, seleccionada, sucursales } = useSucursal();
+  const nombreSucursal = sucursales.find((x) => x.id === seleccionada)?.nombre;
+  const stockBloqueado = hayVarias && !seleccionada && Boolean(editingProduct);
+  const notaStock = !hayVarias
+    ? null
+    : nombreSucursal
+      ? `Existencias en ${nombreSucursal}.`
+      : editingProduct
+        ? "Total del negocio. Elige una sucursal en el selector para editarlas."
+        : "Elige una sucursal en el selector para cargar existencias iniciales, o déjalas en 0.";
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
@@ -562,8 +578,12 @@ export function ProductDialog({
                   placeholder="0"
                   value={formData.stock_actual}
                   onChange={(e) => updateField("stock_actual", e.target.value)}
+                  disabled={stockBloqueado}
                   className="h-8 text-sm font-mono"
                 />
+                {notaStock && (
+                  <p className="text-[11px] text-muted-foreground">{notaStock}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Stock mínimo</Label>

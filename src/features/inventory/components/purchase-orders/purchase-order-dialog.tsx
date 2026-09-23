@@ -48,6 +48,9 @@ import {
   type ProductOption,
 } from "../../types/inventory.types";
 import type { OrdenSaveInput } from "../../hooks/use-purchase-orders";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { CampoSucursal } from "@/features/sucursales/components/campo-sucursal";
+import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import type {
   OrderDetailItem,
   VarianteDeCompra,
@@ -107,10 +110,17 @@ export function PurchaseOrderDialog({
   const [formData, setFormData] = useState<OrdenFormData>(
     defaultOrdenFormData
   );
+  // A que local ira la mercancia. Se decide al pedirla porque es cuando se
+  // sabe; la recepcion la sumara ahi.
+  const { seleccionada, activas, hayVarias } = useSucursal();
+  const [sucursalId, setSucursalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const timeout = window.setTimeout(() => {
+      setSucursalId(
+        editingOrder?.sucursal_id ?? destinoPorDefecto(seleccionada, activas)
+      );
       if (editingOrder) {
         setFormData({
           proveedor_id: editingOrder.proveedor_id,
@@ -135,7 +145,7 @@ export function PurchaseOrderDialog({
       }
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [open, editingOrder, initialDetails, existingOrders]);
+  }, [open, editingOrder, initialDetails, existingOrders, seleccionada, activas]);
 
   // Genérico por campo: `incluye_iva` es booleano y el resto texto, así que
   // fijar `value: string` obligaría a un cast en el único campo que no lo es.
@@ -249,11 +259,17 @@ export function PurchaseOrderDialog({
       return;
     }
 
+    if (hayVarias && !sucursalId) {
+      toast.error("Elige a qué sucursal va la mercancía");
+      return;
+    }
+
     onSave({
       proveedor_id: formData.proveedor_id,
       numero_orden: formData.numero_orden,
       notas: formData.notas || "",
       incluye_iva: formData.incluye_iva,
+      sucursal_id: sucursalId,
       items: details.map((d) => ({
         producto_id: d.producto_id,
         variante_id: d.variante_id,
@@ -308,6 +324,14 @@ export function PurchaseOrderDialog({
               />
             </div>
           </div>
+
+          <CampoSucursal
+            id="orden-sucursal"
+            value={sucursalId}
+            onChange={setSucursalId}
+            etiqueta="Sucursal que recibe"
+            ayuda="Al recibir la orden, las unidades entran en este local."
+          />
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">

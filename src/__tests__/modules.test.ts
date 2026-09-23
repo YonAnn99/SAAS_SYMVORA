@@ -232,11 +232,12 @@ describe("el módulo de Sucursales", () => {
     expect(mod.grantable).toBe(true);
   });
 
-  it("no reclama ninguna ruta, para no robarle /settings a Configuración", () => {
+  it("protege /branches con su permiso SIN robarle /settings a Configuración", () => {
     // `permissionForPath` resuelve por prefijo. Si este módulo declarara
     // "/settings", Configuración pasaría a exigir `org.manage_branches` y
     // ningún ORG_ADMIN podría entrar a editar los datos del negocio.
-    expect(MODULES.find((m) => m.key === "branches")!.paths).toEqual([]);
+    expect(MODULES.find((m) => m.key === "branches")!.paths).toEqual(["/branches"]);
+    expect(permissionForPath("/branches")).toBe("org.manage_branches");
     expect(permissionForPath("/settings")).toBe("org.manage_settings");
   });
 });

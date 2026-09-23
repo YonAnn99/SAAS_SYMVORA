@@ -41,6 +41,7 @@ import {
   ClipboardList,
   Banknote,
   Printer,
+  ArrowLeftRight,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -67,6 +68,7 @@ const ENTITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   config: Settings,
   orden_compra: ClipboardList,
   movimiento_caja: Banknote,
+  traspaso: ArrowLeftRight,
 };
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -112,6 +114,7 @@ const ENTITY_KEYS: Record<string, string> = {
   ordenes_compra: "common.ordenCompra",
   movimientos_caja: "common.movimientoCaja",
   movimiento_caja: "common.movimientoCaja",
+  traspaso: "common.traspaso",
 };
 
 const PAGE_SIZE = 50;
@@ -171,6 +174,7 @@ export default function ActivityPage() {
           caja: ["caja", "cajas"],
           orden_compra: ["orden_compra", "ordenes_compra"],
           movimiento_caja: ["movimiento_caja", "movimientos_caja"],
+          traspaso: ["traspaso"],
         };
         return filterMap[entityFilter]?.includes(log.entity) || log.entity === entityFilter;
       });
@@ -233,6 +237,7 @@ export default function ActivityPage() {
             <SelectItem value="caja">{t("common.cashRegister")}</SelectItem>
             <SelectItem value="orden_compra">{t("common.ordenCompra")}</SelectItem>
             <SelectItem value="movimiento_caja">{t("common.movimientoCaja")}</SelectItem>
+            <SelectItem value="traspaso">{t("common.traspaso")}</SelectItem>
           </SelectContent>
         </Select>
       </div>

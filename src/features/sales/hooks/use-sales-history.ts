@@ -15,6 +15,7 @@ import {
   type VentaGuardada,
 } from "../sale-receipt-builder";
 import type { SaleReceipt } from "@/features/pos/types/pos.types";
+import { useSucursal } from "@/contexts/sucursal-context";
 
 /**
  * El listado de ventas del historial.
@@ -37,6 +38,9 @@ export function useSalesHistory(
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(0);
   const [cargando, setCargando] = useState(true);
+  // La sucursal sale del selector global y no de una prop: asi el historial
+  // obedece al MISMO selector que las graficas de Reportes que lo rodean.
+  const { seleccionada: sucursalId } = useSucursal();
 
   const rango = useMemo(
     () => rangoDePeriodo(periodo, fechaElegida),
@@ -48,7 +52,7 @@ export function useSalesHistory(
   useEffect(() => {
     const t = window.setTimeout(() => setPagina(0), 0);
     return () => window.clearTimeout(t);
-  }, [periodo, fechaElegida, cajeroId]);
+  }, [periodo, fechaElegida, cajeroId, sucursalId]);
 
   const refetch = useCallback(async () => {
     if (!tenantId || !rango) {
@@ -62,6 +66,7 @@ export function useSalesHistory(
         desde: rango.desde,
         hasta: rango.hasta,
         cajeroId,
+        sucursalId,
         limite: VENTAS_POR_PAGINA,
         desplazamiento: pagina * VENTAS_POR_PAGINA,
       });
@@ -72,7 +77,7 @@ export function useSalesHistory(
     } finally {
       setCargando(false);
     }
-  }, [tenantId, rango, cajeroId, pagina]);
+  }, [tenantId, rango, cajeroId, sucursalId, pagina]);
 
   // Diferido, convencion del repo: un setState sincrono dentro de un efecto
   // encadena renders y dispara `react-hooks/set-state-in-effect`.

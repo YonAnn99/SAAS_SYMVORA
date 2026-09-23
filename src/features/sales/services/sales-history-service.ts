@@ -27,6 +27,8 @@ export interface VentaEnHistorial {
   total: number;
   origen: string | null;
   requiere_revision: boolean | null;
+  /** En que local se cobro (migracion 082). `null` en ventas sin sucursal. */
+  sucursal_nombre: string | null;
 }
 
 export interface PaginaDeVentas {
@@ -41,6 +43,8 @@ export interface FiltrosHistorial {
   hasta: Date;
   /** Solo lo honra el servidor si quien pregunta tiene `sales.view_all`. */
   cajeroId?: string | null;
+  /** `null` = todas las sucursales. Acota, no concede: el negocio ya se valida. */
+  sucursalId?: string | null;
   limite?: number;
   desplazamiento?: number;
 }
@@ -60,6 +64,7 @@ export async function fetchHistorialVentas(
     p_cajero_id: filtros.cajeroId ?? null,
     p_limite: filtros.limite ?? VENTAS_POR_PAGINA,
     p_desplazamiento: filtros.desplazamiento ?? 0,
+    p_sucursal_id: filtros.sucursalId ?? null,
   });
 
   if (error) throw error;

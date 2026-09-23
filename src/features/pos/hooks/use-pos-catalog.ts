@@ -7,6 +7,8 @@ import type { VarianteProducto } from "../types/pos.types";
 import { fetchCustomers } from "@/features/customers/services/customer-service";
 import { fetchActiveRegister } from "@/features/cash-register/services/cash-register-service";
 import { fetchPosProducts, fetchPosVariants } from "../services/pos-service";
+import { fetchStockSucursal } from "@/features/sucursales/services/stock-sucursal-service";
+import { CASH_REGISTER_CHANGED_EVENT } from "@/features/cash-register/hooks/use-open-register";
 import {
   fetchPosPriceLists,
   type ListaParaPos,
@@ -64,18 +66,25 @@ export function usePosCatalog(
       if (!user) throw new Error("No se pudo verificar la sesión");
       setUserId(user.id);
 
+      // LA CAJA PRIMERO, y no en paralelo con el catalogo como antes: su
+      // sucursal decide QUE existencias se ven. Un mostrador de Norte tiene que
+      // enseñar lo que hay en Norte, no el total del negocio — si no, ofrece
+      // productos que la venta luego rechaza por falta de stock en el local.
+      const activeRegister = await fetchActiveRegister(user.id);
+      const stockLocal = activeRegister?.sucursal_id
+        ? await fetchStockSucursal(activeRegister.sucursal_id)
+        : null;
+
       const [
         productsResult,
         variantsResult,
         customersResult,
-        activeRegister,
         priceListsResult,
         favoritosResult,
       ] = await Promise.all([
-        fetchPosProducts(tenantId),
-        fetchPosVariants(tenantId),
+        fetchPosProducts(tenantId, stockLocal),
+        fetchPosVariants(tenantId, stockLocal),
         fetchCustomers(tenantId),
-        fetchActiveRegister(user.id),
         fetchPosPriceLists(tenantId),
         fetchFavoritos(tenantId),
       ]);
@@ -103,6 +112,17 @@ export function usePosCatalog(
     const timeout = window.setTimeout(() => void refetch(), 0);
     return () => window.clearTimeout(timeout);
   }, [tenantLoading, refetch]);
+
+  // SE RECARGA AL ABRIR O CERRAR CAJA. La caja decide QUE local se esta
+  // atendiendo, y con el que existencias ve el mostrador. Sin esto, abrir caja
+  // desde el aviso global estando ya en el POS dejaba el catalogo como estaba:
+  // sin caja asociada y enseñando el stock de todo el negocio en vez del del
+  // local. Paso de verdad el 2026-09-22 (una venta quedo sin sucursal).
+  useEffect(() => {
+    const alCambiar = () => void refetch();
+    window.addEventListener(CASH_REGISTER_CHANGED_EVENT, alCambiar);
+    return () => window.removeEventListener(CASH_REGISTER_CHANGED_EVENT, alCambiar);
+  }, [refetch]);
 
   // Agrupadas una sola vez: el POS pregunta por producto en cada clic.
   const variantsByProduct = useMemo(() => {

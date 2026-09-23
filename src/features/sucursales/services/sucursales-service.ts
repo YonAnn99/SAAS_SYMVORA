@@ -3,11 +3,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 /**
  * Las sucursales de un negocio.
  *
- * QUE ES UNA SUCURSAL AQUI, Y QUE NO. Es la DIMENSION por la que se agrupan las
- * cifras: cada venta lleva la suya y el panel puede filtrar por ella. Lo que NO
- * es —todavia— es un almacen: **el stock sigue siendo del negocio, no del
- * local**. Si vendes el mismo producto en dos sucursales, las unidades son un
- * unico numero compartido. Separarlas es la fase grande.
+ * QUE ES UNA SUCURSAL AQUI. Un local con sus propias existencias
+ * (`stock_sucursal`, migracion 078) y sus propias cifras: cada venta, compra,
+ * ajuste y caja lleva la suya. Lo que NO se parte por local es el catalogo ni
+ * los proveedores: un solo "Coca 600ml" con unidades en cada sucursal.
  *
  * DE DONDE SACA UNA VENTA SU SUCURSAL: de la caja. Un mostrador esta en un local
  * concreto, asi que la sucursal se elige una vez al abrir caja y todas las

@@ -119,6 +119,11 @@ export async function createOrder(
     impuesto: number;
     total: number;
     notas: string | null;
+    /**
+     * A que local va la mercancia. Se decide AL PEDIRLA, porque es cuando se
+     * sabe; `recibir_orden_compra` suma ahi al recibir (migracion 082).
+     */
+    sucursal_id?: string | null;
   },
   details: OrderDetailItem[]
 ): Promise<void> {
@@ -153,6 +158,9 @@ export async function updateOrder(
     impuesto: number;
     total: number;
     notas: string | null;
+    // Una orden que aun no se recibio puede cambiar de destino: la sucursal
+    // solo cuenta en el momento de recibirla.
+    sucursal_id?: string | null;
   },
   details: OrderDetailItem[]
 ): Promise<void> {

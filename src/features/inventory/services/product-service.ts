@@ -75,16 +75,26 @@ export async function fetchProducts(tenantId: string): Promise<Producto[]> {
   return data ?? [];
 }
 
+/**
+ * Devuelve el id nuevo: con varias sucursales, las existencias iniciales se
+ * cargan DESPUES en el local elegido (`establecerStockSucursal`), y para eso
+ * hace falta saber que producto se acaba de crear.
+ */
 export async function createProduct(
   tenantId: string,
   input: ProductInput
-): Promise<void> {
+): Promise<string> {
   const supabase = createSupabaseBrowserClient();
-  const { error } = await supabase.from("productos").insert({
-    tenant_id: tenantId,
-    ...input,
-  });
+  const { data, error } = await supabase
+    .from("productos")
+    .insert({
+      tenant_id: tenantId,
+      ...input,
+    })
+    .select("id")
+    .single();
   if (error) throw error;
+  return data.id as string;
 }
 
 /**

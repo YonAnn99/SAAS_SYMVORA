@@ -397,6 +397,47 @@ export type Database = {
           activa?: boolean;
         };
       };
+      stock_sucursal: {
+        Row: {
+          id: string;
+          sucursal_id: string;
+          producto_id: string;
+          /** `null` = el stock "sin clasificar" del producto, no una variante. */
+          variante_id: string | null;
+          cantidad: number;
+          /** El "se vende aqui": `false` oculta el producto en el POS de ese local. */
+          se_vende: boolean;
+          actualizado_en: string;
+        };
+        // Sin Insert/Update a proposito: se escribe por `establecer_stock_sucursal`
+        // y `registrar_traspaso`, nunca a pelo desde el navegador.
+        Insert: never;
+        Update: never;
+      };
+      traspasos: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          sucursal_origen_id: string;
+          sucursal_destino_id: string;
+          usuario_id: string | null;
+          notas: string | null;
+          creado_en: string;
+        };
+        Insert: never;
+        Update: never;
+      };
+      detalle_traspaso: {
+        Row: {
+          id: string;
+          traspaso_id: string;
+          producto_id: string;
+          variante_id: string | null;
+          cantidad: number;
+        };
+        Insert: never;
+        Update: never;
+      };
       ventas: {
         Row: {
           id: string;
@@ -523,6 +564,8 @@ export type Database = {
           fecha_compra: string;
           fecha_recepcion: string | null;
           notas: string | null;
+          /** El local que recibio la mercancia (migracion 082). */
+          sucursal_id: string | null;
         };
         Insert: {
           id?: string;
@@ -531,6 +574,7 @@ export type Database = {
           usuario_id: string;
           numero_factura?: string | null;
           orden_compra_id?: string | null;
+          sucursal_id?: string | null;
           subtotal?: number | null;
           impuesto?: number | null;
           total: number;
@@ -786,6 +830,8 @@ export type Database = {
           notas: string | null;
           usuario_id: string;
           creado_en: string;
+          /** El local ajustado (migracion 082). */
+          sucursal_id: string | null;
         };
         Insert: {
           id?: string;
@@ -793,6 +839,7 @@ export type Database = {
           producto_id: string;
           variante_id?: string | null;
           lote_id?: string | null;
+          sucursal_id?: string | null;
           motivo: "MERMA" | "CONTEO_FISICO" | "DEVOLUCION" | "DAÑO" | "OTRO";
           cantidad_anterior: number;
           cantidad_ajuste: number;
@@ -832,6 +879,8 @@ export type Database = {
           notas: string | null;
           creado_en: string;
           actualizado_en: string;
+          /** A que local va la mercancia; la recepcion la suma ahi (migracion 082). */
+          sucursal_id: string | null;
         };
         Insert: {
           id?: string;
@@ -839,6 +888,7 @@ export type Database = {
           proveedor_id: string;
           usuario_id: string;
           numero_orden: string;
+          sucursal_id?: string | null;
           estado?: "BORRADOR" | "ENVIADA" | "RECIBIDA_PARCIAL" | "RECIBIDA_TOTAL" | "CANCELADA";
           subtotal?: number;
           impuesto?: number;
@@ -1148,8 +1198,30 @@ export type Database = {
           p_notas?: string;
           p_variante_id?: string;
           p_lote_id?: string;
+          /** Sin ella, el local por defecto del negocio (migracion 082). */
+          p_sucursal_id?: string | null;
         };
         Returns: Json;
+      };
+      registrar_traspaso: {
+        Args: {
+          p_origen_id: string;
+          p_destino_id: string;
+          p_items: Json;
+          p_notas?: string | null;
+        };
+        Returns: Json;
+      };
+      establecer_stock_sucursal: {
+        Args: {
+          p_sucursal_id: string;
+          p_producto_id: string;
+          p_variante_id?: string | null;
+          /** Valor FINAL, no diferencia. `null` = no tocar la cantidad. */
+          p_cantidad?: number | null;
+          p_se_vende?: boolean | null;
+        };
+        Returns: undefined;
       };
       recibir_orden_compra: {
         Args: {

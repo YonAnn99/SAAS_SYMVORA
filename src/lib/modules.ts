@@ -126,20 +126,19 @@ export const MODULES: ModuleDefinition[] = [
     grantable: true,
   },
   {
-    // `paths: []` A PROPOSITO: no es una pantalla, es una TARJETA dentro de
-    // /settings. Declarar aqui "/settings" la robaria al modulo de arriba —
-    // `permissionForPath` resuelve por prefijo y dos modulos no pueden
-    // reclamar la misma ruta (hay un test que lo impide). Configuracion sigue
-    // rigiendose por `org.manage_settings`; lo que este permiso gobierna es
-    // solo quien ve y usa esa tarjeta.
+    // Cubre el modulo `/branches` Y la tarjeta de Sucursales de Configuracion.
+    // "/settings" NO se declara aqui: se lo robaria al modulo de arriba
+    // (`permissionForPath` resuelve por prefijo y un test impide que dos
+    // modulos reclamen la misma ruta). Configuracion sigue con
+    // `org.manage_settings`; dentro, la tarjeta se esconde con este permiso.
     //
     // De fabrica lo tiene SOLO el SUPER_ADMIN (migracion 077), pero es
     // `grantable` porque dar de alta un local no reparte poder como si lo hacen
     // Usuarios o Facturacion: el dueño puede cederselo a un encargado.
     key: "branches",
     label: "Sucursales",
-    description: "Dar de alta y cerrar locales del negocio",
-    paths: [],
+    description: "Locales del negocio: alta, cierre, existencias y traspasos",
+    paths: ["/branches"],
     permission: "org.manage_branches",
     grantable: true,
   },

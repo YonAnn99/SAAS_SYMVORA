@@ -105,9 +105,9 @@ export function SucursalesCard() {
           Sucursales
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Cada venta se cuenta en la sucursal de la caja donde se cobró, así que
-          puedes ver las cifras de cada local por separado. El inventario sigue
-          siendo común a todo el negocio.
+          Cada local tiene sus propias existencias y sus propias cifras: la venta
+          descuenta del local de la caja donde se cobró. El catálogo y los
+          proveedores son comunes a todo el negocio.
         </p>
       </CardHeader>
 

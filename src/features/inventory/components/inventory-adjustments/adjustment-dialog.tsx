@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { CampoSucursal } from "@/features/sucursales/components/campo-sucursal";
+import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +61,13 @@ export function AdjustmentDialog({
   const [formData, setFormData] = useState<AjusteFormData>(
     defaultAjusteFormData
   );
+  // El local que se ajusta. `undefined` = aun no se ha tocado el campo y vale
+  // el destino por defecto (la sucursal que se esta mirando); asi no hace falta
+  // un efecto que lo sincronice al abrir.
+  const { seleccionada, activas, hayVarias } = useSucursal();
+  const [sucursalElegida, setSucursalElegida] = useState<string | null | undefined>(undefined);
+  const sucursalId =
+    sucursalElegida === undefined ? destinoPorDefecto(seleccionada, activas) : sucursalElegida;
 
   const selectedProductName = useMemo(
     () => products.find((p) => p.id === formData.producto_id)?.nombre ?? formData.producto_id,
@@ -98,6 +108,7 @@ export function AdjustmentDialog({
   const handleOpenChange = (next: boolean) => {
     if (next) {
       setFormData(defaultAjusteFormData);
+      setSucursalElegida(undefined);
     }
     onOpenChange(next);
   };
@@ -113,6 +124,13 @@ export function AdjustmentDialog({
       return;
     }
 
+    // El ajuste se valida contra las existencias DE UN LOCAL (migracion 082):
+    // sin saber cual, no hay contra que comparar.
+    if (hayVarias && !sucursalId) {
+      toast.error("Elige qué sucursal se ajusta");
+      return;
+    }
+
     onSave({
       productoId: formData.producto_id,
       cantidadAjuste: parseFloat(formData.cantidad_ajuste),
@@ -120,6 +138,7 @@ export function AdjustmentDialog({
       notas: formData.notas || null,
       varianteId: formData.variante_id || null,
       loteId: formData.lote_id || null,
+      sucursalId,
     });
   };
 
@@ -135,6 +154,13 @@ export function AdjustmentDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <CampoSucursal
+            id="ajuste-sucursal"
+            value={sucursalId}
+            onChange={setSucursalElegida}
+            etiqueta="Sucursal *"
+            ayuda="El ajuste suma o resta en el inventario de este local."
+          />
           <div className="space-y-1.5">
             <Label className="text-xs">Producto *</Label>
             <Select

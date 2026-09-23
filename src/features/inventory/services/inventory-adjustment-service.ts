@@ -14,6 +14,12 @@ export interface AjusteInput {
   notas: string | null;
   varianteId: string | null;
   loteId: string | null;
+  /**
+   * El local ajustado. Sin ella, el servidor usa el local por defecto (para un
+   * negocio de uno solo, el de siempre). El tope de "no puede quedar negativo"
+   * se valida contra ESTE local, no contra el total (migracion 082).
+   */
+  sucursalId?: string | null;
 }
 
 export async function fetchAdjustments(
@@ -80,6 +86,7 @@ export async function createAdjustment(input: AjusteInput): Promise<void> {
     p_notas: input.notas,
     p_variante_id: input.varianteId,
     p_lote_id: input.loteId,
+    p_sucursal_id: input.sucursalId ?? null,
   });
   if (error) throw error;
 }

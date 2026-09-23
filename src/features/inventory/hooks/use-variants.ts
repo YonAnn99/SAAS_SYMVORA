@@ -15,6 +15,16 @@ import {
   updateVariant,
   type VarianteInput,
 } from "../services/variant-service";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { destinoPorDefecto } from "@/features/sucursales/seleccion";
+import {
+  conStockDeSucursalVariantes,
+  destinoDeEdicionDeStock,
+} from "@/features/sucursales/stock";
+import {
+  establecerStockSucursal,
+  fetchStockSucursal,
+} from "@/features/sucursales/services/stock-sucursal-service";
 
 export function useVariants(tenantId: string | null, tenantLoading: boolean) {
   const [variants, setVariants] = useState<VarianteProducto[]>([]);
@@ -30,16 +40,23 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
     null
   );
 
+  // Mismo criterio que la pestaña de productos: con un local elegido, cada
+  // talla muestra lo que hay EN ESE local.
+  const { seleccionada, hayVarias, activas } = useSucursal();
+
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    const [variantsData, productsData] = await Promise.all([
+    const [variantsData, productsData, stockLocal] = await Promise.all([
       fetchVariants(tenantId),
       fetchVariantProducts(tenantId),
+      seleccionada ? fetchStockSucursal(seleccionada) : Promise.resolve(null),
     ]);
-    setVariants(variantsData);
+    setVariants(
+      stockLocal ? conStockDeSucursalVariantes(variantsData, stockLocal) : variantsData
+    );
     setProducts(productsData);
     setLoading(false);
-  }, [tenantId]);
+  }, [tenantId, seleccionada]);
 
   useEffect(() => {
     if (tenantLoading) return;
@@ -60,10 +77,54 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
   const handleSave = useCallback(
     async (input: VarianteInput) => {
       if (!tenantId) return;
+
+      // Con varias sucursales el stock de la talla es el DE UN LOCAL y viaja
+      // aparte (ver el mismo razonamiento en `useProducts.handleSave`).
+      const stock = Number(input.stock_actual ?? 0);
+      let destinoStock: string | null = null;
+      if (hayVarias) {
+        if (editingVariant) {
+          const destino = destinoDeEdicionDeStock(hayVarias, seleccionada);
+          const cambio = stock !== Number(editingVariant.stock_actual);
+          if (cambio && destino.tipo === "bloqueado") {
+            toast.error(destino.motivo);
+            return;
+          }
+          if (cambio && destino.tipo === "sucursal") destinoStock = destino.sucursalId;
+        } else if (stock > 0) {
+          destinoStock = destinoPorDefecto(seleccionada, activas);
+          if (!destinoStock) {
+            toast.error(
+              "Elige en el selector a qué sucursal entran las existencias iniciales, o déjalas en 0."
+            );
+            return;
+          }
+        }
+      }
+      const datos: VarianteInput = hayVarias
+        ? { ...input, stock_actual: editingVariant ? editingVariant.stock_actual : 0 }
+        : input;
+
       setSaving(true);
       try {
         if (editingVariant) {
-          await updateVariant(editingVariant.id, input);
+          // Se quita el stock del UPDATE en modo sucursales: reescribirlo, aun
+          // igual, haria que la capa de compatibilidad (080) lo tomara como el
+          // total del negocio.
+          const { stock_actual: _omitido, ...sinStock } = datos;
+          void _omitido;
+          await updateVariant(
+            editingVariant.id,
+            (hayVarias ? sinStock : datos) as VarianteInput
+          );
+          if (destinoStock) {
+            await establecerStockSucursal({
+              sucursalId: destinoStock,
+              productoId: editingVariant.producto_id,
+              varianteId: editingVariant.id,
+              cantidad: stock,
+            });
+          }
           await logActivity({
             action: "UPDATE",
             entity: "producto",
@@ -72,7 +133,15 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
           });
           toast.success("Variante actualizada");
         } else {
-          await createVariant(tenantId, input);
+          const nuevaId = await createVariant(tenantId, datos);
+          if (destinoStock) {
+            await establecerStockSucursal({
+              sucursalId: destinoStock,
+              productoId: datos.producto_id,
+              varianteId: nuevaId,
+              cantidad: stock,
+            });
+          }
           await logActivity({
             action: "CREATE",
             entity: "producto",
@@ -95,7 +164,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
         setSaving(false);
       }
     },
-    [tenantId, editingVariant, refetch]
+    [tenantId, editingVariant, refetch, hayVarias, seleccionada, activas]
   );
 
   const handleDelete = useCallback(

@@ -18,6 +18,8 @@ export interface PurchaseInput {
   items: RenglonCompraRpc[];
   incluyeIva: boolean;
   notas?: string | null;
+  /** El local que RECIBE la mercancia. Sin ella, el de por defecto (082). */
+  sucursalId?: string | null;
 }
 
 export interface SupplierInput {
@@ -80,6 +82,7 @@ export async function createPurchase(
     p_numero_factura: input.numeroFactura || null,
     p_incluye_iva: input.incluyeIva,
     p_notas: input.notas ?? null,
+    p_sucursal_id: input.sucursalId ?? null,
   });
   if (error) throw error;
 }

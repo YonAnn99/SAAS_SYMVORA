@@ -48,6 +48,7 @@
     "noActivity": "No hay registros de actividad",
     "loadMore": "Cargar más",
     "update": "Actualizar",
+    "traspaso": "Traspaso",
     "ordenCompra": "Orden de compra",
     "movimientoCaja": "Movimiento de caja",
     "product": "Producto",
@@ -199,6 +200,7 @@
     }
   },
   "layout": {
+    "branches": "Sucursales",
     "priceLists": "Listas de precios",
     "dashboard": "Dashboard",
     "pos": "Punto de Venta",

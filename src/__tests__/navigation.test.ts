@@ -39,6 +39,7 @@ describe("orden del menú", () => {
       "/purchase-orders",
       "/activity",
       "/users",
+      "/branches",
       "/settings/payments",
       "/billing",
       "/suggestions",
@@ -198,9 +199,34 @@ describe("filterNavigation", () => {
   const nada = () => false;
 
   it("un SUPER_ADMIN con todos los permisos ve el menú completo", () => {
-    expect(filterNavigation("SUPER_ADMIN", todo)).toHaveLength(
+    // Completo = con varias sucursales. Sucursales es el unico modulo que
+    // depende de DATOS y no solo de permisos.
+    expect(filterNavigation("SUPER_ADMIN", todo, { multiSucursal: true })).toHaveLength(
       VISIBLE_NAVIGATION.length
     );
+  });
+
+  it("Sucursales NO aparece con un solo local, ni para el dueño", () => {
+    // El dueño de una tienda de un solo local tiene el permiso, pero un modulo
+    // de sucursales vacio solo seria ruido en su menu.
+    const conUno = filterNavigation("SUPER_ADMIN", todo).map((i) => i.href);
+    expect(conUno).not.toContain("/branches");
+    // Y sin la opcion explicita es lo mismo que "un solo local": nadie tiene
+    // que acordarse de pasarla para que el negocio pequeño no lo vea.
+    expect(filterNavigation("SUPER_ADMIN", todo, {}).map((i) => i.href)).not.toContain("/branches");
+  });
+
+  it("con varios locales, Sucursales aparece solo a quien tiene el permiso", () => {
+    const soloBranches = (p: string) => p === "org.manage_branches";
+    expect(
+      filterNavigation("ORG_ADMIN", soloBranches, { multiSucursal: true }).map((i) => i.href)
+    ).toContain("/branches");
+    // Varios locales NO basta: sin `org.manage_branches` (un ORG_ADMIN de
+    // fabrica, un cajero) no se ve.
+    const sinBranches = (p: string) => p !== "org.manage_branches";
+    expect(
+      filterNavigation("ORG_ADMIN", sinBranches, { multiSucursal: true }).map((i) => i.href)
+    ).not.toContain("/branches");
   });
 
   it("nunca devuelve módulos ocultos, ni con todos los permisos", () => {

@@ -3,6 +3,10 @@
 import { useTranslations } from "next-intl";
 import { useState, useMemo, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { CampoSucursal } from "@/features/sucursales/components/campo-sucursal";
+import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +94,10 @@ export function NewPurchaseDialog({
   const [renglones, setRenglones] = useState<RenglonCompraForm[]>([
     RENGLON_VACIO,
   ]);
+  // A que local entra la mercancia. Arranca en la sucursal que el usuario esta
+  // mirando; con varias y "Todas", vacia, para que se elija a proposito.
+  const { seleccionada, activas, hayVarias } = useSucursal();
+  const [sucursalId, setSucursalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -105,10 +113,11 @@ export function NewPurchaseDialog({
         setNotas("");
         setIncluyeIva(true);
         setRenglones([RENGLON_VACIO]);
+        setSucursalId(destinoPorDefecto(seleccionada, activas));
       }
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [open, editingPurchase]);
+  }, [open, editingPurchase, seleccionada, activas]);
 
   const selectedSupplierName = useMemo(() => {
     const supplier = suppliers.find((s) => s.id === selectedSupplier);
@@ -159,6 +168,12 @@ export function NewPurchaseDialog({
   );
 
   const handleConfirm = () => {
+    // Con varios locales, una compra sin destino entraria en el local por
+    // defecto sin que nadie lo decidiera. Mejor preguntar que adivinar.
+    if (!editingPurchase && hayVarias && !sucursalId) {
+      toast.error("Elige a qué sucursal llegó la mercancía");
+      return;
+    }
     onConfirm(
       {
         proveedorId: selectedSupplier,
@@ -166,6 +181,7 @@ export function NewPurchaseDialog({
         items: aRenglonesRpc(renglones),
         incluyeIva,
         notas: notas.trim() || null,
+        sucursalId,
       },
       renglones
     );
@@ -219,6 +235,16 @@ export function NewPurchaseDialog({
               />
             </div>
           </div>
+
+          {!editingPurchase && (
+            <CampoSucursal
+              id="compra-sucursal"
+              value={sucursalId}
+              onChange={setSucursalId}
+              etiqueta="Sucursal que recibe"
+              ayuda="Las unidades se suman al inventario de este local."
+            />
+          )}
 
           {/* Editar solo toca la cabecera: cambiar renglones de una compra ya
               recibida obligaría a rehacer el movimiento de inventario, y para

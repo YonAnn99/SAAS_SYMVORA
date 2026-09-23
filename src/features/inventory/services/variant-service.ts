@@ -38,15 +38,19 @@ export async function fetchVariantProducts(
   return data ?? [];
 }
 
+/** Devuelve el id: con varias sucursales el stock inicial se carga despues. */
 export async function createVariant(
   tenantId: string,
   input: VarianteInput
-): Promise<void> {
+): Promise<string> {
   const supabase = createSupabaseBrowserClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("variantes_producto")
-    .insert({ tenant_id: tenantId, ...input });
+    .insert({ tenant_id: tenantId, ...input })
+    .select("id")
+    .single();
   if (error) throw error;
+  return data.id as string;
 }
 
 export async function updateVariant(

@@ -48,6 +48,7 @@
     "noActivity": "No activity records",
     "loadMore": "Load more",
     "update": "Update",
+    "traspaso": "Transfer",
     "ordenCompra": "Purchase order",
     "movimientoCaja": "Cash movement",
     "product": "Product",
@@ -199,6 +200,7 @@
     }
   },
   "layout": {
+    "branches": "Branches",
     "priceLists": "Price lists",
     "dashboard": "Dashboard",
     "pos": "Point of Sale",

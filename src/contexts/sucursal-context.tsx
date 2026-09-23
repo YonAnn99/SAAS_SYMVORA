@@ -112,20 +112,23 @@ export function SucursalProvider({ children }: { children: React.ReactNode }) {
     [sucursales]
   );
 
-  const valor = useMemo<SucursalContextValue>(
-    () => ({
+  const valor = useMemo<SucursalContextValue>(() => {
+    // Con una sola sucursal no hay nada que elegir, asi que el selector no se
+    // dibuja y el negocio de un solo local no ve ninguna friccion nueva.
+    const hayVarias = activas.length > 1;
+    return {
       sucursales,
       activas,
-      seleccionada,
+      // Sin selector visible, la seleccion tiene que ser "Todas". Si no, un
+      // negocio que tuvo dos locales, miraba Norte y lo cerro, seguiria viendo
+      // las existencias de un local cerrado sin ningun control para cambiarlo.
+      seleccionada: hayVarias ? seleccionada : null,
       setSeleccionada,
-      // Con una sola sucursal no hay nada que elegir, asi que el selector no se
-      // dibuja y el negocio de un solo local no ve ninguna friccion nueva.
-      hayVarias: activas.length > 1,
+      hayVarias,
       loading,
       refetch: cargar,
-    }),
-    [sucursales, activas, seleccionada, setSeleccionada, loading, cargar]
-  );
+    };
+  }, [sucursales, activas, seleccionada, setSeleccionada, loading, cargar]);
 
   return (
     <SucursalContext.Provider value={valor}>{children}</SucursalContext.Provider>

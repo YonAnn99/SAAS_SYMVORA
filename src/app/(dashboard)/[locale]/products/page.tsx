@@ -25,6 +25,7 @@ import {
   AdjustmentsSection,
 } from "@/features/inventory";
 import type { Producto } from "@/features/inventory";
+import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -119,6 +120,9 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          {/* Con varias sucursales, la columna de existencias es la del local
+              elegido aqui. No se dibuja en un negocio de un solo local. */}
+          <SucursalSelector className="w-[170px] h-8" />
           {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
               Va el primero porque es lo que menos se usa a diario; los dos de
               la derecha son los del trabajo del día. */}

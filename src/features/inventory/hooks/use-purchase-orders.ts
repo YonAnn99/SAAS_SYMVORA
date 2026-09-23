@@ -35,6 +35,8 @@ export interface OrdenSaveInput {
   notas: string;
   /** Si la orden lleva el 16 %. Se guarda como `impuesto = 0` cuando es `false`. */
   incluye_iva: boolean;
+  /** Local que recibira la mercancia. `null` en un negocio de un solo local. */
+  sucursal_id: string | null;
   items: {
     producto_id: string;
     variante_id: string | null;
@@ -134,6 +136,7 @@ export function usePurchaseOrders(
           impuesto,
           total,
           notas: input.notas || null,
+          sucursal_id: input.sucursal_id,
         };
 
         if (editingOrder) {

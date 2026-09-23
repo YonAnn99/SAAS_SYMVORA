@@ -22,3 +22,27 @@ export function resolverSeleccion(
   if (!guardada) return null;
   return sucursales.some((s) => s.id === guardada) ? guardada : null;
 }
+
+/**
+ * A que local va una operacion (compra, orden, ajuste) si nadie dice otra cosa.
+ *
+ * 1. La sucursal que el usuario tiene elegida en el selector: si esta mirando
+ *    Norte y registra una compra, lo natural es que entre en Norte.
+ * 2. Si solo hay un local abierto, ese: no hay nada que preguntar.
+ * 3. Si hay varios y esta en "Todas", NINGUNO (`null`): el formulario obliga a
+ *    elegir. Adivinar aqui mandaria mercancia al local equivocado, y un error de
+ *    inventario no se nota hasta que un producto "desaparece" en un mostrador.
+ *
+ * Una sucursal cerrada nunca es destino por defecto, aunque este elegida para
+ * consultar su historico.
+ */
+export function destinoPorDefecto(
+  seleccionada: string | null,
+  activas: readonly { id: string }[]
+): string | null {
+  if (seleccionada && activas.some((s) => s.id === seleccionada)) {
+    return seleccionada;
+  }
+  if (activas.length === 1) return activas[0].id;
+  return null;
+}

@@ -13,6 +13,7 @@ import {
   Receipt,
   Smartphone,
   Lightbulb,
+  Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { permissionForPath } from "@/lib/modules";
@@ -49,6 +50,12 @@ export interface NavItem {
   minRole?: UserRole;
   /** Fuera del menu sin borrar la entrada (modulo CFDI apagado). */
   hidden?: boolean;
+  /**
+   * Solo aparece si el negocio tiene 2 o mas sucursales ACTIVAS. Es un filtro
+   * por DATOS, no por permiso: el dueño de una tienda de un solo local no debe
+   * ver un modulo de sucursales vacio, aunque tenga el permiso.
+   */
+  requiresMultiSucursal?: boolean;
 }
 
 /**
@@ -78,6 +85,9 @@ export const NAVIGATION: NavItem[] = [
   // --- Administracion del negocio.
   { name: "common.activityLog", href: "/activity", icon: FileText },
   { name: "layout.users", href: "/users", icon: Users, minRole: "SUPER_ADMIN" },
+  // Aparece sola al dar de alta la segunda sucursal (desde Configuracion); con
+  // un solo local no hay nada que gestionar aqui.
+  { name: "layout.branches", href: "/branches", icon: Store, requiresMultiSucursal: true },
 
   // --- Cuenta y cobro.
   { name: "layout.payments", href: "/settings/payments", icon: Smartphone, minRole: "ORG_ADMIN" },
@@ -161,10 +171,14 @@ export function moduleLabelKeyForPath(path: string): string | null {
  */
 export function filterNavigation(
   role: UserRole | null,
-  can: (permission: string) => boolean
+  can: (permission: string) => boolean,
+  opciones: { multiSucursal?: boolean } = {}
 ): NavItem[] {
   return NAVIGATION.filter((item) => {
     if (item.hidden) return false;
+    // Antes que el permiso: sin varias sucursales el modulo no se enseña a
+    // nadie, ni al dueño.
+    if (item.requiresMultiSucursal && !opciones.multiSucursal) return false;
     const permission = permissionForPath(item.href);
     if (permission) return can(permission);
     return !item.minRole || hasRole(role, item.minRole);

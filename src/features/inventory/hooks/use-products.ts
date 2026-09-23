@@ -28,6 +28,16 @@ import {
 import { createAdjustment } from "../services/inventory-adjustment-service";
 import { fetchFavoritos, toggleFavorito } from "../services/favorites-service";
 import { mensajeDeError } from "@/features/inventory/error-message";
+import { useSucursal } from "@/contexts/sucursal-context";
+import { destinoPorDefecto } from "@/features/sucursales/seleccion";
+import {
+  conStockDeSucursal,
+  destinoDeEdicionDeStock,
+} from "@/features/sucursales/stock";
+import {
+  establecerStockSucursal,
+  fetchStockSucursal,
+} from "@/features/sucursales/services/stock-sucursal-service";
 
 export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   const [products, setProducts] = useState<Producto[]>([]);
@@ -44,18 +54,24 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   // mismo catalogo con distintos favoritos.
   const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set());
 
+  // Con una sucursal elegida, la columna de existencias es la DE ESE LOCAL, no
+  // el total del negocio. Todo lo que ya se deriva de `stock_actual` (stock
+  // bajo, agotado, orden, filtros) pasa a hablar del local sin tocarlo.
+  const { seleccionada, hayVarias, activas } = useSucursal();
+
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    // En paralelo: son dos tablas distintas y esperar una para pedir la otra
-    // solo suma latencia a la primera carga.
-    const [data, favs] = await Promise.all([
+    // En paralelo: son tablas distintas y esperar una para pedir la otra solo
+    // suma latencia a la primera carga.
+    const [data, favs, stockLocal] = await Promise.all([
       fetchProducts(tenantId),
       fetchFavoritos(tenantId),
+      seleccionada ? fetchStockSucursal(seleccionada) : Promise.resolve(null),
     ]);
-    setProducts(data);
+    setProducts(stockLocal ? conStockDeSucursal(data, stockLocal) : data);
     setFavoritos(favs);
     setLoading(false);
-  }, [tenantId]);
+  }, [tenantId, seleccionada]);
 
   useEffect(() => {
     if (tenantLoading) return;
@@ -76,10 +92,57 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   const handleSave = useCallback(
     async (input: ProductInput) => {
       if (!tenantId) return;
+
+      // CON VARIAS SUCURSALES, el campo de existencias habla de UN local y no
+      // se manda en el producto: `productos.stock_actual` es la suma que
+      // mantiene la base, y escribirla a pelo mandaria las unidades al local
+      // por defecto. Se guarda aparte, con `establecerStockSucursal`.
+      const stock = Number(input.stock_actual ?? 0);
+      let destinoStock: string | null = null;
+      if (hayVarias) {
+        if (editingProduct) {
+          const destino = destinoDeEdicionDeStock(hayVarias, seleccionada);
+          const cambio = stock !== Number(editingProduct.stock_actual);
+          if (cambio && destino.tipo === "bloqueado") {
+            toast.error(destino.motivo);
+            return;
+          }
+          if (cambio && destino.tipo === "sucursal") destinoStock = destino.sucursalId;
+        } else if (stock > 0) {
+          destinoStock = destinoPorDefecto(seleccionada, activas);
+          if (!destinoStock) {
+            toast.error(
+              "Elige en el selector de arriba a qué sucursal entran las existencias iniciales, o déjalas en 0 y repártelas después."
+            );
+            return;
+          }
+        }
+      }
+      const datosProducto: ProductInput = hayVarias
+        ? {
+            ...input,
+            // Alta: nace en 0 y se carga en el local elegido. Edicion: se
+            // conserva lo que hay; el cambio, si lo hubo, va por el local.
+            stock_actual: editingProduct ? editingProduct.stock_actual : 0,
+          }
+        : input;
+
       setSaving(true);
       try {
         if (editingProduct) {
-          await updateProduct(editingProduct.id, input);
+          // En modo sucursales se quita del UPDATE: aunque sea el mismo numero,
+          // reescribirlo dispararia la capa de compatibilidad (080) con el
+          // total del local elegido y lo convertiria en el total del negocio.
+          const { stock_actual: _omitido, ...sinStock } = datosProducto;
+          void _omitido;
+          await updateProduct(editingProduct.id, hayVarias ? sinStock : datosProducto);
+          if (destinoStock) {
+            await establecerStockSucursal({
+              sucursalId: destinoStock,
+              productoId: editingProduct.id,
+              cantidad: stock,
+            });
+          }
           await logActivity({
             action: "UPDATE",
             entity: "producto",
@@ -88,7 +151,14 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
           });
           toast.success("Producto actualizado");
         } else {
-          await createProduct(tenantId, input);
+          const nuevoId = await createProduct(tenantId, datosProducto);
+          if (destinoStock) {
+            await establecerStockSucursal({
+              sucursalId: destinoStock,
+              productoId: nuevoId,
+              cantidad: stock,
+            });
+          }
           await logActivity({
             action: "CREATE",
             entity: "producto",
@@ -104,7 +174,7 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
         setSaving(false);
       }
     },
-    [tenantId, editingProduct, refetch]
+    [tenantId, editingProduct, refetch, hayVarias, seleccionada, activas]
   );
 
   // Ids con una edicion express en vuelo. Es un Set y no un booleano porque
@@ -140,6 +210,14 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
       }
       if (!hayCambio(product, campo, parseo.valor)) return;
 
+      // Antes del cambio optimista: con "Todas" y varias sucursales no hay
+      // local sobre el que aplicar la diferencia (ver `destinoDeEdicionDeStock`).
+      const destino = destinoDeEdicionDeStock(hayVarias, seleccionada);
+      if (campo === "stock_actual" && destino.tipo === "bloqueado") {
+        toast.error(destino.motivo);
+        return;
+      }
+
       const anterior = product[campo];
       // Optimista: el numero cambia al instante y, con el, el margen y el
       // badge de estado, que se derivan de el.
@@ -165,6 +243,9 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
             notas: "Edición rápida desde el catálogo",
             varianteId: null,
             loteId: null,
+            // La diferencia se calculo contra lo que se ve, que con un local
+            // elegido es lo de ESE local: el ajuste tiene que ir ahi.
+            sucursalId: destino.tipo === "sucursal" ? destino.sucursalId : null,
           });
           // El servidor manda sobre el stock: entre el clic y el guardado
           // pudo entrar una venta del punto de venta.
@@ -185,7 +266,7 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
         marcarGuardando(product.id, false);
       }
     },
-    [marcarGuardando, refetch]
+    [marcarGuardando, refetch, hayVarias, seleccionada]
   );
 
   /**

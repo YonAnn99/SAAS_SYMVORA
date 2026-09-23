@@ -52,6 +52,11 @@ const DISABLED_PATHS = ["/facturas"];
 // Routes that require SUPER_ADMIN only
 const SUPER_ADMIN_ONLY_PATHS = [
   "/billing",
+  // Aqui y no en ADMIN_ONLY_PATHS a proposito. El control principal es por
+  // permiso (`org.manage_branches`, cedible por usuario); pero si faltara el
+  // contexto de permisos, el respaldo por rol exigiria SUPER_ADMIN en vez de
+  // dejar pasar a cualquier ORG_ADMIN.
+  "/branches",
 ];
 
 const ROLE_HIERARCHY: Record<string, number> = {

@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useSucursal } from "@/contexts/sucursal-context";
 import { clavePagoI18n, numeroOperacion } from "@/features/pos/ticket-format";
 import { formatMXN } from "@/lib/money";
 import type { Periodo } from "@/lib/periodo";
@@ -77,6 +78,10 @@ export function SalesHistoryCard({
   const t = useTranslations();
   const { can } = usePermissions();
   const veTodas = can("sales.view_all");
+  // La columna solo aporta viendo varias sucursales a la vez: con una elegida
+  // diria lo mismo en cada fila, y un negocio de un solo local no la necesita.
+  const { hayVarias, seleccionada } = useSucursal();
+  const verSucursal = hayVarias && seleccionada === null;
 
   const [cajeroSel, setCajeroSel] = useState<string>(TODOS_LOS_CAJEROS);
   const [cajeros, setCajeros] = useState<Cajero[]>([]);
@@ -151,6 +156,7 @@ export function SalesHistoryCard({
             <TableHead>Fecha</TableHead>
             <TableHead>Operación</TableHead>
             {veTodas && <TableHead>Atendió</TableHead>}
+            {verSucursal && <TableHead>Sucursal</TableHead>}
             <TableHead>Cliente</TableHead>
             <TableHead>Pago</TableHead>
             <TableHead className="text-right">Total</TableHead>
@@ -175,6 +181,11 @@ export function SalesHistoryCard({
                   {v.cajero_email ?? "—"}
                 </TableCell>
               )}
+              {verSucursal && (
+                <TableCell className="max-w-[120px] truncate text-xs">
+                  {v.sucursal_nombre ?? "—"}
+                </TableCell>
+              )}
               <TableCell className="max-w-[140px] truncate text-xs">
                 {v.cliente_nombre ?? "Cliente general"}
               </TableCell>
@@ -189,7 +200,7 @@ export function SalesHistoryCard({
         </TableBody>
       </Table>
     );
-  }, [sinFechaElegida, cargando, ventas, veTodas, t]);
+  }, [sinFechaElegida, cargando, ventas, veTodas, verSucursal, t]);
 
   return (
     <>

@@ -8,7 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
  * al que se acude cuando algo huele mal.
  */
 type ActivityAction = "CREATE" | "UPDATE" | "DELETE" | "REIMPRIMIR";
-type ActivityEntity = "producto" | "venta" | "compra" | "cliente" | "proveedor" | "usuario" | "caja" | "config" | "orden_compra" | "movimiento_caja";
+type ActivityEntity = "producto" | "venta" | "compra" | "cliente" | "proveedor" | "usuario" | "caja" | "config" | "orden_compra" | "movimiento_caja" | "traspaso";
 
 interface LogActivityParams {
   action: ActivityAction;

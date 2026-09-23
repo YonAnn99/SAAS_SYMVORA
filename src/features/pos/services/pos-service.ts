@@ -1,6 +1,12 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Producto } from "@/lib/types/database";
 import type { MetodoPago, SaleTotals, VarianteProducto } from "../types/pos.types";
+import {
+  conStockDeSucursal,
+  conStockDeSucursalVariantes,
+  vendiblesEnLocal,
+  type FilaStockSucursal,
+} from "@/features/sucursales/stock";
 
 const IVA_RATE = 0.16;
 
@@ -116,8 +122,34 @@ export async function completeSale(params: CompleteSaleParams) {
   return venta;
 }
 
-export async function fetchPosProducts(tenantId: string): Promise<Producto[]> {
+/**
+ * Catalogo del punto de venta.
+ *
+ * CON SUCURSAL (`stockLocal`), el filtro de existencias NO puede hacerse en el
+ * servidor: `productos.stock_actual` es el TOTAL del negocio, y un producto con
+ * 15 en Principal y 0 en Norte apareceria en el mostrador de Norte para fallar
+ * al cobrar con "Disponible: 0". Se trae el catalogo entero y se filtra aqui con
+ * las existencias del local de la caja (`vendiblesEnLocal`), que es la misma
+ * regla que aplica la base al vender.
+ *
+ * Sin sucursal se conserva la consulta de siempre.
+ */
+export async function fetchPosProducts(
+  tenantId: string,
+  stockLocal: FilaStockSucursal[] | null = null
+): Promise<Producto[]> {
   const supabase = createSupabaseBrowserClient();
+
+  if (stockLocal) {
+    const { data, error } = await supabase
+      .from("productos")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("nombre");
+    if (error) throw error;
+    return vendiblesEnLocal(conStockDeSucursal(data ?? [], stockLocal));
+  }
+
   const { data, error } = await supabase
     .from("productos")
     .select("*")
@@ -144,7 +176,8 @@ export async function fetchPosProducts(tenantId: string): Promise<Producto[]> {
  * es lo que el cajero espera ver cuando el cliente pregunta por ella.
  */
 export async function fetchPosVariants(
-  tenantId: string
+  tenantId: string,
+  stockLocal: FilaStockSucursal[] | null = null
 ): Promise<VarianteProducto[]> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
@@ -154,5 +187,7 @@ export async function fetchPosVariants(
     .order("talla");
 
   if (error) throw error;
-  return (data ?? []) as VarianteProducto[];
+  const variantes = (data ?? []) as VarianteProducto[];
+  // Cada talla con lo que hay EN EL LOCAL de la caja, no en todo el negocio.
+  return stockLocal ? conStockDeSucursalVariantes(variantes, stockLocal) : variantes;
 }
