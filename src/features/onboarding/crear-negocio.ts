@@ -2,6 +2,8 @@ import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
 import { convertToWebP } from "@/lib/image";
+import { modulosParaGiro } from "@/lib/modulos";
+import { GIRO_POR_DEFECTO, giroDeRegistro } from "@/features/marketing/giros";
 
 /**
  * Da de alta el negocio de un usuario que YA tiene sesion: el ultimo tramo del
@@ -18,7 +20,8 @@ import { convertToWebP } from "@/lib/image";
 export interface DatosNegocio {
   userId: string;
   nombreEstablecimiento: string;
-  giroComercial: string;
+  /** Slug del giro (`papelerias`); ver `GIROS` en `features/marketing/giros.ts`. */
+  giro: string;
   logoFile: File | null;
   promoCode: string;
   referralCode: string | null;
@@ -95,17 +98,20 @@ export async function crearNegocio(datos: DatosNegocio): Promise<ResultadoCrearN
     }
   }
 
+  // El giro elegido (uno de los 20 de la landing) se guarda de dos formas:
+  // su CONFIGURACION en `tenants.giro_comercial` (los 7 valores de siempre) y
+  // el giro exacto en `giro_detalle`. Un slug desconocido cae en General.
+  const giro = giroDeRegistro(datos.giro) ?? giroDeRegistro(GIRO_POR_DEFECTO)!;
+  const giroComercial = giro.config;
+
   // Create tenant via complete_onboarding RPC
   const configuracionJson = {
-    giro_comercial: datos.giroComercial,
-    modulos_activos: {
-      permite_granel: false,
-      permite_variantes: false,
-      permite_lotes_caducidad: true,
-      permite_mermas: true,
-      permite_servicios: false,
-      permite_credito_fiado: true,
-    },
+    giro_comercial: giroComercial,
+    giro_detalle: giro.slug,
+    // Los modulos de su configuracion MAS los que recomienda la pagina de su
+    // giro en la landing: nace con lo que se le prometio (una ferreteria con
+    // venta por metro, una florería con servicios). Ver `@/lib/modulos`.
+    modulos_activos: modulosParaGiro(giro),
     pos_config: {
       teclado_rapido: true,
       lector_barras: true,
@@ -123,7 +129,7 @@ export async function crearNegocio(datos: DatosNegocio): Promise<ResultadoCrearN
     p_user_id: datos.userId,
     p_nombre_comercial: datos.nombreEstablecimiento,
     p_subdominio: subdominio,
-    p_giro_comercial: datos.giroComercial,
+    p_giro_comercial: giroComercial,
     p_configuracion_json: configuracionJson,
     p_logo_url: logoUrl,
     p_referral_code: datos.referralCode || null,

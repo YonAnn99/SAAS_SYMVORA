@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   claveAviso,
+  debeEmpujarAFinanzas,
   marcarAvisado,
   yaAvisadoHoy,
 } from "@/features/cash-register/daily-prompt";
@@ -75,5 +76,29 @@ describe("ciclo del aviso", () => {
     window.localStorage.setItem("symvora_tutorial_step", "3");
     marcarAvisado(ANA, new Date("2026-09-15T10:00:00"));
     expect(window.localStorage.getItem("symvora_tutorial_step")).toBe("3");
+  });
+});
+
+describe("cuándo empujar a Finanzas", () => {
+  // EL CHOQUE (2026-09-24): con una cuenta nueva se abrian a la vez el
+  // tutorial, el empujon a Finanzas y el dialogo de abrir caja.
+  const base = { hayCaja: false as boolean | null, ruta: "/es/dashboard", tutorialEnCurso: false };
+
+  it("sin caja y sin tutorial: sí", () => {
+    expect(debeEmpujarAFinanzas(base)).toBe(true);
+  });
+
+  it("ESTE es el importante: con el tutorial en curso, no (él guía)", () => {
+    expect(debeEmpujarAFinanzas({ ...base, tutorialEnCurso: true })).toBe(false);
+  });
+
+  it("ya en Finanzas, no (sería un bucle)", () => {
+    expect(debeEmpujarAFinanzas({ ...base, ruta: "/es/finances" })).toBe(false);
+    expect(debeEmpujarAFinanzas({ ...base, ruta: "/finances" })).toBe(false);
+  });
+
+  it("con caja abierta o sin poder saberlo, no", () => {
+    expect(debeEmpujarAFinanzas({ ...base, hayCaja: true })).toBe(false);
+    expect(debeEmpujarAFinanzas({ ...base, hayCaja: null })).toBe(false);
   });
 });

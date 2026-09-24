@@ -1,3 +1,4 @@
+import { CLAVE_SAT, esUnidad } from "@/lib/unidades";
 export const FORMAS_PAGO: Record<string, string> = {
   "01": "Efectivo",
   "02": "Cheque nominativo",
@@ -219,14 +220,7 @@ export function getMetodoPagoCFDI(metodoPago: string): "PUE" | "PPD" {
 }
 
 export function getDefaultClaveUnidad(unidadMedida: string): string {
-  switch (unidadMedida) {
-    case "PIEZA": return "H87";
-    case "KG": return "KGM";
-    case "GRAMO": return "GRM";
-    case "LITRO": return "LTR";
-    case "SERVICIO": return "E48";
-    default: return "H87";
-  }
+  return esUnidad(unidadMedida) ? CLAVE_SAT[unidadMedida] : "H87";
 }
 
 export function formatCurrency(amount: number): string {

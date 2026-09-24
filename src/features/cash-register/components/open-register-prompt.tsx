@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { marcarAvisado, yaAvisadoHoy } from "../daily-prompt";
+import { useTutorialContext } from "@/components/tutorial/tutorial-provider";
+import { debeEmpujarAFinanzas, marcarAvisado, yaAvisadoHoy } from "../daily-prompt";
 import { useOpenRegister } from "../hooks/use-open-register";
 
 /**
@@ -23,19 +24,32 @@ export function OpenRegisterPrompt() {
   const router = useRouter();
   const pathname = usePathname();
   const yaRedirigido = useRef(false);
+  const { isActive, minimized } = useTutorialContext();
+  // Si el tutorial estuvo en curso en ALGUN momento de esta carga, no se
+  // empuja en toda la carga: al terminarlo o saltarlo no debe aparecer de golpe
+  // una redireccion. El aviso tampoco se marca, asi que en la siguiente carga
+  // funciona normal si sigue sin caja.
+  const tutorialVisto = useRef(false);
+  // Declarado ANTES del efecto de abajo: los efectos corren en orden, asi que
+  // cuando se decide el empujon el ref ya refleja este render.
+  useEffect(() => {
+    if (isActive || minimized) tutorialVisto.current = true;
+  }, [isActive, minimized]);
 
   useEffect(() => {
     if (tenantLoading || loading) return;
-    // `null` es "no se pudo resolver", distinto de "no hay caja". Ante la duda
-    // no se redirige: mejor no estorbar que mandar a Finanzas por un fallo de
-    // red pasajero.
-    if (hasOpenRegister !== false) return;
     // Una sola redireccion por montaje, pase lo que pase con los renders.
     if (yaRedirigido.current) return;
-
-    // Ya estando en Finanzas el empujon sobra, y redirigir ahi seria un bucle.
-    const limpia = pathname.replace(/^\/(es|en)(?=\/|$)/, "") || "/";
-    if (limpia.startsWith("/finances")) return;
+    // Sin caja confirmada, fuera de Finanzas y sin tutorial en curso.
+    if (
+      !debeEmpujarAFinanzas({
+        hayCaja: hasOpenRegister,
+        ruta: pathname,
+        tutorialEnCurso: tutorialVisto.current,
+      })
+    ) {
+      return;
+    }
 
     let cancelado = false;
     void (async () => {
@@ -44,6 +58,8 @@ export function OpenRegisterPrompt() {
         data: { user },
       } = await supabase.auth.getUser();
       if (cancelado || !user) return;
+      // El tutorial pudo arrancar mientras se resolvia el usuario.
+      if (tutorialVisto.current) return;
       if (yaAvisadoHoy(user.id)) return;
 
       // Se marca ANTES de navegar. Si se marcara despues y la navegacion
@@ -59,7 +75,7 @@ export function OpenRegisterPrompt() {
     return () => {
       cancelado = true;
     };
-  }, [tenantLoading, loading, hasOpenRegister, pathname, router]);
+  }, [tenantLoading, loading, hasOpenRegister, pathname, router, isActive, minimized]);
 
   return null;
 }

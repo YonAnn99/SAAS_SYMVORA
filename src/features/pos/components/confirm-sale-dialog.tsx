@@ -1,5 +1,6 @@
 "use client";
 
+import { formatearCantidad } from "@/lib/unidades";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,7 @@ export function ConfirmSaleDialog({
             {items.map((item) => (
               <div key={item.productId} className="flex justify-between text-sm">
                 <span>
-                  {item.nombre} x{item.cantidad}
+                  {item.nombre} x{formatearCantidad(item.cantidad, item.unidad_medida)}
                 </span>
                 <span className="font-mono">
                   ${(item.precioUnitario * item.cantidad).toFixed(2)}

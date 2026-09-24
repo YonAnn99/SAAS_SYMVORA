@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,59 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { CartItem, SaleTotals } from "../types/pos.types";
 import { cartLineKey } from "@/features/pos/stores/cart";
+import { esFraccionable, formatearCantidad, normalizarCantidad } from "@/lib/unidades";
+
+/**
+ * Cantidad de una linea: se toca para escribirla. Sirve para 0.750 kg y
+ * tambien para 24 piezas sin pulsar "+" veinticuatro veces. Lo invalido se
+ * descarta y vuelve el valor anterior.
+ */
+function CantidadEditable({
+  item,
+  onChange,
+}: {
+  item: CartItem;
+  onChange: (cantidad: number) => void;
+}) {
+  const [editando, setEditando] = useState<string | null>(null);
+  const fraccionable = esFraccionable(item.unidad_medida);
+
+  const aplicar = () => {
+    if (editando === null) return;
+    const n = normalizarCantidad(editando, item.unidad_medida);
+    if (n !== null && n !== item.cantidad) onChange(n);
+    setEditando(null);
+  };
+
+  if (editando !== null) {
+    return (
+      <input
+        autoFocus
+        inputMode={fraccionable ? "decimal" : "numeric"}
+        value={editando}
+        onChange={(e) => setEditando(e.target.value)}
+        onBlur={aplicar}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") aplicar();
+          if (e.key === "Escape") setEditando(null);
+        }}
+        aria-label={`Cantidad de ${item.nombre}`}
+        className={`${fraccionable ? "w-16" : "w-10"} h-6 rounded border border-input bg-background px-1 text-center text-xs font-mono`}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditando(String(item.cantidad))}
+      title="Toca para escribir la cantidad"
+      className={`${fraccionable ? "min-w-16 px-1" : "w-6"} h-6 rounded text-center text-xs font-mono hover:bg-muted`}
+    >
+      {fraccionable ? formatearCantidad(item.cantidad, item.unidad_medida) : item.cantidad}
+    </button>
+  );
+}
 
 interface PosCartProps {
   items: CartItem[];
@@ -72,33 +126,40 @@ export function PosCart({
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground font-mono">
-                    ${item.precioUnitario.toFixed(2)} x {item.cantidad}
+                    ${item.precioUnitario.toFixed(2)} x {formatearCantidad(item.cantidad, item.unidad_medida)}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                    onClick={() =>
-                      onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad - 1)
-                    }
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-6 text-center text-xs font-mono">
-                    {item.cantidad}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                    onClick={() =>
-                      onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad + 1)
-                    }
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
+                  {/* Por medida (kg, m…) no hay ±1: 0.750 kg + 1 no es lo que
+                      se quiere. Se toca la cantidad y se escribe. */}
+                  {!esFraccionable(item.unidad_medida) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad - 1)
+                      }
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <CantidadEditable
+                    item={item}
+                    onChange={(n) => onUpdateQuantity(cartLineKey(item.productId, item.varianteId), n)}
+                  />
+                  {!esFraccionable(item.unidad_medida) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad + 1)
+                      }
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

@@ -1,5 +1,6 @@
 "use client";
 
+import { useModulos } from "@/hooks/use-modulos";
 import { useMemo, useState } from "react";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { CampoSucursal } from "@/features/sucursales/components/campo-sucursal";
@@ -58,8 +59,13 @@ export function AdjustmentDialog({
   onProductChange,
   onSave,
 }: AdjustmentDialogProps) {
-  const [formData, setFormData] = useState<AjusteFormData>(
-    defaultAjusteFormData
+  // Sin el modulo de mermas no se ofrece ese motivo, y el formulario arranca
+  // en "Conteo fisico" (el valor por defecto era justo "Merma").
+  const { modulos } = useModulos();
+  const [formData, setFormData] = useState<AjusteFormData>(() =>
+    modulos.permite_mermas
+      ? defaultAjusteFormData
+      : { ...defaultAjusteFormData, motivo: "CONTEO_FISICO" }
   );
   // El local que se ajusta. `undefined` = aun no se ha tocado el campo y vale
   // el destino por defecto (la sucursal que se esta mirando); asi no hace falta
@@ -244,7 +250,9 @@ export function AdjustmentDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MERMA">Merma</SelectItem>
+                {(modulos.permite_mermas || formData.motivo === "MERMA") && (
+                  <SelectItem value="MERMA">Merma</SelectItem>
+                )}
                 <SelectItem value="CONTEO_FISICO">Conteo Físico</SelectItem>
                 <SelectItem value="DEVOLUCION">Devolución</SelectItem>
                 <SelectItem value="DAÑO">Daño</SelectItem>

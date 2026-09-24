@@ -1,5 +1,7 @@
 "use client";
 
+import { CLAVES_MODULO, INFO_MODULO, normalizarModulos, type ClaveModulo } from "@/lib/modulos";
+import { useModulos } from "@/hooks/use-modulos";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -27,6 +29,7 @@ import { EnlaceAltaSucursal } from "@/features/sucursales/components/enlace-alta
 export default function SettingsPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { setModulo } = useModulos();
   const { refetch: refetchTenantContext } = useTenantContext();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [settings, setSettings] = useState<TenantSettingsJSON | null>(null);
@@ -171,8 +174,11 @@ export default function SettingsPage() {
     setLogoUploading(false);
   };
 
-  const handleToggleModule = async (module: string, value: boolean) => {
+  const handleToggleModule = async (module: ClaveModulo, value: boolean) => {
     if (!tenant || !settings) return;
+    // El resto del sistema lee los modulos de un store compartido: se
+    // actualiza ya, para que el POS y Productos cambien sin recargar.
+    setModulo(module, value);
 
     const newSettings = {
       ...settings,
@@ -191,6 +197,7 @@ export default function SettingsPage() {
       .eq("tenant_id", tenant.id);
 
     if (error) {
+      setModulo(module, !value);
       toast.error("Error al actualizar módulo: " + error.message);
     }
   };
@@ -323,39 +330,32 @@ export default function SettingsPage() {
               <CardTitle className="text-sm font-medium">{t("settings.modules")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-0">
-              {settings?.modulos_activos &&
-                Object.entries(settings.modulos_activos).map(([key, value], i) => (
-                  <div key={key}>
-                    {i > 0 && <Separator />}
-                    <div className="flex items-center justify-between py-3">
-                      <div className="space-y-0.5">
-                        <Label className="text-xs capitalize">
-                          {key.replace(/_/g, " ")}
-                        </Label>
-                        <p className="text-[11px] text-muted-foreground">
-                          {key === "permite_granel" &&
-                            "Productos vendidos por peso o volumen"}
-                          {key === "permite_variantes" &&
-                            "Variantes de talla y color"}
-                          {key === "permite_lotes_caducidad" &&
-                            "Control de lotes y fechas de caducidad"}
-                          {key === "permite_mermas" &&
-                            "Registro de mermas y pérdidas"}
-                          {key === "permite_servicios" &&
-                            "Productos de tipo servicio"}
-                          {key === "permite_credito_fiado" &&
-                            "Ventas a crédito / fiado"}
-                        </p>
+              <p className="pb-2 text-[11px] text-muted-foreground">
+                Apagar un módulo oculta sus opciones en el sistema. No se borra nada: lo
+                que ya lo usa sigue funcionando, y al encenderlo vuelve todo.
+              </p>
+              {settings &&
+                CLAVES_MODULO.map((key, i) => {
+                  // Lo que no este guardado cuenta como encendido (`normalizarModulos`).
+                  const activo = normalizarModulos(settings.modulos_activos)[key];
+                  return (
+                    <div key={key}>
+                      {i > 0 && <Separator />}
+                      <div className="flex items-center justify-between gap-4 py-3">
+                        <div className="space-y-0.5">
+                          <Label className="text-xs">{INFO_MODULO[key].nombre}</Label>
+                          <p className="text-[11px] text-muted-foreground">
+                            {INFO_MODULO[key].efecto}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={activo}
+                          onCheckedChange={(checked) => handleToggleModule(key, checked)}
+                        />
                       </div>
-                      <Switch
-                        checked={value as boolean}
-                        onCheckedChange={(checked) =>
-                          handleToggleModule(key, checked)
-                        }
-                      />
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </CardContent>
           </Card>
         </TabsContent>

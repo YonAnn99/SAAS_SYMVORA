@@ -196,4 +196,36 @@ describe("Cart Store", () => {
       expect(items[0].varianteId).toBe("g-azul");
     });
   });
+
+  describe("productos por peso o medida", () => {
+    const jitomate = {
+      productId: "jitomate",
+      varianteId: null,
+      nombre: "Jitomate",
+      cantidad: 0.75,
+      precioUnitario: 32,
+      unidad_medida: "KG" as const,
+    };
+
+    it("el total usa la cantidad decimal", () => {
+      useCartStore.getState().addItem(jitomate);
+      expect(useCartStore.getState().getTotal()).toBeCloseTo(24, 5);
+    });
+
+    it("cuenta 1 artículo por línea, no 0.75", () => {
+      const { addItem } = useCartStore.getState();
+      addItem(jitomate);
+      addItem(mockItem); // 2 refrescos
+      expect(useCartStore.getState().getItemCount()).toBe(3);
+    });
+
+    it("agregar otra vez suma la cantidad a la misma línea", () => {
+      const { addItem } = useCartStore.getState();
+      addItem(jitomate);
+      addItem({ ...jitomate, cantidad: 0.5 });
+      const { items } = useCartStore.getState();
+      expect(items).toHaveLength(1);
+      expect(items[0].cantidad).toBeCloseTo(1.25, 5);
+    });
+  });
 });

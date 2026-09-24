@@ -38,7 +38,7 @@ describe("«Completa tu registro» (entrada con Google)", () => {
   const valido = {
     nombre: "Ana López",
     nombre_establecimiento: "Abarrotes Ana",
-    giro_comercial: "ABARROTES",
+    giro: "papelerias",
     acceptTerms: true,
   };
 
@@ -48,6 +48,10 @@ describe("«Completa tu registro» (entrada con Google)", () => {
 
   it("no deja pasar sin aceptar los términos", () => {
     expect(completarRegistroSchema.safeParse({ ...valido, acceptTerms: false }).success).toBe(false);
+  });
+
+  it("rechaza un giro que no existe", () => {
+    expect(completarRegistroSchema.safeParse({ ...valido, giro: "inventado" }).success).toBe(false);
   });
 
   it("un nombre de negocio de puros espacios no cuenta", () => {

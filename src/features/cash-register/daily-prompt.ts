@@ -59,3 +59,26 @@ export function marcarAvisado(userId: string, hoy: Date = new Date()): void {
     // Si no se puede escribir, el aviso saldra otra vez. Molesto, no roto.
   }
 }
+
+/**
+ * Si toca llevar al usuario a Finanzas a abrir caja. Reune las condiciones que
+ * estaban sueltas en `OpenRegisterPrompt`, mas la del tutorial:
+ *
+ * - Solo si SABEMOS que no hay caja (`false`). `null` es "no se pudo
+ *   resolver": ante la duda no se estorba por un fallo de red.
+ * - Ya en Finanzas sobra, y redirigir ahi seria un bucle.
+ * - CON EL TUTORIAL EN CURSO, NO. En el primer acceso se abrian a la vez el
+ *   tutorial, el empujon a Finanzas y el dialogo de abrir caja. El tutorial ya
+ *   tiene su paso "Abre la caja" (despues de configurar, proveedores y
+ *   productos): mientras corre, el guia.
+ */
+export function debeEmpujarAFinanzas(estado: {
+  hayCaja: boolean | null;
+  ruta: string;
+  tutorialEnCurso: boolean;
+}): boolean {
+  if (estado.hayCaja !== false) return false;
+  if (estado.tutorialEnCurso) return false;
+  const limpia = estado.ruta.replace(/^\/(es|en)(?=\/|$)/, "") || "/";
+  return !limpia.startsWith("/finances");
+}

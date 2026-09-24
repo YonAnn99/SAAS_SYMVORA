@@ -2,7 +2,9 @@ import type { Cliente, Producto } from "@/lib/types/database";
 
 export type { Cliente, Producto };
 
-export type UnidadMedida = "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+// Fuente unica en `@/lib/unidades` (migracion 090 agrego metro, caja, par...).
+export type { UnidadMedida } from "@/lib/unidades";
+import type { UnidadMedida } from "@/lib/unidades";
 
 export interface CartItem {
   productId: string;

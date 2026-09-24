@@ -1,3 +1,4 @@
+import { UNIDADES_FISICAS } from "@/lib/unidades";
 import { describe, expect, it } from "vitest";
 import {
   deltaStock,
@@ -41,7 +42,10 @@ describe("unidadesPermitidas", () => {
 
   it("un producto físico no se mide en 'servicio'", () => {
     const unidades = unidadesPermitidas(p({ unidad_medida: "KG" }));
-    expect(unidades).toEqual(["PIEZA", "KG", "GRAMO", "LITRO"]);
+    // Todas las físicas de `@/lib/unidades` (la migración 090 sumó metro,
+    // caja, par…), en su orden, y ninguna es "servicio".
+    expect(unidades).toEqual([...UNIDADES_FISICAS]);
+    expect(unidades).toContain("METRO");
     expect(unidades).not.toContain("SERVICIO");
   });
 

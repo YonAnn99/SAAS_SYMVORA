@@ -8,6 +8,8 @@ import {
   GIROS_FRANJA,
   MODULOS,
   giroPorSlug,
+  giroDeRegistro,
+  GIROS_REGISTRO,
   rutaGiro,
   rutaRegistroGiro,
 } from "@/features/marketing/giros";
@@ -68,9 +70,22 @@ describe("enlaces de cada giro", () => {
     expect(rutaGiro("papelerias")).toBe("/es/punto-de-venta/papelerias");
   });
 
-  it("'Prueba gratis' abre el registro con su configuración", () => {
-    const ferreteria = giroPorSlug("ferreterias")!;
-    expect(rutaRegistroGiro(ferreteria)).toBe("/es/auth?mode=signup&giro=FERRETERIA");
+  it("'Prueba gratis' abre el registro con ese giro elegido", () => {
+    const papeleria = giroPorSlug("papelerias")!;
+    expect(rutaRegistroGiro(papeleria)).toBe("/es/auth?mode=signup&giro=papelerias");
+  });
+
+  it("?giro= acepta el slug y, de enlaces viejos, la configuración", () => {
+    expect(giroDeRegistro("papelerias")?.slug).toBe("papelerias");
+    expect(giroDeRegistro("FERRETERIA")?.slug).toBe("ferreterias");
+    expect(giroDeRegistro("GENERAL")?.slug).toBe("tiendas");
+    expect(giroDeRegistro("inventado")).toBeUndefined();
+    expect(giroDeRegistro(null)).toBeUndefined();
+  });
+
+  it("el registro ofrece los 20 giros, con Tienda General al final", () => {
+    expect(GIROS_REGISTRO).toHaveLength(GIROS.length);
+    expect(GIROS_REGISTRO.at(-1)?.slug).toBe("tiendas");
   });
 
   it("el sitemap incluye todas las páginas de giro", () => {

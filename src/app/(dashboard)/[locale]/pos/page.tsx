@@ -20,10 +20,14 @@ import { useOpenRegister } from "@/features/cash-register/hooks/use-open-registe
 import { OpenRegisterDialog, OpenRegisterRequiredDialog, abrirCaja } from "@/features/cash-register";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useModulos } from "@/hooks/use-modulos";
 import { sucursalDelPos } from "@/features/sucursales/seleccion";
 import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { esFraccionable } from "@/lib/unidades";
+import { cartLineKey } from "@/features/pos/stores/cart";
+import { CantidadDialog } from "@/features/pos/components/cantidad-dialog";
 import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
 import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 
@@ -69,6 +73,7 @@ export default function POSPage() {
   const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
   const { activas, hayVarias, seleccionada, setSeleccionada } = useSucursal();
   const { can } = usePermissions();
+  const { modulos } = useModulos();
   // A donde se sale del POS si no se abre caja. El dashboard solo para quien lo
   // ve: al cajero (migracion 088) el middleware lo devolveria aqui, al mismo
   // aviso, y cancelar no haria nada. El catalogo esta abierto a todos.
@@ -102,6 +107,11 @@ export default function POSPage() {
   // de cliente ni cuando la PWA abre el POS desde su cache sin conexion.
   const { hasOpenRegister, loading: loadingRegister } = useOpenRegister(tenantId);
   const [variantPickerFor, setVariantPickerFor] = useState<Producto | null>(null);
+  // Producto por medida (kg, l, m…) esperando que el cajero diga cuánto.
+  const [pidiendoCantidad, setPidiendoCantidad] = useState<{
+    product: Producto;
+    variant: VarianteProducto | null;
+  } | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<PosViewMode>(() => {
@@ -141,9 +151,27 @@ export default function POSPage() {
     return construirMapaLista(lista.renglones);
   }, [priceLists, selectedPriceList]);
 
+  // Precio final de una linea: base (variante o producto) y encima la lista.
+  const precioDeLinea = useCallback(
+    (product: Producto, variant: VarianteProducto | null) =>
+      precioConLista(
+        variant ? variantPrice(variant, product) : product.precio_venta,
+        mapaLista,
+        product.id,
+        variant?.id ?? null
+      ),
+    [mapaLista]
+  );
+
   // Agrega ya resuelta la variante (o `null` para la venta general).
+  // Por medida (kg, l, m…) primero se pregunta la cantidad: antes siempre
+  // entraba 1 y no habia forma de cobrar 0.750 kg.
   const addResolved = useCallback(
-    (product: Producto, variant: VarianteProducto | null) => {
+    (product: Producto, variant: VarianteProducto | null, cantidad?: number) => {
+      if (cantidad === undefined && esFraccionable(product.unidad_medida)) {
+        setPidiendoCantidad({ product, variant });
+        return;
+      }
       // El precio base primero (la variante tiene el suyo; 0 = "usa el del
       // producto") y encima, si hay lista, el de la lista. Este es el mismo
       // orden que sigue el servidor en `_crear_venta_desde_items`: si aqui se
@@ -157,7 +185,7 @@ export default function POSPage() {
         varianteId: variant?.id ?? null,
         varianteLabel: variant ? variantLabel(variant) : null,
         nombre: product.nombre,
-        cantidad: 1,
+        cantidad: cantidad ?? 1,
         precioUnitario: precioConLista(
           precioBase,
           mapaLista,
@@ -465,7 +493,11 @@ export default function POSPage() {
     { key: "EFECTIVO", label: t("pos.paymentMethods.CASH"), icon: Banknote },
     { key: "TARJETA", label: t("pos.paymentMethods.CARD"), icon: CreditCard },
     { key: "TRANSFERENCIA", label: t("pos.paymentMethods.TRANSFER"), icon: ArrowRightLeft },
-    { key: "CREDITO", label: t("pos.paymentMethods.CREDIT"), icon: AlertTriangle },
+    // Sin el modulo de credito/fiado no se ofrece (Configuracion -> Modulos).
+    // Los saldos que ya existan se siguen cobrando desde Clientes.
+    ...(modulos.permite_credito_fiado
+      ? [{ key: "CREDITO", label: t("pos.paymentMethods.CREDIT"), icon: AlertTriangle }]
+      : []),
     { key: "TARJETA_TERMINAL", label: t("pos.paymentMethods.TERMINAL"), icon: Smartphone },
   ];
 
@@ -622,6 +654,36 @@ export default function POSPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <CantidadDialog
+        open={pidiendoCantidad !== null}
+        nombre={
+          pidiendoCantidad
+            ? pidiendoCantidad.product.nombre +
+              (pidiendoCantidad.variant ? ` · ${variantLabel(pidiendoCantidad.variant)}` : "")
+            : ""
+        }
+        unidad={pidiendoCantidad?.product.unidad_medida ?? "KG"}
+        precioUnitario={
+          pidiendoCantidad ? precioDeLinea(pidiendoCantidad.product, pidiendoCantidad.variant) : 0
+        }
+        disponible={(() => {
+          if (!pidiendoCantidad || pidiendoCantidad.product.es_servicio) return null;
+          const { product, variant } = pidiendoCantidad;
+          // Lo que queda por vender: existencias menos lo que ya va en el carrito.
+          const stock = Number(variant ? variant.stock_actual : product.stock_actual);
+          const enCarrito =
+            items.find((i) => cartLineKey(i.productId, i.varianteId) === cartLineKey(product.id, variant?.id ?? null))
+              ?.cantidad ?? 0;
+          return Math.max(0, Math.round((stock - enCarrito) * 1000) / 1000);
+        })()}
+        onOpenChange={(open) => !open && setPidiendoCantidad(null)}
+        onConfirm={(cantidad) => {
+          if (!pidiendoCantidad) return;
+          addResolved(pidiendoCantidad.product, pidiendoCantidad.variant, cantidad);
+          setPidiendoCantidad(null);
+        }}
+      />
 
       <VariantPickerDialog
         product={variantPickerFor}

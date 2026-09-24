@@ -1,3 +1,4 @@
+import { articulosDeLinea } from "@/lib/unidades";
 import type { CartItem } from "./types/pos.types";
 
 /**
@@ -35,7 +36,8 @@ export function numeroOperacion(ref: string | null | undefined): string | null {
  * cliente cuenta en la bolsa.
  */
 export function totalArticulos(items: CartItem[]): number {
-  return items.reduce((suma, item) => suma + item.cantidad, 0);
+  // Por medida cuenta 1 (ver `articulosDeLinea`): si no, "3.75 articulos".
+  return items.reduce((suma, item) => suma + articulosDeLinea(item.cantidad, item.unidad_medida), 0);
 }
 
 /** Importe de una linea: precio unitario x cantidad, ya con su descuento. */

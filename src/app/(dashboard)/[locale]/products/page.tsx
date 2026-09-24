@@ -1,5 +1,6 @@
 "use client";
 
+import { useModulos } from "@/hooks/use-modulos";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
@@ -91,7 +92,13 @@ export default function ProductsPage() {
       : "catalog"
   );
   // Si el rol no da para inventario, cualquier ?tab= cae de vuelta al catálogo.
-  const currentTab = showInventoryTabs ? activeTab : "catalog";
+  // Modulos (Configuracion -> Modulos): sin variantes o sin lotes, su pestaña
+  // no se ofrece. Los datos siguen ahi; al encenderlo vuelve la pestaña.
+  const { modulos } = useModulos();
+  const tabOculta =
+    (activeTab === "variants" && !modulos.permite_variantes) ||
+    (activeTab === "lots" && !modulos.permite_lotes_caducidad);
+  const currentTab = showInventoryTabs && !tabOculta ? activeTab : "catalog";
 
   const exportColumns = [
     { header: "Nombre", accessor: (p: Producto) => p.nombre },
@@ -163,14 +170,18 @@ export default function ProductsPage() {
               <Package className="h-3.5 w-3.5" />
               Catálogo
             </TabsTrigger>
-            <TabsTrigger value="variants" className="gap-1.5 text-xs">
-              <Palette className="h-3.5 w-3.5" />
-              Variantes
-            </TabsTrigger>
-            <TabsTrigger value="lots" className="gap-1.5 text-xs">
-              <Calendar className="h-3.5 w-3.5" />
-              Lotes
-            </TabsTrigger>
+            {modulos.permite_variantes && (
+              <TabsTrigger value="variants" className="gap-1.5 text-xs">
+                <Palette className="h-3.5 w-3.5" />
+                Variantes
+              </TabsTrigger>
+            )}
+            {modulos.permite_lotes_caducidad && (
+              <TabsTrigger value="lots" className="gap-1.5 text-xs">
+                <Calendar className="h-3.5 w-3.5" />
+                Lotes
+              </TabsTrigger>
+            )}
             <TabsTrigger value="adjustments" className="gap-1.5 text-xs">
               <Wrench className="h-3.5 w-3.5" />
               Ajustes

@@ -1,3 +1,5 @@
+import { giroPorSlug } from "@/features/marketing/giros";
+import { UNIDADES } from "@/lib/unidades";
 import { z } from "zod";
 
 export const loginSchema = z.object({
@@ -20,15 +22,9 @@ export const signupSchema = z
     apellido_paterno: z.string().min(1, "El apellido paterno es requerido"),
     apellido_materno: z.string().min(1, "El apellido materno es requerido"),
     nombre_establecimiento: z.string().min(2, "El nombre del establecimiento es requerido"),
-    giro_comercial: z.enum([
-      "ABARROTES",
-      "VERDULERIA",
-      "MASCOTAS",
-      "ROPA",
-      "FERRETERIA",
-      "FARMACIA",
-      "GENERAL",
-    ]),
+    // Slug de uno de los 20 giros de la landing (`GIROS`), no ya una de las 7
+    // configuraciones: el formulario ofrece los 20.
+    giro: z.string().refine((v) => giroPorSlug(v) !== undefined, "Elige el giro de tu negocio"),
     email: z.string().email("Correo electrónico inválido"),
     password: passwordValidation,
     password_confirm: z.string(),
@@ -50,7 +46,7 @@ export const signupSchema = z
 export const completarRegistroSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es requerido"),
   nombre_establecimiento: z.string().trim().min(2, "El nombre del establecimiento es requerido"),
-  giro_comercial: signupSchema.shape.giro_comercial,
+  giro: signupSchema.shape.giro,
   acceptTerms: z.literal(true, {
     message:
       "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
@@ -84,7 +80,7 @@ export const productSchema = z.object({
   sku: z.string().optional(),
   nombre: z.string().min(1, "El nombre es requerido"),
   descripcion: z.string().optional(),
-  unidad_medida: z.enum(["PIEZA", "KG", "GRAMO", "LITRO", "SERVICIO"]),
+  unidad_medida: z.enum(UNIDADES),
   precio_venta: z.number().min(0, "El precio debe ser mayor a 0"),
   costo_compra: z.number().min(0, "El costo debe ser mayor a 0"),
   stock_actual: z.number().min(0, "El stock debe ser mayor a 0"),
@@ -139,7 +135,7 @@ export const cartItemSchema = z.object({
   cantidad: z.number().min(0.001),
   precioUnitario: z.number().min(0),
   descuento: z.number().min(0).default(0),
-  unidad_medida: z.enum(["PIEZA", "KG", "GRAMO", "LITRO", "SERVICIO"]),
+  unidad_medida: z.enum(UNIDADES),
 });
 
 export const saleSchema = z.object({

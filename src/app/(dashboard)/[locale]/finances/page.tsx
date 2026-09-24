@@ -13,6 +13,7 @@ import { MovementsTable } from "@/features/cash-register/components/movements-ta
 import { OpenRegisterDialog } from "@/features/cash-register/components/open-register-dialog";
 import { RegisterSummaryCards } from "@/features/cash-register/components/register-summary-cards";
 import { OpenSinceTooltip } from "@/features/cash-register/components/open-since-tooltip";
+import { useTutorialContext } from "@/components/tutorial/tutorial-provider";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { destinoPorDefecto, sucursalDelPos } from "@/features/sucursales/seleccion";
@@ -33,13 +34,18 @@ export default function FinancesPage() {
     : undefined;
   const autoOpenedRef = useRef(false);
 
-  // Abre automáticamente la ventana de fondo inicial al entrar a Finanzas sin caja abierta
+  const { isActive: tutorialActivo, minimized: tutorialMinimizado } = useTutorialContext();
+
+  // Abre automáticamente la ventana de fondo inicial al entrar a Finanzas sin caja abierta.
+  // Con el tutorial en curso NO: su paso "Abre la caja" señala el botón con una
+  // flecha, y el diálogo abierto solo la tapaba (primer acceso de cuentas nuevas).
   useEffect(() => {
+    if (tutorialActivo || tutorialMinimizado) return;
     if (!cash.loading && !tenantLoading && !cash.activeRegister && !autoOpenedRef.current) {
       autoOpenedRef.current = true;
       cash.setShowOpenDialog(true);
     }
-  }, [cash.loading, tenantLoading, cash.activeRegister, cash]);
+  }, [cash.loading, tenantLoading, cash.activeRegister, cash, tutorialActivo, tutorialMinimizado]);
 
   if (cash.loading || tenantLoading) {
     return (

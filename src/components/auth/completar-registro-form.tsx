@@ -4,27 +4,13 @@ import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { completarRegistroSchema } from "@/lib/validations/schemas";
 import { crearNegocio } from "@/features/onboarding/crear-negocio";
+import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
+import { GiroSelect } from "./giro-select";
 import "@/styles/auth-toggle.css";
 
-const GIROS = [
-  "ABARROTES",
-  "VERDULERIA",
-  "MASCOTAS",
-  "ROPA",
-  "FERRETERIA",
-  "FARMACIA",
-  "GENERAL",
-] as const;
 
 /**
  * "Completa tu registro" para quien entro con Google sin tener negocio.
@@ -49,7 +35,8 @@ export function CompletarRegistroForm({
 
   const [nombre, setNombre] = useState(nombreInicial);
   const [nombreEstablecimiento, setNombreEstablecimiento] = useState("");
-  const [giroComercial, setGiroComercial] = useState<string>("GENERAL");
+  // Slug de uno de los 20 giros (ver `GiroSelect`).
+  const [giro, setGiro] = useState<string>(GIRO_POR_DEFECTO);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState("");
@@ -83,7 +70,7 @@ export function CompletarRegistroForm({
     const validation = completarRegistroSchema.safeParse({
       nombre,
       nombre_establecimiento: nombreEstablecimiento,
-      giro_comercial: giroComercial,
+      giro,
       acceptTerms,
     });
     if (!validation.success) {
@@ -101,7 +88,7 @@ export function CompletarRegistroForm({
     const resultado = await crearNegocio({
       userId,
       nombreEstablecimiento: validation.data.nombre_establecimiento,
-      giroComercial: validation.data.giro_comercial,
+      giro: validation.data.giro,
       logoFile,
       promoCode,
       referralCode: null,
@@ -176,18 +163,12 @@ export function CompletarRegistroForm({
           />
 
           <div className="auth-field-block">
-            <Select value={giroComercial} onValueChange={(v) => setGiroComercial(v || "GENERAL")}>
-              <SelectTrigger className="auth-select-trigger">
-                <SelectValue placeholder={t("auth.businessTypePlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {GIROS.map((g) => (
-                  <SelectItem key={g} value={g}>
-                    {t(`auth.businessTypes.${g}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <GiroSelect
+              value={giro}
+              onChange={setGiro}
+              placeholder={t("auth.businessTypePlaceholder")}
+              triggerClassName="auth-select-trigger"
+            />
           </div>
 
           <div className="auth-field-block">

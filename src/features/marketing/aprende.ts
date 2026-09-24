@@ -112,7 +112,8 @@ export const GUIAS: Guia[] = [
         pasos: [
           { titulo: "Escanea o busca", texto: "Con un lector de código de barras el producto entra directo al carrito. Sin lector, escribe el nombre o el código en el buscador. También puedes filtrar por categoría o por tus favoritos." },
           { titulo: "Productos con variantes", texto: "Si el producto tiene tallas o colores, al elegirlo se abre la selección de variante: cada una tiene su propio precio y stock." },
-          { titulo: "Cantidades y quitar productos", texto: "En el carrito ajusta la cantidad o quita un producto. El total se actualiza al momento." },
+          { titulo: "Productos por peso o medida", texto: "Si el producto se vende por kilo, litro o metro, al agregarlo se abre «¿Cuánto?»: escribe la cantidad (por ejemplo 0.750) o usa los atajos ¼, ½, 1 y 2, y ves el importe antes de agregarlo." },
+          { titulo: "Cantidades y quitar productos", texto: "En el carrito toca la cantidad para escribirla (sirve también para 24 piezas) o usa + y −. Con el bote de basura quitas el producto. El total se actualiza al momento." },
           { titulo: "Precios de mayoreo", texto: "Si tienes listas de precios, elige la lista antes de cobrar y se aplica a los productos que incluye. Al terminar la venta vuelve a precios normales, para que el siguiente cliente no se lleve el precio de mayoreo por error." },
         ],
       },
@@ -162,7 +163,7 @@ export const GUIAS: Guia[] = [
         pasos: [
           { titulo: "Variantes", texto: "Con el módulo de variantes encendido, un producto puede tener tallas y colores. Cada combinación lleva su propio stock, precio y código." },
           { titulo: "Lotes y caducidades", texto: "Con lotes encendido, registra cada entrada con su fecha de caducidad para vender primero lo que vence antes." },
-          { titulo: "Venta a granel", texto: "Con granel encendido, el producto se vende por kilo, litro o metro, con el precio calculado según la cantidad." },
+          { titulo: "Venta por peso o medida", texto: "Con el módulo «Venta por peso o medida» encendido, elige como unidad kilogramo, gramo, litro, mililitro o metro. En el punto de venta, al agregar el producto capturas la cantidad (por ejemplo 0.750 kg o 3.5 m) y el importe se calcula solo. También hay caja, paquete, par y docena para lo que se vende cerrado." },
         ],
       },
       {
@@ -420,7 +421,7 @@ export const GUIAS: Guia[] = [
         id: "modulos",
         titulo: "Módulos",
         pasos: [
-          { titulo: "Enciende lo que necesitas", texto: "Venta a granel, variantes de talla y color, lotes y caducidades, mermas, servicios y ventas a crédito. Se activan con un interruptor y puedes cambiarlos cuando quieras." },
+          { titulo: "Enciende lo que necesitas", texto: "Venta por peso o medida, variantes de talla y color, lotes y caducidades, mermas, servicios y ventas a crédito. Cada interruptor muestra u oculta sus opciones en todo el sistema (unidades, pestañas, métodos de pago). Apagar uno no borra nada: lo que ya lo usa sigue funcionando." },
         ],
       },
       {

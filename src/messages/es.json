@@ -257,6 +257,12 @@
       "KG": "Kilogramo",
       "GRAMO": "Gramo",
       "LITRO": "Litro",
+      "MILILITRO": "Mililitro",
+      "METRO": "Metro",
+      "CAJA": "Caja",
+      "PAQUETE": "Paquete",
+      "PAR": "Par",
+      "DOCENA": "Docena",
       "SERVICIO": "Servicio"
     },
     "salePrice": "Precio de venta",

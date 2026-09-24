@@ -178,7 +178,7 @@ export const GIROS: Giro[] = [
     ],
     modulos: ["granel", "mermas", "lotes", "credito"],
     faqs: [
-      { pregunta: "¿Puedo vender por kilo y por pieza?", respuesta: "Sí. Activa la venta a granel en Configuración → Módulos; cada producto se configura por kilo, por litro o por pieza." },
+      { pregunta: "¿Puedo vender por kilo y por pieza?", respuesta: "Sí. Cada producto tiene su unidad: kilogramo, gramo, litro, metro, pieza, caja… Si es por kilo, al agregarlo en el punto de venta capturas el peso (por ejemplo 0.750 kg) y el importe se calcula solo." },
       { pregunta: "¿Cómo registro lo que se echa a perder?", respuesta: "Con el módulo de mermas registras la cantidad y el motivo; el inventario se ajusta y la pérdida queda registrada." },
       { pregunta: "¿Puedo dar precio especial a mis clientes de mayoreo?", respuesta: "Sí, con listas de precios: creas una lista de mayoreo y la eliges al cobrar." },
     ],
@@ -210,7 +210,7 @@ export const GIROS: Giro[] = [
     modulos: ["granel", "servicios", "variantes", "lotes"],
     faqs: [
       { pregunta: "¿Puedo cobrar el baño de la mascota?", respuesta: "Sí. Crea el baño como producto de tipo servicio: se cobra en el ticket y no descuenta inventario." },
-      { pregunta: "¿Puedo vender croquetas sueltas?", respuesta: "Sí, con la venta a granel las vendes por kilo; el bulto cerrado puede ser otro producto por pieza." },
+      { pregunta: "¿Puedo vender croquetas sueltas?", respuesta: "Sí. Da de alta las croquetas sueltas en kilogramo: al cobrar capturas el peso y el importe se calcula solo. El bulto cerrado puede ser otro producto por pieza." },
       { pregunta: "¿Maneja tallas de ropa y accesorios?", respuesta: "Sí, con variantes: cada talla y color tiene su propio stock." },
     ],
   },
@@ -274,7 +274,7 @@ export const GIROS: Giro[] = [
     modulos: ["granel", "credito"],
     faqs: [
       { pregunta: "Tengo miles de productos, ¿cómo los cargo?", respuesta: "Con la importación desde Excel o CSV: subes tu lista, asignas las columnas y el sistema detecta duplicados por código de barras." },
-      { pregunta: "¿Puedo vender cable por metro?", respuesta: "Sí, con la venta a granel cada producto se vende en su unidad: metro, kilo o litro." },
+      { pregunta: "¿Puedo vender cable por metro?", respuesta: "Sí. Da de alta el producto con unidad metro; al cobrar capturas la cantidad (por ejemplo 3.5 m) y el importe se calcula solo. Igual con kilo o litro." },
       { pregunta: "¿Puedo dar crédito a contratistas?", respuesta: "Sí, con el módulo de crédito cada cliente tiene su saldo y registras sus abonos." },
     ],
   },
@@ -366,7 +366,7 @@ export const GIROS: Giro[] = [
     ],
     modulos: ["granel", "mermas", "credito", "lotes"],
     faqs: [
-      { pregunta: "¿Vende por kilo?", respuesta: "Sí. Activa la venta a granel en Configuración → Módulos y configura cada corte por kilo." },
+      { pregunta: "¿Vende por kilo?", respuesta: "Sí. Da de alta cada corte en kilogramo: al cobrar capturas el peso y el importe se calcula solo." },
       { pregunta: "¿Puedo llevar el crédito de restaurantes?", respuesta: "Sí, con el módulo de crédito cada cliente tiene su saldo y sus abonos." },
       { pregunta: "¿Cómo registro las mermas?", respuesta: "Con el módulo de mermas registras la cantidad perdida y el motivo; el inventario se ajusta." },
     ],
@@ -377,7 +377,7 @@ export const GIROS: Giro[] = [
     plural: "Panaderías",
     tu: "tu panadería",
     icono: Croissant,
-    config: "GENERAL",
+    config: "ABARROTES",
     resumen:
       "Cobro ágil en hora pico, control de lo que sobra al final del día y pedidos de mayoreo.",
     queEs:
@@ -428,7 +428,7 @@ export const GIROS: Giro[] = [
     ],
     modulos: ["granel", "lotes", "credito"],
     faqs: [
-      { pregunta: "¿Puedo vender dulces a granel?", respuesta: "Sí, activa la venta a granel y configura el producto por kilo." },
+      { pregunta: "¿Puedo vender dulces a granel?", respuesta: "Sí. Da de alta el dulce a granel en kilogramo o gramo: al cobrar capturas el peso y el importe se calcula solo." },
       { pregunta: "¿Maneja precio de mayoreo?", respuesta: "Sí, con listas de precios que eliges al cobrar." },
       { pregunta: "¿Controla la caducidad?", respuesta: "Sí, con lotes y fechas de caducidad." },
     ],
@@ -522,7 +522,7 @@ export const GIROS: Giro[] = [
     ],
     modulos: ["granel", "lotes", "mermas", "credito"],
     faqs: [
-      { pregunta: "¿Vende quesos por kilo?", respuesta: "Sí, activa la venta a granel y configura cada producto por kilo." },
+      { pregunta: "¿Vende quesos por kilo?", respuesta: "Sí. Da de alta cada producto en kilogramo: al cobrar capturas el peso y el importe se calcula solo." },
       { pregunta: "¿Controla la caducidad?", respuesta: "Sí, registra cada lote con su fecha al recibir la mercancía." },
       { pregunta: "¿Puedo dar crédito a taquerías?", respuesta: "Sí, con el módulo de crédito." },
     ],
@@ -657,7 +657,7 @@ export const GIROS: Giro[] = [
     plural: "Florerías",
     tu: "tu florería",
     icono: Flower2,
-    config: "VERDULERIA",
+    config: "GENERAL",
     resumen:
       "Flor por pieza o por ramo, arreglos como servicio y control de la flor que se marchita.",
     queEs:
@@ -773,5 +773,43 @@ export function rutaGiro(slug: string): string {
 
 /** Registro con el giro ya elegido (`auth-forms.tsx` lee `?giro=`). */
 export function rutaRegistroGiro(giro: Giro): string {
-  return `/es/auth?mode=signup&giro=${giro.config}`;
+  return `/es/auth?mode=signup&giro=${giro.slug}`;
 }
+
+/** Giro con el que se registra quien no elige otro. */
+export const GIRO_POR_DEFECTO = "tiendas";
+
+/**
+ * Los enlaces viejos de "Prueba gratis" mandaban la CONFIGURACION
+ * (`?giro=FERRETERIA`). Se siguen aceptando: cada una apunta a su giro tipo.
+ */
+const GIRO_DE_CONFIG: Record<ConfigRegistro, string> = {
+  ABARROTES: "abarrotes",
+  VERDULERIA: "verdulerias",
+  MASCOTAS: "tiendas-de-mascotas",
+  ROPA: "tiendas-de-ropa",
+  FERRETERIA: "ferreterias",
+  FARMACIA: "farmacias",
+  GENERAL: "tiendas",
+};
+
+/**
+ * El giro que llega en `?giro=` (slug, o configuracion vieja), o `undefined`
+ * si no es ninguno: un valor inventado en la URL no debe llegar al formulario.
+ */
+export function giroDeRegistro(valor: string | null | undefined): Giro | undefined {
+  if (!valor) return undefined;
+  const porSlug = giroPorSlug(valor);
+  if (porSlug) return porSlug;
+  const slug = GIRO_DE_CONFIG[valor as ConfigRegistro];
+  return slug ? giroPorSlug(slug) : undefined;
+}
+
+/**
+ * Los giros para el desplegable del registro: en el orden del catalogo y con
+ * "Tienda General" al final (es el comodin para quien no se ve en la lista).
+ */
+export const GIROS_REGISTRO: Giro[] = [
+  ...GIROS.filter((g) => g.slug !== GIRO_POR_DEFECTO),
+  ...GIROS.filter((g) => g.slug === GIRO_POR_DEFECTO),
+];

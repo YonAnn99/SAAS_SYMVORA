@@ -119,7 +119,7 @@ export type Database = {
           sku: string | null;
           nombre: string;
           descripcion: string | null;
-          unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+          unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
           precio_venta: number;
           costo_compra: number;
           stock_actual: number;
@@ -143,7 +143,7 @@ export type Database = {
           sku?: string | null;
           nombre: string;
           descripcion?: string | null;
-          unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+          unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
           precio_venta: number;
           costo_compra: number;
           stock_actual?: number;
@@ -167,7 +167,7 @@ export type Database = {
           sku?: string | null;
           nombre?: string;
           descripcion?: string | null;
-          unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+          unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
           precio_venta?: number;
           costo_compra?: number;
           stock_actual?: number;
@@ -1283,7 +1283,7 @@ export type Database = {
     };
     Enums: {
       app_role: "SUPER_ADMIN" | "ORG_ADMIN" | "CAJERO";
-      unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+      unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
       metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "CREDITO" | "TARJETA_TERMINAL";
       estado_venta: "COMPLETADA" | "CANCELADA" | "PENDIENTE";
       estado_compra: "PENDIENTE" | "RECIBIDA" | "CANCELADA";

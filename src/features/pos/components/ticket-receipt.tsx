@@ -1,5 +1,6 @@
 "use client";
 
+import { abreviatura, formatearCantidad } from "@/lib/unidades";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
@@ -117,9 +118,9 @@ export function TicketReceipt({
                   {item.varianteLabel ? ` · ${item.varianteLabel}` : ""}
                 </span>
                 <span className="ticket-producto-linea">
-                  <span className="ticket-col-izq">x{item.cantidad} u.</span>
+                  <span className="ticket-col-izq">x{formatearCantidad(item.cantidad, item.unidad_medida)}</span>
                   <span className="ticket-col-der">
-                    {formatearImporte(item.precioUnitario)}/u.
+                    {formatearImporte(item.precioUnitario)}/{abreviatura(item.unidad_medida, 1)}
                   </span>
                   <span className="ticket-col-der">
                     {formatearImporte(subtotalLinea(item))}

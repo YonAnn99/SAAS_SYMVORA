@@ -1,6 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { UNIDADES } from "@/lib/unidades";
+import { unidadesOfrecidas } from "@/lib/modulos";
+import { useModulos } from "@/hooks/use-modulos";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -60,6 +63,9 @@ export function ProductDialog({
   tenantId,
 }: ProductDialogProps) {
   const t = useTranslations();
+  // Modulos del negocio (Configuracion -> Modulos): deciden que unidades y que
+  // opciones se ofrecen. Lo que el producto YA usa se muestra siempre.
+  const { modulos } = useModulos();
   const [formData, setFormData] = useState<ProductFormData>(
     defaultProductFormData
   );
@@ -487,6 +493,7 @@ export function ProductDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">Unidad de medida *</Label>
               <Select
+                items={Object.fromEntries(UNIDADES.map((u) => [u, t(`products.units.${u}`)]))}
                 value={formData.unidad_medida}
                 onValueChange={(v) => v && updateField("unidad_medida", v)}
               >
@@ -494,11 +501,12 @@ export function ProductDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PIEZA">Pieza</SelectItem>
-                  <SelectItem value="KG">Kilogramo</SelectItem>
-                  <SelectItem value="GRAMO">Gramo</SelectItem>
-                  <SelectItem value="LITRO">Litro</SelectItem>
-                  <SelectItem value="SERVICIO">Servicio</SelectItem>
+                  {/* De `@/lib/unidades`: agregar una unidad alli la trae aqui. */}
+                  {unidadesOfrecidas(modulos, formData.unidad_medida).map((u) => (
+                    <SelectItem key={u} value={u}>
+                      {t(`products.units.${u}`)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -601,6 +609,7 @@ export function ProductDialog({
           {/* Los tres llevan una línea que dice QUÉ cambia al activarlos. Sin
               ella el usuario movía el interruptor, no veía nada distinto y
               concluía —con razón— que no servían para nada. */}
+          {(modulos.permite_servicios || formData.es_servicio) && (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Switch
@@ -614,6 +623,8 @@ export function ProductDialog({
               a domicilio.
             </p>
           </div>
+          )}
+          {(modulos.permite_lotes_caducidad || formData.permite_lotes) && (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Switch
@@ -627,6 +638,8 @@ export function ProductDialog({
               registrar sus caducidades.
             </p>
           </div>
+          )}
+          {(modulos.permite_variantes || formData.permite_variantes) && (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Switch
@@ -640,6 +653,7 @@ export function ProductDialog({
               de alta tallas y colores con su propio stock.
             </p>
           </div>
+          )}
         </div>
         <DialogFooter>
           <Button

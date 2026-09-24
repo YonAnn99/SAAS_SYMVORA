@@ -10,6 +10,8 @@
 import { productSchema } from "@/lib/validations/schemas";
 import type { Producto } from "./types/inventory.types";
 import type { UnidadMedida } from "@/lib/types/database";
+import { UNIDADES_FISICAS } from "@/lib/unidades";
+import { unidadesOfrecidas, type Modulos } from "@/lib/modulos";
 
 /**
  * Los cuatro campos que se pueden tocar desde la tabla.
@@ -27,7 +29,6 @@ export type CampoInline =
 
 export type ValorInline = string | number;
 
-const UNIDADES_FISICAS: UnidadMedida[] = ["PIEZA", "KG", "GRAMO", "LITRO"];
 
 /**
  * Las unidades que tiene sentido ofrecer para ESTE producto.
@@ -37,11 +38,17 @@ const UNIDADES_FISICAS: UnidadMedida[] = ["PIEZA", "KG", "GRAMO", "LITRO"];
  * al que corresponde segun `es_servicio`.
  */
 export function unidadesPermitidas(
-  producto: Pick<Producto, "es_servicio" | "unidad_medida">
+  producto: Pick<Producto, "es_servicio" | "unidad_medida">,
+  modulos?: Modulos
 ): UnidadMedida[] {
+  // Sin "venta por peso o medida" se quitan kg, g, l, ml y m (ver
+  // `@/lib/modulos`). La unidad actual se reincorpora abajo igualmente.
+  const fisicas = modulos
+    ? unidadesOfrecidas(modulos).filter((u) => u !== "SERVICIO")
+    : [...UNIDADES_FISICAS];
   const base: UnidadMedida[] = producto.es_servicio
     ? ["SERVICIO"]
-    : UNIDADES_FISICAS;
+    : fisicas;
 
   // La unidad actual SIEMPRE entra, aunque contradiga `es_servicio`. Hay
   // productos con datos inconsistentes (marcados como servicio pero en PIEZA,

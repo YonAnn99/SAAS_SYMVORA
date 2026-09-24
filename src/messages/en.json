@@ -257,6 +257,12 @@
       "KG": "Kilogram",
       "GRAMO": "Gram",
       "LITRO": "Liter",
+      "MILILITRO": "Milliliter",
+      "METRO": "Meter",
+      "CAJA": "Box",
+      "PAQUETE": "Pack",
+      "PAR": "Pair",
+      "DOCENA": "Dozen",
       "SERVICIO": "Service"
     },
     "salePrice": "Sale price",

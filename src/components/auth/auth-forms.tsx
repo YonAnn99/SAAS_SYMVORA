@@ -22,6 +22,8 @@ import {
 import { getAppUrl } from "@/lib/site";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { crearNegocio } from "@/features/onboarding/crear-negocio";
+import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
+import { GiroSelect } from "./giro-select";
 import "@/styles/auth-toggle.css";
 
 function GoogleIcon() {
@@ -129,7 +131,8 @@ export function AuthForms({
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [nombreEstablecimiento, setNombreEstablecimiento] = useState("");
-  const [giroComercial, setGiroComercial] = useState<string>(initialGiro ?? "GENERAL");
+  // Slug de uno de los 20 giros (ver `GiroSelect`).
+  const [giro, setGiro] = useState<string>(initialGiro ?? GIRO_POR_DEFECTO);
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -409,7 +412,7 @@ export function AuthForms({
       apellido_paterno: apellidoPaterno,
       apellido_materno: apellidoMaterno,
       nombre_establecimiento: nombreEstablecimiento,
-      giro_comercial: giroComercial,
+      giro,
       email: signupEmail,
       password: signupPassword,
       password_confirm: passwordConfirm,
@@ -436,7 +439,7 @@ export function AuthForms({
         data: {
           nombre: fullName,
           nombre_establecimiento: nombreEstablecimiento,
-          giro_comercial: giroComercial,
+          giro,
         },
         captchaToken: signupCaptchaToken ?? undefined,
       },
@@ -460,7 +463,7 @@ export function AuthForms({
     const resultado = await crearNegocio({
       userId: authData.user.id,
       nombreEstablecimiento,
-      giroComercial,
+      giro,
       logoFile,
       promoCode,
       referralCode,
@@ -595,20 +598,12 @@ export function AuthForms({
                   style={inputStyle}
                 />
                 <div className="auth-field-block">
-                  <Select value={giroComercial} onValueChange={(v) => setGiroComercial(v || "GENERAL")}>
-                    <SelectTrigger className="auth-select-trigger">
-                      <SelectValue placeholder={t("auth.businessTypePlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ABARROTES">{t("auth.businessTypes.ABARROTES")}</SelectItem>
-                      <SelectItem value="VERDULERIA">{t("auth.businessTypes.VERDULERIA")}</SelectItem>
-                      <SelectItem value="MASCOTAS">{t("auth.businessTypes.MASCOTAS")}</SelectItem>
-                      <SelectItem value="ROPA">{t("auth.businessTypes.ROPA")}</SelectItem>
-                      <SelectItem value="FERRETERIA">{t("auth.businessTypes.FERRETERIA")}</SelectItem>
-                      <SelectItem value="FARMACIA">{t("auth.businessTypes.FARMACIA")}</SelectItem>
-                      <SelectItem value="GENERAL">{t("auth.businessTypes.GENERAL")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <GiroSelect
+                    value={giro}
+                    onChange={setGiro}
+                    placeholder={t("auth.businessTypePlaceholder")}
+                    triggerClassName="auth-select-trigger"
+                  />
                 </div>
                 <div className="auth-field-block">
                   <label className="auth-field-label">

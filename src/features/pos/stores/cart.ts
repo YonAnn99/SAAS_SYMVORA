@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { CartItem } from "../types/pos.types";
+import { articulosDeLinea } from "@/lib/unidades";
 
 export type { CartItem } from "../types/pos.types";
 
@@ -111,6 +112,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
 
   getItemCount: () => {
-    return get().items.reduce((sum, item) => sum + item.cantidad, 0);
+    // Por medida cuenta 1 (ver `articulosDeLinea`): si no, "3.75 articulos".
+    return get().items.reduce((sum, item) => sum + articulosDeLinea(item.cantidad, item.unidad_medida), 0);
   },
 }));

@@ -1,3 +1,4 @@
+import { esUnidad, type UnidadMedida } from "@/lib/unidades";
 import { productImportRowSchema } from "@/lib/validations/schemas";
 import { getDefaultClaveUnidad } from "@/features/facturacion/catalogs";
 import type {
@@ -8,8 +9,21 @@ import type {
 } from "../../../types/import.types";
 import type { ExistingProductInfo } from "../../../services/product-import-service";
 
-const VALID_UNITS = ["PIEZA", "KG", "GRAMO", "LITRO", "SERVICIO"] as const;
-type UnidadMedida = (typeof VALID_UNITS)[number];
+// Alias habituales en los Excel de los clientes. Lo que no se reconoce queda
+// como PIEZA (igual que antes), para no rechazar el renglon entero por la unidad.
+const ALIAS_UNIDAD: Record<string, UnidadMedida> = {
+  PZ: "PIEZA", PZA: "PIEZA", PZAS: "PIEZA", PIEZAS: "PIEZA", UNIDAD: "PIEZA", U: "PIEZA",
+  KILO: "KG", KILOS: "KG", KILOGRAMO: "KG", KILOGRAMOS: "KG", KGS: "KG",
+  G: "GRAMO", GR: "GRAMO", GRS: "GRAMO", GRAMOS: "GRAMO",
+  L: "LITRO", LT: "LITRO", LTS: "LITRO", LITROS: "LITRO",
+  ML: "MILILITRO", MILILITROS: "MILILITRO",
+  M: "METRO", MT: "METRO", MTS: "METRO", METROS: "METRO",
+  CAJAS: "CAJA", CJ: "CAJA",
+  PAQ: "PAQUETE", PAQUETES: "PAQUETE", PQ: "PAQUETE",
+  PARES: "PAR",
+  DOC: "DOCENA", DOCENAS: "DOCENA",
+  SERV: "SERVICIO", SERVICIOS: "SERVICIO",
+};
 
 function readField(
   raw: Record<string, unknown>,
@@ -30,11 +44,15 @@ function parseNumber(value: string): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-function parseUnidadMedida(value: string): UnidadMedida {
-  const upper = value.toUpperCase();
-  return (VALID_UNITS as readonly string[]).includes(upper)
-    ? (upper as UnidadMedida)
-    : "PIEZA";
+export function parseUnidadMedida(value: string): UnidadMedida {
+  const upper = value
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\.$/, "");
+  if (esUnidad(upper)) return upper;
+  return ALIAS_UNIDAD[upper] ?? "PIEZA";
 }
 
 export interface BuildImportRowsParams {

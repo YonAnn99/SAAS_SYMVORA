@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
 import { Heart, Package, Pencil, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
@@ -70,6 +71,7 @@ export function ProductsTable({
   onToggleFavorito,
 }: ProductsTableProps) {
   const t = useTranslations();
+  const { modulos } = useModulos();
 
   return (
     <Card className="animate-fade-in-up stagger-3">
@@ -182,7 +184,7 @@ export function ProductsTable({
                         saving={savingRow}
                         hint={t("products.inlineUnitHint")}
                         value={product.unidad_medida}
-                        options={unidadesPermitidas(product).map((u) => ({
+                        options={unidadesPermitidas(product, modulos).map((u) => ({
                           value: u,
                           label: t(`products.units.${u}`),
                         }))}

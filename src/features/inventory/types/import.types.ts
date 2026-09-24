@@ -1,3 +1,4 @@
+import type { UnidadMedida } from "@/lib/unidades";
 export type ImportTargetField =
   | "nombre"
   | "codigo_barras"
@@ -24,7 +25,7 @@ export interface ProductImportInput {
   descripcion: string | null;
   codigo_barras: string | null;
   sku: string | null;
-  unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+  unidad_medida: UnidadMedida;
   precio_venta: number;
   costo_compra: number;
   stock_actual: number;

@@ -8,6 +8,7 @@
  * cobro, dentro del Punto de Venta.
  */
 
+import { formatearCantidad } from "@/lib/unidades";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Printer, Loader2 } from "lucide-react";
@@ -142,7 +143,7 @@ export function SaleDetailDialog({
                           )}
                         </td>
                         <td className="px-3 py-2 text-right font-mono tabular-nums">
-                          {Number(r.cantidad)}
+                          {formatearCantidad(Number(r.cantidad), r.unidad_medida)}
                         </td>
                         <td className="px-3 py-2 text-right font-mono tabular-nums">
                           {formatMXN(Number(r.precio_unitario))}

@@ -1,3 +1,4 @@
+import type { UnidadMedida } from "@/lib/unidades";
 import type {
   AjusteInventario,
   Compra,
@@ -49,7 +50,7 @@ export interface ProductFormData {
   descripcion: string;
   codigo_barras: string;
   sku: string;
-  unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "SERVICIO";
+  unidad_medida: UnidadMedida;
   precio_venta: string;
   costo_compra: string;
   stock_actual: string;
