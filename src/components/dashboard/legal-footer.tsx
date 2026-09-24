@@ -30,7 +30,10 @@ export function LegalFooter() {
     // Colores por token del tema, nunca fijos: con `bg-neutral-50` el pie salia
     // como una franja BLANCA sobre el panel en modo oscuro.
     <footer className="mt-6 border-t border-border bg-muted/30 px-4 py-2 md:px-6 md:py-3">
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:justify-between sm:text-xs">
+      {/* `leading-4` fijo: con `text-[11px]` el interlineado heredado era
+          16.5 px y el alto del pie no era exacto. `alto-panel.ts` cuenta con
+          una linea de 16 px. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] leading-4 text-muted-foreground sm:justify-between sm:text-xs sm:leading-4">
         <span>
           © 2026 SYMVORA.
           {/* La frase entera no cabe en 360px junto a los tres enlaces. */}

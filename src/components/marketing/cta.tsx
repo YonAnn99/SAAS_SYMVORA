@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { Check, Rocket } from "lucide-react";
 import { PRECIO_PROMO_MXN, precioListaMXN, promoAplica } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
+import { SinLimites } from "./sin-limites";
 import {
   easeOutLong,
   easeOutShort,
@@ -220,6 +221,11 @@ export function CTA() {
             })}
           </motion.p>
         )}
+
+        {/* Destacado antes de la lista: lo que el precio NO limita. */}
+        <div className="mt-2">
+          <SinLimites alineacion="centro" retraso={0.2} />
+        </div>
 
         <motion.div
           className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-lg mt-4 text-left"

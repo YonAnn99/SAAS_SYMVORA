@@ -24,6 +24,7 @@ import { sucursalDelPos } from "@/features/sucursales/seleccion";
 import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
 import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 
 import { completeSale } from "@/features/pos/services/pos-service";
@@ -483,12 +484,18 @@ export default function POSPage() {
     <>
       <div
         className={cn(
-          "flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] gap-3 lg:gap-5 transition-all duration-200",
+          // El alto exacto entre el encabezado y el pie: sin esto la pagina se
+          // desplazaba y el pie quedaba fuera de la pantalla.
+          "flex flex-col lg:flex-row gap-3 lg:gap-5 transition-all duration-200",
+          ALTO_PANEL_COMPLETO,
           showRegisterBlocked && "filter blur-sm pointer-events-none select-none opacity-40"
         )}
       >
-      {/* Left: Products grid / search */}
-      <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
+      {/* Left: Products grid / search.
+          `min-w-0`: sin el, esta columna no podia ser mas angosta que su barra
+          de herramientas y empujaba el carrito fuera de la pantalla en anchos
+          de ~1280 px (laptops con la escala de Windows al 125 %). */}
+      <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0 min-w-0">
         <PosSearchBar
           search={search}
           onSearchChange={setSearch}
@@ -546,7 +553,7 @@ export default function POSPage() {
       </div>
 
       {/* Right: Cart (desktop only — on mobile it lives in the bottom sheet below) */}
-      <div className="hidden lg:flex lg:w-80 flex-col animate-fade-in-up stagger-2">
+      <div className="hidden lg:flex lg:w-80 shrink-0 flex-col animate-fade-in-up stagger-2">
         <CheckoutPanel
           className="h-full"
           customers={customers}

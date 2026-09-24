@@ -104,3 +104,41 @@ describe("el pie se desplaza con el contenido", () => {
     ).toContain("flex-1");
   });
 });
+
+describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
+  // EL DEFECTO (2026-09-24): el POS media `100vh - 3.5rem` pero alrededor tenia
+  // encabezado (64), relleno de main arriba y ABAJO (24 + 24) y el pie (~65).
+  // Sobraban ~120 px: la pagina se desplazaba, la barra de busqueda quedaba
+  // cortada y el pie flotaba 24 px sobre el fondo. `alto-panel.ts` hace la
+  // cuenta; estos tests fijan las piezas de las que depende.
+  const alto = leer("src/components/dashboard/alto-panel.ts");
+  const header = leer("src/components/layout/header.tsx");
+
+  it("main no tiene relleno inferior", () => {
+    const etiquetaMain = shell.match(/<main[^>]*>/)?.[0] ?? "";
+    expect(etiquetaMain).not.toMatch(/\b(md:)?p-\d/); // p-4 / md:p-6 incluyen el de abajo
+    expect(etiquetaMain).not.toMatch(/\b(md:)?pb-/);
+    expect(etiquetaMain).toContain("pt-4");
+    expect(etiquetaMain).toContain("md:pt-6");
+  });
+
+  it("las medidas que asume alto-panel.ts siguen siendo esas", () => {
+    expect(header).toMatch(/<header className="[^"]*\bh-16\b/);
+    expect(footer).toContain("mt-6");
+    expect(footer).toContain("py-2");
+    expect(footer).toContain("md:py-3");
+    expect(footer).toContain("leading-4");
+    expect(alto).toContain("h-[calc(100vh-137px)]");
+    expect(alto).toContain("md:h-[calc(100vh-153px)]");
+  });
+
+  it.each([
+    "src/app/(dashboard)/[locale]/pos/page.tsx",
+    "src/app/(dashboard)/[locale]/pos/loading.tsx",
+    "src/features/cash-register/components/register-required-notice.tsx",
+  ])("%s usa ALTO_PANEL_COMPLETO y no un calc escrito a mano", (ruta) => {
+    const fuente = leer(ruta);
+    expect(fuente).toContain("ALTO_PANEL_COMPLETO");
+    expect(fuente).not.toMatch(/h-\[calc\(100vh/);
+  });
+});

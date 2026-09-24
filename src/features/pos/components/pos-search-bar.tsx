@@ -62,8 +62,12 @@ export function PosSearchBar({
   const showCategorySelect = categories.length > 0 || favoritosCount > 0;
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 animate-fade-in-up stagger-1">
-      <div className="relative flex-1 max-w-md">
+    // `sm:flex-wrap`: la fila se parte cuando no cabe. Con sucursal, categoria,
+    // lista de precios, vista y "Agregar articulo" suma ~950 px; en una
+    // pantalla de 1280 px la columna de productos tiene ~670 y, sin partirse,
+    // el buscador quedaba reducido a la lupa y el carrito salia de la pantalla.
+    <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 animate-fade-in-up stagger-1">
+      <div className="relative flex-1 min-w-[12rem] max-w-md">
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder={t("pos.barcodePlaceholder")}

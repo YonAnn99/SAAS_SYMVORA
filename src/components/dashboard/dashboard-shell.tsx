@@ -44,7 +44,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               come el espacio sobrante, así que el pie cae al fondo cuando hay
               poco que mostrar y se va hacia abajo cuando hay mucho.
             */}
-            <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
+            {/* Sin relleno inferior: el pie queda pegado al fondo (su `mt-6`
+                ya lo separa del contenido). Ver `alto-panel.ts`. */}
+            <main className="flex flex-1 flex-col overflow-y-auto px-4 pt-4 md:px-6 md:pt-6">
               <div className="flex-1">{children}</div>
               <LegalFooter />
             </main>

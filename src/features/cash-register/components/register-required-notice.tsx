@@ -3,6 +3,8 @@
 import { Wallet } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
+import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
+import { cn } from "@/lib/utils";
 
 /**
  * Lo que ve quien abre el Punto de Venta sin caja abierta.
@@ -13,7 +15,7 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
  */
 export function RegisterRequiredNotice() {
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col items-center justify-center gap-4 px-6 text-center">
+    <div className={cn("flex flex-col items-center justify-center gap-4 px-6 text-center", ALTO_PANEL_COMPLETO)}>
       <div className="rounded-full bg-amber-500/10 p-4">
         <Wallet className="h-8 w-8 text-amber-600 dark:text-amber-400" />
       </div>

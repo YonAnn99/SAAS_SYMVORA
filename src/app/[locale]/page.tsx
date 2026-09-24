@@ -2,7 +2,7 @@
 // desde faq.tsx porque tiene "use client" y al cruzar el boundary
 // server→client se serializa como referencia, no como array literal.
 // En runtime resultaba en: "TypeError: o.FAQ_KEYS.map is not a function"
-const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8"] as const;
+const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8", "9"] as const;
 
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -33,7 +33,7 @@ import { DIAS_PRUEBA } from "@/lib/trial";
 export const metadata: Metadata = {
   title: "SYMVORA — POS e inventario para PyMEs",
   description:
-    `Sistema de punto de venta e inventarios para PyMEs en México. Sin comisiones por venta y demo gratuita de ${DIAS_PRUEBA} días.`,
+    `Sistema de punto de venta e inventarios para PyMEs en México. Usuarios y productos ilimitados, sin comisiones por venta y demo gratuita de ${DIAS_PRUEBA} días.`,
   alternates: {
     canonical: "/es",
   },
@@ -94,7 +94,7 @@ export default async function LocalePage() {
 
   const software = softwareApplicationSchema(siteUrl, {
     description:
-      "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $399 MXN/mes sin comisiones por venta.",
+      "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $399 MXN/mes con usuarios y productos ilimitados y sin comisiones por venta.",
     featureList,
   });
 

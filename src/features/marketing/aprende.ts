@@ -377,7 +377,10 @@ export const GUIAS: Guia[] = [
         ],
       },
     ],
-    consejos: ["Usuarios y Suscripción solo los maneja el dueño: son los módulos que reparten poder y cobran."],
+    consejos: [
+      "Puedes agregar todos los usuarios que necesites, sin costo extra.",
+      "Usuarios y Suscripción solo los maneja el dueño: son los módulos que reparten poder y cobran.",
+    ],
     relacionadas: ["sucursales", "bitacora"],
   },
   {

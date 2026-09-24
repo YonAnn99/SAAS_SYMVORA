@@ -149,7 +149,7 @@ export default async function GiroPage({ params }: { params: Params }) {
               </a>
             </div>
             <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-              Sin tarjeta · Sin comisiones por venta · Cancela cuando quieras
+              Sin tarjeta · Sin comisiones por venta · Usuarios ilimitados
             </p>
           </div>
 

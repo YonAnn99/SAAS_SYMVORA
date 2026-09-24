@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Play } from "lucide-react";
 import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./animations";
 import { PosMockup } from "./pos-mockup";
+import { SinLimites } from "./sin-limites";
 import { PromoBadgeEnLinea } from "./promo-badge";
 
 export function Hero() {
@@ -122,6 +123,8 @@ export function Hero() {
           </motion.div>
         </motion.div>
 
+        {/* Lo que no tiene tope: usuarios, productos y comisiones. */}
+        <SinLimites retraso={0.75} />
       </motion.div>
 
       {/* Right Column - POS Mockup (40%) */}

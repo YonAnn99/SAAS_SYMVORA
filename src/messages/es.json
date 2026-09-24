@@ -710,6 +710,11 @@
         "added": "Producto agregado"
       }
     },
+    "sinLimites": {
+      "usuarios": "Usuarios ilimitados",
+      "productos": "Productos ilimitados",
+      "comisiones": "Sin comisiones por venta"
+    },
     "promo": {
       "badge": "−50% OFF",
       "aria": "Promoción: 50% de descuento. Ver precios."
@@ -874,6 +879,10 @@
         "8": {
           "question": "¿Puedo cancelar cuando quiera?",
           "answer": "Sí. Sin penalizaciones ni cláusulas de permanencia. Si cancelas, sigues teniendo acceso hasta el final del periodo que ya pagaste. No hacemos devoluciones por periodos parciales."
+        },
+        "9": {
+          "question": "¿Hay límite de usuarios o de productos?",
+          "answer": "No. Puedes agregar a todo tu equipo y todo tu catálogo sin costo extra: el precio de la suscripción es el mismo tengas 1 o 20 usuarios, y 50 o 5,000 productos. Tampoco cobramos comisión por venta."
         }
       },
       "cta": {
@@ -897,7 +906,7 @@
         "pos": "Punto de venta completo",
         "inventory": "Inventario con lotes y variantes",
         "reports": "Reportes y gráficas",
-        "users": "Hasta 3 usuarios",
+        "users": "Permisos por usuario y rol",
         "support": "Soporte en español",
         "catalogImport": "Importa tu catálogo desde Excel/CSV"
       },

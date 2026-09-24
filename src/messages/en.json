@@ -710,6 +710,11 @@
         "added": "Item added"
       }
     },
+    "sinLimites": {
+      "usuarios": "Unlimited users",
+      "productos": "Unlimited products",
+      "comisiones": "No sales commissions"
+    },
     "promo": {
       "badge": "−50% OFF",
       "aria": "Promotion: 50% off. See pricing."
@@ -874,6 +879,10 @@
         "8": {
           "question": "Can I cancel anytime?",
           "answer": "Yes. No penalties and no long-term contracts. If you cancel, you keep access until the end of the period you already paid for. We don't offer refunds for partial periods."
+        },
+        "9": {
+          "question": "Is there a limit on users or products?",
+          "answer": "No. You can add your whole team and your whole catalog at no extra cost: the subscription price is the same whether you have 1 or 20 users, and 50 or 5,000 products. We don't charge sales commissions either."
         }
       },
       "cta": {
@@ -897,7 +906,7 @@
         "pos": "Full point of sale",
         "inventory": "Inventory with lots and variants",
         "reports": "Reports and charts",
-        "users": "Up to 3 users",
+        "users": "Per-user and role permissions",
         "support": "Spanish support",
         "catalogImport": "Import your catalog from Excel/CSV"
       },
