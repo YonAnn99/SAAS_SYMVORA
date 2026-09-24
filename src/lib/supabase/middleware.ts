@@ -28,6 +28,9 @@ const MARKETING_SEGMENTS = [
   // publica. Sin esto, en produccion redirigiria al host de la app, y sin
   // sesion terminaria en el login en lugar de mostrarse.
   "/punto-de-venta",
+  // Guias de uso (/es/aprende): publicas y en www. Desde el sistema se enlazan
+  // en relativo y esta lista las manda del host de la app al de marketing.
+  "/aprende",
 ];
 
 // Routes that require ORG_ADMIN or higher

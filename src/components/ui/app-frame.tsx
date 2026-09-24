@@ -34,7 +34,11 @@ export function AppFrame({
 }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToTop = (e: React.MouseEvent) => {
+  // En la landing (`inicio` vacio) el logo sube al principio de la pagina. En
+  // las demas que usan este marco (Aprende, paginas de giro) lleva a la
+  // landing: antes era siempre `href="#"` y ahi no hacia nada.
+  const alLogo = (e: React.MouseEvent) => {
+    if (inicio) return;
     e.preventDefault();
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({
@@ -49,8 +53,16 @@ export function AppFrame({
       
       <div className="md:hidden">
         <BubbleMenu
+          items={[
+            { label: "Productos", href: `${inicio}#features`, rotation: -8 },
+            { label: "Precios", href: `${inicio}#pricing`, rotation: 8 },
+            { label: "Aprende", href: "/es/aprende", rotation: -8 },
+            { label: "Contáctanos", href: `${inicio}#footer-contacto`, rotation: 8 },
+            { label: "Iniciar sesión", href: "/login", rotation: -8 },
+            { label: "Prueba gratis", href: "/signup", rotation: 8 },
+          ]}
           logo={
-            <div className="w-[100px] h-[28px] overflow-hidden">
+            <a href={inicio || "#"} onClick={alLogo} aria-label="SYMVORA, ir al inicio" className="block w-[100px] h-[28px] overflow-hidden">
               <img 
                 src="/symvora-logo.webp" 
                 alt="SYMVORA" 
@@ -59,7 +71,7 @@ export function AppFrame({
                 className="w-full h-full object-contain dark:brightness-0 dark:invert transition-all"
                 style={{ objectFit: 'contain' }}
               />
-            </div>
+            </a>
           }
           menuBg="var(--bubble-bg)"
           menuContentColor="var(--bubble-text)"
@@ -79,7 +91,7 @@ export function AppFrame({
             <path d="M0 24V0H24C10.7452 0 0 10.7452 0 24Z" />
           </svg>
 
-          <a href="#" onClick={scrollToTop} className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer">
+          <a href={inicio || "#"} onClick={alLogo} aria-label="SYMVORA, ir al inicio" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer">
             <Image 
               src="/symvora-logo.webp" 
               alt="SYMVORA" 
@@ -93,6 +105,7 @@ export function AppFrame({
           <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
             <Link href={`${inicio}#features`} className="hover:text-white transition-colors">Productos</Link>
             <Link href={`${inicio}#pricing`} className="hover:text-white transition-colors">Precios</Link>
+            <Link href="/es/aprende" className="hover:text-white transition-colors">Aprende</Link>
             <Link href={`${inicio}#footer-contacto`} className="hover:text-white transition-colors">Contáctanos</Link>
           </nav>
 

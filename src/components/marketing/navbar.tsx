@@ -43,6 +43,10 @@ const navItems: NavItem[] = [
     href: "#pricing",
   },
   {
+    label: "landing.nav.learn",
+    href: "/es/aprende",
+  },
+  {
     label: "landing.nav.companyLabel",
     children: [
       { label: "landing.nav.company.about", href: "#about" },

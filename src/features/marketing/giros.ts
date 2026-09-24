@@ -198,7 +198,7 @@ export const GIROS: Giro[] = [
       { titulo: "Alimento por kilo o por bulto", texto: "Vende croquetas sueltas por kilo y el bulto cerrado por pieza, cada uno con su precio." },
       { titulo: "Servicios en el mismo ticket", texto: "Cobra el baño o la estética junto con el shampoo o la correa." },
       { titulo: "Accesorios por talla", texto: "Collares, arneses y ropa con su talla y color, cada variante con su propio stock." },
-      { titulo: "Clientes frecuentes", texto: "Registra a tus clientes y consulta qué compran." },
+      { titulo: "Clientes frecuentes", texto: "Registra a tus clientes y lleva su saldo si les vendes a crédito." },
     ],
     funciones: [
       { clave: "granel", texto: "Croquetas y alimento a granel con precio por kilo." },
@@ -604,7 +604,7 @@ export const GIROS: Giro[] = [
       { titulo: "Consulta y productos juntos", texto: "Cobra la consulta, la vacuna y el alimento en un solo ticket." },
       { titulo: "Medicamentos sin caducar", texto: "Lotes con fecha para usar primero lo que vence." },
       { titulo: "Alimento a granel", texto: "Croquetas por kilo o por bulto." },
-      { titulo: "Clientes registrados", texto: "Consulta el historial de compras de cada cliente." },
+      { titulo: "Clientes registrados", texto: "Registra a tus clientes y lleva su saldo si les das crédito." },
     ],
     funciones: [
       { clave: "servicios", texto: "Consultas, vacunas y estética como servicio." },
@@ -617,7 +617,7 @@ export const GIROS: Giro[] = [
     faqs: [
       { pregunta: "¿Puedo cobrar consultas?", respuesta: "Sí, como productos de tipo servicio, sin inventario." },
       { pregunta: "¿Controla caducidad de medicamentos?", respuesta: "Sí, con lotes y fechas de caducidad." },
-      { pregunta: "¿Lleva expediente de las mascotas?", respuesta: "No. SYMVORA es un punto de venta e inventario: registra al cliente y sus compras, pero no lleva historia clínica." },
+      { pregunta: "¿Lleva expediente de las mascotas?", respuesta: "No. SYMVORA es un punto de venta e inventario: registra al cliente y su saldo, pero no lleva historia clínica." },
     ],
   },
   {

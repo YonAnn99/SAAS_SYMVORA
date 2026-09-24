@@ -634,7 +634,7 @@
       },
       "reports": {
         "title": "Check your reports",
-        "description": "On the dashboard you can see today's and this month's sales, average ticket, best-selling products and payment methods. You can export to CSV or PDF."
+        "description": "On the dashboard you can see today's and this month's sales, average ticket, best-selling products and payment methods."
       },
       "activity": {
         "title": "Activity log",
@@ -663,6 +663,7 @@
       "features": "Features",
       "solutionsLabel": "Solutions",
       "pricing": "Pricing",
+      "learn": "Learn",
       "faq": "FAQ",
       "login": "Log in",
       "cta": "Start free",
@@ -754,10 +755,10 @@
       },
       "finances": {
         "title": "Finance & reports",
-        "description": "Open and close cash register with automatic reconciliation — system compares expected balance against actual cash. Sales charts, top products and payment methods. Export to PDF and CSV.",
+        "description": "Open and close cash register with automatic reconciliation — system compares expected balance against actual cash. Sales charts, top products and payment methods.",
         "viewDashboards": "See reports",
         "efficiency": "Precision",
-        "stats": "Reconciliation · 6 reports · Export"
+        "stats": "Reconciliation · Per-cashier closings · 6 reports"
       },
       "catalogImport": {
         "title": "Migrate your catalog easily",

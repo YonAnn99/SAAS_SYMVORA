@@ -236,6 +236,27 @@ export function breadcrumbSchema(
   };
 }
 
+/** Guia paso a paso (/es/aprende/...): los buscadores la muestran como instrucciones. */
+export function howToSchema(
+  siteUrl: string,
+  guia: { nombre: string; descripcion: string; ruta: string; pasos: { nombre: string; texto: string }[] }
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: guia.nombre,
+    description: guia.descripcion,
+    url: `${siteUrl}${guia.ruta}`,
+    inLanguage: "es-MX",
+    step: guia.pasos.map((p, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: p.nombre,
+      text: p.texto,
+    })),
+  };
+}
+
 export function serializeJsonLd(data: unknown): string {
   return JSON.stringify(data);
 }

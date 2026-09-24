@@ -23,6 +23,7 @@ import {
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
+import { AprendeTrigger } from "@/components/tutorial/aprende-trigger";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -133,6 +134,8 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
             sobre algo que nadie iba a echar en falta. Mismo criterio que el
             resto del cliente en demo (ver `demo-restricted-notice.tsx`). */}
         {!isDemo && <TutorialTrigger />}
+        {/* Guia escrita del modulo actual, en /es/aprende. */}
+        <AprendeTrigger />
 
         {/* Search trigger */}
         <Button

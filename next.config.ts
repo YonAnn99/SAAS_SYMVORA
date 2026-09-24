@@ -18,7 +18,8 @@ function securityHeaders() {
     "font-src 'self' data: https://unpkg.com https://fonts.gstatic.com",
     "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.conekta.io https://*.conekta.io https://*.sentry.io https://challenges.cloudflare.com" +
       (isDev ? " ws://localhost:*" : ""),
-    "frame-src https://challenges.cloudflare.com https://*.conekta.io",
+    // youtube-nocookie: los videos de las guias de /es/aprende.
+    "frame-src https://challenges.cloudflare.com https://*.conekta.io https://www.youtube-nocookie.com",
     "worker-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

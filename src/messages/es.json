@@ -634,7 +634,7 @@
       },
       "reports": {
         "title": "Consulta tus reportes",
-        "description": "En el dashboard ves las ventas del día, del mes, ticket promedio, productos más vendidos y métodos de pago. Puedes exportar a CSV o PDF."
+        "description": "En el dashboard ves las ventas del día, del mes, ticket promedio, productos más vendidos y métodos de pago."
       },
       "activity": {
         "title": "Bitácora de actividad",
@@ -663,6 +663,7 @@
       "features": "Funciones",
       "solutionsLabel": "Soluciones",
       "pricing": "Precios",
+      "learn": "Aprende",
       "faq": "FAQ",
       "login": "Iniciar sesión",
       "cta": "Comenzar gratis",
@@ -754,10 +755,10 @@
       },
       "finances": {
         "title": "Finanzas y reportes",
-        "description": "Abre y cierra caja con conciliación automática — el sistema compara el saldo esperado contra el efectivo real. Gráficas de ventas, productos más vendidos y métodos de pago. Exporta a PDF y CSV.",
+        "description": "Abre y cierra caja con conciliación automática — el sistema compara el saldo esperado contra el efectivo real. Gráficas de ventas, productos más vendidos y métodos de pago.",
         "viewDashboards": "Ver reportes",
         "efficiency": "Precisión",
-        "stats": "Conciliación · 6 reportes · Exportación"
+        "stats": "Conciliación · Cortes por cajero · 6 reportes"
       },
       "catalogImport": {
         "title": "Migra tu catálogo fácil",
