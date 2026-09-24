@@ -64,10 +64,13 @@ export function AuthForms({
   initialMode = "login",
   referralCode = null,
   referrerBusinessName = null,
+  initialGiro,
 }: {
   initialMode?: AuthMode;
   referralCode?: string | null;
   referrerBusinessName?: string | null;
+  /** Giro elegido desde su pagina de la landing (`?giro=`), ya validado. */
+  initialGiro?: string;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -126,7 +129,7 @@ export function AuthForms({
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [nombreEstablecimiento, setNombreEstablecimiento] = useState("");
-  const [giroComercial, setGiroComercial] = useState<string>("GENERAL");
+  const [giroComercial, setGiroComercial] = useState<string>(initialGiro ?? "GENERAL");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");

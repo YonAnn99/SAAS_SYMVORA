@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
   {
     label: "landing.nav.solutionsLabel",
     children: [
-      { label: "landing.nav.solutions.byIndustry", href: "#industries" },
+      { label: "landing.nav.solutions.byIndustry", href: "#giros" },
       { label: "landing.nav.solutions.enterprises", href: "#enterprises" },
       { label: "landing.nav.solutions.developers", href: "#developers" },
     ],

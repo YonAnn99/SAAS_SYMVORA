@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { GIROS, rutaGiro } from "@/features/marketing/giros";
 
 const BASE_URL = "https://www.symvora.com.mx";
 
@@ -68,5 +69,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
       alternates: { languages: languageAlternates },
     },
+    // Una por giro, solo en español: son las que traen busquedas como
+    // "punto de venta para papeleria".
+    ...GIROS.map((giro) => ({
+      url: `${BASE_URL}${rutaGiro(giro.slug)}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
   ];
 }

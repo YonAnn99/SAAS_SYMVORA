@@ -191,15 +191,21 @@ export function softwareApplicationSchema(
   };
 }
 
+/**
+ * `pagina`: ruta de la pagina que lleva las preguntas (por defecto la landing).
+ * Las paginas de cada giro tienen las suyas, con su propio `@id`: dos FAQPage
+ * con el mismo id en sitios distintos confunden a los buscadores.
+ */
 export function faqPageSchema(
   siteUrl: string,
-  items: FAQItem[]
+  items: FAQItem[],
+  pagina?: string
 ): FAQPageSchema {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "@id": faqPageId(siteUrl),
-    url: `${siteUrl}/es`,
+    "@id": pagina ? `${siteUrl}${pagina}#faq` : faqPageId(siteUrl),
+    url: pagina ? `${siteUrl}${pagina}` : `${siteUrl}/es`,
     inLanguage: "es-MX",
     isPartOf: { "@id": websiteId(siteUrl) },
     mainEntity: items.map((item) => ({
@@ -209,6 +215,23 @@ export function faqPageSchema(
         "@type": "Answer",
         text: item.answer,
       },
+    })),
+  };
+}
+
+/** Migas de pan (Inicio / Giros / Papelerías) para los resultados de búsqueda. */
+export function breadcrumbSchema(
+  siteUrl: string,
+  items: { nombre: string; ruta: string }[]
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.nombre,
+      item: `${siteUrl}${item.ruta}`,
     })),
   };
 }

@@ -19,7 +19,19 @@ const VoiceNarrator = dynamic(
   { ssr: false }
 );
 
-export function AppFrame({ children }: { children: React.ReactNode }) {
+/**
+ * `inicio`: prefijo de las anclas del encabezado ("Productos", "Precios",
+ * "Contáctanos"). En la landing va vacio (`#features`); en otras paginas que
+ * reutilizan el marco —las de cada giro— es "/es", para que el enlace lleve a
+ * la seccion de la landing y no a un ancla que ahi no existe.
+ */
+export function AppFrame({
+  children,
+  inicio = "",
+}: {
+  children: React.ReactNode;
+  inicio?: string;
+}) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToTop = (e: React.MouseEvent) => {
@@ -79,9 +91,9 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           </a>
 
           <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="#features" className="hover:text-white transition-colors">Productos</Link>
-            <Link href="#pricing" className="hover:text-white transition-colors">Precios</Link>
-            <Link href="#footer-contacto" className="hover:text-white transition-colors">Contáctanos</Link>
+            <Link href={`${inicio}#features`} className="hover:text-white transition-colors">Productos</Link>
+            <Link href={`${inicio}#pricing`} className="hover:text-white transition-colors">Precios</Link>
+            <Link href={`${inicio}#footer-contacto`} className="hover:text-white transition-colors">Contáctanos</Link>
           </nav>
 
           <div className="flex items-center gap-4">

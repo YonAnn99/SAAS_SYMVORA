@@ -24,6 +24,10 @@ const MARKETING_SEGMENTS = [
   "/terminos",
   "/aviso-privacidad",
   "/politica-cookies",
+  // Una pagina por giro (/es/punto-de-venta/papelerias): se sirve en www y es
+  // publica. Sin esto, en produccion redirigiria al host de la app, y sin
+  // sesion terminaria en el login en lugar de mostrarse.
+  "/punto-de-venta",
 ];
 
 // Routes that require ORG_ADMIN or higher
@@ -174,6 +178,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.includes("/billing") ||
     request.nextUrl.pathname.includes("/demo") ||
     isLegalRoute ||
+    isMarketingPath(request.nextUrl.pathname) ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);
 
   if (!user && !isAuthRoute && !isPublicRoute) {

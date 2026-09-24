@@ -5,13 +5,14 @@
 const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8"] as const;
 
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { AppFrame } from "@/components/ui/app-frame";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import LogoCarousel from "@/components/ui/logo-carousel";
 import { Features } from "@/components/marketing/features";
-import { BusinessTypes } from "@/components/marketing/business-types";
+import { GirosStrip } from "@/components/marketing/giros-strip";
+import { GirosCatalog } from "@/components/marketing/giros-catalog";
 import { WhyChooseUs } from "@/components/marketing/why-choose-us";
 import { SecuritySection } from "@/components/marketing/security-section";
 import { Benefits } from "@/components/marketing/benefits";
@@ -75,6 +76,7 @@ export const metadata: Metadata = {
 
 export default async function LocalePage() {
   const t = await getTranslations("landing");
+  const locale = await getLocale();
   const siteUrl = getSiteUrl();
 
   const featureList = [
@@ -100,11 +102,14 @@ export default async function LocalePage() {
 
   return (
     <AppFrame>
+      {/* Lo primero que se ve: el visitante se reconoce por su giro antes de
+          leer el hero. "Otros" baja a `GirosCatalog` (#giros). */}
+      <GirosStrip />
       <Hero />
       <LogoCarousel />
-      <CompatibilityBar />
       <Features />
-      <BusinessTypes />
+      <GirosCatalog locale={locale} />
+      <CompatibilityBar />
       <WhyChooseUs />
       <SecuritySection />
       <Benefits />

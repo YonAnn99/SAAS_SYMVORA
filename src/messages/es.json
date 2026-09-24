@@ -765,41 +765,6 @@
         "stats": "CSV y Excel · Detección de duplicados · Importación por lotes"
       }
     },
-    "businessTypes": {
-      "badge": "Adaptado a tu Negocio",
-      "title": "Configurado para tu giro",
-      "subtitle": "SYMVORA se adapta a múltiples tipos de negocio con módulos y configuraciones predefinidas. Activa solo lo que necesitas.",
-      "types": {
-        "ABARROTES": {
-          "name": "Abarrotes",
-          "desc": "Productos de consumo diario, minimarket y tienda de la esquina"
-        },
-        "VERDULERIA": {
-          "name": "Verdulería",
-          "desc": "Frutas, verduras y productos frescos con control de caducidad"
-        },
-        "MASCOTAS": {
-          "name": "Mascotas",
-          "desc": "Alimentos, accesorios y servicios para mascotas"
-        },
-        "ROPA": {
-          "name": "Ropa y Calzado",
-          "desc": "Tallas, colores y variantes con stock independiente"
-        },
-        "FERRETERIA": {
-          "name": "Ferretería",
-          "desc": "Herramientas, materiales de construcción y refacciones"
-        },
-        "FARMACIA": {
-          "name": "Farmacia",
-          "desc": "Medicamentos, lotes con caducidad y trazabilidad"
-        },
-        "GENERAL": {
-          "name": "General",
-          "desc": "Configuración flexible para cualquier tipo de negocio"
-        }
-      }
-    },
     "security": {
       "badge": "Seguridad",
       "title": "Tus datos están protegidos",

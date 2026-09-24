@@ -765,41 +765,6 @@
         "stats": "CSV & Excel · Duplicate detection · Batch import"
       }
     },
-    "businessTypes": {
-      "badge": "Adapted to Your Business",
-      "title": "Configured for your business type",
-      "subtitle": "SYMVORA adapts to multiple business types with pre-defined modules and configurations. Activate only what you need.",
-      "types": {
-        "ABARROTES": {
-          "name": "Grocery Store",
-          "desc": "Daily consumption products, minimarket and corner store"
-        },
-        "VERDULERIA": {
-          "name": "Produce Shop",
-          "desc": "Fruits, vegetables and fresh products with expiry control"
-        },
-        "MASCOTAS": {
-          "name": "Pet Shop",
-          "desc": "Food, accessories and services for pets"
-        },
-        "ROPA": {
-          "name": "Clothing & Footwear",
-          "desc": "Sizes, colors and variants with independent stock"
-        },
-        "FERRETERIA": {
-          "name": "Hardware Store",
-          "desc": "Tools, construction materials and spare parts"
-        },
-        "FARMACIA": {
-          "name": "Pharmacy",
-          "desc": "Medications, lots with expiry and traceability"
-        },
-        "GENERAL": {
-          "name": "General",
-          "desc": "Flexible configuration for any business type"
-        }
-      }
-    },
     "security": {
       "badge": "Security",
       "title": "Your data is protected",
