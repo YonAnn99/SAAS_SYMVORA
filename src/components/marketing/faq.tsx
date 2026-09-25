@@ -3,7 +3,8 @@
 import { SALES_WHATSAPP } from "@/lib/contact";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { motion, AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
+import { AnimatePresence } from "motion/react";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import {
   easeOutLong,
@@ -12,6 +13,7 @@ import {
   fadeInUp,
 } from "./animations";
 import { WhatsAppLogo } from "./whatsapp-logo";
+import { CAPSULA, CAPSULA_CHICA, WHATSAPP } from "./boton-capsula";
 
 // FAQ_KEYS se mantiene local (no export) porque este archivo es "use client".
 // El Server Component src/app/[locale]/page.tsx declara su propia copia
@@ -69,7 +71,7 @@ function AccordionRow({ index, question, answer, isOpen, onToggle }: AccordionRo
       </button>
       <AnimatePresence initial={false}>
         {isOpen && (
-          <motion.div
+          <m.div
             id={`faq-panel-${index}`}
             role="region"
             aria-labelledby={`faq-trigger-${index}`}
@@ -82,7 +84,7 @@ function AccordionRow({ index, question, answer, isOpen, onToggle }: AccordionRo
             <div className="px-5 pb-4 pl-[60px] text-sm sm:text-base text-neutral-600 dark:text-neutral-300 leading-relaxed">
               {answer}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -94,7 +96,7 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <motion.section
+    <m.section
       id="faq"
       className="w-full py-24 bg-white dark:bg-[#0C0C0C]"
       initial={{ opacity: 0, y: 24 }}
@@ -103,14 +105,14 @@ export function FAQ() {
       transition={easeOutLong}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-12">
-        <motion.div
+        <m.div
           className="flex flex-col items-center text-center gap-4 max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={easeOutShort}
         >
-          <motion.div
+          <m.div
             className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-500/20"
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -120,8 +122,8 @@ export function FAQ() {
             <span className="text-xs font-medium text-blue-600 uppercase tracking-widest">
               {t("landing.faq.badge")}
             </span>
-          </motion.div>
-          <motion.h2
+          </m.div>
+          <m.h2
             className="text-3xl sm:text-4xl font-bold text-black dark:text-neutral-50"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -129,8 +131,8 @@ export function FAQ() {
             transition={{ ...easeOutShort, delay: 0.1 }}
           >
             {t("landing.faq.title")}
-          </motion.h2>
-          <motion.p
+          </m.h2>
+          <m.p
             className="text-lg text-neutral-500 dark:text-neutral-400"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -138,10 +140,10 @@ export function FAQ() {
             transition={{ ...easeOutShort, delay: 0.2 }}
           >
             {t("landing.faq.subtitle")}
-          </motion.p>
-        </motion.div>
+          </m.p>
+        </m.div>
 
-        <motion.div
+        <m.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
@@ -149,7 +151,7 @@ export function FAQ() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-w-5xl mx-auto w-full"
         >
           {FAQ_KEYS.map((key, i) => (
-            <motion.div key={key} variants={fadeInUp} transition={easeOutShort}>
+            <m.div key={key} variants={fadeInUp} transition={easeOutShort}>
               <AccordionRow
                 index={i}
                 question={t(`landing.faq.items.${key}.question`)}
@@ -157,11 +159,11 @@ export function FAQ() {
                 isOpen={openIndex === i}
                 onToggle={() => setOpenIndex(openIndex === i ? null : i)}
               />
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
 
-        <motion.div
+        <m.div
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-2"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -172,19 +174,19 @@ export function FAQ() {
             <MessageCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
             {t("landing.faq.cta.noAnswer")}
           </span>
-          <motion.a
+          <m.a
             href={buildWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-llenado [--llenado:#128C7E] [--llenado-texto:#FFFFFF] inline-flex items-center gap-2 bg-[#25D366] text-white font-medium px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:ring-offset-[#0C0C0C]"
+            className={`${CAPSULA} ${CAPSULA_CHICA} ${WHATSAPP} shadow-sm hover:shadow-md`}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.97 }}
           >
             <WhatsAppLogo size={18} className="text-white" aria-hidden="true" />
             {t("landing.faq.cta.contactUs")}
-          </motion.a>
-        </motion.div>
+          </m.a>
+        </m.div>
       </div>
-    </motion.section>
+    </m.section>
   );
 }

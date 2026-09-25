@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { isMarketingPath } from "@/lib/rutas-marketing";
 
 /**
  * Sentry en el navegador.
@@ -24,19 +25,54 @@ Sentry.init({
   // el stack trace en una interfaz tactil.
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 0.1,
-  integrations: [
-    Sentry.replayIntegration({
-      // El POS maneja datos de clientes y montos. Por defecto Sentry ya
-      // enmascara texto y entradas; se deja explicito para que nadie lo
-      // relaje sin darse cuenta de lo que implica.
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+  // Replay NO va aqui: se carga bajo demanda (ver `asegurarReplay`).
+  integrations: [],
 });
+
+/**
+ * Sentry Replay solo en el sistema, nunca en la landing.
+ *
+ * Replay (rrweb) pesaba ~600 KB de JS en CADA visita a la landing, donde no
+ * sirve de nada: es para ver que hizo el cajero antes de un error. Ahora se
+ * descarga del CDN de Sentry (`browser.sentry-cdn.com`, permitido en la CSP de
+ * next.config.ts) la primera vez que se entra a una ruta del sistema, ya sea
+ * al cargar la pagina o al navegar desde la landing (registro -> panel).
+ */
+let replayPedido = false;
+
+function asegurarReplay(ruta: string) {
+  if (replayPedido || isMarketingPath(ruta)) return;
+  replayPedido = true;
+  Sentry.lazyLoadIntegration("replayIntegration")
+    .then((replayIntegration) => {
+      Sentry.addIntegration(
+        replayIntegration({
+          // El POS maneja datos de clientes y montos. Por defecto Sentry ya
+          // enmascara texto y entradas; se deja explicito para que nadie lo
+          // relaje sin darse cuenta de lo que implica.
+          maskAllText: true,
+          blockAllMedia: true,
+        })
+      );
+    })
+    .catch(() => {
+      // CDN bloqueado o sin red: la app sigue igual, solo sin grabacion.
+      replayPedido = false;
+    });
+}
+
+if (typeof window !== "undefined") {
+  asegurarReplay(window.location.pathname);
+}
 
 /**
  * Sin esto las navegaciones del App Router no se instrumentan y el SDK avisa
  * en cada build con un "ACTION REQUIRED".
  */
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export const onRouterTransitionStart: typeof Sentry.captureRouterTransitionStart = (
+  href,
+  navigationType
+) => {
+  Sentry.captureRouterTransitionStart(href, navigationType);
+  asegurarReplay(new URL(href, window.location.href).pathname);
+};

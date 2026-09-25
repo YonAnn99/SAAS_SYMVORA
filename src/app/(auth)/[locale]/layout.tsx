@@ -1,6 +1,7 @@
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
 import { GradientWaves } from "@/components/auth/gradient-waves";
@@ -29,6 +30,7 @@ export default async function AuthLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      <IdiomaHtml locale={locale} />
       <div className="auth-page-wrapper">
         <GradientWaves className="auth-gradient-waves" />
         <div className="auth-noise-overlay" />

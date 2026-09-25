@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GUIAS, guiaParaRuta, guiaPorSlug, idYoutube, rutaGuia } from "@/features/marketing/aprende";
 import { NAVIGATION } from "@/lib/navigation";
+import { MARKETING_SEGMENTS, isMarketingPath } from "@/lib/rutas-marketing";
 import sitemap from "@/app/sitemap";
 
 /**
@@ -112,9 +113,8 @@ describe("publicación", () => {
 
   it("el middleware las trata como marketing y la CSP permite el video", () => {
     const leer = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
-    const mw = leer("src/lib/supabase/middleware.ts");
-    const segmentos = mw.slice(mw.indexOf("const MARKETING_SEGMENTS"), mw.indexOf("];", mw.indexOf("const MARKETING_SEGMENTS")));
-    expect(segmentos).toContain('"/aprende"');
+    expect(MARKETING_SEGMENTS).toContain("/aprende");
+    expect(isMarketingPath("/es/aprende/primeros-pasos")).toBe(true);
     expect(leer("next.config.ts")).toMatch(/frame-src[^"]*https:\/\/www\.youtube-nocookie\.com/);
   });
 });

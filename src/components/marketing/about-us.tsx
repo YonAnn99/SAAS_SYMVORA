@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { motion, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
+import { useReducedMotion } from "motion/react";
 import { GraduationCap, Target, Heart, Users, Shield } from "lucide-react";
 import {
   easeOutLong,
@@ -15,7 +16,7 @@ export function AboutUs() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <motion.section
+    <m.section
       id="about"
       className="w-full py-24 lg:py-32 bg-white dark:bg-[#0C0C0C]"
       initial={{ opacity: 0, y: 24 }}
@@ -40,7 +41,7 @@ export function AboutUs() {
               {t("landing.about.subtitle")}
             </p>
 
-            <motion.div
+            <m.div
               variants={staggerContainer}
               initial="hidden"
               whileInView="visible"
@@ -53,7 +54,7 @@ export function AboutUs() {
                 { icon: Users, labelKey: "landing.about.values.community", descKey: "landing.about.values.communityDesc" },
                 { icon: Shield, labelKey: "landing.about.values.trust", descKey: "landing.about.values.trustDesc" },
               ].map((item) => (
-                <motion.div
+                <m.div
                   key={item.labelKey}
                   variants={fadeInUpSmall}
                   className="flex flex-col gap-3"
@@ -65,13 +66,13 @@ export function AboutUs() {
                     <h3 className="font-semibold text-black dark:text-neutral-50">{t(item.labelKey)}</h3>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">{t(item.descKey)}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
-            </motion.div>
+            </m.div>
           </div>
 
           <div className="relative">
-            <motion.div
+            <m.div
               className="w-full max-w-md mx-auto bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-blue-950 dark:via-neutral-900 dark:to-purple-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-8 relative overflow-hidden"
               initial="hidden"
               whileInView="visible"
@@ -123,9 +124,9 @@ export function AboutUs() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
 
-            <motion.div
+            <m.div
               className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-100 dark:bg-blue-900 rounded-full blur-3xl opacity-50 dark:opacity-40"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -133,7 +134,7 @@ export function AboutUs() {
               style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
               aria-hidden="true"
             />
-            <motion.div
+            <m.div
               className="absolute -top-4 -right-4 w-24 h-24 bg-purple-100 dark:bg-purple-900 rounded-full blur-3xl opacity-50 dark:opacity-40"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -144,6 +145,6 @@ export function AboutUs() {
           </div>
         </div>
       </div>
-    </motion.section>
+    </m.section>
   );
 }

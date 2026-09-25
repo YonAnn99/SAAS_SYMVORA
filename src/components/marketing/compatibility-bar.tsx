@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { Smartphone, Tablet, Monitor, Cloud } from "lucide-react";
 import { easeOutShort, staggerContainerFast, fadeInUpSmall } from "./animations";
 
@@ -16,7 +16,7 @@ export function CompatibilityBar() {
   const t = useTranslations();
 
   return (
-    <motion.section
+    <m.section
       aria-label={t("landing.compatibility.ariaLabel")}
       className="w-full py-10 sm:py-12 bg-white dark:bg-[#0C0C0C] border-b border-neutral-100 dark:border-neutral-800"
       initial={{ opacity: 0, y: 16 }}
@@ -25,7 +25,7 @@ export function CompatibilityBar() {
       transition={easeOutShort}
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
+        <m.div
           variants={staggerContainerFast}
           initial="hidden"
           whileInView="visible"
@@ -33,7 +33,7 @@ export function CompatibilityBar() {
           className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 sm:gap-x-10"
         >
           {items.map(({ icon: Icon, key }) => (
-            <motion.div
+            <m.div
               key={key}
               variants={fadeInUpSmall}
               transition={easeOutShort}
@@ -54,10 +54,10 @@ export function CompatibilityBar() {
                   {t(`landing.compatibility.${key}.desc`)}
                 </span>
               </span>
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
       </div>
-    </motion.section>
+    </m.section>
   );
 }

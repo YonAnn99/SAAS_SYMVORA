@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
-import { motion, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
+import { useReducedMotion } from "motion/react";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { GIROS, GIROS_FRANJA, giroPorSlug, rutaGiro, type Giro } from "@/features/marketing/giros";
-import { ETIQUETA_GIRO, RECUADRO_GIRO, TRAZO_GIRO } from "./giro-estilos";
-import { easeOutShort, staggerContainerFast, fadeInUpSmall } from "./animations";
+import { CAPSULA, CAPSULA_CHICA, FLECHA_CAPSULA, SECUNDARIA_AZUL } from "./boton-capsula";
+import { ENLACE_GIRO, ETIQUETA_GIRO, RECUADRO_GIRO, TRAZO_GIRO } from "./giro-estilos";
 
 /**
  * Franja de giros, lo primero de la landing (encima del hero): el visitante se
@@ -156,12 +157,11 @@ export function GirosStrip() {
           </div>
 
           <div className="relative flex-1 min-w-0 -mx-4 sm:-mx-6 lg:mx-0">
-            <motion.ul
+            {/* Lista normal, sin animacion de entrada: esta encima del hero y
+                debe verse desde el primer pintado (antes llegaba con
+                `opacity: 0` hasta que cargaba el JS). */}
+            <ul
               ref={listaRef}
-              variants={staggerContainerFast}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.3 }}
               onScroll={medir}
               onPointerDown={alInteractuar}
               onTouchStart={alInteractuar}
@@ -177,10 +177,10 @@ export function GirosStrip() {
                 const Icono = giro.icono;
                 const idioma = locale === "en" ? "en" : "es";
                 return (
-                  <motion.li key={giro.slug} variants={fadeInUpSmall} transition={easeOutShort} className="snap-start shrink-0">
+                  <li key={giro.slug} className="snap-start shrink-0">
                     <Link
                       href={rutaGiro(giro.slug)}
-                      className="group flex w-[70px] lg:w-[72px] flex-col items-center gap-2 lg:gap-[9px] rounded-lg text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                      className={`${ENLACE_GIRO} flex w-[70px] lg:w-[72px] flex-col items-center gap-2 lg:gap-[9px] rounded-lg text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400`}
                     >
                       <span
                         className={`w-12 h-12 lg:w-[46px] lg:h-[46px] ${RECUADRO_GIRO}`}
@@ -192,10 +192,10 @@ export function GirosStrip() {
                         {ETIQUETA_CORTA[giro.slug]?.[idioma] ?? giro.nombre[idioma]}
                       </span>
                     </Link>
-                  </motion.li>
+                  </li>
                 );
               })}
-            </motion.ul>
+            </ul>
 
             {/* Degradados: hay mas contenido de ese lado. Del color del fondo del
                 marco de la landing (blanco / zinc-900). */}
@@ -215,7 +215,7 @@ export function GirosStrip() {
             {/* Flecha con vaiven: invita a deslizar y desliza al tocarla. Se va al
                 llegar al final o en cuanto el usuario desliza por su cuenta. */}
             {hayDerecha && !usuarioDeslizo && (
-              <motion.button
+              <m.button
                 type="button"
                 onClick={deslizar}
                 aria-label={locale === "en" ? "See more business types" : "Ver más giros"}
@@ -229,17 +229,17 @@ export function GirosStrip() {
                 }
               >
                 <ChevronRight className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
-              </motion.button>
+              </m.button>
             )}
           </div>
 
           {/* Escritorio: el catalogo completo, en lugar del antiguo circulo "+ Otros". */}
           <a
             href="#giros"
-            className="hidden lg:flex shrink-0 items-center gap-1.5 rounded-md border border-[#EAEAEA] dark:border-white/[0.08] bg-white dark:bg-[#1E1E1E] px-3.5 py-2.5 text-[13px] font-semibold text-[#111111] dark:text-[#F5F4F0] transition-colors hover:border-[#CFCDC8] dark:hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+            className={`max-lg:hidden shrink-0 ${CAPSULA} ${CAPSULA_CHICA} ${SECUNDARIA_AZUL}`}
           >
             {verTodos}
-            <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} aria-hidden="true" />
+            <ArrowRight className={`w-4 h-4 ${FLECHA_CAPSULA}`} aria-hidden="true" />
           </a>
         </div>
       </div>

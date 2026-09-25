@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
-import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
@@ -8,17 +7,21 @@ import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import "./globals.css";
 import "sonner/dist/styles.css";
 
+// Sin `weight`: asi se descarga la version VARIABLE de Outfit, un solo archivo
+// con todos los grosores. Con la lista de 6 pesos eran 6 archivos woff2.
 const outfitSans = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
+// Solo etiquetas pequeñas (las "PARA TU GIRO"): no merece precarga y competir
+// con la fuente principal por el ancho de banda del primer pintado.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -119,12 +122,11 @@ export const viewport: Viewport = {
   themeColor: "#0A0A0A",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const locale = await getLocale();
   const siteUrl = getSiteUrl();
   const org = organizationSchema(siteUrl, {
     description:
@@ -133,7 +135,12 @@ export default async function RootLayout({
   const site = websiteSchema(siteUrl);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    // `lang` fijo y SIN `getLocale()`: leer el idioma aqui obligaba a mirar las
+    // cabeceras de la peticion, y eso volvia dinamica TODA la app, incluida la
+    // landing (se renderizaba en cada visita, sin CDN: TTFB de 300-750 ms).
+    // El layout raiz no recibe el `[locale]`; lo corrige `<IdiomaHtml>` en los
+    // layouts de cada idioma. Español por defecto: el mercado es Mexico.
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${outfitSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >

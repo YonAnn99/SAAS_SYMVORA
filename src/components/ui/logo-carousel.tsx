@@ -11,9 +11,10 @@ const logos = [
 ];
 
 export default function LogoCarousel() {
-  // 8 copias: cada mitad (4 copias) supera el ancho del viewport, así el
-  // loop translateX(-50%) nunca deja espacio vacío y el reinicio es invisible.
-  const extendedLogos = [...logos, ...logos, ...logos, ...logos, ...logos, ...logos, ...logos, ...logos];
+  // 6 copias: cada mitad (3 copias, ~1,600 px) supera el ancho maximo del
+  // contenedor (max-w-7xl), asi el loop translateX(-50%) nunca deja espacio
+  // vacio y el reinicio es invisible. Antes eran 8 (24 imagenes para 3 logos).
+  const extendedLogos = Array.from({ length: 6 }, () => logos).flat();
 
   return (
     <section className="py-10 sm:py-14 overflow-hidden relative">
@@ -45,10 +46,16 @@ export default function LogoCarousel() {
         <div className="relative flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
           <div className="flex animate-infinite-scroll items-center gap-8 sm:gap-10">
             {extendedLogos.map((logo, index) => (
-              <div key={index} className="flex items-center justify-center shrink-0">
+              // Solo la primera tanda se anuncia: las copias son decoracion del
+              // loop y un lector de pantalla leeria 18 logos en vez de 3.
+              <div
+                key={index}
+                className="flex items-center justify-center shrink-0"
+                aria-hidden={index >= logos.length ? true : undefined}
+              >
                 <Image
                   src={logo.src}
-                  alt={logo.alt}
+                  alt={index >= logos.length ? "" : logo.alt}
                   width={140}
                   height={40}
                   className="object-contain h-6 sm:h-8 w-auto brightness-0 dark:invert opacity-40 hover:opacity-100 transition-opacity duration-300"

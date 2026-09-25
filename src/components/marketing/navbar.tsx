@@ -5,10 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
-import { ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight } from "lucide-react";
+import * as m from "motion/react-m";
+import { AnimatePresence } from "motion/react";
 import { MorphIcon } from "morphicons/react";
 import { cn } from "@/lib/utils";
+import { CAPSULA, CAPSULA_CHICA, CLARA, FLECHA_CAPSULA, PRINCIPAL } from "./boton-capsula";
 import { springTransition } from "./animations";
 import { useBubbleMenuAnimation } from "./use-bubble-menu-animation";
 import { MENU, X, CHEVRON_DOWN, CHEVRON_RIGHT } from "./morph-icons";
@@ -209,7 +211,7 @@ className={cn(
                         </button>
                         <AnimatePresence>
                           {isOpen && (
-                            <motion.div
+                            <m.div
                               initial={{ opacity: 0, y: -8 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -8 }}
@@ -228,7 +230,7 @@ className={cn(
                                   {t(child.label)}
                                 </Link>
                               ))}
-                            </motion.div>
+                            </m.div>
                           )}
                         </AnimatePresence>
                       </>
@@ -260,14 +262,16 @@ className={cn(
               <Link
                 href="/signup"
                 className={cn(
-                  "hidden sm:inline-flex text-sm font-medium px-5 py-2 rounded-lg transition-all active:translate-y-px items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                  mobileOpen
-                    ? "bg-white text-black hover:bg-neutral-200 focus-visible:ring-white"
-                    : "bg-black text-white hover:bg-neutral-800 focus-visible:ring-neutral-500 dark:bg-white dark:text-black dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-300"
+                  "max-sm:hidden",
+                  CAPSULA,
+                  CAPSULA_CHICA,
+                  // Sobre el menu abierto (fondo negro) va la blanca; si no, la
+                  // principal de la landing.
+                  mobileOpen ? CLARA : PRINCIPAL
                 )}
               >
                 {t("landing.nav.cta")}
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                <ArrowRight className={`w-4 h-4 ${FLECHA_CAPSULA}`} aria-hidden="true" />
               </Link>
               <button
                 className={cn(
@@ -331,7 +335,7 @@ className={cn(
                     </button>
                     <AnimatePresence>
                       {isMobileOpen && (
-                        <motion.div
+                        <m.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
@@ -351,7 +355,7 @@ className={cn(
                               {t(child.label)}
                             </Link>
                           ))}
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -388,7 +392,7 @@ className={cn(
               </Link>
               <Link
                 href="/signup"
-                className="block bg-white text-black text-sm font-medium px-5 py-2 rounded-lg text-center hover:bg-neutral-200 transition-colors"
+                className={`w-full ${CAPSULA} ${CAPSULA_CHICA} ${CLARA}`}
                 onClick={() => setMobileOpen(false)}
               >
                 {t("landing.nav.cta")}

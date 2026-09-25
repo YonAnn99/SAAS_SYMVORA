@@ -33,7 +33,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
+import { useReducedMotion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 
@@ -61,7 +62,7 @@ function Estrella({ textoClassName }: { textoClassName: string }) {
 
   return (
     <>
-      <motion.svg
+      <m.svg
         viewBox="0 0 100 100"
         aria-hidden="true"
         className="absolute inset-0 h-full w-full drop-shadow-lg"
@@ -73,7 +74,7 @@ function Estrella({ textoClassName }: { textoClassName: string }) {
         }
       >
         <path d={ESTRELLA} fill="#dc2626" stroke="#ffffff" strokeWidth="3" />
-      </motion.svg>
+      </m.svg>
 
       <span
         className={`relative select-none text-center font-extrabold leading-none tracking-tight text-white ${textoClassName}`}
@@ -131,7 +132,7 @@ export function PromoBadge() {
   if (!PROMO_LANZAMIENTO.activa || !visible) return null;
 
   return (
-    <motion.a
+    <m.a
       href="#pricing"
       onClick={irAPrecios}
       aria-label={t("aria")}
@@ -147,7 +148,7 @@ export function PromoBadge() {
       }`}
     >
       <Estrella textoClassName="text-[13px]" />
-    </motion.a>
+    </m.a>
   );
 }
 
@@ -172,7 +173,7 @@ export function PromoBadgeEnLinea() {
   if (!PROMO_LANZAMIENTO.activa) return null;
 
   return (
-    <motion.a
+    <m.a
       href="#pricing"
       onClick={irAPrecios}
       aria-label={t("aria")}
@@ -180,6 +181,6 @@ export function PromoBadgeEnLinea() {
       className="relative grid h-16 w-16 shrink-0 place-items-center self-start md:hidden"
     >
       <Estrella textoClassName="text-[10px]" />
-    </motion.a>
+    </m.a>
   );
 }

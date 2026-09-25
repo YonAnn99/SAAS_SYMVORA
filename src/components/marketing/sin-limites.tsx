@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { CirclePercent, Package, Users } from "lucide-react";
 
 /**
@@ -39,19 +39,23 @@ const ITEMS = [
 export function SinLimites({
   alineacion = "inicio",
   retraso = 0,
+  visibleDesdeInicio = false,
 }: {
   alineacion?: "inicio" | "centro";
   retraso?: number;
+  /** En el hero se ve sin desplazar: no debe llegar oculto (`opacity: 0`) y
+   *  esperar al JS para aparecer. */
+  visibleDesdeInicio?: boolean;
 }) {
   const t = useTranslations();
   const centro = alineacion === "centro";
 
   return (
-    <motion.ul
+    <m.ul
       className={`flex flex-col sm:flex-row sm:flex-wrap border-t border-[#EAEAEA] dark:border-white/[0.08] sm:pt-[22px] ${
         centro ? "w-full max-w-sm sm:max-w-none mx-auto sm:justify-center" : ""
       }`}
-      initial={{ opacity: 0, y: 12 }}
+      initial={visibleDesdeInicio ? false : { opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ delay: retraso, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -74,6 +78,6 @@ export function SinLimites({
           </span>
         </li>
       ))}
-    </motion.ul>
+    </m.ul>
   );
 }

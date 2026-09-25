@@ -13,6 +13,7 @@ import {
   rutaGiro,
   rutaRegistroGiro,
 } from "@/features/marketing/giros";
+import { MARKETING_SEGMENTS, isMarketingPath } from "@/lib/rutas-marketing";
 import sitemap from "@/app/sitemap";
 
 /**
@@ -97,13 +98,9 @@ describe("enlaces de cada giro", () => {
 
   it("el middleware las trata como marketing (públicas y servidas en www)", () => {
     // Sin esto, en produccion redirigirian al host de la app y sin sesion
-    // acabarian en el login. Se lee el fuente: importar el middleware arrastra
-    // `next/server` (mismo enfoque que modules.test.ts).
-    const middleware = readFileSync(join(process.cwd(), "src/lib/supabase/middleware.ts"), "utf8");
-    const segmentos = middleware.slice(
-      middleware.indexOf("const MARKETING_SEGMENTS"),
-      middleware.indexOf("];", middleware.indexOf("const MARKETING_SEGMENTS"))
-    );
-    expect(segmentos).toContain('"/punto-de-venta"');
+    // acabarian en el login. `rutas-marketing` es la lista que usa el
+    // middleware (y Sentry, para no cargar Replay en marketing).
+    expect(MARKETING_SEGMENTS).toContain("/punto-de-venta");
+    expect(isMarketingPath("/es/punto-de-venta/papelerias")).toBe(true);
   });
 });

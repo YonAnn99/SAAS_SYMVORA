@@ -3,6 +3,15 @@ import { SALES_WHATSAPP } from "@/lib/contact";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, ChevronRight, ToggleRight } from "lucide-react";
+import {
+  CAPSULA,
+  CAPSULA_GRANDE,
+  CLARA,
+  FLECHA_CAPSULA,
+  PRINCIPAL,
+  WHATSAPP_CONTORNO,
+} from "@/components/marketing/boton-capsula";
+import { WhatsAppLogo } from "@/components/marketing/whatsapp-logo";
 import { AppFrame } from "@/components/ui/app-frame";
 import Footer from "@/components/ui/footer";
 import { JsonLd } from "@/components/marketing/json-ld";
@@ -135,17 +144,18 @@ export default async function GiroPage({ params }: { params: Params }) {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
                 href={registro}
-                className="btn-llenado [--llenado:#FFFFFF] [--llenado-texto:#000000] dark:[--llenado:#000000] dark:[--llenado-texto:#FFFFFF] inline-flex items-center justify-center gap-2 rounded-full border border-black dark:border-white bg-black dark:bg-white text-white dark:text-black px-6 py-3 text-sm font-semibold"
+                className={`${CAPSULA} ${CAPSULA_GRANDE} ${PRINCIPAL}`}
               >
                 Prueba gratis {DIAS_PRUEBA} días
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                <ArrowRight className={`w-5 h-5 ${FLECHA_CAPSULA}`} aria-hidden="true" />
               </Link>
               <a
                 href={whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-llenado [--llenado:#25D366] [--llenado-texto:#111111] hover:border-[#25D366] inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 dark:border-neutral-700 px-6 py-3 text-sm font-semibold text-black dark:text-white"
+                className={`${CAPSULA} ${CAPSULA_GRANDE} ${WHATSAPP_CONTORNO}`}
               >
+                <WhatsAppLogo size={20} className="shrink-0" aria-hidden="true" />
                 Escríbenos por WhatsApp
               </a>
             </div>
@@ -306,10 +316,10 @@ export default async function GiroPage({ params }: { params: Params }) {
           </p>
           <Link
             href={registro}
-            className="btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] mt-7 inline-flex items-center gap-2 rounded-full border border-white bg-white text-black px-7 py-3 text-sm font-semibold"
+            className={`mt-7 ${CAPSULA} ${CAPSULA_GRANDE} ${CLARA}`}
           >
             Crear mi cuenta gratis
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            <ArrowRight className={`w-5 h-5 ${FLECHA_CAPSULA}`} aria-hidden="true" />
           </Link>
         </div>
       </section>

@@ -2,7 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { ArrowLeft, Home } from "lucide-react";
 
 export default function NotFound() {
@@ -17,13 +17,13 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 pb-20">
-        <motion.div
+        <m.div
           className="max-w-xl w-full text-center flex flex-col items-center gap-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <motion.span
+          <m.span
             className="text-[clamp(7rem,18vw,11rem)] leading-none font-bold tracking-tight text-black"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -31,27 +31,27 @@ export default function NotFound() {
             aria-hidden="true"
           >
             {t("notFound.code")}
-          </motion.span>
+          </m.span>
 
-          <motion.h1
+          <m.h1
             className="text-3xl sm:text-4xl font-bold tracking-tight text-black"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut", delay: 0.15 }}
           >
             {t("notFound.title")}
-          </motion.h1>
+          </m.h1>
 
-          <motion.p
+          <m.p
             className="text-base sm:text-lg text-neutral-500 max-w-md leading-relaxed"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
           >
             {t("notFound.description")}
-          </motion.p>
+          </m.p>
 
-          <motion.div
+          <m.div
             className="flex flex-col sm:flex-row gap-3 mt-4 w-full sm:w-auto"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -72,8 +72,8 @@ export default function NotFound() {
               <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               {t("notFound.back")}
             </button>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       </div>
     </div>
   );

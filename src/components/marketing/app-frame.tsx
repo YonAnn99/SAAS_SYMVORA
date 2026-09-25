@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Menu, X, ChevronRight } from "lucide-react";
+import { CAPSULA, CAPSULA_CHICA, CLARA, FLECHA_CAPSULA } from "./boton-capsula";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { WhatsAppFab } from "./whatsapp-fab";
 import { ThemeToggleFab } from "./theme-toggle-fab";
 
@@ -74,10 +75,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             </Link>
             <Link
               href="/signup"
-              className="hidden sm:inline-flex items-center gap-1 btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] border border-white text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full"
+              className={`max-sm:hidden ${CAPSULA} ${CAPSULA_CHICA} ${CLARA}`}
             >
               {t("landing.nav.cta")}
-              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              <ArrowRight className={`w-4 h-4 ${FLECHA_CAPSULA}`} aria-hidden="true" />
             </Link>
             <button
               type="button"
@@ -121,7 +122,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
               <Link
                 href="/signup"
                 onClick={() => setMobileOpen(false)}
-                className="block text-center btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] border border-white text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full"
+                className={`w-full ${CAPSULA} ${CAPSULA_CHICA} ${CLARA}`}
               >
                 {t("landing.nav.cta")}
               </Link>

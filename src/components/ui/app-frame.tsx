@@ -6,6 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
 import { PromoBadge } from "@/components/marketing/promo-badge";
+import { CAPSULA, CAPSULA_CHICA, CLARA, FLECHA_CAPSULA } from "@/components/marketing/boton-capsula";
+import { ArrowRight } from "lucide-react";
 
 // BubbleMenu arrastra gsap entero, y AppFrame envuelve TODA la landing: sin
 // esto, cada visita descarga gsap solo por el menu movil. VoiceNarrator vive
@@ -113,8 +115,9 @@ export function AppFrame({
             <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
               Iniciar sesión
             </Link>
-            <Link href="/signup" className="btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] border border-white text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full">
+            <Link href="/signup" className={`${CAPSULA} ${CAPSULA_CHICA} ${CLARA}`}>
               Prueba gratis
+              <ArrowRight className={`w-4 h-4 ${FLECHA_CAPSULA}`} aria-hidden="true" />
             </Link>
           </div>
         </header>

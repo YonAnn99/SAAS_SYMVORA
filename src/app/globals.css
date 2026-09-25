@@ -151,7 +151,15 @@
   opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-size: 256px;
-  mix-blend-mode: overlay;
+}
+/* Sin `mix-blend-mode`: una capa fija a pantalla completa con mezcla obligaba a
+   recomponer TODA la pagina en cada fotograma de desplazamiento. A 2.5% de
+   opacidad el grano se ve practicamente igual. En pantallas tactiles (celular,
+   tablet) ni se dibuja: ahi el costo pesa mas y el grano no se aprecia. */
+@media (hover: none) {
+  .noise-overlay {
+    display: none;
+  }
 }
 
 @layer base {
@@ -334,20 +342,6 @@
     @apply translate-y-0;
   }
 
-  /* Magnetic CTA button - nested icon */
-  .btn-magnetic {
-    @apply relative overflow-hidden;
-  }
-  .btn-magnetic .icon-wrapper {
-    @apply absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center transition-transform duration-200;
-  }
-  .btn-magnetic:hover .icon-wrapper {
-    @apply translate-x-1 -translate-y-1 scale-105;
-  }
-  .btn-magnetic:active .icon-wrapper {
-    @apply translate-x-0 translate-y-0 scale-100;
-  }
-
   /* Link styling */
   a {
     @apply transition-colors duration-150;
@@ -407,18 +401,6 @@
   @apply bg-white/15 dark:bg-black/15 backdrop-blur-3xl border border-white/20 dark:border-white/10;
 }
 
-/* Noise overlay - fixed, pointer-events-none */
-.noise-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 256px;
-  mix-blend-mode: overlay;
-}
-
 /* Radial gradient orbs for hero background */
 .hero-orb {
   @apply absolute rounded-full blur-3xl opacity-30 pointer-events-none;
@@ -430,30 +412,6 @@
 }
 .double-bezel-inner {
   @apply bg-white dark:bg-black rounded-[calc(2rem-0.375rem)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)];
-}
-
-/* Button-in-button CTA */
-.btn-magnetic {
-  @apply relative overflow-hidden;
-}
-.btn-magnetic .icon-wrapper {
-  @apply absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center transition-transform duration-200;
-}
-.btn-magnetic:hover .icon-wrapper {
-  @apply translate-x-1 -translate-y-1 scale-105;
-}
-.btn-magnetic:active .icon-wrapper {
-  @apply translate-x-0 translate-y-0 scale-100;
-}
-
-/* Magnetic physics on buttons */
-@media (hover: hover) {
-  .btn-magnetic:not(:disabled):hover {
-    @apply -translate-y-0.5;
-  }
-  .btn-magnetic:not(:disabled):hover:active {
-    @apply translate-y-0;
-  }
 }
 
 /* Reduced motion */
@@ -913,7 +871,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  transition-property: color, border-color, box-shadow, transform, opacity;
+  transition-property: color, border-color, box-shadow, transform, translate, opacity;
   transition-duration: 0.6s;
   transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
 }
@@ -941,9 +899,40 @@
 .btn-llenado:focus-visible::before {
   transform: translateY(-25%);
 }
+/* Llenado disparado por el raton sobre el contenedor (`group/giro`), no solo
+   sobre el elemento: los iconos de giro se llenan aunque el cursor este en el
+   nombre de abajo. */
+.group\/giro:hover .llenado-en-grupo,
+.group\/giro:focus-visible .llenado-en-grupo {
+  color: var(--llenado-texto, #fff);
+}
+.group\/giro:hover .llenado-en-grupo::before,
+.group\/giro:focus-visible .llenado-en-grupo::before {
+  transform: translateY(-25%);
+}
 @media (prefers-reduced-motion: reduce) {
   .btn-llenado,
   .btn-llenado::before {
     transition-duration: 0.01ms;
+  }
+}
+
+/* Entrada del hero SIN ocultar: solo desplazamiento, nunca `opacity: 0`.
+   Es CSS (corre desde el primer pintado, sin esperar al JS), asi el H1 -el
+   elemento del LCP- se ve en cuanto llega el HTML. En `@layer components` para
+   que `[animation-delay:…]` (utilidad) pueda escalonar los elementos. */
+@layer components {
+  .entrada-suave {
+    animation: entrada-suave 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes entrada-suave {
+  from {
+    transform: translateY(14px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entrada-suave {
+    animation: none;
   }
 }

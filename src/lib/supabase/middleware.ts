@@ -4,6 +4,7 @@ import { after, type NextRequest, NextResponse } from "next/server";
 import { permissionForPath } from "@/lib/modules";
 import { inicioPara } from "@/lib/inicio";
 import type { UserRole } from "@/lib/types/database";
+import { isMarketingPath, stripLocale } from "@/lib/rutas-marketing";
 
 const APP_HOST = "https://app.symvora.com.mx";
 const MARKETING_HOST = "https://www.symvora.com.mx";
@@ -19,19 +20,6 @@ const PROD_HOSTS = new Set([
   "symvora.com.mx",
   DEMO_HOST,
 ]);
-const MARKETING_SEGMENTS = [
-  "/marketing",
-  "/terminos",
-  "/aviso-privacidad",
-  "/politica-cookies",
-  // Una pagina por giro (/es/punto-de-venta/papelerias): se sirve en www y es
-  // publica. Sin esto, en produccion redirigiria al host de la app, y sin
-  // sesion terminaria en el login en lugar de mostrarse.
-  "/punto-de-venta",
-  // Guias de uso (/es/aprende): publicas y en www. Desde el sistema se enlazan
-  // en relativo y esta lista las manda del host de la app al de marketing.
-  "/aprende",
-];
 
 // Routes that require ORG_ADMIN or higher
 const ADMIN_ONLY_PATHS = [
@@ -79,19 +67,6 @@ const ROLE_HIERARCHY: Record<string, number> = {
   SUPER_ADMIN: 3,
 };
 
-function stripLocale(path: string): string {
-  const match = path.match(/^\/(es|en)(?=\/|$)/);
-  return match ? path.slice(match[0].length) || "/" : path;
-}
-
-function isMarketingPath(path: string): boolean {
-  const clean = stripLocale(path);
-  if (clean === "/") return true;
-  return MARKETING_SEGMENTS.some(
-    (segment) => clean === segment || clean.startsWith(`${segment}/`)
-  );
-}
-
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -116,6 +91,20 @@ export async function updateSession(request: NextRequest) {
         308
       );
     }
+  }
+
+  // Las paginas de marketing son publicas y no usan la sesion: todo lo que
+  // sigue (renovar el token, chequeos de rol y suscripcion) solo aplica al
+  // sistema. Salir aqui evita un `auth.getUser()` -una ida y vuelta a Supabase
+  // cuando el visitante trae cookie- en CADA visita a la landing, y no gasta
+  // conexiones del pool en trafico de marketing. En el host de la app (y el de
+  // la demo) ya se redirigio arriba.
+  if (
+    host !== "app.symvora.com.mx" &&
+    host !== DEMO_HOST &&
+    isMarketingPath(request.nextUrl.pathname)
+  ) {
+    return supabaseResponse;
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

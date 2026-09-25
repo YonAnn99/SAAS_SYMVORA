@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { Search, Plus, ShoppingCart, X, Barcode } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { easeOutShort, springIcon } from "./animations";
@@ -38,7 +38,7 @@ export function PosMockup() {
             {t("landing.hero.mockup.products")}
           </span>
           {items.map((item, i) => (
-            <motion.div
+            <m.div
               key={item.key}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -50,7 +50,7 @@ export function PosMockup() {
               </div>
               <div className="flex items-center justify-between mt-1">
                 <span className="text-[10px] font-bold text-neutral-900 dark:text-neutral-100">${item.price}</span>
-                <motion.span
+                <m.span
                   className="w-4 h-4 bg-blue-600 text-white rounded flex items-center justify-center"
                   whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
@@ -58,9 +58,9 @@ export function PosMockup() {
                   aria-hidden="true"
                 >
                   <Plus className="w-2.5 h-2.5" />
-                </motion.span>
+                </m.span>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
 
@@ -79,7 +79,7 @@ export function PosMockup() {
               { name: t("landing.hero.mockup.items.apple"), price: 48, qty: 1 },
               { name: t("landing.hero.mockup.items.tortillas"), price: 22, qty: 1 },
             ].map((row, i) => (
-              <motion.div
+              <m.div
                 key={row.name}
                 initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -95,7 +95,7 @@ export function PosMockup() {
                   </div>
                 </div>
                 <X className="w-3 h-3 text-neutral-300 dark:text-neutral-600" aria-hidden="true" />
-              </motion.div>
+              </m.div>
             ))}
           </div>
 
@@ -110,7 +110,7 @@ export function PosMockup() {
             </div>
           </div>
 
-          <motion.button
+          <m.button
             type="button"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +118,7 @@ export function PosMockup() {
             className="mt-2 w-full bg-blue-600 text-white text-xs font-semibold py-2 rounded-md hover:bg-blue-700 transition-colors"
           >
             {t("landing.hero.mockup.charge")}
-          </motion.button>
+          </m.button>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@
 const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8", "9"] as const;
 
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AppFrame } from "@/components/ui/app-frame";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
@@ -74,9 +74,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function LocalePage() {
+// Pagina estatica (ver `setRequestLocale` en el layout), regenerada cada hora:
+// la promocion de lanzamiento y sus fechas se calculan al renderizar, y asi no
+// se quedan congeladas hasta el siguiente despliegue.
+export const revalidate = 3600;
+
+export default async function LocalePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("landing");
-  const locale = await getLocale();
   const siteUrl = getSiteUrl();
 
   const featureList = [

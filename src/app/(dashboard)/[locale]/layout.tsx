@@ -1,6 +1,7 @@
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
@@ -27,6 +28,7 @@ export default async function DashboardLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      <IdiomaHtml locale={locale} />
       <DashboardShell>{children}</DashboardShell>
     </NextIntlClientProvider>
   );

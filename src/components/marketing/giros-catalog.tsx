@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { GIROS, rutaGiro } from "@/features/marketing/giros";
-import { ETIQUETA_GIRO, RECUADRO_GIRO, TRAZO_GIRO } from "./giro-estilos";
+import { ENLACE_GIRO, ETIQUETA_GIRO, RECUADRO_GIRO, TRAZO_GIRO } from "./giro-estilos";
 
 /**
  * Catalogo completo de giros (`#giros`): destino del boton "Ver los 20" de
@@ -54,7 +54,7 @@ export function GirosCatalog({
               <li key={giro.slug}>
                 <Link
                   href={rutaGiro(giro.slug)}
-                  className="group flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-[#EAEAEA] dark:border-white/[0.08] bg-white dark:bg-[#1A1A1A] px-3 py-6 text-center transition-colors duration-200 hover:border-[#1e3a8a]/40 dark:hover:border-[#1e3a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                  className={`${ENLACE_GIRO} flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-[#EAEAEA] dark:border-white/[0.08] bg-white dark:bg-[#1A1A1A] px-3 py-6 text-center transition-colors duration-200 hover:border-[#1e3a8a]/40 dark:hover:border-[#1e3a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400`}
                 >
                   <span className={`w-12 h-12 ${RECUADRO_GIRO}`} aria-hidden="true">
                     <Icono className="w-[22px] h-[22px]" strokeWidth={TRAZO_GIRO} />

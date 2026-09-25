@@ -1,7 +1,7 @@
 "use client";
 
 import { SALES_WHATSAPP } from "@/lib/contact";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { WhatsAppLogo } from "./whatsapp-logo";
 
 const WHATSAPP_NUMBER = SALES_WHATSAPP;
@@ -15,7 +15,7 @@ function buildWhatsAppUrl() {
 
 export function WhatsAppFab() {
   return (
-    <motion.a
+    <m.a
       href={buildWhatsAppUrl()}
       target="_blank"
       rel="noopener noreferrer"
@@ -36,6 +36,6 @@ export function WhatsAppFab() {
       <span className="btn-llenado [--llenado:#128C7E] [--llenado-texto:#FFFFFF] !absolute inset-0 rounded-full bg-[#25D366] text-white flex items-center justify-center">
         <WhatsAppLogo size={28} aria-hidden="true" />
       </span>
-    </motion.a>
+    </m.a>
   );
 }
