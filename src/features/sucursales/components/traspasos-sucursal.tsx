@@ -20,6 +20,7 @@ import {
   type TraspasoHistorial,
 } from "@/features/sucursales/services/stock-sucursal-service";
 import { opcionesDeTraspaso, type OpcionTraspaso } from "@/features/sucursales/traspaso";
+import { SelectSimple } from "@/components/ui/select-simple";
 
 interface Linea {
   valor: string;
@@ -199,37 +200,27 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
             <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
               <div className="space-y-1.5">
                 <Label className="text-xs" htmlFor="traspaso-origen">Desde</Label>
-                <select
+                <SelectSimple
                   id="traspaso-origen"
                   value={origen}
-                  onChange={(e) => cambiarOrigen(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value="">Sucursal de origen…</option>
-                  {origenes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre}
-                      {!s.activa ? " (cerrada)" : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => cambiarOrigen(v ?? "")}
+                  placeholder="Sucursal de origen…"
+                  opciones={origenes.map((s) => ({
+                    value: s.id,
+                    label: `${s.nombre}${!s.activa ? " (cerrada)" : ""}`,
+                  }))}
+                />
               </div>
               <ArrowRight className="mx-auto hidden h-4 w-4 text-muted-foreground sm:block sm:mb-2.5" aria-hidden="true" />
               <div className="space-y-1.5">
                 <Label className="text-xs" htmlFor="traspaso-destino">Hacia</Label>
-                <select
+                <SelectSimple
                   id="traspaso-destino"
                   value={destino}
-                  onChange={(e) => setDestino(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value="">Sucursal de destino…</option>
-                  {destinos.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setDestino(v ?? "")}
+                  placeholder="Sucursal de destino…"
+                  opciones={destinos.map((s) => ({ value: s.id, label: s.nombre }))}
+                />
               </div>
             </div>
 
@@ -245,19 +236,17 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
                   const op = porValor.get(l.valor);
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <select
-                        aria-label="Producto"
+                      <SelectSimple
+                        ariaLabel="Producto"
                         value={l.valor}
-                        onChange={(e) => actualizar(i, "valor", e.target.value)}
-                        className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm"
-                      >
-                        <option value="">Producto…</option>
-                        {opciones.map((o) => (
-                          <option key={o.valor} value={o.valor}>
-                            {o.etiqueta} ({o.disponible} disp.)
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => actualizar(i, "valor", v ?? "")}
+                        placeholder="Producto…"
+                        opciones={opciones.map((o) => ({
+                          value: o.valor,
+                          label: `${o.etiqueta} (${o.disponible} disp.)`,
+                        }))}
+                        className="min-w-0 flex-1"
+                      />
                       <Input
                         type="number"
                         min="0"

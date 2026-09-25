@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
-import { useTheme } from "next-themes";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,14 +13,14 @@ import {
 import {
   LogOut,
   Menu,
-  Moon,
   Search,
   Settings,
-  Sun,
   User,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useCambioTema } from "@/hooks/use-cambio-tema";
+import { IconoTema } from "@/components/icono-tema";
 import { TutorialTrigger } from "@/components/tutorial/tutorial-trigger";
 import { AprendeTrigger } from "@/components/tutorial/aprende-trigger";
 import { useIsDemo } from "@/hooks/use-is-demo";
@@ -48,20 +47,14 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
   const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { oscuro, montado, alternar } = useCambioTema();
   const { tenantId, tenantName, tenantLogo, role } = useCurrentTenant();
   const { can } = usePermissions();
   const isDemo = useIsDemo();
-  const [mounted, setMounted] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const canManageSettings =
     role === "SUPER_ADMIN" || role === "ORG_ADMIN" || can("org.manage_settings");
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
 
   // El título sale de `lib/navigation.ts`, la misma fuente que el menú lateral
   // y la búsqueda global. Antes este componente tenía su propio mapa con las
@@ -165,19 +158,15 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Theme toggle */}
+        {/* Cambio de tema con el efecto "Circle blur" (ver `useCambioTema`). */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={alternar}
           className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
-          aria-label="Toggle theme"
+          aria-label={oscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
         >
-          {mounted && theme === "dark" ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
+          <IconoTema oscuro={oscuro} montado={montado} />
         </Button>
 
         {/* User menu */}

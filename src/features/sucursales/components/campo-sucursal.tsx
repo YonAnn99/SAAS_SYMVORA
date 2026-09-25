@@ -2,6 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { useSucursal } from "@/contexts/sucursal-context";
+import { SelectSimple } from "@/components/ui/select-simple";
 
 /**
  * "¿A que local va esto?" dentro de un formulario (compra, orden, ajuste).
@@ -10,9 +11,9 @@ import { useSucursal } from "@/contexts/sucursal-context";
  * respuesta y el servidor ya la conoce. El valor inicial lo decide quien lo
  * usa con `destinoPorDefecto`, para que el formulario y la regla no diverjan.
  *
- * `<select>` nativo y no el `Select` de Base UI a proposito: vive dentro de
- * dialogos, y el nativo no pelea con el foco ni con el portal del dialogo. Es
- * el mismo criterio que el de apertura de caja.
+ * Usa `SelectSimple` (el Select del sistema): antes era un `<select>` nativo
+ * por miedo al foco y al portal dentro de dialogos, pero Base UI los maneja y
+ * asi se ve igual que el resto de los desplegables.
  */
 export function CampoSucursal({
   id = "campo-sucursal",
@@ -35,19 +36,13 @@ export function CampoSucursal({
       <Label className="text-xs" htmlFor={id}>
         {etiqueta}
       </Label>
-      <select
+      <SelectSimple
         id={id}
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value || null)}
-        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-      >
-        <option value="">Selecciona una sucursal…</option>
-        {activas.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.nombre}
-          </option>
-        ))}
-      </select>
+        value={value}
+        onChange={onChange}
+        placeholder="Selecciona una sucursal…"
+        opciones={activas.map((s) => ({ value: s.id, label: s.nombre }))}
+      />
       {ayuda && <p className="text-[11px] text-muted-foreground">{ayuda}</p>}
     </div>
   );

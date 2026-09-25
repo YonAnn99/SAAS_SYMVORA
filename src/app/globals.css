@@ -936,3 +936,78 @@
     animation: none;
   }
 }
+
+/* Cambio de tema "Circle blur" (beUI, beui.dev/components/motion/theme-toggle),
+   con la View Transition API: el tema nuevo se revela en un circulo que nace
+   del boton pulsado (`--tema-origen`, lo pone `useCambioTema`) y se enfoca al
+   crecer. El atributo solo existe durante la transicion. */
+html[data-transicion-tema]::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html[data-transicion-tema]::view-transition-new(root) {
+  mix-blend-mode: normal;
+  animation: tema-circulo-blur 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes tema-circulo-blur {
+  from {
+    clip-path: circle(0% at var(--tema-origen, 50% 100%));
+    filter: blur(8px);
+  }
+  to {
+    clip-path: circle(150% at var(--tema-origen, 50% 100%));
+    filter: blur(0px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-transicion-tema]::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* Opciones del Select que entran escalonadas al abrir (el "stagger" del
+   Select de beUI), en CSS y no con motion: el Select es compartido por la
+   landing y el sistema. Base UI monta el panel al abrir, asi que se repite en
+   cada apertura. Solo se escalonan las primeras 12: el resto queda fuera de la
+   vista inicial (el panel mide como maximo 18rem). */
+[data-slot="select-content"] [data-slot="select-item"],
+[data-slot="combobox-popup"] [data-slot="combobox-item"] {
+  animation: select-opcion 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(1) { animation-delay: 50ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(2) { animation-delay: 85ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(3) { animation-delay: 120ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(4) { animation-delay: 155ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(5) { animation-delay: 190ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(6) { animation-delay: 225ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(7) { animation-delay: 260ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(8) { animation-delay: 295ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(9) { animation-delay: 330ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(10) { animation-delay: 365ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(11) { animation-delay: 400ms; }
+[data-slot="select-content"] [data-slot="select-item"]:nth-child(12) { animation-delay: 435ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(1) { animation-delay: 50ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(2) { animation-delay: 85ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(3) { animation-delay: 120ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(4) { animation-delay: 155ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(5) { animation-delay: 190ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(6) { animation-delay: 225ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(7) { animation-delay: 260ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(8) { animation-delay: 295ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(9) { animation-delay: 330ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(10) { animation-delay: 365ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(11) { animation-delay: 400ms; }
+[data-slot="combobox-popup"] [data-slot="combobox-item"]:nth-child(12) { animation-delay: 435ms; }
+@keyframes select-opcion {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    filter: blur(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="select-content"] [data-slot="select-item"],
+  [data-slot="combobox-popup"] [data-slot="combobox-item"] {
+    animation: none;
+  }
+}

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useSucursal } from "@/contexts/sucursal-context";
+import { SelectSimple } from "@/components/ui/select-simple";
 import {
   fetchLastClosedRegister,
   getCurrentUserId,
@@ -104,19 +105,14 @@ export function OpenRegisterDialog({
               <Label className="text-xs" htmlFor="caja-sucursal">
                 Sucursal
               </Label>
-              <select
+              <SelectSimple
                 id="caja-sucursal"
-                value={sucursalId ?? ""}
-                onChange={(e) => setSucursalId(e.target.value || null)}
-                className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
-              >
-                <option value="">Selecciona una sucursal…</option>
-                {activas.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nombre}
-                  </option>
-                ))}
-              </select>
+                value={sucursalId}
+                onChange={setSucursalId}
+                placeholder="Selecciona una sucursal…"
+                opciones={activas.map((s) => ({ value: s.id, label: s.nombre }))}
+                className="h-8"
+              />
               <p className="text-[11px] text-muted-foreground">
                 Todas las ventas de este turno se contarán en esta sucursal.
               </p>
