@@ -113,7 +113,7 @@ export function AppFrame({
             <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
               Iniciar sesión
             </Link>
-            <Link href="/signup" className="text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full hover:bg-zinc-200 transition-colors">
+            <Link href="/signup" className="btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] border border-white text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full">
               Prueba gratis
             </Link>
           </div>

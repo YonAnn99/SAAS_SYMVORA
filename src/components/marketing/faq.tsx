@@ -1,5 +1,6 @@
 "use client";
 
+import { SALES_WHATSAPP } from "@/lib/contact";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
@@ -18,8 +19,7 @@ import { WhatsAppLogo } from "./whatsapp-logo";
 // boundary server→client (Next.js serializa referencias, no valores).
 const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8", "9"] as const;
 
-const WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";
+const WHATSAPP_NUMBER = SALES_WHATSAPP;
 const WHATSAPP_MESSAGE =
   "Hola, tengo una duda sobre SYMVORA que no encontré en las preguntas frecuentes.";
 
@@ -176,7 +176,7 @@ export function FAQ() {
             href={buildWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:ring-offset-[#0C0C0C]"
+            className="btn-llenado [--llenado:#128C7E] [--llenado-texto:#FFFFFF] inline-flex items-center gap-2 bg-[#25D366] text-white font-medium px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:ring-offset-[#0C0C0C]"
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.97 }}
           >

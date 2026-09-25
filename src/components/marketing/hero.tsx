@@ -86,7 +86,7 @@ export function Hero() {
           >
             <Link
               href="/signup"
-              className="relative group btn-magnetic inline-flex items-center justify-center gap-2 bg-primary text-white font-semibold px-8 py-4 rounded-full hover:bg-primary/90 transition-all shadow-md hover:shadow-lg active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:ring-offset-[#0A0A0A]"
+              className="relative group btn-magnetic inline-flex items-center justify-center gap-2 btn-llenado [--llenado:#FFFFFF] [--llenado-texto:var(--primary)] bg-primary text-white font-semibold px-8 py-4 rounded-full border border-primary shadow-md hover:shadow-lg active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:ring-offset-[#0A0A0A]"
             >
               {t("landing.hero.ctaPrimary")}
               <span className="icon-wrapper" aria-hidden="true">
@@ -113,7 +113,7 @@ export function Hero() {
                   ? `https://demo.symvora.com.mx/${locale}/demo`
                   : `/${locale}/demo`
               }
-              className="relative bg-white dark:bg-neutral-900 text-black dark:text-neutral-50 font-medium px-8 py-4 rounded-full border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:ring-offset-[#0C0C0C]"
+              className="btn-llenado [--llenado:#111111] [--llenado-texto:#FFFFFF] dark:[--llenado:#FFFFFF] dark:[--llenado-texto:#111111] bg-white dark:bg-neutral-900 text-black dark:text-neutral-50 font-medium px-8 py-4 rounded-full border border-neutral-200 dark:border-neutral-800 active:translate-y-px flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:ring-offset-[#0C0C0C]"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 01-1.497.89l-3.197-2.132A1 1 0 004 10.073V13.93a1 1 0 001.497.89l3.197 2.132A1 1 0 0011 14.12V18a1 1 0 001 1h2a1 1 0 001-1v-4.263a1 1 0 011.497-.89l3.197-2.132A1 1 0 0020 10.073V6.927a1 1 0 00-1.497-.89l-3.197 2.132A1 1 0 0012 6.927z" />

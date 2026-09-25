@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SALES_WHATSAPP } from "@/lib/contact";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, ChevronRight, ToggleRight } from "lucide-react";
@@ -36,7 +37,7 @@ import { urlWhatsApp } from "@/lib/whatsapp";
 export const dynamicParams = false;
 
 /** Mismo numero de ventas que el boton flotante, el CTA y las FAQ de la landing. */
-const WHATSAPP_VENTAS = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";
+const WHATSAPP_VENTAS = SALES_WHATSAPP;
 
 export function generateStaticParams() {
   return GIROS.map((g) => ({ locale: "es", giro: g.slug }));
@@ -134,7 +135,7 @@ export default async function GiroPage({ params }: { params: Params }) {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
                 href={registro}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-black dark:bg-white text-white dark:text-black px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="btn-llenado [--llenado:#FFFFFF] [--llenado-texto:#000000] dark:[--llenado:#000000] dark:[--llenado-texto:#FFFFFF] inline-flex items-center justify-center gap-2 rounded-full border border-black dark:border-white bg-black dark:bg-white text-white dark:text-black px-6 py-3 text-sm font-semibold"
               >
                 Prueba gratis {DIAS_PRUEBA} días
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -143,7 +144,7 @@ export default async function GiroPage({ params }: { params: Params }) {
                 href={whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 dark:border-neutral-700 px-6 py-3 text-sm font-semibold text-black dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                className="btn-llenado [--llenado:#25D366] [--llenado-texto:#111111] hover:border-[#25D366] inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 dark:border-neutral-700 px-6 py-3 text-sm font-semibold text-black dark:text-white"
               >
                 Escríbenos por WhatsApp
               </a>
@@ -305,7 +306,7 @@ export default async function GiroPage({ params }: { params: Params }) {
           </p>
           <Link
             href={registro}
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-white text-black px-7 py-3 text-sm font-semibold hover:bg-zinc-200 transition-colors"
+            className="btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] mt-7 inline-flex items-center gap-2 rounded-full border border-white bg-white text-black px-7 py-3 text-sm font-semibold"
           >
             Crear mi cuenta gratis
             <ArrowRight className="w-4 h-4" aria-hidden="true" />

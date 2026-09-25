@@ -74,7 +74,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             </Link>
             <Link
               href="/signup"
-              className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full hover:bg-zinc-200 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1 btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] border border-white text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full"
             >
               {t("landing.nav.cta")}
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
@@ -121,7 +121,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
               <Link
                 href="/signup"
                 onClick={() => setMobileOpen(false)}
-                className="block text-center text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full hover:bg-zinc-200 transition-colors"
+                className="block text-center btn-llenado [--llenado:#09090B] [--llenado-texto:#FFFFFF] border border-white text-sm font-semibold bg-white text-zinc-950 px-5 py-2.5 rounded-full"
               >
                 {t("landing.nav.cta")}
               </Link>

@@ -1,10 +1,10 @@
 "use client";
 
+import { SALES_WHATSAPP } from "@/lib/contact";
 import { motion } from "motion/react";
 import { WhatsAppLogo } from "./whatsapp-logo";
 
-const WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";
+const WHATSAPP_NUMBER = SALES_WHATSAPP;
 const WHATSAPP_MESSAGE =
   "Hola, me interesa SYMVORA para mi negocio. ¿Pueden darme más información?";
 
@@ -25,17 +25,17 @@ export function WhatsAppFab() {
       transition={{ delay: 1.5, type: "spring", stiffness: 300, damping: 22 }}
       whileHover={{ scale: 1.1, y: -2 }}
       whileTap={{ scale: 0.95 }}
-      className="absolute bottom-6 right-6 z-40 w-14 h-14 bg-emerald-500 text-white rounded-full shadow-lg hover:bg-emerald-600 hover:shadow-xl transition-colors flex items-center justify-center"
+      className="absolute bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center"
     >
       <span
-        className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-30"
+        className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30"
         aria-hidden="true"
       />
-      <WhatsAppLogo
-        size={28}
-        className="relative text-white"
-        aria-hidden="true"
-      />
+      {/* El llenado va en un circulo interior: el efecto necesita
+          `overflow: hidden`, y en el enlace recortaria el anillo que late. */}
+      <span className="btn-llenado [--llenado:#128C7E] [--llenado-texto:#FFFFFF] !absolute inset-0 rounded-full bg-[#25D366] text-white flex items-center justify-center">
+        <WhatsAppLogo size={28} aria-hidden="true" />
+      </span>
     </motion.a>
   );
 }

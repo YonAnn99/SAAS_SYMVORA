@@ -1,3 +1,4 @@
+import { SALES_WHATSAPP } from "@/lib/contact";
 interface OrganizationSchema {
   "@context": "https://schema.org";
   "@type": "Organization";
@@ -108,7 +109,7 @@ export function organizationSchema(
     sameAs?: string[];
   }
 ): OrganizationSchema {
-  const whatsapp = options.whatsappNumber ?? process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5215512345678";
+  const whatsapp = options.whatsappNumber ?? SALES_WHATSAPP;
 
   return {
     "@context": "https://schema.org",

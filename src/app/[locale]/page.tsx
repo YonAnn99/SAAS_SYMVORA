@@ -103,7 +103,7 @@ export default async function LocalePage() {
   return (
     <AppFrame>
       {/* Lo primero que se ve: el visitante se reconoce por su giro antes de
-          leer el hero. "Otros" baja a `GirosCatalog` (#giros). */}
+          leer el hero. "Ver los 20" baja a `GirosCatalog` (#giros). */}
       <GirosStrip />
       <Hero />
       <LogoCarousel />

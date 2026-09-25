@@ -900,3 +900,50 @@
     box-shadow: none !important;
   }
 }
+
+/* Boton con llenado de abajo hacia arriba (como los de la pagina de WhatsApp).
+   Al pasar el raton, una elipse del color `--llenado` sube desde abajo con el
+   borde curvo hasta cubrir el boton, y el texto pasa a `--llenado-texto`.
+   Cada boton pone sus colores con variables de Tailwind:
+     btn-llenado [--llenado:#fff] [--llenado-texto:#0F172A] dark:[--llenado:…]
+
+   Va FUERA de `@layer` a proposito: el CSS sin capa gana a las utilidades, y
+   si no el `text-white` del boton le ganaria al color del hover. */
+.btn-llenado {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition-property: color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.6s;
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+.btn-llenado::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -25%;
+  top: 0;
+  width: 150%;
+  height: 200%;
+  border-radius: 50%;
+  background: var(--llenado, #111);
+  transform: translateY(50%);
+  /* Curva simetrica (entra y sale suave): con una "ease-out" fuerte casi todo
+     el recorrido ocurria en el primer instante y no se apreciaba el llenado. */
+  transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+.btn-llenado:hover,
+.btn-llenado:focus-visible {
+  color: var(--llenado-texto, #fff);
+}
+.btn-llenado:hover::before,
+.btn-llenado:focus-visible::before {
+  transform: translateY(-25%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-llenado,
+  .btn-llenado::before {
+    transition-duration: 0.01ms;
+  }
+}

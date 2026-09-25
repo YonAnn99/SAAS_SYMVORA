@@ -719,7 +719,10 @@
     "sinLimites": {
       "usuarios": "Usuarios ilimitados",
       "productos": "Productos ilimitados",
-      "comisiones": "Sin comisiones por venta"
+      "comisiones": "Sin comisiones por venta",
+      "usuariosDetalle": "Todo tu equipo, mismo precio",
+      "productosDetalle": "Todo tu catálogo",
+      "comisionesDetalle": "Lo que vendes es tuyo"
     },
     "promo": {
       "badge": "−50% OFF",
