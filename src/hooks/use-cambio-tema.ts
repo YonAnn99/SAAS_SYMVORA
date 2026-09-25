@@ -54,9 +54,9 @@ export function useCambioTema() {
       flushSync(() => setTheme(siguiente));
       // next-themes aplica la clase en un efecto: se aplica tambien aqui para
       // que la captura "nueva" de la transicion ya tenga el tema cambiado.
+      // (El `color-scheme` sale de la clase, en globals.css.)
       raiz.classList.remove("light", "dark");
       raiz.classList.add(siguiente);
-      raiz.style.colorScheme = siguiente;
     });
 
     transicion.finished.finally(() => {

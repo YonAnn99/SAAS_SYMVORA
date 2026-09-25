@@ -120,6 +120,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: "#0A0A0A",
+  // `<meta name="color-scheme" content="light dark">`: el sitio trae modo claro
+  // y oscuro propios, asi Chrome no le aplica su oscurecimiento automatico. El
+  // esquema real de cada momento lo fija globals.css con la clase del tema.
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({

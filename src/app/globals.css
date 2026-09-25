@@ -1011,3 +1011,16 @@ html[data-transicion-tema]::view-transition-new(root) {
     animation: none;
   }
 }
+
+/* Esquema de color de la pagina segun el tema elegido en la app.
+   `only light` (y no `light`) prohibe al navegador oscurecer la pagina a la
+   fuerza: con el telefono en modo oscuro, Chrome Android ("Tema oscuro para
+   sitios") y MIUI/Samsung invertian el modo claro y el texto azul marino
+   quedaba sobre fondo negro. `next-themes` ya no escribe el color-scheme en
+   linea (`enableColorScheme={false}` en providers.tsx). */
+html {
+  color-scheme: only light;
+}
+html.dark {
+  color-scheme: dark;
+}
