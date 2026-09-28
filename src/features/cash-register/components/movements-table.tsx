@@ -83,6 +83,14 @@ export function MovementsTable({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {movement.descripcion}
+                        {/* El motivo, si lo tiene (migracion 093): distingue un
+                            deposito al banco de un gasto o del pago de una
+                            compra. */}
+                        {movement.concepto && (
+                          <span className="block text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                            {t(`finances.movementConcepts.${movement.concepto}`)}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge

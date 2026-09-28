@@ -30,6 +30,11 @@ import {
   totalesRecepcion,
 } from "../../purchase-receipt";
 import type { ItemRecepcion } from "../../services/purchase-order-service";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import {
+  CasillaPagoConCaja,
+  useCajaParaPago,
+} from "@/features/cash-register/components/casilla-pago-con-caja";
 
 /**
  * El diálogo que faltaba para recibir mercancía.
@@ -47,7 +52,12 @@ interface ReceiveOrderDialogProps {
   /** Nombre a mostrar en el renglón, ya con la variante si la lleva. */
   nombreProducto: (productoId: string, varianteId: string | null) => string;
   saving: boolean;
-  onConfirm: (items: ItemRecepcion[], numeroFactura: string | null) => void;
+  /** `cajaId`: "Pagada con efectivo de la caja"; `null` si se paga por fuera. */
+  onConfirm: (
+    items: ItemRecepcion[],
+    numeroFactura: string | null,
+    cajaId: string | null
+  ) => void;
 }
 
 const money = (n: number) =>
@@ -65,6 +75,14 @@ export function ReceiveOrderDialog({
   /** Lo que se escribe en cada renglón, como texto. Clave: id del detalle. */
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
   const [numeroFactura, setNumeroFactura] = useState("");
+  const [pagarConCaja, setPagarConCaja] = useState(false);
+  const { tenantId } = useCurrentTenant();
+  // De que caja saldria el efectivo: la del local que recibe la orden.
+  const { caja: cajaPago, cargando: buscandoCaja } = useCajaParaPago(
+    tenantId,
+    open,
+    order?.sucursal_id ?? null
+  );
 
   // Al abrir se precarga cada renglón con lo PENDIENTE: el caso normal es que
   // llegue todo lo que falta, y así recibir completo es un solo clic. Diferido
@@ -78,6 +96,7 @@ export function ReceiveOrderDialog({
       }
       setCantidades(inicial);
       setNumeroFactura("");
+      setPagarConCaja(false);
     }, 0);
     return () => window.clearTimeout(timeout);
   }, [open, details]);
@@ -129,7 +148,11 @@ export function ReceiveOrderDialog({
     const items: ItemRecepcion[] = lineas
       .filter((l) => l.valor > 0)
       .map((l) => ({ detalle_id: l.detalle.id, cantidad_recibida: l.valor }));
-    onConfirm(items, numeroFactura.trim() || null);
+    onConfirm(
+      items,
+      numeroFactura.trim() || null,
+      pagarConCaja && cajaPago ? cajaPago.id : null
+    );
   }
 
   return (
@@ -227,6 +250,15 @@ export function ReceiveOrderDialog({
             <span className="font-mono">{money(totales.total)}</span>
           </div>
         </div>
+
+        {/* Se paga lo que llega en ESTA entrega, no la orden entera. */}
+        <CasillaPagoConCaja
+          caja={cajaPago}
+          cargando={buscandoCaja}
+          total={totales.total}
+          checked={pagarConCaja}
+          onCheckedChange={setPagarConCaja}
+        />
 
         {/* Se avisa ANTES de confirmar, no después: recibir parcialmente es
             legítimo, pero conviene saber que la orden seguirá abierta. */}

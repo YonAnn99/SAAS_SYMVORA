@@ -245,16 +245,23 @@ export interface ResultadoRecepcion {
 export async function receiveOrder(
   orderId: string,
   items: ItemRecepcion[],
-  numeroFactura: string | null
+  numeroFactura: string | null,
+  /** "Pagada con efectivo de la caja" (migracion 093). */
+  cajaId: string | null = null
 ): Promise<ResultadoRecepcion> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase.rpc("recibir_orden_compra", {
     p_orden_id: orderId,
     p_items: items,
     p_numero_factura: numeroFactura,
+    p_caja_id: cajaId,
   });
   if (error) throw error;
-  return data as unknown as ResultadoRecepcion;
+  // El RPC devuelve `estado`, no `nuevo_estado`. Antes se leia `nuevo_estado`
+  // directo, llegaba `undefined` y el aviso decia "Recepcion parcial" aunque la
+  // orden quedara completa.
+  const r = data as unknown as { compra_id: string; total: number; estado: OrdenCompra["estado"] };
+  return { compra_id: r.compra_id, total: Number(r.total), nuevo_estado: r.estado };
 }
 
 export async function deleteOrder(orderId: string): Promise<void> {

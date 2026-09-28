@@ -415,6 +415,13 @@
       "SALIDA": "Salida",
       "VENTA": "Venta"
     },
+    "movementConcepts": {
+      "DEPOSITO_BANCO": "Depósito de efectivo",
+      "RETIRO_EFECTIVO": "Retiro de efectivo",
+      "OTRO_GASTO": "Otro gasto",
+      "COMPRA": "Pago de compra",
+      "DEVOLUCION_COMPRA": "Devolución de compra"
+    },
     "credit": "Crédito / Fiado",
     "customers": "Clientes",
     "addCustomer": "Agregar cliente",

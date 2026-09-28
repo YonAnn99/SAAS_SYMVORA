@@ -415,6 +415,13 @@
       "SALIDA": "Exit",
       "VENTA": "Sale"
     },
+    "movementConcepts": {
+      "DEPOSITO_BANCO": "Cash deposit",
+      "RETIRO_EFECTIVO": "Cash withdrawal",
+      "OTRO_GASTO": "Other expense",
+      "COMPRA": "Purchase payment",
+      "DEVOLUCION_COMPRA": "Purchase refund"
+    },
     "credit": "Credit",
     "customers": "Customers",
     "addCustomer": "Add customer",

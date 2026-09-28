@@ -20,6 +20,19 @@ export interface PurchaseInput {
   notas?: string | null;
   /** El local que RECIBE la mercancia. Sin ella, el de por defecto (082). */
   sucursalId?: string | null;
+  /**
+   * "Pagada con efectivo de la caja": la caja abierta del usuario de donde
+   * sale el dinero. El RPC registra la SALIDA en la misma transaccion (093).
+   */
+  cajaId?: string | null;
+}
+
+/** Lo que devuelve `cancelar_compra` (migracion 093). */
+export interface ResultadoCancelacion {
+  /** Efectivo devuelto a la caja de donde salio el pago (0 si no se pago con caja). */
+  devuelto_a_caja: number;
+  /** Se pago con una caja cuyo corte ya se cerro: no se toco, hay que ajustarlo a mano. */
+  caja_cerrada: boolean;
 }
 
 export interface SupplierInput {
@@ -83,6 +96,7 @@ export async function createPurchase(
     p_incluye_iva: input.incluyeIva,
     p_notas: input.notas ?? null,
     p_sucursal_id: input.sucursalId ?? null,
+    p_caja_id: input.cajaId ?? null,
   });
   if (error) throw error;
 }
@@ -97,12 +111,19 @@ export async function createPurchase(
  * NO revierte el costo: `costo_compra` es "ultimo costo" y no se guarda el
  * anterior en ningun sitio. La pantalla lo advierte.
  */
-export async function cancelPurchase(purchaseId: string): Promise<void> {
+export async function cancelPurchase(
+  purchaseId: string
+): Promise<ResultadoCancelacion> {
   const supabase = createSupabaseBrowserClient();
-  const { error } = await supabase.rpc("cancelar_compra", {
+  const { data, error } = await supabase.rpc("cancelar_compra", {
     p_compra_id: purchaseId,
   });
   if (error) throw error;
+  const r = (data ?? {}) as Partial<ResultadoCancelacion>;
+  return {
+    devuelto_a_caja: Number(r.devuelto_a_caja ?? 0),
+    caja_cerrada: Boolean(r.caja_cerrada),
+  };
 }
 
 export async function createSupplier(

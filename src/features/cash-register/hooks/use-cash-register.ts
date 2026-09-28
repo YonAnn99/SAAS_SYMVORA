@@ -15,6 +15,7 @@ import {
   openRegister,
 } from "../services/cash-register-service";
 import { notifyCashRegisterChanged } from "./use-open-register";
+import type { ConceptoSalida } from "../conceptos";
 
 export interface CashRegisterHookState {
   activeRegister: Caja | null;
@@ -38,7 +39,8 @@ export interface CashRegisterHookState {
   handleAddMovement: (
     tipo: "ENTRADA" | "SALIDA",
     monto: number,
-    descripcion: string
+    descripcion: string,
+    concepto?: ConceptoSalida | null
   ) => Promise<void>;
   handleCloseRegister: (saldoReal: number, notasCierre: string) => Promise<void>;
 }
@@ -175,7 +177,12 @@ export function useCashRegister(
   );
 
   const handleAddMovement = useCallback(
-    async (tipo: "ENTRADA" | "SALIDA", monto: number, descripcion: string) => {
+    async (
+      tipo: "ENTRADA" | "SALIDA",
+      monto: number,
+      descripcion: string,
+      concepto: ConceptoSalida | null = null
+    ) => {
       if (!activeRegister) return;
       if (!(monto > 0)) {
         toast.error("El monto debe ser mayor a 0");
@@ -185,12 +192,12 @@ export function useCashRegister(
         toast.error("La descripción es requerida");
         return;
       }
-      await addMovement(activeRegister.id, tipo, monto, descripcion);
+      await addMovement(activeRegister.id, tipo, monto, descripcion, concepto);
       await logActivity({
         action: "CREATE",
         entity: "movimiento_caja",
         entityName: descripcion,
-        details: { tipo, monto, caja_id: activeRegister.id },
+        details: { tipo, monto, concepto, caja_id: activeRegister.id },
       });
       setShowMovementDialog(false);
       void refetch();

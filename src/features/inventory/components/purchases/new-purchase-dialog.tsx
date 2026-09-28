@@ -5,6 +5,11 @@ import { useState, useMemo, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSucursal } from "@/contexts/sucursal-context";
+import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import {
+  CasillaPagoConCaja,
+  useCajaParaPago,
+} from "@/features/cash-register/components/casilla-pago-con-caja";
 import { CampoSucursal } from "@/features/sucursales/components/campo-sucursal";
 import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import { Button } from "@/components/ui/button";
@@ -102,7 +107,16 @@ export function NewPurchaseDialog({
   // A que local entra la mercancia. Arranca en la sucursal que el usuario esta
   // mirando; con varias y "Todas", vacia, para que se elija a proposito.
   const { seleccionada, activas, hayVarias } = useSucursal();
+  const { tenantId } = useCurrentTenant();
+  // "Pagada con efectivo de la caja": solo al crear (editar no toca importes).
+  const [pagarConCaja, setPagarConCaja] = useState(false);
   const [sucursalId, setSucursalId] = useState<string | null>(null);
+  // De que caja saldria el efectivo: la del local que recibe, si la hay.
+  const { caja: cajaPago, cargando: buscandoCaja } = useCajaParaPago(
+    tenantId,
+    open && !editingPurchase,
+    sucursalId
+  );
   const [categoria, setCategoria] = useState(TODAS_CATEGORIAS);
 
   useEffect(() => {
@@ -118,6 +132,7 @@ export function NewPurchaseDialog({
         setInvoiceNumber("");
         setNotas("");
         setIncluyeIva(true);
+        setPagarConCaja(false);
         setRenglones([RENGLON_VACIO]);
         setCategoria(TODAS_CATEGORIAS);
         setSucursalId(destinoPorDefecto(seleccionada, activas));
@@ -196,6 +211,7 @@ export function NewPurchaseDialog({
         incluyeIva,
         notas: notas.trim() || null,
         sucursalId,
+        cajaId: pagarConCaja && cajaPago ? cajaPago.id : null,
       },
       renglones
     );
@@ -434,6 +450,14 @@ export function NewPurchaseDialog({
                   Total: ${total.toFixed(2)}
                 </span>
               </div>
+
+              <CasillaPagoConCaja
+                caja={cajaPago}
+                cargando={buscandoCaja}
+                total={total}
+                checked={pagarConCaja}
+                onCheckedChange={setPagarConCaja}
+              />
             </>
           )}
         </div>

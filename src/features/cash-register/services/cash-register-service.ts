@@ -1,5 +1,6 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Caja, MovimientoCaja } from "../types/cash-register.types";
+import type { CajaAbierta, ConceptoSalida } from "../conceptos";
 
 export async function getCurrentUserId(): Promise<string | null> {
   const supabase = createSupabaseBrowserClient();
@@ -125,7 +126,9 @@ export async function addMovement(
   cajaId: string,
   tipo: "ENTRADA" | "SALIDA",
   monto: number,
-  descripcion: string
+  descripcion: string,
+  /** Solo en salidas: depósito, retiro u otro gasto (migración 093). */
+  concepto: ConceptoSalida | null = null
 ): Promise<void> {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase.from("movimientos_caja").insert({
@@ -133,6 +136,7 @@ export async function addMovement(
     tipo,
     monto,
     descripcion,
+    concepto: tipo === "SALIDA" ? concepto : null,
   });
   if (error) throw error;
 }
@@ -180,4 +184,23 @@ export function calculateRegisterTotals(
     },
     { totalEntradas: 0, totalSalidas: 0 }
   );
+}
+/**
+ * Las cajas abiertas del usuario, para pagar una compra con su efectivo (ver
+ * `cajaParaPago`). Con varias sucursales puede tener una por local.
+ */
+export async function fetchMisCajasAbiertas(
+  tenantId: string
+): Promise<CajaAbierta[]> {
+  const userId = await getCurrentUserId();
+  if (!userId) return [];
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase
+    .from("cajas")
+    .select("id, sucursal_id, fecha_apertura, sucursal:sucursales!sucursal_id(nombre)")
+    .eq("tenant_id", tenantId)
+    .eq("usuario_id", userId)
+    .eq("estado", "ABIERTA")
+    .order("fecha_apertura", { ascending: false });
+  return (data as unknown as CajaAbierta[] | null) ?? [];
 }

@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  CONCEPTOS_SALIDA,
+  CONCEPTO_SALIDA_POR_DEFECTO,
+  descripcionDeMovimiento,
+  esConceptoSalida,
+  type ConceptoSalida,
+} from "../conceptos";
 
 interface MovementDialogProps {
   open: boolean;
@@ -28,7 +36,8 @@ interface MovementDialogProps {
   onConfirm: (
     tipo: "ENTRADA" | "SALIDA",
     monto: number,
-    descripcion: string
+    descripcion: string,
+    concepto: ConceptoSalida | null
   ) => void;
 }
 
@@ -43,6 +52,43 @@ export function MovementDialog({
   );
   const [movementAmount, setMovementAmount] = useState("");
   const [movementDescription, setMovementDescription] = useState("");
+  const [concepto, setConcepto] = useState<ConceptoSalida>(
+    CONCEPTO_SALIDA_POR_DEFECTO
+  );
+  const esSalida = movementType === "SALIDA";
+
+  // Mapas de etiquetas: sin ellos el Select de Base UI muestra el valor crudo
+  // ("SALIDA", "DEPOSITO_BANCO") en el boton.
+  const tipos = {
+    ENTRADA: t("finances.movementTypes.ENTRADA"),
+    SALIDA: t("finances.movementTypes.SALIDA"),
+  };
+  const conceptos = Object.fromEntries(
+    CONCEPTOS_SALIDA.map((c) => [c, t(`finances.movementConcepts.${c}`)])
+  ) as Record<ConceptoSalida, string>;
+
+  const confirmar = () => {
+    const conceptoFinal = esSalida ? concepto : null;
+    const descripcion = descripcionDeMovimiento(
+      conceptoFinal,
+      movementDescription,
+      conceptoFinal ? conceptos[conceptoFinal] : ""
+    );
+    if (descripcion === null) {
+      toast.error(
+        esSalida
+          ? "Describe en qué se usó el dinero"
+          : "La descripción es requerida"
+      );
+      return;
+    }
+    onConfirm(
+      movementType,
+      parseFloat(movementAmount) || 0,
+      descripcion,
+      conceptoFinal
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,8 +103,9 @@ export function MovementDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">{t("common.status")}</Label>
+            <Label className="text-xs">Tipo</Label>
             <Select
+              items={tipos}
               value={movementType}
               onValueChange={(v) => setMovementType(v as "ENTRADA" | "SALIDA")}
             >
@@ -75,6 +122,29 @@ export function MovementDialog({
               </SelectContent>
             </Select>
           </div>
+          {/* Por que sale el dinero: depositarlo al banco, que lo retire el
+              dueño u otro gasto. Queda en el movimiento (`concepto`). */}
+          {esSalida && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Motivo</Label>
+              <Select
+                items={conceptos}
+                value={concepto}
+                onValueChange={(v) => esConceptoSalida(v) && setConcepto(v)}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONCEPTOS_SALIDA.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {conceptos[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label className="text-xs">{t("common.total")}</Label>
             <Input
@@ -86,9 +156,20 @@ export function MovementDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">{t("common.description")}</Label>
+            <Label className="text-xs">
+              {t("common.description")}
+              {esSalida && concepto !== "OTRO_GASTO" && (
+                <span className="ml-1 font-normal text-muted-foreground">
+                  (opcional)
+                </span>
+              )}
+            </Label>
             <Input
-              placeholder="Descripción del movimiento"
+              placeholder={
+                esSalida && concepto === "OTRO_GASTO"
+                  ? "Ej. pago de luz, papelería"
+                  : "Descripción del movimiento"
+              }
               value={movementDescription}
               onChange={(e) => setMovementDescription(e.target.value)}
               className="h-8 text-sm"
@@ -107,13 +188,7 @@ export function MovementDialog({
           <SpecularActionButton
             tone="add"
             className="h-8"
-            onClick={() =>
-              onConfirm(
-                movementType,
-                parseFloat(movementAmount) || 0,
-                movementDescription
-              )
-            }
+            onClick={confirmar}
           >
             {t("common.confirm")}
           </SpecularActionButton>

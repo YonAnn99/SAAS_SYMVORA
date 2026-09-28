@@ -124,8 +124,8 @@ export default function FinancesPage() {
       <MovementDialog
         open={cash.showMovementDialog}
         onOpenChange={cash.setShowMovementDialog}
-        onConfirm={(tipo, monto, descripcion) =>
-          void cash.handleAddMovement(tipo, monto, descripcion)
+        onConfirm={(tipo, monto, descripcion, concepto) =>
+          void cash.handleAddMovement(tipo, monto, descripcion, concepto)
         }
       />
 

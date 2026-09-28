@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/supabase/activity-logger";
+import { formatMXN } from "@/lib/money";
+import { notifyCashRegisterChanged } from "@/features/cash-register/hooks/use-open-register";
 import type { OrdenCompra, DetalleOrdenCompra } from "../types/inventory.types";
 import { normalizarTelefonoMx, urlWhatsApp } from "@/lib/whatsapp";
 import { mensajeParaProveedor } from "../purchase-order-message";
@@ -209,14 +211,19 @@ export function usePurchaseOrders(
   }, []);
 
   const handleReceive = useCallback(
-    async (items: ItemRecepcion[], numeroFactura: string | null) => {
+    async (
+      items: ItemRecepcion[],
+      numeroFactura: string | null,
+      cajaId: string | null = null
+    ) => {
       if (!receivingOrder) return;
       setReceiving(true);
       try {
         const resultado = await receiveOrder(
           receivingOrder.id,
           items,
-          numeroFactura
+          numeroFactura,
+          cajaId
         );
         await logActivity({
           action: "UPDATE",
@@ -227,12 +234,17 @@ export function usePurchaseOrders(
             recibido: true,
             nuevo_estado: resultado.nuevo_estado,
             compra_id: resultado.compra_id,
+            pagada_con_caja: Boolean(cajaId),
           },
         });
+        const pagoCaja = cajaId
+          ? ` Se descontaron ${formatMXN(resultado.total)} del efectivo de tu caja.`
+          : "";
+        if (cajaId) notifyCashRegisterChanged();
         toast.success(
-          resultado.nuevo_estado === "RECIBIDA_TOTAL"
+          (resultado.nuevo_estado === "RECIBIDA_TOTAL"
             ? "Orden recibida completa. Se registró la compra y subió el stock."
-            : "Recepción parcial registrada. La orden sigue abierta."
+            : "Recepción parcial registrada. La orden sigue abierta.") + pagoCaja
         );
         setReceivingOrder(null);
         void refetch();

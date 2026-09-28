@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
+import { formatMXN } from "@/lib/money";
+import { notifyCashRegisterChanged } from "@/features/cash-register/hooks/use-open-register";
 import type {
   Proveedor,
   PurchaseWithRelations,
@@ -94,9 +96,17 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
             proveedor_id: input.proveedorId,
             renglones: input.items.length,
             iva: input.incluyeIva,
+            pagada_con_caja: Boolean(input.cajaId),
           },
         });
-        toast.success("Compra creada correctamente");
+        if (input.cajaId) {
+          // La salida ya quedo registrada por el RPC: que Finanzas y el
+          // encabezado lo vean sin recargar.
+          notifyCashRegisterChanged();
+          toast.success("Compra creada y descontada del efectivo de tu caja");
+        } else {
+          toast.success("Compra creada correctamente");
+        }
         setShowNewPurchaseDialog(false);
         void refetch();
       } catch (error: unknown) {
@@ -257,14 +267,33 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const handleCancelPurchase = useCallback(
     async (purchaseId: string) => {
       try {
-        await cancelPurchase(purchaseId);
+        const resultado = await cancelPurchase(purchaseId);
         await logActivity({
           action: "UPDATE",
           entity: "compra",
           entityId: purchaseId,
-          details: { estado: "CANCELADA", stock: "revertido" },
+          details: {
+            estado: "CANCELADA",
+            stock: "revertido",
+            devuelto_a_caja: resultado.devuelto_a_caja,
+          },
         });
-        toast.success("Compra cancelada. El inventario volvió a su valor anterior.");
+        if (resultado.devuelto_a_caja > 0) {
+          notifyCashRegisterChanged();
+          toast.success(
+            `Compra cancelada. El inventario volvió a su valor anterior y se devolvieron ${formatMXN(resultado.devuelto_a_caja)} a la caja.`
+          );
+        } else {
+          toast.success("Compra cancelada. El inventario volvió a su valor anterior.");
+        }
+        // Se pago con una caja cuyo corte ya se cerro: no se toca (reabrirlo
+        // lo descuadraria), pero hay que decirlo para que se ajuste a mano.
+        if (resultado.caja_cerrada) {
+          toast.warning(
+            "Esta compra se pagó con una caja que ya hizo su corte: el efectivo no se devolvió solo. Regístralo como entrada en Finanzas si volvió al cajón.",
+            { duration: 10000 }
+          );
+        }
         void refetch();
       } catch (error: unknown) {
         toast.error(

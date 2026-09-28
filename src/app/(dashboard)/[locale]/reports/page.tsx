@@ -39,6 +39,7 @@ import {
   type Periodo,
 } from "@/lib/periodo";
 import { SalesHistoryCard } from "@/features/sales/components/sales-history-card";
+import { ComprasPeriodoCard } from "@/features/inventory/components/compras-periodo-card";
 import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 
 interface ReportData {
@@ -819,6 +820,15 @@ export default function ReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Compras del periodo: en que se fue el dinero (vista de flujo, aparte
+          de la ganancia). Mismo periodo y sucursal que el resto del reporte. */}
+      <ComprasPeriodoCard
+        tenantId={tenantId}
+        periodo={periodo}
+        fechaElegida={selectedDate}
+        totalVentas={reportData.resumen.totalVentas}
+      />
 
       {/* Charts Grid */}
       <div className="grid gap-4 md:grid-cols-2">

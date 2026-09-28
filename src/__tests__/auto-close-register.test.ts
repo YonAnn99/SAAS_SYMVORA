@@ -101,10 +101,10 @@ describe("Auto-close caja - CDMX timezone logic", () => {
 describe("Auto-close caja - calculateRegisterTotals", () => {
   it("calculates totals correctly excluding VENTA type", () => {
     const movements: MovimientoCaja[] = [
-      { tipo: "ENTRADA", monto: 100, descripcion: "Test", fecha: "", caja_id: "", id: "" },
-      { tipo: "SALIDA", monto: 50, descripcion: "Test", fecha: "", caja_id: "", id: "" },
-      { tipo: "VENTA", monto: 500, descripcion: "Test", fecha: "", caja_id: "", id: "" },
-      { tipo: "ENTRADA", monto: 200, descripcion: "Test", fecha: "", caja_id: "", id: "" },
+      { tipo: "ENTRADA", monto: 100, descripcion: "Test", fecha: "", caja_id: "", id: "", concepto: null, compra_id: null },
+      { tipo: "SALIDA", monto: 50, descripcion: "Test", fecha: "", caja_id: "", id: "", concepto: null, compra_id: null },
+      { tipo: "VENTA", monto: 500, descripcion: "Test", fecha: "", caja_id: "", id: "", concepto: null, compra_id: null },
+      { tipo: "ENTRADA", monto: 200, descripcion: "Test", fecha: "", caja_id: "", id: "", concepto: null, compra_id: null },
     ];
 
     const { totalEntradas, totalSalidas } = calculateRegisterTotals(movements);
@@ -120,8 +120,8 @@ describe("Auto-close caja - calculateRegisterTotals", () => {
 
   it("handles only VENTA movements", () => {
     const movements: MovimientoCaja[] = [
-      { tipo: "VENTA", monto: 500, descripcion: "Test", fecha: "", caja_id: "", id: "" },
-      { tipo: "VENTA", monto: 300, descripcion: "Test", fecha: "", caja_id: "", id: "" },
+      { tipo: "VENTA", monto: 500, descripcion: "Test", fecha: "", caja_id: "", id: "", concepto: null, compra_id: null },
+      { tipo: "VENTA", monto: 300, descripcion: "Test", fecha: "", caja_id: "", id: "", concepto: null, compra_id: null },
     ];
 
     const { totalEntradas, totalSalidas } = calculateRegisterTotals(movements);
