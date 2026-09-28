@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   buscarOpcion,
+  categoriasDeProductos,
   componerValor,
   construirOpciones,
   descomponerValor,
   etiquetaVariante,
+  filtrarPorCategoria,
+  TODAS_CATEGORIAS,
 } from "@/features/inventory/purchase-order-items";
 
 const productos = [
-  { id: "p-sueter", nombre: "sueter", costo_compra: 100 },
-  { id: "p-cafe", nombre: "Café molido", costo_compra: 45 },
+  { id: "p-sueter", nombre: "sueter", costo_compra: 100, categoria: "Ropa" },
+  { id: "p-cafe", nombre: "Café molido", costo_compra: 45, categoria: "Abarrotes" },
 ];
 
 const variantes = [
@@ -116,5 +119,29 @@ describe("buscarOpcion", () => {
     // Pasa al editar una orden cuya variante se borró del catálogo.
     const o = construirOpciones(productos, variantes);
     expect(buscarOpcion(o, "p-sueter", "v-borrada")).toBeUndefined();
+  });
+});
+
+describe("filtro por categoría", () => {
+  it("lista las categorías sin repetir, sin vacías y en orden", () => {
+    expect(
+      categoriasDeProductos([
+        ...productos,
+        { id: "p-gorra", nombre: "gorra", costo_compra: 20, categoria: " Ropa " },
+        { id: "p-x", nombre: "x", costo_compra: 1, categoria: null },
+        { id: "p-y", nombre: "y", costo_compra: 1, categoria: "  " },
+      ])
+    ).toEqual(["Abarrotes", "Ropa"]);
+  });
+
+  it("las variantes heredan la categoría de su padre", () => {
+    const o = construirOpciones(productos, variantes);
+    const ropa = filtrarPorCategoria(o, "Ropa");
+    expect(ropa.map((x) => x.label)).toEqual(["sueter", "sueter · M / ROJO"]);
+  });
+
+  it("con 'Todas' no filtra", () => {
+    const o = construirOpciones(productos, variantes);
+    expect(filtrarPorCategoria(o, TODAS_CATEGORIAS)).toBe(o);
   });
 });

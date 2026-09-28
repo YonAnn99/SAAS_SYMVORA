@@ -46,10 +46,15 @@ import type { PurchaseInput } from "../../services/purchase-service";
 import type { VarianteDeCompra } from "../../services/purchase-order-service";
 import {
   buscarOpcion,
+  categoriasDeProductos,
   construirOpciones,
   descomponerValor,
+  filtrarPorCategoria,
+  TODAS_CATEGORIAS,
   type OpcionCompra,
+  type ProductoOpcion,
 } from "../../purchase-order-items";
+import { FiltroCategoriaCompra } from "../filtro-categoria-compra";
 import { totalesOrdenCompra } from "../../purchase-order-totals";
 import { aRenglonesRpc, type RenglonCompraForm } from "../../compra-directa";
 
@@ -71,7 +76,7 @@ interface NewPurchaseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   suppliers: Proveedor[];
-  products: { id: string; nombre: string; costo_compra: number }[];
+  products: ProductoOpcion[];
   variants: VarianteDeCompra[];
   onConfirm: (input: PurchaseInput, renglones: RenglonCompraForm[]) => void;
   editingPurchase?: PurchaseWithRelations | null;
@@ -98,6 +103,7 @@ export function NewPurchaseDialog({
   // mirando; con varias y "Todas", vacia, para que se elija a proposito.
   const { seleccionada, activas, hayVarias } = useSucursal();
   const [sucursalId, setSucursalId] = useState<string | null>(null);
+  const [categoria, setCategoria] = useState(TODAS_CATEGORIAS);
 
   useEffect(() => {
     if (!open) return;
@@ -113,6 +119,7 @@ export function NewPurchaseDialog({
         setNotas("");
         setIncluyeIva(true);
         setRenglones([RENGLON_VACIO]);
+        setCategoria(TODAS_CATEGORIAS);
         setSucursalId(destinoPorDefecto(seleccionada, activas));
       }
     }, 0);
@@ -129,6 +136,13 @@ export function NewPurchaseDialog({
   const opciones = useMemo(
     () => construirOpciones(products, variants),
     [products, variants]
+  );
+  const categorias = useMemo(() => categoriasDeProductos(products), [products]);
+  // Solo acota lo que ofrece el buscador. El valor de cada renglon se sigue
+  // buscando en `opciones` completas: cambiar el filtro no borra lo ya elegido.
+  const opcionesFiltradas = useMemo(
+    () => filtrarPorCategoria(opciones, categoria),
+    [opciones, categoria]
   );
 
   const actualizarRenglon = (
@@ -252,19 +266,26 @@ export function NewPurchaseDialog({
           {!editingPurchase && (
             <>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <Label className="text-xs">Productos</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() =>
-                      setRenglones((prev) => [...prev, RENGLON_VACIO])
-                    }
-                  >
-                    <Plus className="mr-1 h-3.5 w-3.5" />
-                    Agregar producto
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <FiltroCategoriaCompra
+                      categorias={categorias}
+                      value={categoria}
+                      onChange={setCategoria}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() =>
+                        setRenglones((prev) => [...prev, RENGLON_VACIO])
+                      }
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" />
+                      Agregar producto
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -275,14 +296,23 @@ export function NewPurchaseDialog({
                           Producto
                         </Label>
                         <Combobox
-                          items={opciones}
-                          value={
-                            opciones.find((o) => o.value === renglon.valor) ??
-                            null
+                          items={opcionesFiltradas}
+                          // Cada item lleva `value={o.value}` (texto), asi que
+                          // el valor del combobox es ese texto y no el objeto.
+                          // Antes se leia `.value` de lo recibido, salia
+                          // `undefined` y elegir un producto no hacia nada.
+                          value={renglon.valor || null}
+                          onValueChange={(valor) => {
+                            if (valor) elegirProducto(index, valor as string);
+                          }}
+                          itemToStringLabel={(valor) =>
+                            opciones.find((o) => o.value === valor)?.label ?? ""
                           }
-                          onValueChange={(candidato) => {
+                          filter={(candidato, query) => {
                             const o = candidato as unknown as OpcionCompra;
-                            if (o?.value) elegirProducto(index, o.value);
+                            return o.keywords
+                              .toLowerCase()
+                              .includes(query.toLowerCase());
                           }}
                         >
                           <ComboboxInputGroup className="h-8">
@@ -291,13 +321,19 @@ export function NewPurchaseDialog({
                           </ComboboxInputGroup>
                           <ComboboxPortal>
                             <ComboboxPositioner>
-                              <ComboboxPopup>
+                              {/* Mas ancho que el campo: nombre y categoria caben sin cortarse. */}
+                              <ComboboxPopup className="min-w-64">
                                 <ComboboxEmpty>Sin resultados</ComboboxEmpty>
                                 <ComboboxList>
                                   {(o: OpcionCompra) => (
                                     <ComboboxItem key={o.value} value={o.value}>
                                       <ComboboxItemIndicator />
-                                      <span>{o.label}</span>
+                                      <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                                      {categoria === TODAS_CATEGORIAS && o.categoria && (
+                                        <span className="shrink-0 text-[10px] text-muted-foreground/70">
+                                          {o.categoria}
+                                        </span>
+                                      )}
                                     </ComboboxItem>
                                   )}
                                 </ComboboxList>

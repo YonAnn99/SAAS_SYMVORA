@@ -12,6 +12,7 @@ export interface ProductoOpcion {
   id: string;
   nombre: string;
   costo_compra: number;
+  categoria: string | null;
 }
 
 export interface VarianteOpcion {
@@ -31,6 +32,8 @@ export interface OpcionCompra {
   costo: number;
   /** Texto extra por el que se puede buscar (nombre del padre, talla, color). */
   keywords: string;
+  /** La del producto; las variantes heredan la de su padre. */
+  categoria: string | null;
 }
 
 const SEPARADOR = "::";
@@ -81,6 +84,7 @@ export function construirOpciones(
       varianteId: null,
       costo: Number(p.costo_compra) || 0,
       keywords: p.nombre,
+      categoria: p.categoria,
     });
 
     // Un producto marcado `permite_variantes` pero SIN variantes creadas no
@@ -98,6 +102,7 @@ export function construirOpciones(
         // equivocado.
         costo: Number(v.costo_compra) || 0,
         keywords: `${p.nombre} ${sufijo}`,
+        categoria: p.categoria,
       });
     }
   }
@@ -112,4 +117,30 @@ export function buscarOpcion(
   varianteId: string | null
 ): OpcionCompra | undefined {
   return opciones.find((o) => o.value === componerValor(productoId, varianteId));
+}
+
+/** Valor del filtro de categoria cuando no se filtra. Igual que en el POS. */
+export const TODAS_CATEGORIAS = "all";
+
+/** Las categorias del catalogo, sin repetir ni vacias, en orden alfabetico. */
+export function categoriasDeProductos(productos: ProductoOpcion[]): string[] {
+  const unicas = new Set<string>();
+  for (const p of productos) {
+    const categoria = p.categoria?.trim();
+    if (categoria) unicas.add(categoria);
+  }
+  return [...unicas].sort((a, b) => a.localeCompare(b, "es"));
+}
+
+/**
+ * Deja solo las opciones de una categoria. Con catalogos de cientos de
+ * productos el buscador solo no basta: acotar primero por categoria es lo que
+ * ya hace el punto de venta.
+ */
+export function filtrarPorCategoria(
+  opciones: OpcionCompra[],
+  categoria: string
+): OpcionCompra[] {
+  if (categoria === TODAS_CATEGORIAS) return opciones;
+  return opciones.filter((o) => o.categoria?.trim() === categoria);
 }

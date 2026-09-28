@@ -28,13 +28,12 @@ import {
   fetchOrderVariants,
   type VarianteDeCompra,
 } from "../services/purchase-order-service";
+import type { ProductoOpcion } from "../purchase-order-items";
 
 export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const [purchases, setPurchases] = useState<PurchaseWithRelations[]>([]);
   const [suppliers, setSuppliers] = useState<Proveedor[]>([]);
-  const [products, setProducts] = useState<
-    { id: string; nombre: string; costo_compra: number }[]
-  >([]);
+  const [products, setProducts] = useState<ProductoOpcion[]>([]);
   const [variants, setVariants] = useState<VarianteDeCompra[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);

@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { ProductoOpcion } from "../purchase-order-items";
 import type {
   DetalleOrdenCompra,
   OrdenCompra,
@@ -88,11 +89,12 @@ export async function fetchOrderVariants(
 
 export async function fetchOrderProducts(
   tenantId: string
-): Promise<{ id: string; nombre: string; costo_compra: number }[]> {
+): Promise<ProductoOpcion[]> {
   const supabase = createSupabaseBrowserClient();
+  // `categoria` alimenta el filtro del selector (ver `filtrarPorCategoria`).
   const { data } = await supabase
     .from("productos")
-    .select("id, nombre, costo_compra")
+    .select("id, nombre, costo_compra, categoria")
     .eq("tenant_id", tenantId)
     .order("nombre");
   return data ?? [];

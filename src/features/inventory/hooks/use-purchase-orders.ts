@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/supabase/activity-logger";
 import type { OrdenCompra, DetalleOrdenCompra } from "../types/inventory.types";
 import { normalizarTelefonoMx, urlWhatsApp } from "@/lib/whatsapp";
 import { mensajeParaProveedor } from "../purchase-order-message";
+import type { ProductoOpcion } from "../purchase-order-items";
 import {
   createOrder,
   deleteOrder,
@@ -53,11 +54,7 @@ export function usePurchaseOrders(
 ) {
   const [orders, setOrders] = useState<OrdenCompra[]>([]);
   const [suppliers, setSuppliers] = useState<ProveedorContacto[]>([]);
-  const [products, setProducts] = useState<{
-    id: string;
-    nombre: string;
-    costo_compra: number;
-  }[]>([]);
+  const [products, setProducts] = useState<ProductoOpcion[]>([]);
   const [variants, setVariants] = useState<VarianteDeCompra[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);

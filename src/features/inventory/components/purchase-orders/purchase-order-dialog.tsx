@@ -59,9 +59,14 @@ import {
   buscarOpcion,
   componerValor,
   construirOpciones,
+  categoriasDeProductos,
   descomponerValor,
+  filtrarPorCategoria,
+  TODAS_CATEGORIAS,
   type OpcionCompra,
+  type ProductoOpcion,
 } from "../../purchase-order-items";
+import { FiltroCategoriaCompra } from "../filtro-categoria-compra";
 
 /**
  * Los campos numéricos van SIN las flechitas de incremento del navegador.
@@ -77,7 +82,7 @@ interface PurchaseOrderDialogProps {
   editingOrder: OrdenCompra | null;
   initialDetails: DetalleOrdenCompra[];
   suppliers: ProductOption[];
-  products: { id: string; nombre: string; costo_compra: number }[];
+  products: ProductoOpcion[];
   variants: VarianteDeCompra[];
   existingOrders?: OrdenCompra[];
   saving: boolean;
@@ -114,10 +119,12 @@ export function PurchaseOrderDialog({
   // sabe; la recepcion la sumara ahi.
   const { seleccionada, activas, hayVarias } = useSucursal();
   const [sucursalId, setSucursalId] = useState<string | null>(null);
+  const [categoria, setCategoria] = useState(TODAS_CATEGORIAS);
 
   useEffect(() => {
     if (!open) return;
     const timeout = window.setTimeout(() => {
+      setCategoria(TODAS_CATEGORIAS);
       setSucursalId(
         editingOrder?.sucursal_id ?? destinoPorDefecto(seleccionada, activas)
       );
@@ -202,6 +209,13 @@ export function PurchaseOrderDialog({
     () => construirOpciones(products, variants),
     [products, variants]
   );
+  const categorias = useMemo(() => categoriasDeProductos(products), [products]);
+  // Solo acota lo que ofrece el buscador. El valor de cada renglon se sigue
+  // buscando en `opciones` completas: cambiar el filtro no borra lo ya elegido.
+  const opcionesFiltradas = useMemo(
+    () => filtrarPorCategoria(opciones, categoria),
+    [opciones, categoria]
+  );
 
   const handleProductChange = (index: number, value: string) => {
     const { productoId, varianteId } = descomponerValor(value);
@@ -281,7 +295,7 @@ export function PurchaseOrderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base">
             {editingOrder ? "Editar orden de compra" : "Nueva orden de compra"}
@@ -334,17 +348,24 @@ export function PurchaseOrderDialog({
           />
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Label className="text-xs">Productos</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={addItem}
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Agregar producto
-              </Button>
+              <div className="flex items-center gap-2">
+                <FiltroCategoriaCompra
+                  categorias={categorias}
+                  value={categoria}
+                  onChange={setCategoria}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={addItem}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Agregar producto
+                </Button>
+              </div>
             </div>
             {formData.items.length === 0 ? (
               <p className="text-xs text-muted-foreground py-4 text-center border rounded-lg">
@@ -365,7 +386,7 @@ export function PurchaseOrderDialog({
                         Producto
                       </Label>
                       <Combobox
-                        items={opciones}
+                        items={opcionesFiltradas}
                         value={
                           item.producto_id
                             ? componerValor(item.producto_id, item.variante_id)
@@ -390,13 +411,19 @@ export function PurchaseOrderDialog({
                         </ComboboxInputGroup>
                         <ComboboxPortal>
                           <ComboboxPositioner>
-                            <ComboboxPopup>
+                            {/* Mas ancho que el campo: nombre y categoria caben sin cortarse. */}
+                            <ComboboxPopup className="min-w-64">
                               <ComboboxEmpty>Sin resultados</ComboboxEmpty>
                               <ComboboxList>
                                 {(o: OpcionCompra) => (
                                   <ComboboxItem key={o.value} value={o.value}>
                                     <ComboboxItemIndicator />
-                                    <span>{o.label}</span>
+                                    <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                                    {categoria === TODAS_CATEGORIAS && o.categoria && (
+                                      <span className="shrink-0 text-[10px] text-muted-foreground/70">
+                                        {o.categoria}
+                                      </span>
+                                    )}
                                   </ComboboxItem>
                                 )}
                               </ComboboxList>
