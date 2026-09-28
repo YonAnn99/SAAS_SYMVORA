@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FileText, MessageCircle, Pencil, Send, Trash2 } from "lucide-react";
+import { Check, FileText, Loader2, MessageCircle, Pencil, Send, Trash2 } from "lucide-react";
 import { normalizarTelefonoMx } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -36,8 +36,13 @@ interface PurchaseOrdersTableProps {
   onStatusChange: (order: OrdenCompra, newStatus: OrdenCompra["estado"]) => void;
   /** Abre el diálogo de recepción. */
   onReceive: (order: OrdenCompra) => void;
-  /** Abre WhatsApp con el pedido escrito. No cambia el estado. */
+  /**
+   * Envia la orden en PDF por WhatsApp y, si es borrador, la marca como
+   * enviada (ver `handleWhatsApp`).
+   */
   onWhatsApp: (order: OrdenCompra) => void;
+  /** La orden que se esta preparando para WhatsApp, para el spinner. */
+  enviandoId?: string | null;
   /** Teléfono del proveedor, para saber si se puede ofrecer WhatsApp. */
   getSupplierPhone: (supplierId: string) => string | null;
 }
@@ -53,6 +58,7 @@ export function PurchaseOrdersTable({
   onStatusChange,
   onReceive,
   onWhatsApp,
+  enviandoId = null,
   getSupplierPhone,
 }: PurchaseOrdersTableProps) {
   return (
@@ -115,97 +121,116 @@ export function PurchaseOrdersTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono text-sm font-medium">
-                      {order.numero_orden}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {getSupplierName(order.proveedor_id)}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(order.creado_en).toLocaleDateString("es-MX")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`${orderEstadoColors[order.estado]} text-[10px] px-1.5 py-0`}
-                      >
-                        {orderEstadoLabels[order.estado]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-mono">
-                      ${order.total.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {order.estado === "BORRADOR" && (
-                          <>
+                {filteredOrders.map((order) => {
+                  // Sin telefono valido no hay WhatsApp, y "Enviar" es la
+                  // unica forma de avanzar la orden. Con telefono, WhatsApp
+                  // ya la envia: dos botones que hacen lo mismo sobran.
+                  const tieneWhatsApp = !!normalizarTelefonoMx(
+                    getSupplierPhone(order.proveedor_id)
+                  );
+                  const enviando = enviandoId === order.id;
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono text-sm font-medium">
+                        {order.numero_orden}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {getSupplierName(order.proveedor_id)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {new Date(order.creado_en).toLocaleDateString("es-MX")}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`${orderEstadoColors[order.estado]} text-[10px] px-1.5 py-0`}
+                        >
+                          {orderEstadoLabels[order.estado]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-mono">
+                        ${order.total.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {order.estado === "BORRADOR" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => onEdit(order)}
+                              >
+                                <Pencil className="h-3 w-3 mr-1" />
+                                Editar
+                              </Button>
+                              {!tieneWhatsApp && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-blue-600 hover:text-blue-600"
+                                  onClick={() => onStatusChange(order, "ENVIADA")}
+                                  title="Marcar como enviada (el proveedor no tiene WhatsApp)"
+                                >
+                                  <Send className="h-3 w-3 mr-1" />
+                                  Enviar
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {/* WhatsApp solo mientras tiene sentido mandar el
+                              pedido, y solo si el teléfono se puede normalizar:
+                              un enlace a un número adivinado abre el chat de un
+                              desconocido. */}
+                          {(order.estado === "BORRADOR" ||
+                            order.estado === "ENVIADA") &&
+                            tieneWhatsApp && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-emerald-600 hover:text-emerald-600"
+                                onClick={() => onWhatsApp(order)}
+                                disabled={enviando}
+                                title={
+                                  order.estado === "BORRADOR"
+                                    ? "Enviar la orden en PDF por WhatsApp"
+                                    : "Reenviar la orden en PDF por WhatsApp"
+                                }
+                              >
+                                {enviando ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <MessageCircle className="h-3 w-3 mr-1" />
+                                )}
+                                WhatsApp
+                              </Button>
+                            )}
+                          {/* También en RECIBIDA_PARCIAL: la segunda entrega se
+                              recibe igual que la primera. */}
+                          {(order.estado === "ENVIADA" ||
+                            order.estado === "RECIBIDA_PARCIAL") && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => onEdit(order)}
+                              className="h-7 text-xs text-green-600 hover:text-green-600"
+                              onClick={() => onReceive(order)}
                             >
-                              <Pencil className="h-3 w-3 mr-1" />
-                              Editar
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-blue-600 hover:text-blue-600"
-                              onClick={() => onStatusChange(order, "ENVIADA")}
-                            >
-                              <Send className="h-3 w-3 mr-1" />
-                              Enviar
-                            </Button>
-                          </>
-                        )}
-                        {/* WhatsApp solo mientras tiene sentido mandar el
-                            pedido, y solo si el teléfono se puede normalizar:
-                            un enlace a un número adivinado abre el chat de un
-                            desconocido. */}
-                        {(order.estado === "BORRADOR" ||
-                          order.estado === "ENVIADA") &&
-                          normalizarTelefonoMx(
-                            getSupplierPhone(order.proveedor_id)
-                          ) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-emerald-600 hover:text-emerald-600"
-                              onClick={() => onWhatsApp(order)}
-                              title="Mandar el pedido por WhatsApp"
-                            >
-                              <MessageCircle className="h-3 w-3 mr-1" />
-                              WhatsApp
+                              <Check className="h-3 w-3 mr-1" />
+                              Recibir
                             </Button>
                           )}
-                        {/* También en RECIBIDA_PARCIAL: la segunda entrega se
-                            recibe igual que la primera. */}
-                        {(order.estado === "ENVIADA" ||
-                          order.estado === "RECIBIDA_PARCIAL") && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 text-xs text-green-600 hover:text-green-600"
-                            onClick={() => onReceive(order)}
+                            className="h-7 text-xs text-destructive hover:text-destructive"
+                            onClick={() => onDelete(order)}
                           >
-                            <Check className="h-3 w-3 mr-1" />
-                            Recibir
+                            <Trash2 className="h-3 w-3" />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => onDelete(order)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

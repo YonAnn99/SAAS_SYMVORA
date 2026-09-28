@@ -185,6 +185,26 @@ export async function updateOrder(
   if (insertError) throw insertError;
 }
 
+/**
+ * Sube el PDF de una orden y devuelve su enlace publico (migracion 092).
+ *
+ * Cada envio lleva un nombre nuevo y aleatorio: el enlace no se puede adivinar
+ * y reenviar una orden no pisa el PDF que el proveedor ya recibio.
+ */
+export async function subirPdfOrden(
+  tenantId: string,
+  ordenId: string,
+  pdf: Blob
+): Promise<string> {
+  const supabase = createSupabaseBrowserClient();
+  const ruta = `${tenantId}/${ordenId}/${crypto.randomUUID()}.pdf`;
+  const { error } = await supabase.storage
+    .from("ordenes-compra")
+    .upload(ruta, pdf, { contentType: "application/pdf" });
+  if (error) throw error;
+  return supabase.storage.from("ordenes-compra").getPublicUrl(ruta).data.publicUrl;
+}
+
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrdenCompra["estado"]

@@ -43,7 +43,13 @@ export function TopProductsChart({ data, title }: TopProductsChartProps) {
                 axisLine={false}
                 width={120}
               />
+              {/* Sin `cursor`, Recharts pinta detras de la fila activa un
+                  rectangulo #ccc fijo: en modo oscuro se veia como una franja
+                  blanca que tapaba la barra. */}
               <Tooltip
+                cursor={{ fill: "var(--muted)", opacity: 0.5, radius: 4 }}
+                labelStyle={{ color: "var(--foreground)", fontWeight: 500 }}
+                itemStyle={{ color: "var(--muted-foreground)" }}
                 contentStyle={{
                   backgroundColor: "var(--card)",
                   border: "1px solid var(--border)",

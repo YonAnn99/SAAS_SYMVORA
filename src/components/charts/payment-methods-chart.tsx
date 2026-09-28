@@ -52,6 +52,7 @@ export function PaymentMethodsChart({ data, title }: PaymentMethodsChartProps) {
                   ))}
                 </Pie>
               <Tooltip
+                itemStyle={{ color: "var(--muted-foreground)" }}
                 contentStyle={{
                   backgroundColor: "var(--card)",
                   border: "1px solid var(--border)",

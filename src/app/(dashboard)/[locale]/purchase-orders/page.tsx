@@ -50,6 +50,7 @@ export default function PurchaseOrdersPage() {
     closeReceiveDialog,
     handleReceive,
     handleWhatsApp,
+    enviandoId,
   } = usePurchaseOrders(tenantId, tenantLoading, tenantName ?? undefined);
 
   const handleEdit = async (order: Parameters<typeof openEditDialog>[0]) => {
@@ -109,6 +110,7 @@ export default function PurchaseOrdersPage() {
         onStatusChange={handleStatusChange}
         onReceive={(order) => void openReceiveDialog(order)}
         onWhatsApp={(order) => void handleWhatsApp(order)}
+        enviandoId={enviandoId}
         getSupplierPhone={(id) =>
           suppliers.find((s) => s.id === id)?.telefono ?? null
         }

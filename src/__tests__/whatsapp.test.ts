@@ -48,30 +48,24 @@ describe("mensajeParaProveedor", () => {
     numeroOrden: "OC-007",
     proveedor: "Diego",
     negocio: "Pruebas SYMVORA",
-    lineas: [
-      { nombre: "Café", cantidad: 2, costo_unitario: 30 },
-      { nombre: "Azúcar", cantidad: 1.5, costo_unitario: 20 },
-    ],
     total: 116,
+    enlacePdf: "https://x.supabase.co/storage/v1/object/public/ordenes-compra/t/o/u.pdf",
     incluyeIva: true,
     fechaEstimada: null,
   };
 
-  it("lleva el pedido completo", () => {
+  it("lleva el resumen y el enlace al PDF", () => {
     const m = mensajeParaProveedor(datos);
     expect(m).toContain("Diego");
     expect(m).toContain("OC-007");
     expect(m).toContain("Pruebas SYMVORA");
-    expect(m).toContain("Café");
-    expect(m).toContain("Azúcar");
+    expect(m).toContain(`Orden en PDF: ${datos.enlacePdf}`);
   });
 
-  it("las cantidades enteras salen sin decimales", () => {
-    // "2 x Café" se lee mejor que "2.000 x Café"; los decimales de verdad se
-    // conservan.
-    const m = mensajeParaProveedor(datos);
-    expect(m).toContain("2 x Café");
-    expect(m).toContain("1.5 x Azúcar");
+  it("el enlace sobrevive a urlWhatsApp", () => {
+    // Escapado dentro de `text=`, WhatsApp lo vuelve a mostrar como enlace.
+    const url = urlWhatsApp("525555567678", mensajeParaProveedor(datos));
+    expect(decodeURIComponent(url.split("text=")[1])).toContain(datos.enlacePdf);
   });
 
   it("sin nombre de proveedor no deja un 'Hola ,' colgando", () => {
@@ -98,8 +92,8 @@ describe("mensajeParaProveedor: el IVA en el total", () => {
     numeroOrden: "OC-010",
     proveedor: "Diego",
     negocio: "Pruebas SYMVORA",
-    lineas: [{ nombre: "Café", cantidad: 2, costo_unitario: 30 }],
     fechaEstimada: null,
+    enlacePdf: "https://ejemplo/orden.pdf",
   };
 
   it("avisa cuando el total NO lleva IVA", () => {

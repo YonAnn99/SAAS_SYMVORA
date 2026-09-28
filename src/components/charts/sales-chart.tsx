@@ -55,6 +55,9 @@ export function SalesChart({ data, title }: SalesChartProps) {
                 tickFormatter={(value) => `$${value}`}
               />
               <Tooltip
+                cursor={{ stroke: "var(--border)" }}
+                labelStyle={{ color: "var(--foreground)", fontWeight: 500 }}
+                itemStyle={{ color: "var(--muted-foreground)" }}
                 contentStyle={{
                   backgroundColor: "var(--card)",
                   border: "1px solid var(--border)",

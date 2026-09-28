@@ -7,7 +7,8 @@ import { logActivity } from "@/lib/supabase/activity-logger";
 import type { OrdenCompra, DetalleOrdenCompra } from "../types/inventory.types";
 import { normalizarTelefonoMx, urlWhatsApp } from "@/lib/whatsapp";
 import { mensajeParaProveedor } from "../purchase-order-message";
-import type { ProductoOpcion } from "../purchase-order-items";
+import { generarPdfOrdenCompra } from "../purchase-order-pdf";
+import { etiquetaVariante, type ProductoOpcion } from "../purchase-order-items";
 import {
   createOrder,
   deleteOrder,
@@ -20,6 +21,7 @@ import {
   updateOrderStatus,
   receiveOrder,
   fetchOrderVariants,
+  subirPdfOrden,
   type VarianteDeCompra,
   type OrderDetailItem,
   type ItemRecepcion,
@@ -250,44 +252,121 @@ export function usePurchaseOrders(
 
   // ---- Envío al proveedor por WhatsApp ----
 
+  /** La orden que se esta preparando para WhatsApp (PDF subiendose). */
+  const [enviandoId, setEnviandoId] = useState<string | null>(null);
+
   /**
-   * Abre WhatsApp con el pedido ya escrito.
+   * Envia la orden al proveedor por WhatsApp: genera el PDF, lo sube, marca la
+   * orden como ENVIADA y abre el chat con un resumen y el enlace al PDF.
    *
-   * NO cambia el estado de la orden, y es deliberado: abrir el chat no es
-   * prueba de haberlo enviado, y pasar a ENVIADA bloquea la edición. Si se
-   * abandona el chat, la orden quedaría bloqueada sin que el proveedor haya
-   * recibido nada. Marcarla como enviada sigue siendo el botón "Enviar".
+   * Antes eran dos botones ("Enviar" solo cambiaba el estado y "WhatsApp"
+   * solo abria el chat) y el usuario pidio unificarlos: pulsar WhatsApp ES
+   * enviar la orden. "Enviar" queda solo para proveedores sin telefono valido.
+   *
+   * El PDF va por enlace porque WhatsApp no deja adjuntar archivos desde un
+   * enlace wa.me (solo texto). Si algo falla antes de abrir el chat, la orden
+   * NO cambia de estado: no se bloquea una orden que nadie recibio.
+   *
+   * En una orden ya ENVIADA sirve para reenviarla (PDF nuevo, sin tocar el
+   * estado).
    */
   const handleWhatsApp = useCallback(
     async (order: OrdenCompra) => {
       const proveedor = suppliers.find((s) => s.id === order.proveedor_id);
       const telefono = normalizarTelefonoMx(proveedor?.telefono);
-      if (!telefono) {
+      if (!telefono || !tenantId) {
         toast.error("Este proveedor no tiene un teléfono válido");
         return;
       }
 
-      const details = await fetchOrderDetails(order.id);
-      const mensaje = mensajeParaProveedor({
-        numeroOrden: order.numero_orden,
-        proveedor: proveedor?.nombre ?? "",
-        negocio: nombreNegocio,
-        lineas: details.map((d) => ({
-          nombre:
-            products.find((p) => p.id === d.producto_id)?.nombre ?? "Producto",
-          cantidad: Number(d.cantidad_solicitada),
-          costo_unitario: Number(d.costo_unitario),
-        })),
-        total: Number(order.total),
-        // Se deduce de la orden guardada, no de un parametro: asi el mensaje
-        // no puede contradecir a lo que se guardo.
-        incluyeIva: ordenLlevaIva(order),
-        fechaEstimada: order.fecha_estimada_recepcion,
-      });
+      // La pestaña se abre YA, dentro del clic: abierta despues de los
+      // `await` el navegador la bloquea como ventana emergente. Se abre sin
+      // "noopener" porque con el `window.open` devuelve null y no se podria
+      // redirigir; el `opener` se corta a mano abajo.
+      const pestana = window.open("", "_blank");
+      setEnviandoId(order.id);
 
-      window.open(urlWhatsApp(telefono, mensaje), "_blank", "noopener");
+      try {
+        const details = await fetchOrderDetails(order.id);
+        const nombreRenglon = (d: DetalleOrdenCompra) => {
+          const base =
+            products.find((p) => p.id === d.producto_id)?.nombre ?? "Producto";
+          const variante = d.variante_id
+            ? variants.find((v) => v.id === d.variante_id)
+            : null;
+          return variante ? `${base} · ${etiquetaVariante(variante)}` : base;
+        };
+        // Se deduce de la orden guardada, no de un parametro: asi el PDF y el
+        // mensaje no pueden contradecir a lo que se guardo.
+        const incluyeIva = ordenLlevaIva(order);
+
+        const pdf = generarPdfOrdenCompra({
+          negocio: nombreNegocio,
+          numeroOrden: order.numero_orden,
+          fecha: order.creado_en,
+          proveedor: proveedor?.nombre ?? "",
+          fechaEstimada: order.fecha_estimada_recepcion,
+          renglones: details.map((d) => ({
+            nombre: nombreRenglon(d),
+            cantidad: Number(d.cantidad_solicitada),
+            costoUnitario: Number(d.costo_unitario),
+            importe: Number(d.subtotal),
+          })),
+          subtotal: Number(order.subtotal),
+          impuesto: Number(order.impuesto),
+          total: Number(order.total),
+          incluyeIva,
+          notas: order.notas,
+        });
+
+        const enlacePdf = await subirPdfOrden(tenantId, order.id, pdf);
+
+        if (order.estado === "BORRADOR") {
+          await updateOrderStatus(order.id, "ENVIADA");
+          await logActivity({
+            action: "UPDATE",
+            entity: "orden_compra",
+            entityId: order.id,
+            entityName: order.numero_orden,
+            details: { nuevo_estado: "ENVIADA", via: "whatsapp" },
+          });
+        }
+
+        const url = urlWhatsApp(
+          telefono,
+          mensajeParaProveedor({
+            numeroOrden: order.numero_orden,
+            proveedor: proveedor?.nombre ?? "",
+            negocio: nombreNegocio,
+            total: Number(order.total),
+            incluyeIva,
+            fechaEstimada: order.fecha_estimada_recepcion,
+            enlacePdf,
+          })
+        );
+
+        if (pestana) {
+          pestana.opener = null;
+          pestana.location.href = url;
+        } else {
+          // Bloqueador de ventanas muy estricto: se abre en esta misma.
+          window.location.href = url;
+        }
+
+        toast.success(
+          order.estado === "BORRADOR"
+            ? `Orden ${order.numero_orden} enviada por WhatsApp`
+            : `Orden ${order.numero_orden} reenviada por WhatsApp`
+        );
+        void refetch();
+      } catch {
+        pestana?.close();
+        toast.error("No se pudo preparar la orden para WhatsApp");
+      } finally {
+        setEnviandoId(null);
+      }
     },
-    [suppliers, products, nombreNegocio]
+    [suppliers, products, variants, nombreNegocio, tenantId, refetch]
   );
 
   const handleDelete = useCallback(
@@ -358,6 +437,7 @@ export function usePurchaseOrders(
     closeReceiveDialog: () => setReceivingOrder(null),
     handleReceive,
     handleWhatsApp,
+    enviandoId,
   };
 }
 
