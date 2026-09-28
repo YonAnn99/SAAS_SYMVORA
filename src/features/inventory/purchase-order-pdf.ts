@@ -1,5 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { etiquetaVariante } from "./purchase-order-items";
+import { ordenLlevaIva } from "./purchase-order-totals";
 
 /**
  * El PDF de una orden de compra, el que recibe el proveedor por WhatsApp.
@@ -30,6 +32,72 @@ export interface DatosPdfOrden {
   total: number;
   incluyeIva: boolean;
   notas?: string | null;
+}
+
+/** "sueter · M / ROJO", o solo el nombre si el renglon no es de una variante. */
+export function nombreConVariante(
+  nombre: string,
+  variante: { talla: string | null; color: string | null } | null | undefined
+): string {
+  return variante ? `${nombre} · ${etiquetaVariante(variante)}` : nombre;
+}
+
+/**
+ * Arma los datos del PDF a partir de una orden guardada. Lo usan el envio por
+ * WhatsApp y el boton "Descargar PDF" del detalle: una sola funcion para que
+ * los dos PDF sean identicos.
+ */
+export function datosPdfDeOrden(params: {
+  negocio: string;
+  proveedor: string;
+  orden: {
+    numero_orden: string;
+    creado_en: string;
+    fecha_estimada_recepcion: string | null;
+    subtotal: number | string;
+    impuesto: number | string;
+    total: number | string;
+    notas: string | null;
+  };
+  /** Renglones con el nombre ya resuelto (ver `nombreConVariante`). */
+  renglones: {
+    nombre: string;
+    cantidad_solicitada: number | string;
+    costo_unitario: number | string;
+    subtotal: number | string;
+  }[];
+}): DatosPdfOrden {
+  const { orden } = params;
+  return {
+    negocio: params.negocio,
+    numeroOrden: orden.numero_orden,
+    fecha: orden.creado_en,
+    proveedor: params.proveedor,
+    fechaEstimada: orden.fecha_estimada_recepcion,
+    renglones: params.renglones.map((r) => ({
+      nombre: r.nombre,
+      cantidad: Number(r.cantidad_solicitada),
+      costoUnitario: Number(r.costo_unitario),
+      importe: Number(r.subtotal),
+    })),
+    subtotal: Number(orden.subtotal),
+    impuesto: Number(orden.impuesto),
+    total: Number(orden.total),
+    // Se deduce de lo guardado: el PDF no puede contradecir a la orden.
+    incluyeIva: ordenLlevaIva(orden),
+    notas: orden.notas,
+  };
+}
+
+/** Descarga un PDF en el equipo. */
+export function descargarPdf(pdf: Blob, nombreArchivo: string) {
+  const url = URL.createObjectURL(pdf);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombreArchivo;
+  a.click();
+  // Se libera despues: revocarlo en el acto cancela la descarga en Firefox.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 const money = (n: number) =>

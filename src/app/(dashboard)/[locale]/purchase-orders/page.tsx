@@ -13,6 +13,7 @@ import { PurchaseOrderDialog } from "@/features/inventory";
 import { PurchaseOrderDeleteDialog } from "@/features/inventory";
 import { PurchaseOrdersTable } from "@/features/inventory";
 import { ReceiveOrderDialog } from "@/features/inventory";
+import { PurchaseOrderDetailDialog } from "@/features/inventory";
 import { etiquetaVariante } from "@/features/inventory/purchase-order-items";
 import type { DetalleOrdenCompra } from "@/features/inventory";
 
@@ -52,6 +53,7 @@ export default function PurchaseOrdersPage() {
     handleWhatsApp,
     enviandoId,
   } = usePurchaseOrders(tenantId, tenantLoading, tenantName ?? undefined);
+  const [ordenAbierta, setOrdenAbierta] = useState<string | null>(null);
 
   const handleEdit = async (order: Parameters<typeof openEditDialog>[0]) => {
     const details = await fetchOrderDetails(order.id);
@@ -111,12 +113,21 @@ export default function PurchaseOrdersPage() {
         onReceive={(order) => void openReceiveDialog(order)}
         onWhatsApp={(order) => void handleWhatsApp(order)}
         enviandoId={enviandoId}
+        onOpen={(order) => setOrdenAbierta(order.id)}
         getSupplierPhone={(id) =>
           suppliers.find((s) => s.id === id)?.telefono ?? null
         }
       />
 
       {/* Recepción de mercancía */}
+      {/* Desglose de una orden (clic en la fila). */}
+      <PurchaseOrderDetailDialog
+        ordenId={ordenAbierta}
+        tenantId={tenantId ?? ""}
+        nombreNegocio={tenantName || "nuestro negocio"}
+        onOpenChange={(open) => !open && setOrdenAbierta(null)}
+      />
+
       <ReceiveOrderDialog
         open={receivingOrder !== null}
         onOpenChange={(open) => !open && closeReceiveDialog()}

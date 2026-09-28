@@ -271,3 +271,64 @@ export async function deleteOrder(orderId: string): Promise<void> {
     .eq("id", orderId);
   if (error) throw error;
 }
+export interface RenglonOrdenDetalle {
+  producto_id: string;
+  variante_id: string | null;
+  cantidad_solicitada: number;
+  cantidad_recibida: number;
+  costo_unitario: number;
+  subtotal: number;
+  producto: { nombre: string; unidad_medida: string | null } | null;
+  variante: { talla: string | null; color: string | null } | null;
+}
+
+export interface OrdenDetalle extends OrdenCompra {
+  proveedor: { nombre: string; telefono: string | null } | null;
+  sucursal: { nombre: string } | null;
+  detalle: RenglonOrdenDetalle[];
+  /** Las compras que genero la orden al recibirse (una por entrega). */
+  recepciones: {
+    id: string;
+    numero_factura: string | null;
+    fecha_compra: string;
+    total: number;
+    estado: string;
+  }[];
+}
+
+/**
+ * Todo lo de una orden para su ventana de detalle: cabecera, renglones con lo
+ * pedido y lo recibido, y las compras que genero cada recepcion.
+ */
+export async function fetchOrderFullDetail(
+  ordenId: string
+): Promise<OrdenDetalle | null> {
+  const supabase = createSupabaseBrowserClient();
+  const [{ data: orden }, { data: recepciones }] = await Promise.all([
+    supabase
+      .from("ordenes_compra")
+      .select(`
+        *,
+        proveedor:proveedores!proveedor_id(nombre, telefono),
+        sucursal:sucursales!sucursal_id(nombre),
+        detalle:detalle_orden_compra(
+          producto_id, variante_id, cantidad_solicitada, cantidad_recibida,
+          costo_unitario, subtotal,
+          producto:productos!producto_id(nombre, unidad_medida),
+          variante:variantes_producto!variante_id(talla, color)
+        )
+      `)
+      .eq("id", ordenId)
+      .maybeSingle(),
+    supabase
+      .from("compras")
+      .select("id, numero_factura, fecha_compra, total, estado")
+      .eq("orden_compra_id", ordenId)
+      .order("fecha_compra"),
+  ]);
+  if (!orden) return null;
+  return {
+    ...(orden as unknown as Omit<OrdenDetalle, "recepciones">),
+    recepciones: recepciones ?? [],
+  };
+}

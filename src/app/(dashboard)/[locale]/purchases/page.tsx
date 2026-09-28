@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { ShoppingCart, Truck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePurchases } from "@/features/inventory";
@@ -8,6 +9,7 @@ import { PurchasesTable } from "@/features/inventory";
 import { SuppliersTable } from "@/features/inventory";
 import { NewPurchaseDialog } from "@/features/inventory";
 import { NewSupplierDialog } from "@/features/inventory";
+import { PurchaseDetailDialog } from "@/features/inventory";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 
 export default function PurchasesPage() {
@@ -35,6 +37,7 @@ export default function PurchasesPage() {
     products,
     variants,
   } = usePurchases(tenantId, tenantLoading);
+  const [compraAbierta, setCompraAbierta] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -75,6 +78,7 @@ export default function PurchasesPage() {
             onUpdateStatus={handleUpdatePurchaseStatus}
             onDelete={handleDeletePurchase}
             onCancel={handleCancelPurchase}
+            onOpen={(purchase) => setCompraAbierta(purchase.id)}
           />
         </TabsContent>
 
@@ -100,6 +104,13 @@ export default function PurchasesPage() {
             ? handleUpdatePurchase(editingPurchase.id, input)
             : handleCreatePurchase(input, renglones)
         }
+      />
+
+      {/* Desglose de una compra (clic en la fila). */}
+      <PurchaseDetailDialog
+        compraId={compraAbierta}
+        tenantId={tenantId}
+        onOpenChange={(open) => !open && setCompraAbierta(null)}
       />
 
       {/* New / edit supplier dialog */}

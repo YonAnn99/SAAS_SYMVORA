@@ -29,6 +29,8 @@ interface PurchasesTableProps {
   onUpdateStatus: (id: string, estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA") => void;
   onDelete: (id: string) => void;
   onCancel: (id: string) => void;
+  /** Abre el desglose de la compra (clic en la fila). */
+  onOpen: (purchase: PurchaseWithRelations) => void;
 }
 
 export function PurchasesTable({
@@ -38,6 +40,7 @@ export function PurchasesTable({
   onUpdateStatus,
   onDelete,
   onCancel,
+  onOpen,
 }: PurchasesTableProps) {
   const t = useTranslations();
 
@@ -99,7 +102,11 @@ export function PurchasesTable({
               </TableHeader>
               <TableBody>
                 {purchases.map((purchase) => (
-                  <TableRow key={purchase.id}>
+                  <TableRow
+                    key={purchase.id}
+                    className="cursor-pointer"
+                    onClick={() => onOpen(purchase)}
+                  >
                     <TableCell className="font-medium text-sm">
                       {purchase.proveedor?.nombre || "N/A"}
                     </TableCell>
@@ -127,7 +134,9 @@ export function PurchasesTable({
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    {/* Los botones hacen su propia accion: sin esto, cada
+                        clic abriria tambien el desglose. */}
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {canEdit(purchase.estado) && (
                           <Button

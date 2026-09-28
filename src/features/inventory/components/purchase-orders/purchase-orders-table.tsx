@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, FileText, Loader2, MessageCircle, Pencil, Send, Trash2 } from "lucide-react";
+import { Check, FileText, Loader2, Pencil, Send, Trash2 } from "lucide-react";
+import { WhatsAppLogo } from "@/components/marketing/whatsapp-logo";
 import { normalizarTelefonoMx } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -43,6 +44,8 @@ interface PurchaseOrdersTableProps {
   onWhatsApp: (order: OrdenCompra) => void;
   /** La orden que se esta preparando para WhatsApp, para el spinner. */
   enviandoId?: string | null;
+  /** Abre el desglose de la orden (clic en la fila). */
+  onOpen: (order: OrdenCompra) => void;
   /** Teléfono del proveedor, para saber si se puede ofrecer WhatsApp. */
   getSupplierPhone: (supplierId: string) => string | null;
 }
@@ -59,6 +62,7 @@ export function PurchaseOrdersTable({
   onReceive,
   onWhatsApp,
   enviandoId = null,
+  onOpen,
   getSupplierPhone,
 }: PurchaseOrdersTableProps) {
   return (
@@ -130,7 +134,11 @@ export function PurchaseOrdersTable({
                   );
                   const enviando = enviandoId === order.id;
                   return (
-                    <TableRow key={order.id}>
+                    <TableRow
+                      key={order.id}
+                      className="cursor-pointer"
+                      onClick={() => onOpen(order)}
+                    >
                       <TableCell className="font-mono text-sm font-medium">
                         {order.numero_orden}
                       </TableCell>
@@ -150,7 +158,9 @@ export function PurchaseOrdersTable({
                       <TableCell className="text-right text-sm font-mono">
                         ${order.total.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      {/* Los botones hacen su propia accion: sin esto, cada
+                          clic abriria tambien el desglose. */}
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           {order.estado === "BORRADOR" && (
                             <>
@@ -197,9 +207,15 @@ export function PurchaseOrdersTable({
                                 }
                               >
                                 {enviando ? (
-                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                                 ) : (
-                                  <MessageCircle className="h-3 w-3 mr-1" />
+                                  // El logo real de WhatsApp (el mismo de la
+                                  // landing); el texto del boton ya lo nombra.
+                                  <WhatsAppLogo
+                                    size={14}
+                                    className="mr-1"
+                                    aria-hidden="true"
+                                  />
                                 )}
                                 WhatsApp
                               </Button>

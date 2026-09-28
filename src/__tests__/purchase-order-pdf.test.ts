@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { generarPdfOrdenCompra } from "@/features/inventory/purchase-order-pdf";
+import {
+  datosPdfDeOrden,
+  generarPdfOrdenCompra,
+  nombreConVariante,
+} from "@/features/inventory/purchase-order-pdf";
 
 const datos = {
   negocio: "Pruebas SYMVORA",
@@ -44,5 +48,45 @@ describe("generarPdfOrdenCompra", () => {
     );
     expect(t).toContain("Sin IVA");
     expect(t).not.toContain("IVA (16%)");
+  });
+});
+
+describe("datosPdfDeOrden", () => {
+  const orden = {
+    numero_orden: "OC-013",
+    creado_en: "2026-09-21T18:00:00Z",
+    fecha_estimada_recepcion: null,
+    subtotal: "500.00",
+    impuesto: "0.00",
+    total: "500.00",
+    notas: null,
+  };
+
+  it("toma los importes de lo guardado y deduce el IVA", () => {
+    const d = datosPdfDeOrden({
+      negocio: "Pruebas SYMVORA",
+      proveedor: "johana",
+      orden,
+      renglones: [
+        {
+          nombre: nombreConVariante("sueter", { talla: "M", color: "ROJO" }),
+          cantidad_solicitada: "5",
+          costo_unitario: "100",
+          subtotal: "500",
+        },
+      ],
+    });
+    expect(d.total).toBe(500);
+    expect(d.incluyeIva).toBe(false);
+    expect(d.renglones[0]).toEqual({
+      nombre: "sueter · M / ROJO",
+      cantidad: 5,
+      costoUnitario: 100,
+      importe: 500,
+    });
+  });
+
+  it("un renglón sin variante lleva solo el nombre", () => {
+    expect(nombreConVariante("Café molido", null)).toBe("Café molido");
   });
 });

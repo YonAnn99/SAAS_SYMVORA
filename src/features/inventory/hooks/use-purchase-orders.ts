@@ -7,8 +7,12 @@ import { logActivity } from "@/lib/supabase/activity-logger";
 import type { OrdenCompra, DetalleOrdenCompra } from "../types/inventory.types";
 import { normalizarTelefonoMx, urlWhatsApp } from "@/lib/whatsapp";
 import { mensajeParaProveedor } from "../purchase-order-message";
-import { generarPdfOrdenCompra } from "../purchase-order-pdf";
-import { etiquetaVariante, type ProductoOpcion } from "../purchase-order-items";
+import {
+  datosPdfDeOrden,
+  generarPdfOrdenCompra,
+  nombreConVariante,
+} from "../purchase-order-pdf";
+import type { ProductoOpcion } from "../purchase-order-items";
 import {
   createOrder,
   deleteOrder,
@@ -27,10 +31,7 @@ import {
   type ItemRecepcion,
   type ProveedorContacto,
 } from "../services/purchase-order-service";
-import {
-  ordenLlevaIva,
-  totalesOrdenCompra,
-} from "../purchase-order-totals";
+import { totalesOrdenCompra } from "../purchase-order-totals";
 
 export interface OrdenSaveInput {
   proveedor_id: string;
@@ -288,36 +289,19 @@ export function usePurchaseOrders(
 
       try {
         const details = await fetchOrderDetails(order.id);
-        const nombreRenglon = (d: DetalleOrdenCompra) => {
-          const base =
-            products.find((p) => p.id === d.producto_id)?.nombre ?? "Producto";
-          const variante = d.variante_id
-            ? variants.find((v) => v.id === d.variante_id)
-            : null;
-          return variante ? `${base} · ${etiquetaVariante(variante)}` : base;
-        };
-        // Se deduce de la orden guardada, no de un parametro: asi el PDF y el
-        // mensaje no pueden contradecir a lo que se guardo.
-        const incluyeIva = ordenLlevaIva(order);
-
-        const pdf = generarPdfOrdenCompra({
+        const nombreRenglon = (d: DetalleOrdenCompra) =>
+          nombreConVariante(
+            products.find((p) => p.id === d.producto_id)?.nombre ?? "Producto",
+            d.variante_id ? variants.find((v) => v.id === d.variante_id) : null
+          );
+        const datosPdf = datosPdfDeOrden({
           negocio: nombreNegocio,
-          numeroOrden: order.numero_orden,
-          fecha: order.creado_en,
           proveedor: proveedor?.nombre ?? "",
-          fechaEstimada: order.fecha_estimada_recepcion,
-          renglones: details.map((d) => ({
-            nombre: nombreRenglon(d),
-            cantidad: Number(d.cantidad_solicitada),
-            costoUnitario: Number(d.costo_unitario),
-            importe: Number(d.subtotal),
-          })),
-          subtotal: Number(order.subtotal),
-          impuesto: Number(order.impuesto),
-          total: Number(order.total),
-          incluyeIva,
-          notas: order.notas,
+          orden: order,
+          renglones: details.map((d) => ({ ...d, nombre: nombreRenglon(d) })),
         });
+        const incluyeIva = datosPdf.incluyeIva;
+        const pdf = generarPdfOrdenCompra(datosPdf);
 
         const enlacePdf = await subirPdfOrden(tenantId, order.id, pdf);
 

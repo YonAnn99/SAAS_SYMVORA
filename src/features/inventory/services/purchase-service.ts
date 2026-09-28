@@ -202,3 +202,74 @@ export async function deletePurchase(purchaseId: string): Promise<void> {
   const { error } = await supabase.from("compras").delete().eq("id", purchaseId);
   if (error) throw error;
 }
+/** Un renglon del desglose, con el producto y la variante ya resueltos. */
+export interface RenglonDetalle {
+  cantidad: number;
+  costo_unitario: number;
+  subtotal: number;
+  producto: { nombre: string; unidad_medida: string | null } | null;
+  variante: { talla: string | null; color: string | null } | null;
+}
+
+export interface CompraDetalle {
+  id: string;
+  numero_factura: string | null;
+  estado: "PENDIENTE" | "RECIBIDA" | "CANCELADA";
+  fecha_compra: string;
+  fecha_recepcion: string | null;
+  subtotal: number | null;
+  impuesto: number | null;
+  total: number;
+  notas: string | null;
+  usuario_id: string;
+  proveedor: { nombre: string; telefono: string | null } | null;
+  sucursal: { nombre: string } | null;
+  orden: { numero_orden: string } | null;
+  renglones: RenglonDetalle[];
+}
+
+/**
+ * Todo lo de una compra para su ventana de detalle. Se pide al abrirla y no
+ * en la lista: la tabla solo necesita la cabecera.
+ */
+export async function fetchPurchaseDetail(
+  compraId: string
+): Promise<CompraDetalle | null> {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase
+    .from("compras")
+    .select(`
+      id, numero_factura, estado, fecha_compra, fecha_recepcion,
+      subtotal, impuesto, total, notas, usuario_id,
+      proveedor:proveedores!proveedor_id(nombre, telefono),
+      sucursal:sucursales!sucursal_id(nombre),
+      orden:ordenes_compra!orden_compra_id(numero_orden),
+      renglones:detalle_compras(
+        cantidad, costo_unitario, subtotal,
+        producto:productos!producto_id(nombre, unidad_medida),
+        variante:variantes_producto!variante_id(talla, color)
+      )
+    `)
+    .eq("id", compraId)
+    .maybeSingle();
+  return (data as unknown as CompraDetalle | null) ?? null;
+}
+
+/**
+ * El correo de quien registro algo (`usuario_id`). La tabla de usuarios no es
+ * legible desde el cliente; `get_tenant_members` es la via, igual que en el
+ * historial de ventas.
+ */
+export async function correoDeMiembro(
+  tenantId: string,
+  userId: string
+): Promise<string | null> {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase.rpc("get_tenant_members", {
+    p_tenant_id: tenantId,
+  });
+  const miembro = ((data ?? []) as { user_id: string; user_email: string | null }[]).find(
+    (m) => m.user_id === userId
+  );
+  return miembro?.user_email ?? null;
+}
