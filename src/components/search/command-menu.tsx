@@ -8,7 +8,6 @@ import { Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { filterNavigation } from "@/lib/navigation";
-import { useSucursal } from "@/contexts/sucursal-context";
 
 interface CommandMenuProps {
   open: boolean;
@@ -30,11 +29,10 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
   // Mientras el rol no resuelve no se ofrece nada: calcular con `role` en
   // `null` mostraría el subconjunto de CAJERO a cualquiera durante unos cientos
   // de ms (mismo motivo por el que el sidebar pinta un skeleton).
-  const { hayVarias } = useSucursal();
   const navItems =
     tenantLoading || permsLoading
       ? []
-      : filterNavigation(role, can, { multiSucursal: hayVarias });
+      : filterNavigation(role, can);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

@@ -21,7 +21,7 @@ import {
 
 interface FeatureItem {
   key: string;
-  badgeKey?: "point" | "cashRegister" | "multibranch";
+  badgeKey?: "multibranch";
   underlined?: boolean;
 }
 
@@ -30,8 +30,6 @@ const features: FeatureItem[] = [
   { key: "unlimitedProducts", underlined: true },
   { key: "noCommissions", underlined: true },
   { key: "pos" },
-  { key: "terminalPoint", badgeKey: "point" },
-  { key: "cashRegister", badgeKey: "cashRegister" },
   { key: "multibranch", badgeKey: "multibranch" },
   { key: "inventory" },
   { key: "priceLists" },
@@ -39,15 +37,10 @@ const features: FeatureItem[] = [
   { key: "cfdi" },
   { key: "catalogImport" },
   { key: "reports" },
-  { key: "users" },
   { key: "support" },
 ];
 
-const badgeStyles: Record<"point" | "cashRegister" | "multibranch", string> = {
-  point:
-    "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 tracking-wide shrink-0",
-  cashRegister:
-    "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 tracking-wide shrink-0",
+const badgeStyles: Record<"multibranch", string> = {
   multibranch:
     "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 tracking-wide shrink-0",
 };
@@ -327,16 +320,6 @@ export function CTA() {
           </m.a>
         </m.div>
 
-        <m.div
-          className="flex items-center justify-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-xl text-center px-4"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ ...easeOutShort, delay: 0.55 }}
-        >
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
-          <span>{t("landing.cta.hardwareNote")}</span>
-        </m.div>
 
         <m.span
           className="text-xs text-neutral-400 dark:text-neutral-500 mt-1"

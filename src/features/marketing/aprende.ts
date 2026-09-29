@@ -330,7 +330,7 @@ export const GUIAS: Guia[] = [
         id: "alta",
         titulo: "Alta de sucursales",
         pasos: [
-          { titulo: "Tu segunda sucursal", texto: "Mientras tengas un solo local, en Configuración verás «¿Abriste otro local? Da de alta tu segunda sucursal». Con dos o más, el módulo Sucursales aparece en el menú." },
+          { titulo: "Tu segunda sucursal", texto: "El módulo Sucursales siempre está en el menú. Con un solo local te invita a dar de alta el segundo; con dos o más muestra la comparación entre locales, las existencias de cada uno y los traspasos." },
           { titulo: "Cerrar un local", texto: "Una sucursal cerrada deja de ofrecerse para vender, pero su historial se conserva." },
         ],
       },

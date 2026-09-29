@@ -921,12 +921,10 @@
       "periodMonthly": "MXN / month",
       "periodYearly": "MXN / month · $3,588 billed yearly",
       "features": {
-        "unlimitedUsers": "Unlimited users and cashiers",
+        "unlimitedUsers": "Unlimited users and cashiers (with roles & permissions)",
         "unlimitedProducts": "Unlimited products and catalog",
         "noCommissions": "Zero commissions on sales",
         "pos": "Fast point of sale and bulk sales (Kg, Lt)",
-        "terminalPoint": "Integrated Mercado Pago Point terminal",
-        "cashRegister": "Secured cash drawer with blind audit & expenses",
         "multibranch": "Multi-branch & store-to-store transfers",
         "inventory": "Inventory with lots, variants & expiry dates",
         "priceLists": "Wholesale, retail pricing & promotions",
@@ -934,15 +932,11 @@
         "cfdi": "CFDI 4.0 electronic invoicing ready",
         "catalogImport": "1-click catalog import from Excel/CSV",
         "reports": "Profit reports & live business metrics",
-        "users": "Permissions & restrictions by user role",
         "support": "Personalized WhatsApp support"
       },
       "badges": {
-        "point": "Native",
-        "cashRegister": "Anti-theft",
         "multibranch": "No extra cost"
       },
-      "hardwareNote": "Compatible with your setup: USB on PC and Bluetooth on mobile/tablet (thermal printers, scanners & scales)",
       "primary": "Try {dias} days free (No credit card)",
       "secondary": "Chat on WhatsApp",
       "trialNote": "{dias}-day free trial · No credit card · Cancel anytime"

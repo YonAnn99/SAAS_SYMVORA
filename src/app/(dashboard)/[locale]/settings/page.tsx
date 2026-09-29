@@ -26,7 +26,6 @@ import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
 import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
-import { EnlaceAltaSucursal } from "@/features/sucursales/components/enlace-alta-sucursal";
 
 const PESTANAS = ["general", "modules", "payments"];
 
@@ -349,8 +348,6 @@ export default function SettingsPage() {
                 )}
               </CardContent>
             </Card>
-
-            <EnlaceAltaSucursal />
           </div>
         </TabsContent>
 

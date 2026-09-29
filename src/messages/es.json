@@ -921,12 +921,10 @@
       "periodMonthly": "MXN / mes",
       "periodYearly": "MXN / mes · $3,588 facturado al año",
       "features": {
-        "unlimitedUsers": "Usuarios y cajeros ilimitados",
+        "unlimitedUsers": "Usuarios y cajeros ilimitados (con roles y permisos)",
         "unlimitedProducts": "Productos y catálogo ilimitados",
         "noCommissions": "Cero comisiones por venta",
         "pos": "Punto de venta ágil y venta a granel (Kg, Lt)",
-        "terminalPoint": "Terminal Mercado Pago Point integrada",
-        "cashRegister": "Caja blindada con arqueo ciego y gastos",
         "multibranch": "Multi-sucursal y traspasos entre tiendas",
         "inventory": "Inventario con lotes, variantes y caducidades",
         "priceLists": "Precios de mayoreo, menudeo y promociones",
@@ -934,15 +932,11 @@
         "cfdi": "Facturación electrónica CFDI 4.0 lista",
         "catalogImport": "Importa tu catálogo en 1 clic desde Excel/CSV",
         "reports": "Reportes de ganancias y métricas en vivo",
-        "users": "Permisos y restricciones por rol de usuario",
         "support": "Soporte personalizado en español por WhatsApp"
       },
       "badges": {
-        "point": "Nativo",
-        "cashRegister": "Anti-robo",
         "multibranch": "Sin costo extra"
       },
-      "hardwareNote": "Compatible con tu equipo: USB en PC y Bluetooth en celular o tablet (impresoras térmicas, lectores y báscula)",
       "primary": "Probar {dias} días gratis (Sin tarjeta)",
       "secondary": "Hablar por WhatsApp",
       "trialNote": "{dias} días gratis · Sin tarjeta de crédito · Cancela cuando quieras"
