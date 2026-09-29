@@ -4,8 +4,10 @@ import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { getAppUrl } from "@/lib/site";
 import {
+  COBROS_OFERTA_REGRESO,
   claveDePlanNuevo,
   cobrosPromoIniciales,
+  ofertaRegresoVigente,
   precioCobroCents,
 } from "@/features/payments/promocion";
 
@@ -72,12 +74,33 @@ export async function POST(request: Request) {
     // La promocion solo se siembra en una cuenta que aun no paga. Sin esa
     // condicion, un cliente de un año que entra a /billing a cambiar de tarjeta
     // se regalaria tres meses a mitad de precio con cada clic.
-    const clavePlan = claveDePlanNuevo(period);
+    //
+    // Oferta de regreso (migracion 096): su propia lectura y sin comprobar el
+    // error, para que el checkout siga funcionando si la columna aun no existe.
+    const { data: oferta } = await supabase
+      .from("subscriptions")
+      .select("oferta_regreso_hasta")
+      .eq("id", subscription.id)
+      .maybeSingle();
+    const conOfertaRegreso = ofertaRegresoVigente(
+      (oferta as { oferta_regreso_hasta?: string | null } | null)?.oferta_regreso_hasta,
+      period
+    );
+
+    const clavePlan = conOfertaRegreso ? "monthlyPromo" : claveDePlanNuevo(period);
     const esPromo = clavePlan === "monthlyPromo";
     const yaPaga = Boolean(subscription.last_payment_at);
 
     const cambios: Record<string, unknown> = { billing_period: period };
-    if (!yaPaga) {
+    if (conOfertaRegreso) {
+      // A diferencia de la promocion de lanzamiento, esta SI se siembra en
+      // quien ya pago: es justo a quien va dirigida. Un solo cobro.
+      const { CONEKTA_PLAN_IDS } = await import(
+        "@/features/payments/services/conekta/config"
+      );
+      cambios.promo_cobros_restantes = COBROS_OFERTA_REGRESO;
+      cambios.promo_plan = CONEKTA_PLAN_IDS.monthlyPromo;
+    } else if (!yaPaga) {
       // Import dinamico como el resto de Conekta en este archivo: `config.ts`
       // instancia el SDK al cargarse, y este route corta antes por permisos o
       // por tenant demo en la mayoria de las llamadas.
@@ -211,7 +234,11 @@ export async function POST(request: Request) {
     // Efectivo/transferencia arma el monto a mano, asi que tiene que aplicar la
     // promocion por su cuenta: si no, la landing anunciaria $199 y el cliente
     // que elige OXXO se encontraria una ficha de $399.
-    const cobrosPromo = esPromo && !yaPaga ? cobrosPromoIniciales(period) : 0;
+    const cobrosPromo = conOfertaRegreso
+      ? COBROS_OFERTA_REGRESO
+      : esPromo && !yaPaga
+        ? cobrosPromoIniciales(period)
+        : 0;
     const amount = precioCobroCents(period, cobrosPromo);
     const description =
       period === "yearly"

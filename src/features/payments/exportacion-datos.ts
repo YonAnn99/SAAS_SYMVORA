@@ -7,36 +7,12 @@
  * pagina. La RLS no depende de la suscripcion: el dueño sigue leyendo sus
  * propios datos con el cliente del navegador.
  *
- * Cada conjunto sale como un CSV (abre en Excel) con `exportToCSV`.
+ * Cada conjunto sale como un CSV (abre en Excel) con `exportToCSV`. Cuando
+ * se ofrece y hasta cuando lo decide `acceso-suscripcion.ts`.
  */
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { exportToCSV } from "@/lib/export/csv";
-
-/** Estados en los que se ofrece la descarga. */
-export const ESTADOS_CON_DESCARGA = ["expired", "past_due", "canceled"] as const;
-
-export const DIAS_GRACIA_EXPORTACION = 30;
-
-export function ofreceDescarga(estado: string | null | undefined): boolean {
-  return (ESTADOS_CON_DESCARGA as readonly string[]).includes(estado ?? "");
-}
-
-/**
- * Fecha limite del periodo de gracia: 30 dias despues de que termino el
- * acceso (fin del periodo pagado o, si nunca pago, fin de la prueba).
- */
-export function limiteDescarga(sub: {
-  current_period_end: string | null;
-  trial_end: string | null;
-}): Date | null {
-  const base = sub.current_period_end ?? sub.trial_end;
-  if (!base) return null;
-  const fecha = new Date(base);
-  if (Number.isNaN(fecha.getTime())) return null;
-  fecha.setDate(fecha.getDate() + DIAS_GRACIA_EXPORTACION);
-  return fecha;
-}
 
 const TAM_PAGINA = 1000;
 

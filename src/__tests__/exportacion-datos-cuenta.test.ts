@@ -2,32 +2,41 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/supabase/client", () => ({ createSupabaseBrowserClient: vi.fn() }));
 
-import { limiteDescarga, ofreceDescarga } from "@/features/payments/exportacion-datos";
+import { CONJUNTOS } from "@/features/payments/exportacion-datos";
+import { ofertaRegresoVigente } from "@/features/payments/promocion";
 
 describe("descarga de datos de cuenta vencida", () => {
-  it("se ofrece solo a cuentas vencidas, con adeudo o canceladas", () => {
-    expect(ofreceDescarga("expired")).toBe(true);
-    expect(ofreceDescarga("past_due")).toBe(true);
-    expect(ofreceDescarga("canceled")).toBe(true);
-    expect(ofreceDescarga("active")).toBe(false);
-    expect(ofreceDescarga("trial")).toBe(false);
-    expect(ofreceDescarga(null)).toBe(false);
+  it("cada conjunto tiene archivo y columnas, sin claves repetidas", () => {
+    const claves = CONJUNTOS.map((c) => c.clave);
+    expect(new Set(claves).size).toBe(claves.length);
+    for (const c of CONJUNTOS) {
+      expect(c.columnas.length).toBeGreaterThan(0);
+      expect(c.archivo).not.toBe("");
+    }
   });
 
-  it("el limite es 30 dias despues del fin del periodo pagado", () => {
-    const limite = limiteDescarga({
-      current_period_end: "2026-09-01T12:00:00Z",
-      trial_end: "2026-08-01T12:00:00Z",
-    });
-    expect(limite?.toISOString().slice(0, 10)).toBe("2026-10-01");
+  it("el detalle de ventas se filtra por el negocio de su venta", () => {
+    const detalle = CONJUNTOS.find((c) => c.clave === "detalle_ventas");
+    expect(detalle?.select).toContain("ventas!inner");
+    expect(detalle?.filtroTenant).toBe("ventas.tenant_id");
   });
 
-  it("sin periodo pagado cuenta desde el fin de la prueba", () => {
-    const limite = limiteDescarga({ current_period_end: null, trial_end: "2026-08-01T12:00:00Z" });
-    expect(limite?.toISOString().slice(0, 10)).toBe("2026-08-31");
+  it("las columnas toleran relaciones vacias", () => {
+    const ventas = CONJUNTOS.find((c) => c.clave === "ventas")!;
+    const cliente = ventas.columnas.find((c) => c.header === "Cliente")!;
+    expect(cliente.accessor({ clientes: null })).toBe("");
+    expect(cliente.accessor({ clientes: { nombre: "Ana" } })).toBe("Ana");
   });
+});
 
-  it("sin fechas no inventa un limite", () => {
-    expect(limiteDescarga({ current_period_end: null, trial_end: null })).toBeNull();
+describe("oferta de regreso", () => {
+  const ahora = new Date("2026-10-10T12:00:00Z");
+
+  it("aplica solo al plan mensual y dentro de su vigencia", () => {
+    expect(ofertaRegresoVigente("2026-10-20T00:00:00Z", "monthly", ahora)).toBe(true);
+    expect(ofertaRegresoVigente("2026-10-20T00:00:00Z", "yearly", ahora)).toBe(false);
+    expect(ofertaRegresoVigente("2026-10-01T00:00:00Z", "monthly", ahora)).toBe(false);
+    expect(ofertaRegresoVigente(null, "monthly", ahora)).toBe(false);
+    expect(ofertaRegresoVigente("no-es-fecha", "monthly", ahora)).toBe(false);
   });
 });

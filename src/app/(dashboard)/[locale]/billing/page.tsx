@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -37,12 +38,13 @@ import { toast } from "sonner";
 import { Clock, CheckCircle, Calendar, History, Gift, Copy, Check, MessageCircle, Users, Info, Link2, Tag } from "lucide-react";
 import {
   PRECIO_PROMO_MXN,
+  ofertaRegresoVigente,
   precioListaMXN,
   promoAplica,
 } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
-import { ofreceDescarga } from "@/features/payments/exportacion-datos";
+import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 
 interface Subscription {
   id: string;
@@ -59,6 +61,8 @@ interface Subscription {
   billing_period: "monthly" | "yearly";
   promo_cobros_restantes: number | null;
   promo_plan: string | null;
+  /** Migracion 096; ausente si aun no se aplica. */
+  oferta_regreso_hasta?: string | null;
 }
 
 interface ReferralRecord {
@@ -85,6 +89,8 @@ export default function BillingPage() {
   const locale = useLocale();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const isDemo = useIsDemo();
+  const accesoCuenta = useAccesoCuenta();
+  const motivo = useSearchParams().get("motivo");
 const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,8 +168,16 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   // la constante, y solo si la cuenta aun no paga), y cuantos cobros
   // promocionales le quedan a esta suscripcion (manda la base, aunque la
   // oferta ya se haya retirado).
+  //
+  // La oferta de regreso (migracion 096) usa el mismo precio promocional, pero
+  // SI aplica a quien ya pago: es justo a quien va dirigida.
+  const ofertaRegreso = ofertaRegresoVigente(
+    subscription?.oferta_regreso_hasta,
+    selectedPeriod
+  );
   const promoEnCheckout =
-    promoAplica(selectedPeriod) && !subscription?.last_payment_at;
+    ofertaRegreso ||
+    (promoAplica(selectedPeriod) && !subscription?.last_payment_at);
   const cobrosPromoRestantes = subscription?.promo_cobros_restantes ?? 0;
 
   const getDaysLeft = () => {
@@ -430,6 +444,19 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
         </p>
       </div>
 
+      {/* Llego aqui desde una pantalla de escritura (POS, compras...) con la
+          cuenta en solo lectura: el middleware lo redirige con el motivo. */}
+      {motivo === "solo_lectura" && accesoCuenta.acceso === "solo_lectura" && (
+        <div
+          role="status"
+          className="animate-fade-in-up rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-900 dark:text-red-200"
+        >
+          <strong className="font-medium">Para volver a vender y registrar cambios, reactiva tu plan.</strong>{" "}
+          Tu información sigue intacta: productos, ventas, clientes e inventario te
+          esperan tal como los dejaste.
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="animate-fade-in-up stagger-2">
           <CardHeader className="pb-3">
@@ -572,10 +599,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
 
             {promoEnCheckout && (
               <p className="-mt-2 text-xs text-red-600 dark:text-red-400">
-                {t("landing.cta.promoNota", {
-                  meses: PROMO_LANZAMIENTO.cobros,
-                  normal: `$${precioListaMXN("monthly")}`,
-                })}
+                {ofertaRegreso
+                  ? `Oferta de regreso: tu primer mes a $${PRECIO_PROMO_MXN}, después $${precioListaMXN("monthly")} al mes. Válida hasta el ${new Date(
+                      subscription!.oferta_regreso_hasta as string
+                    ).toLocaleDateString("es-MX", { day: "numeric", month: "long" })}.`
+                  : t("landing.cta.promoNota", {
+                      meses: PROMO_LANZAMIENTO.cobros,
+                      normal: `$${precioListaMXN("monthly")}`,
+                    })}
               </p>
             )}
 
@@ -689,8 +720,8 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
 
       {/* Periodo de gracia de los Terminos (seccion 6): una cuenta vencida o
           cancelada solo llega a esta pagina, asi que aqui puede bajar sus datos. */}
-      {tenantId && subscription && ofreceDescarga(subscription.status) && (
-        <DescargaDatosCuenta tenantId={tenantId} subscription={subscription} />
+      {tenantId && accesoCuenta.acceso === "solo_lectura" && (
+        <DescargaDatosCuenta tenantId={tenantId} limite={accesoCuenta.limiteDatos} />
       )}
 
       <Card className="animate-fade-in-up stagger-4">

@@ -3,6 +3,8 @@ import { getReferralSignupUrl } from "@/lib/referrals";
 import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SUPPORT_EMAIL } from "@/lib/contact";
 import { TIMEOUTS, withTimeout } from "@/lib/http/timeout";
 import { DIAS_PRUEBA } from "@/lib/trial";
+import { PRECIO_PROMO_MXN, precioListaMXN } from "@/features/payments/promocion";
+import type { AvisoCobro } from "@/lib/avisos-cobro";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -841,7 +843,7 @@ export async function sendTrialEndedEmail(params: {
     preheader: "Tu prueba terminó — reactiva tu acceso cuando quieras",
     heading: `Tu prueba terminó, ${params.businessName}`,
     intro:
-      `Los ${DIAS_PRUEBA} días de prueba llegaron a su fin, así que por ahora el acceso al sistema está en pausa. Activar tu suscripción lo restablece al instante.`,
+      `Los ${DIAS_PRUEBA} días de prueba llegaron a su fin, así que por ahora tu cuenta está en solo lectura: puedes entrar, ver tus reportes y descargar tu información, pero no registrar ventas. Activar tu suscripción lo restablece al instante.`,
     highlight:
       "<strong>Tu información sigue guardada.</strong> Nada se borra: productos, ventas, clientes e inventario te esperan tal cual los dejaste.",
     ctaLabel: "Reactivar mi acceso",
@@ -860,6 +862,136 @@ export async function sendTrialEndedEmail(params: {
     return { ok: true };
   } catch (err) {
     console.error("[email] Falló el aviso de prueba terminada:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * Avisos de cobro de clientes que ya pagaban (cron `avisos-cobro`, reglas en
+ * `lib/avisos-cobro.ts`): renovacion, gracia, solo lectura, oferta de regreso
+ * y ultimo aviso. Un solo envio con el contenido de cada caso, porque todos
+ * comparten plantilla, destinatario y manejo de errores.
+ *
+ * El tono va de informativo (renovacion) a oferta (regreso): nunca amenaza. El
+ * mensaje central es siempre el mismo — tu informacion esta a salvo y vuelves
+ * justo donde lo dejaste.
+ */
+export async function sendAvisoCobroEmail(params: {
+  to: string;
+  businessName: string;
+  tipo: AvisoCobro;
+  /** Fin del periodo pagado (renovacion). */
+  venceEl?: Date | null;
+  /** `past_due`: fallo la tarjeta; si no, vencio un pago manual. */
+  cobroFallido?: boolean;
+  /** Hasta cuando se conservan los datos (solo lectura / ultimo). */
+  limiteDatos?: Date | null;
+  /** Vigencia de la oferta de regreso (regreso / ultimo). */
+  ofertaHasta?: Date | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite el aviso de cobro");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const fecha = (d?: Date | null) =>
+    d ? d.toLocaleDateString("es-MX", { day: "numeric", month: "long", timeZone: "America/Mexico_City" }) : "";
+  const negocio = params.businessName;
+  const billing = `${BRAND.appUrl}/es/billing`;
+  const oferta = `tu primer mes de regreso a $${PRECIO_PROMO_MXN} en vez de $${precioListaMXN("monthly")}`;
+
+  let subject: string;
+  let contenido: Parameters<typeof buildNoticeHtml>[0];
+
+  switch (params.tipo) {
+    case "renovacion":
+      subject = `Tu mensualidad de SYMVORA vence el ${fecha(params.venceEl)}`;
+      contenido = {
+        preheader: `Genera tu referencia de pago antes del ${fecha(params.venceEl)}`,
+        heading: `Tu mes vence el ${fecha(params.venceEl)}, ${negocio}`,
+        intro:
+          "Como pagas en efectivo o transferencia, el cobro no es automático. Genera tu referencia con tiempo para seguir vendiendo sin interrupciones.",
+        highlight:
+          "<strong>¿Prefieres olvidarte de esto?</strong> Con tarjeta el cobro es automático cada mes y puedes cancelar cuando quieras.",
+        ctaLabel: "Pagar mi mensualidad",
+        ctaHref: billing,
+      };
+      break;
+    case "gracia":
+      subject = params.cobroFallido
+        ? "No pudimos procesar tu pago de SYMVORA"
+        : "Tu mensualidad de SYMVORA venció";
+      contenido = {
+        preheader: "Tienes 3 días para pagar sin perder el acceso",
+        heading: params.cobroFallido
+          ? `No pudimos cobrar tu mensualidad, ${negocio}`
+          : `Tu mensualidad venció, ${negocio}`,
+        intro:
+          "No te preocupes: durante los próximos 3 días todo sigue funcionando igual. Solo necesitas completar el pago para no perder el acceso.",
+        highlight: params.cobroFallido
+          ? "Suele pasar cuando la tarjeta venció o no tenía fondos. Puedes pagar con otra tarjeta, en OXXO o por transferencia."
+          : "Puedes pagar con tarjeta, en OXXO o por transferencia.",
+        ctaLabel: "Pagar ahora",
+        ctaHref: billing,
+      };
+      break;
+    case "solo_lectura":
+      subject = "Tu cuenta de SYMVORA está en solo lectura";
+      contenido = {
+        preheader: "Tu información está a salvo — reactiva para volver a vender",
+        heading: `Tu cuenta está en solo lectura, ${negocio}`,
+        intro:
+          "Todavía puedes entrar, ver tus reportes y descargar tu información, pero no registrar ventas ni cambios hasta que reactives tu plan.",
+        highlight: `<strong>Tu información está a salvo.</strong> Productos, ventas, clientes e inventario se conservan${
+          params.limiteDatos ? ` hasta el ${fecha(params.limiteDatos)}` : ""
+        }; al reactivar sigues justo donde lo dejaste.`,
+        ctaLabel: "Reactivar mi plan",
+        ctaHref: billing,
+      };
+      break;
+    case "regreso":
+      subject = `Vuelve a SYMVORA: ${oferta}`;
+      contenido = {
+        preheader: `Oferta de regreso válida hasta el ${fecha(params.ofertaHasta)}`,
+        heading: `Te guardamos todo, ${negocio}`,
+        intro:
+          "Tu catálogo, tus clientes y tu historial de ventas siguen exactamente como los dejaste. Para que retomar sea más fácil, te preparamos una oferta.",
+        highlight: `<strong>${oferta[0].toUpperCase()}${oferta.slice(1)}.</strong> Válido hasta el ${fecha(
+          params.ofertaHasta
+        )}; se aplica solo al elegir el plan mensual.`,
+        ctaLabel: "Aprovechar la oferta",
+        ctaHref: billing,
+      };
+      break;
+    case "ultimo":
+      subject = `Última oportunidad: tu información de SYMVORA se conserva hasta el ${fecha(params.limiteDatos)}`;
+      contenido = {
+        preheader: "Reactiva o descarga tu información antes de que termine el plazo",
+        heading: `Quedan pocos días, ${negocio}`,
+        intro: `Tu información se conserva hasta el ${fecha(
+          params.limiteDatos
+        )}. Después de esa fecha podríamos eliminarla, como indican nuestros Términos. Reactiva tu plan o, si ya no lo necesitas, descarga tu información antes.`,
+        highlight: params.ofertaHasta
+          ? `<strong>Tu oferta sigue en pie:</strong> ${oferta}, hasta el ${fecha(params.ofertaHasta)}.`
+          : undefined,
+        ctaLabel: "Reactivar o descargar mis datos",
+        ctaHref: billing,
+      };
+      break;
+  }
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: params.to,
+      subject,
+      html: buildNoticeHtml(contenido),
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error(`[email] Falló el aviso de cobro (${params.tipo}):`, err);
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

@@ -6,25 +6,21 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CONTACT_EMAIL } from "@/lib/contact";
-import {
-  CONJUNTOS,
-  DIAS_GRACIA_EXPORTACION,
-  descargarConjunto,
-  limiteDescarga,
-} from "../exportacion-datos";
+import { DIAS_CONSERVACION_DATOS } from "@/lib/acceso-suscripcion";
+import { CONJUNTOS, descargarConjunto } from "../exportacion-datos";
 
 interface DescargaDatosCuentaProps {
   tenantId: string;
-  subscription: { current_period_end: string | null; trial_end: string | null };
+  /** Fin del periodo para descargar (`limiteConservacion`). */
+  limite: Date | null;
 }
 
 /**
  * "Descarga tu informacion" en /billing para cuentas vencidas o canceladas:
  * cumple el periodo de gracia de la seccion 6 de los Terminos.
  */
-export function DescargaDatosCuenta({ tenantId, subscription }: DescargaDatosCuentaProps) {
+export function DescargaDatosCuenta({ tenantId, limite }: DescargaDatosCuentaProps) {
   const [descargando, setDescargando] = useState<string | null>(null);
-  const limite = limiteDescarga(subscription);
 
   const descargar = async (clave: string) => {
     const conjunto = CONJUNTOS.find((c) => c.clave === clave);
@@ -51,7 +47,7 @@ export function DescargaDatosCuenta({ tenantId, subscription }: DescargaDatosCue
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Tu información sigue siendo tuya. Tienes {DIAS_GRACIA_EXPORTACION} días
+          Tu información sigue siendo tuya. Tienes {DIAS_CONSERVACION_DATOS} días
           naturales desde que terminó tu acceso para descargarla
           {limite
             ? ` (hasta el ${limite.toLocaleDateString("es-MX", {

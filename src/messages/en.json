@@ -517,7 +517,7 @@
     "promoUsed": "This promo code has already been used",
     "promoExpired": "The promo code has expired",
     "promoActiveSub": "You can't apply a code with an active subscription",
-    "confirmCancel": "Are you sure you want to cancel your subscription? You will lose access to the system.",
+    "confirmCancel": "Are you sure you want to cancel your subscription? You keep access until the end of the period you already paid; after that your account becomes read-only (you can view and download your data, but not sell).",
     "subscriptionCanceled": "Subscription canceled",
     "cancelReasonTitle": "Why are you canceling?",
     "cancelReasonDescription": "Help us improve by telling us why.",

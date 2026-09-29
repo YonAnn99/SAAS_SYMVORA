@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { usePermissions } from "@/hooks/use-permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useTutorialContext } from "@/components/tutorial/tutorial-provider";
 import { debeEmpujarAFinanzas, marcarAvisado, yaAvisadoHoy } from "../daily-prompt";
@@ -21,6 +22,9 @@ import { useOpenRegister } from "../hooks/use-open-register";
 export function OpenRegisterPrompt() {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { hasOpenRegister, loading } = useOpenRegister(tenantId);
+  // Sin `cash.manage` (p. ej. cuenta en solo lectura) Finanzas esta cerrada:
+  // empujar ahi solo produciria otra redireccion.
+  const { can, loading: permsLoading } = usePermissions();
   const router = useRouter();
   const pathname = usePathname();
   const yaRedirigido = useRef(false);
@@ -37,7 +41,8 @@ export function OpenRegisterPrompt() {
   }, [isActive, minimized]);
 
   useEffect(() => {
-    if (tenantLoading || loading) return;
+    if (tenantLoading || loading || permsLoading) return;
+    if (!can("cash.manage")) return;
     // Una sola redireccion por montaje, pase lo que pase con los renders.
     if (yaRedirigido.current) return;
     // Sin caja confirmada, fuera de Finanzas y sin tutorial en curso.
@@ -75,7 +80,7 @@ export function OpenRegisterPrompt() {
     return () => {
       cancelado = true;
     };
-  }, [tenantLoading, loading, hasOpenRegister, pathname, router, isActive, minimized]);
+  }, [permsLoading, can, tenantLoading, loading, hasOpenRegister, pathname, router, isActive, minimized]);
 
   return null;
 }

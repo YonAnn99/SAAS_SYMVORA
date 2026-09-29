@@ -9,6 +9,7 @@ import { TutorialDialog } from "@/components/tutorial/tutorial-dialog";
 import { TutorialMinimized } from "@/components/tutorial/tutorial-minimized";
 import { LegalFooter } from "@/components/dashboard/legal-footer";
 import { PolicyUpdateBanner } from "@/components/compliance/policy-update-banner";
+import { AvisoEstadoPago } from "@/features/payments/components/aviso-estado-pago";
 import { DemoBanner } from "@/components/demo/demo-banner";
 import { OpenRegisterPrompt } from "@/features/cash-register/components/open-register-prompt";
 import { TenantProvider } from "@/contexts/tenant-context";
@@ -27,6 +28,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <TutorialProvider>
         <DemoBanner />
         <PolicyUpdateBanner />
+        <AvisoEstadoPago />
         <OpenRegisterPrompt />
         <div className="flex h-screen overflow-hidden">
           <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />

@@ -347,6 +347,25 @@ async function avanzarPromocion(
 }
 
 // Email de bienvenida al dueño del tenant que acaba de pagar su membresia.
+/**
+ * Al pagar, el ciclo de cobro vuelve a empezar (migracion 096): se borra el
+ * inicio de la gracia, la oferta de regreso y las marcas de los avisos de
+ * cobro, para que el proximo vencimiento vuelva a avisar desde cero.
+ *
+ * Va en un update APARTE y sin comprobar el error a proposito: si la migracion
+ * 096 aun no esta aplicada, estas columnas no existen y el update falla solo,
+ * sin tumbar la activacion de la cuenta.
+ */
+const REINICIO_CICLO_COBRO = {
+  past_due_desde: null,
+  oferta_regreso_hasta: null,
+  aviso_renovacion_en: null,
+  aviso_gracia_en: null,
+  aviso_solo_lectura_en: null,
+  aviso_regreso_en: null,
+  aviso_ultimo_en: null,
+} as const;
+
 async function sendWelcomeEmailToOwner(
   supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
   tenantId: string,
@@ -527,6 +546,10 @@ export async function POST(request: Request) {
           .from("subscriptions")
           .update(paidUpdate)
           .eq("conekta_customer_id", customerId);
+        await supabase
+          .from("subscriptions")
+          .update(REINICIO_CICLO_COBRO)
+          .eq("conekta_customer_id", customerId);
 
         // Conekta reintenta la entrega mientras no reciba 200 — sin este
         // chequeo, cada reintento del mismo cargo duplicaba el registro Y
@@ -628,6 +651,16 @@ export async function POST(request: Request) {
             updated_at: new Date().toISOString(),
           })
           .eq("conekta_customer_id", customerId);
+
+        // Desde cuando corren los 3 dias de gracia (migracion 096). Solo el
+        // PRIMER fallo del ciclo: Conekta reintenta el cobro y cada reintento
+        // fallido reenvia este evento. Aparte y sin comprobar el error, por la
+        // misma razon que REINICIO_CICLO_COBRO.
+        await supabase
+          .from("subscriptions")
+          .update({ past_due_desde: new Date().toISOString() })
+          .eq("conekta_customer_id", customerId)
+          .is("past_due_desde", null);
 
         const { data: subData } = await supabase
           .from("subscriptions")
@@ -753,6 +786,10 @@ export async function POST(request: Request) {
               .update({ subscription_status: "active" })
               .eq("id", subData.tenant_id),
           ]);
+          await supabase
+            .from("subscriptions")
+            .update(REINICIO_CICLO_COBRO)
+            .eq("id", subData.id);
 
           // El checkout hosted es el pago real del flujo: el primer pago
           // dispara la conversion del referido y el email de bienvenida;

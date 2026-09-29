@@ -203,6 +203,9 @@ export async function updateSession(request: NextRequest) {
           trial_end: string | null;
           permisos: string[];
           tiene_caja_abierta: boolean;
+          // Migracion 096. Ausente si aun no se aplica: entonces rige el
+          // bloqueo anterior (todo a /billing).
+          acceso?: "completo" | "gracia" | "solo_lectura" | null;
         }>();
 
       // SIN NEGOCIO -> a terminar el registro. Pasa con la primera entrada con
@@ -229,7 +232,30 @@ export async function updateSession(request: NextRequest) {
       // --- Subscription check ---
       // Se salta en /billing a proposito: es la pagina a la que redirige este
       // mismo chequeo, y evaluarla ahi produce el redirect loop del bug #9.
-      if (contexto && !isBillingRoute) {
+      //
+      // Con la migracion 096 (`contexto.acceso`) ya NO se bloquea todo: la
+      // cuenta vencida entra en SOLO LECTURA. Los permisos de escritura ya
+      // vienen recortados desde la base, asi que las rutas de escritura (POS,
+      // compras...) se cierran solas mas abajo, y la base rechaza cualquier
+      // escritura. Aqui solo queda la contabilidad de marcar la prueba vencida.
+      const accesoPorEstado = contexto?.acceso != null;
+      if (contexto && !isBillingRoute && accesoPorEstado) {
+        if (
+          contexto.subscription_status === "trial" &&
+          contexto.trial_end &&
+          new Date(contexto.trial_end) < new Date()
+        ) {
+          after(async () => {
+            await supabaseAdmin
+              .from("tenants")
+              .update({ subscription_status: "expired" })
+              .eq("id", contexto.tenant_id);
+          });
+        }
+      }
+
+      // Sin la migracion 096: bloqueo total como antes.
+      if (contexto && !isBillingRoute && !accesoPorEstado) {
         const status = contexto.subscription_status;
 
         // Redirect to billing if expired or past_due
@@ -309,9 +335,20 @@ export async function updateSession(request: NextRequest) {
         }
 
         if (!allowed) {
+          const locale = request.nextUrl.pathname.split("/")[1] || "es";
+          // En solo lectura, quien puede pagar va a /billing con el motivo
+          // (p. ej. entro al POS): ahi ve por que y como reactivar.
+          if (
+            contexto?.acceso === "solo_lectura" &&
+            contexto.permisos.includes("subscription.manage")
+          ) {
+            const billingUrl = request.nextUrl.clone();
+            billingUrl.pathname = `/${locale}/billing`;
+            billingUrl.search = "?motivo=solo_lectura";
+            return NextResponse.redirect(billingUrl);
+          }
           // A SU inicio y no al dashboard: el cajero tampoco puede verlo, y
           // mandarlo ahi seria otra negativa y otra redireccion (bucle).
-          const locale = request.nextUrl.pathname.split("/")[1] || "es";
           const inicioUrl = request.nextUrl.clone();
           inicioUrl.pathname = `/${locale}${inicioPara(contexto?.permisos ?? [])}`;
           return NextResponse.redirect(inicioUrl);

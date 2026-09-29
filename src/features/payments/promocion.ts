@@ -94,3 +94,23 @@ export function precioListaMXN(period: BillingPeriod): number {
 
 /** Precio promocional en pesos, para la UI. */
 export const PRECIO_PROMO_MXN = PROMO_LANZAMIENTO.precioCents / 100;
+
+/**
+ * Oferta de regreso (migracion 096): quien quedo en solo lectura recibe el
+ * dia 7 un correo con su primer mes de vuelta al precio promocional. Reutiliza
+ * el plan `monthlyPromo` y el contador de arriba — con 1 cobro — asi que no
+ * hace falta otro plan en Conekta, y el webhook lo devuelve solo al plan normal
+ * tras ese cobro.
+ */
+export const COBROS_OFERTA_REGRESO = 1;
+
+/** ?Aplica la oferta de regreso a este checkout? Solo mensual y dentro de su vigencia. */
+export function ofertaRegresoVigente(
+  hasta: string | null | undefined,
+  period: BillingPeriod,
+  ahora: Date = new Date()
+): boolean {
+  if (period !== PROMO_LANZAMIENTO.periodo || !hasta) return false;
+  const limite = new Date(hasta);
+  return !Number.isNaN(limite.getTime()) && limite >= ahora;
+}
