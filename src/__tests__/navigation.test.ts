@@ -40,7 +40,6 @@ describe("orden del menú", () => {
       "/activity",
       "/users",
       "/branches",
-      "/settings/payments",
       "/billing",
       "/suggestions",
       "/settings",
@@ -77,11 +76,11 @@ describe("título del encabezado (moduleLabelKeyForPath)", () => {
     }
   });
 
-  it("/settings/payments dice Métodos de pago, no Configuración", () => {
-    // EL BUG CONCRETO: `/settings` es subcadena de `/settings/payments` y
-    // estaba declarado antes, asi que ganaba. Se resuelve por prefijo mas
-    // largo, no por orden.
-    expect(moduleLabelKeyForPath("/settings/payments")).toBe("layout.payments");
+  it("Métodos de pago ya no es un módulo del menú: vive en Configuración", () => {
+    // Es la pestaña "Mercado Pago Point" de Configuración; la ruta vieja
+    // redirige alli, asi que su encabezado debe decir Configuración.
+    expect(VISIBLE_NAVIGATION.map((i) => i.href)).not.toContain("/settings/payments");
+    expect(moduleLabelKeyForPath("/settings/payments")).toBe("layout.settings");
     expect(moduleLabelKeyForPath("/settings")).toBe("layout.settings");
   });
 
@@ -186,11 +185,9 @@ describe("selectores del tutorial contra el orden del menú", () => {
     const paso = tutorialSteps.find((p) => p.moduleKey === "layout.settings");
     expect(paso?.targetSelector).toBe('a[href$="/settings"]');
 
-    // La razon de ser del anclaje: en el menu, Metodos de pago va antes.
+    // Y apunta a un enlace que existe en el menu.
     const hrefs = VISIBLE_NAVIGATION.map((i) => i.href);
-    expect(hrefs.indexOf("/settings/payments")).toBeLessThan(
-      hrefs.indexOf("/settings")
-    );
+    expect(hrefs).toContain("/settings");
   });
 });
 

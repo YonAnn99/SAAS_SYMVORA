@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Puzzle } from "lucide-react";
+import { Building2, Puzzle, Smartphone } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { MercadoPagoPointSettings } from "@/features/payments/components/mercado-pago-point-settings";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -26,7 +28,26 @@ import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 import { EnlaceAltaSucursal } from "@/features/sucursales/components/enlace-alta-sucursal";
 
+const PESTANAS = ["general", "modules", "payments"];
+
 export default function SettingsPage() {
+  // La pestaña sale de `?tab=`: asi /settings/payments (que redirige con
+  // ?tab=payments) abre directo la de Mercado Pago, y al recargar se queda en
+  // la misma.
+  const searchParams = useSearchParams();
+  const [pestana, setPestana] = useState(() => {
+    const pedida = searchParams.get("tab");
+    return pedida && PESTANAS.includes(pedida) ? pedida : "general";
+  });
+  const cambiarPestana = (valor: unknown) => {
+    const siguiente = typeof valor === "string" ? valor : "general";
+    setPestana(siguiente);
+    // Sin navegar: solo deja la URL al dia para recargar o compartir.
+    const url = new URL(window.location.href);
+    if (siguiente === "general") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", siguiente);
+    window.history.replaceState(null, "", url);
+  };
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { setModulo } = useModulos();
@@ -229,7 +250,11 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="general" className="w-full animate-fade-in-up stagger-2">
+      <Tabs
+        value={pestana}
+        onValueChange={cambiarPestana}
+        className="w-full animate-fade-in-up stagger-2"
+      >
         <TabsList>
           <TabsTrigger value="general" className="gap-1.5 text-xs">
             <Building2 className="h-3.5 w-3.5" />
@@ -238,6 +263,12 @@ export default function SettingsPage() {
           <TabsTrigger id="settings-tab-modules" value="modules" className="gap-1.5 text-xs">
             <Puzzle className="h-3.5 w-3.5" />
             {t("settings.modules")}
+          </TabsTrigger>
+          {/* Antes era el modulo "Metodos de pago" del menu (/settings/payments,
+              que ahora redirige aqui). */}
+          <TabsTrigger value="payments" className="gap-1.5 text-xs">
+            <Smartphone className="h-3.5 w-3.5" />
+            {t("settings.mercadoPagoPoint")}
           </TabsTrigger>
         </TabsList>
 
@@ -360,7 +391,11 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Inventory: variants, lots, adjustments */}
+        {/* Se monta solo al abrir la pestaña: asi la configuracion de Mercado
+            Pago se consulta nada mas cuando hace falta. */}
+        <TabsContent value="payments">
+          {pestana === "payments" && <MercadoPagoPointSettings />}
+        </TabsContent>
       </Tabs>
     </div>
   );

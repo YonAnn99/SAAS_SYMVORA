@@ -71,11 +71,10 @@ export const tutorialSteps: TutorialStep[] = [
     descriptionKey: "tutorial.steps.business.description",
     icon: Building2,
     route: "/settings",
-    // Anclado al FINAL (`$=`), no `*=`. El menú tiene tambien
-    // `/settings/payments`, y `tutorial-dialog.tsx` resuelve esto con
-    // `document.querySelector`, que devuelve la primera coincidencia del
-    // documento: con `*=` este paso resaltaria Metodos de pago, que desde el
-    // reordenado del menu va ANTES que Configuracion.
+    // Anclado al FINAL (`$=`), no `*=`: `tutorial-dialog.tsx` resuelve esto
+    // con `document.querySelector`, que devuelve la primera coincidencia, y
+    // cualquier enlace que CONTENGA "/settings" (como era "/settings/payments"
+    // cuando Metodos de pago estaba en el menu) le ganaria a Configuracion.
     targetSelector: 'a[href$="/settings"]',
     position: "right",
     navigates: true,

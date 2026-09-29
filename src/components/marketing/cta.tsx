@@ -5,10 +5,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import * as m from "motion/react-m";
-import { ArrowRight, Check, Rocket } from "lucide-react";
+import { ArrowRight, Rocket } from "lucide-react";
 import { PRECIO_PROMO_MXN, precioListaMXN, promoAplica } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
-import { SinLimites } from "./sin-limites";
 import { WhatsAppLogo } from "./whatsapp-logo";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, WHATSAPP_CONTORNO } from "./boton-capsula";
 import {
@@ -20,14 +19,38 @@ import {
   springIcon,
 } from "./animations";
 
-const featureKeys = [
-  "pos",
-  "inventory",
-  "reports",
-  "users",
-  "support",
-  "catalogImport",
-] as const;
+interface FeatureItem {
+  key: string;
+  badgeKey?: "point" | "cashRegister" | "multibranch";
+  underlined?: boolean;
+}
+
+const features: FeatureItem[] = [
+  { key: "unlimitedUsers", underlined: true },
+  { key: "unlimitedProducts", underlined: true },
+  { key: "noCommissions", underlined: true },
+  { key: "pos" },
+  { key: "terminalPoint", badgeKey: "point" },
+  { key: "cashRegister", badgeKey: "cashRegister" },
+  { key: "multibranch", badgeKey: "multibranch" },
+  { key: "inventory" },
+  { key: "priceLists" },
+  { key: "cloudAccess" },
+  { key: "cfdi" },
+  { key: "catalogImport" },
+  { key: "reports" },
+  { key: "users" },
+  { key: "support" },
+];
+
+const badgeStyles: Record<"point" | "cashRegister" | "multibranch", string> = {
+  point:
+    "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 tracking-wide shrink-0",
+  cashRegister:
+    "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 tracking-wide shrink-0",
+  multibranch:
+    "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 tracking-wide shrink-0",
+};
 
 const WHATSAPP_NUMBER = SALES_WHATSAPP;
 const WHATSAPP_MESSAGE =
@@ -224,39 +247,47 @@ export function CTA() {
           </m.p>
         )}
 
-        {/* Destacado antes de la lista: lo que el precio NO limita. */}
-        <div className="mt-2">
-          <SinLimites alineacion="centro" retraso={0.2} />
-        </div>
-
         <m.div
-          className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-lg mt-4 text-left"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3.5 w-full max-w-2xl mt-4 text-left"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
-          {featureKeys.map((key) => (
+          {features.map((item) => (
             <m.div
-              key={key}
-              className="flex items-center gap-2"
+              key={item.key}
+              className="flex items-center gap-2.5"
               variants={fadeInUp}
               transition={easeOutLong}
             >
               <m.span
-                className="w-4 h-4 text-primary shrink-0 inline-block"
+                className="w-4 h-4 text-primary shrink-0 inline-flex items-center justify-center"
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.1, ...springIcon }}
                 aria-hidden="true"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </m.span>
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                {t(`landing.cta.features.${key}`)}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span
+                  className={`text-sm ${
+                    item.underlined
+                      ? "font-semibold text-neutral-900 dark:text-neutral-100 underline decoration-primary decoration-2 underline-offset-4"
+                      : "font-medium text-neutral-700 dark:text-neutral-300"
+                  }`}
+                >
+                  {t(`landing.cta.features.${item.key}`)}
+                </span>
+                {item.badgeKey && (
+                  <span className={badgeStyles[item.badgeKey]}>
+                    {t(`landing.cta.badges.${item.badgeKey}`)}
+                  </span>
+                )}
+              </div>
             </m.div>
           ))}
         </m.div>
@@ -295,8 +326,20 @@ export function CTA() {
             {t("landing.cta.secondary")}
           </m.a>
         </m.div>
+
+        <m.div
+          className="flex items-center justify-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-xl text-center px-4"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ ...easeOutShort, delay: 0.55 }}
+        >
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+          <span>{t("landing.cta.hardwareNote")}</span>
+        </m.div>
+
         <m.span
-          className="text-xs text-neutral-500 dark:text-neutral-400 mt-2"
+          className="text-xs text-neutral-400 dark:text-neutral-500 mt-1"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.3 }}

@@ -11,7 +11,6 @@ import {
   TrendingUp,
   CreditCard,
   Receipt,
-  Smartphone,
   Lightbulb,
   Store,
 } from "lucide-react";
@@ -90,7 +89,8 @@ export const NAVIGATION: NavItem[] = [
   { name: "layout.branches", href: "/branches", icon: Store, requiresMultiSucursal: true },
 
   // --- Cuenta y cobro.
-  { name: "layout.payments", href: "/settings/payments", icon: Smartphone, minRole: "ORG_ADMIN" },
+  // "Metodos de pago" ya no es un modulo: es la pestaña "Mercado Pago Point" de
+  // Configuracion (/settings?tab=payments; /settings/payments redirige alli).
   { name: "layout.billing", href: "/billing", icon: CreditCard, minRole: "SUPER_ADMIN" },
   // Modulo CFDI apagado por decision de negocio (sesion 2026-09-05). No se
   // borra: para reactivarlo basta con quitar `hidden` (ver CONTEXT.md).
