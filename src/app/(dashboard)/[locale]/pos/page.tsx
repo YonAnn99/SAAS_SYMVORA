@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -33,6 +33,7 @@ import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 
 import { completeSale } from "@/features/pos/services/pos-service";
 import { numeroOperacion } from "@/features/pos/ticket-format";
+import { celebrarVenta } from "@/features/pos/celebracion-venta";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
@@ -316,7 +317,11 @@ export default function POSPage() {
   } = useCashDrawer({
     tenantId,
     tenantReady: !tenantLoading,
-    onSaleCompleted: finalizeSale,
+    // Cobro con terminal confirmado: la misma celebracion que el cobro directo.
+    onSaleCompleted: () => {
+      celebrarVenta(null);
+      finalizeSale();
+    },
     onTerminalStarted: () => setShowConfirmDialog(false),
   });
 
@@ -383,23 +388,42 @@ export default function POSPage() {
     items.length > 0 &&
     (montoRecibidoNum == null || Number.isNaN(montoRecibidoNum) || montoRecibidoNum < totals.total);
 
-  const handleCompleteSale = async () => {
-    if (items.length === 0) return;
-    if (!selectedPayment) {
-      toast.error("Selecciona un método de pago");
-      return;
-    }
-    if (selectedPayment === "CREDITO" && selectedCustomer === "none") {
-      toast.error("Selecciona un cliente para la venta a crédito");
-      return;
-    }
+  /**
+   * Venta ya registrada que espera a que termine la animacion del slider para
+   * limpiar el carrito y abrir el ticket (ver `handleVentaConfirmada`). Solo
+   * la llena el cobro directo: el de terminal sigue su propio camino.
+   */
+  const ventaRegistrada = useRef<{
+    receipt: SaleReceipt;
+    descuento: { tipo: string; valor: number } | null;
+    montoDescuento: number;
+    subtotal: number;
+    total: number;
+  } | null>(null);
 
+  /**
+   * Registra la venta. Devuelve una promesa que se RESUELVE si quedo
+   * registrada y se RECHAZA si no: el slider de "Desliza para cobrar" muestra
+   * "Venta completada" o la sacudida de error segun eso. Los avisos se siguen
+   * mostrando aqui.
+   */
+  const handleCompleteSale = async (): Promise<void> => {
+    const fallar = (mensaje: string): never => {
+      toast.error(mensaje);
+      throw new Error(mensaje);
+    };
+    if (items.length === 0) fallar("El carrito está vacío");
+    if (!selectedPayment) fallar("Selecciona un método de pago");
+    if (selectedPayment === "CREDITO" && selectedCustomer === "none") {
+      fallar("Selecciona un cliente para la venta a crédito");
+    }
     if (isEfectivo && montoRecibidoInsuficiente) {
-      toast.error("El monto recibido debe ser al menos el total de la venta");
-      return;
+      fallar("El monto recibido debe ser al menos el total de la venta");
     }
 
     if (selectedPayment === "TARJETA_TERMINAL") {
+      // El dialogo se cierra al iniciar el cobro (`onTerminalStarted`); la
+      // celebracion suena cuando la terminal confirma el pago.
       await startTerminalSale(
         selectedCustomer === "none" ? null : selectedCustomer,
         items,
@@ -427,36 +451,90 @@ export default function POSPage() {
         includeIva,
         montoRecibido: isEfectivo ? montoRecibidoNum : null,
         listaPrecioId,
+        // La caja del local que se esta atendiendo. Sin ella, el servidor usaba
+        // la caja abierta MAS RECIENTE del usuario: con una abierta en Principal
+        // y otra en Norte, una venta de Principal se descontaba (y validaba el
+        // stock) en Norte, y fallaba con "Stock insuficiente".
+        cajaId: cajaId ?? null,
       })) as { id?: string } | null;
-      const referenciaTicket = venta?.id ?? null;
 
-      setSaleReceipt({
-        items: [...items],
+      ventaRegistrada.current = {
+        receipt: {
+          items: [...items],
+          total: totals.total,
+          paymentMethod: selectedPayment,
+          customerName,
+          customerPhone: selectedCustomerObj?.telefono ?? null,
+          montoRecibido: isEfectivo ? montoRecibidoNum : null,
+          cambio: isEfectivo ? cambio : null,
+          reference: venta?.id ?? null,
+        },
+        descuento: descuentoTicket,
+        montoDescuento: totals.descuento,
+        subtotal: totals.subtotal,
         total: totals.total,
-        paymentMethod: selectedPayment,
-        customerName,
-        customerPhone: selectedCustomerObj?.telefono ?? null,
-        montoRecibido: isEfectivo ? montoRecibidoNum : null,
-        cambio: isEfectivo ? cambio : null,
-        reference: referenciaTicket,
-      });
+      };
       toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
+    } catch (error) {
+      // Un fallo de red aqui deja la venta EN DUDA: la peticion pudo llegar al
+      // servidor y confirmarse, y perderse solo la respuesta. Antes daba igual
+      // porque la venta se encolaba; sin cola, volver a cobrar a ciegas es
+      // duplicar el cargo al cliente. Por eso se distingue del error de
+      // validacion, que si es inequivoco (el servidor rechazo y no guardo nada).
+      // El error de Supabase no es un `Error` de JS: con `instanceof Error` se
+      // perdia su mensaje y solo se veia "Error al procesar la venta".
+      const mensaje =
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message: unknown }).message)
+            : "";
+      const pareceFalloDeRed =
+        error instanceof TypeError ||
+        /fetch|network|failed to fetch|load failed/i.test(mensaje);
+
+      if (pareceFalloDeRed) {
+        toast.error(
+          "No se pudo confirmar la venta por un problema de conexión. Búscala en Reportes antes de volver a cobrarla: puede que sí haya quedado registrada.",
+          { duration: 12000 }
+        );
+      } else {
+        toast.error(mensaje || "Error al procesar la venta");
+      }
+      throw error;
+    } finally {
+      setProcessingSale(false);
+    }
+  };
+
+  /**
+   * Terminada la animacion de exito del slider: sonido y destello verde, y un
+   * momento despues se cierra el dialogo y se abre el ticket. Si se limpiara
+   * al registrar, el dialogo se cerraria antes de verse "Venta completada".
+   */
+  const handleVentaConfirmada = (origen: DOMRect | null) => {
+    const v = ventaRegistrada.current;
+    if (!v) return;
+    ventaRegistrada.current = null;
+    celebrarVenta(origen);
+
+    window.setTimeout(() => {
+      setSaleReceipt(v.receipt);
       // Un descuento manual queda en la Bitacora: quien lo dio, cuanto y en
       // que venta. No se espera: que falle la Bitacora no frena el cobro.
-      if (descuentoTicket && totals.descuento > 0) {
+      if (v.descuento && v.montoDescuento > 0) {
+        const ref = v.receipt.reference;
         void logActivity({
           action: "DESCUENTO",
           entity: "venta",
-          entityId: referenciaTicket ?? undefined,
-          entityName: referenciaTicket
-            ? `Venta #${numeroOperacion(referenciaTicket) ?? ""}`
-            : "Venta",
+          entityId: ref ?? undefined,
+          entityName: ref ? `Venta #${numeroOperacion(ref) ?? ""}` : "Venta",
           details: {
-            tipo: descuentoTicket.tipo,
-            valor: descuentoTicket.valor,
-            monto: totals.descuento,
-            subtotal: totals.subtotal,
-            total: totals.total,
+            tipo: v.descuento.tipo,
+            valor: v.descuento.valor,
+            monto: v.montoDescuento,
+            subtotal: v.subtotal,
+            total: v.total,
           },
         });
       }
@@ -468,27 +546,7 @@ export default function POSPage() {
       setShowConfirmDialog(false);
       setMobileCartOpen(false);
       void refetch();
-    } catch (error) {
-      // Un fallo de red aqui deja la venta EN DUDA: la peticion pudo llegar al
-      // servidor y confirmarse, y perderse solo la respuesta. Antes daba igual
-      // porque la venta se encolaba; sin cola, volver a cobrar a ciegas es
-      // duplicar el cargo al cliente. Por eso se distingue del error de
-      // validacion, que si es inequivoco (el servidor rechazo y no guardo nada).
-      const pareceFalloDeRed =
-        error instanceof TypeError ||
-        (error instanceof Error && /fetch|network|failed to fetch|load failed/i.test(error.message));
-
-      if (pareceFalloDeRed) {
-        toast.error(
-          "No se pudo confirmar la venta por un problema de conexión. Búscala en Reportes antes de volver a cobrarla: puede que sí haya quedado registrada.",
-          { duration: 12000 }
-        );
-        return;
-      }
-      toast.error(error instanceof Error ? error.message : "Error al procesar la venta");
-    } finally {
-      setProcessingSale(false);
-    }
+    }, 900);
   };
 
   // Una sola fuente para las dos instancias del panel de cobro (escritorio y
@@ -756,6 +814,7 @@ export default function POSPage() {
         montoRecibido={isEfectivo ? montoRecibidoNum : null}
         cambio={isEfectivo ? cambio : null}
         onConfirm={handleCompleteSale}
+        onVentaConfirmada={handleVentaConfirmada}
       />
 
       <TerminalPaymentDialog
