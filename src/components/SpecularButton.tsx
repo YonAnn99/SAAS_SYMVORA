@@ -312,7 +312,9 @@ const SpecularButton = ({
       {webglEnabled && (
         <span ref={fxRef} aria-hidden="true" className="pointer-events-none absolute -inset-5 z-[1] [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full" />
       )}
-      <span className="relative z-[2]">{children}</span>
+      {/* En fila y con el `gap` del boton: el SVG de un icono es `display:block`
+          (preflight de Tailwind) y en un span normal bajaba de linea. */}
+      <span className="relative z-[2] inline-flex items-center [gap:inherit]">{children}</span>
     </button>
   );
 };

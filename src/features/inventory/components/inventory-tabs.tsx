@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -20,7 +21,22 @@ export interface InventorySectionProps {
   tenantLoading: boolean;
 }
 
-export function VariantsSection({ tenantId, tenantLoading }: InventorySectionProps) {
+interface VariantsSectionProps extends InventorySectionProps {
+  /**
+   * Pide abrir "Crear variante" (lo usa "Agregar producto -> Producto
+   * variante" en la pagina). Se atiende una vez y se avisa con
+   * `onAbrirCrearAtendido`, para que no se reabra al volver a esta pestaña.
+   */
+  abrirCrear?: boolean;
+  onAbrirCrearAtendido?: () => void;
+}
+
+export function VariantsSection({
+  tenantId,
+  tenantLoading,
+  abrirCrear = false,
+  onAbrirCrearAtendido,
+}: VariantsSectionProps) {
   const {
     variants,
     products,
@@ -38,6 +54,12 @@ export function VariantsSection({ tenantId, tenantLoading }: InventorySectionPro
     handleSave,
     handleDelete,
   } = useVariants(tenantId, tenantLoading);
+
+  useEffect(() => {
+    if (!abrirCrear) return;
+    openCreateDialog();
+    onAbrirCrearAtendido?.();
+  }, [abrirCrear, openCreateDialog, onAbrirCrearAtendido]);
 
   return (
     <div className="space-y-4">

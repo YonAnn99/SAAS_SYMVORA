@@ -33,7 +33,10 @@ export async function fetchVariantProducts(
     .from("productos")
     .select("id, nombre, permite_variantes, permite_lotes")
     .eq("tenant_id", tenantId)
-    .eq("permite_variantes", true)
+    // Todos los productos fisicos, no solo los que ya tienen variantes: si no,
+    // la PRIMERA variante de un producto nunca se podia crear (el selector
+    // salia vacio). Mismo arreglo que `fetchLotProducts`.
+    .eq("es_servicio", false)
     .order("nombre");
   return data ?? [];
 }
@@ -50,6 +53,18 @@ export async function createVariant(
     .select("id")
     .single();
   if (error) throw error;
+
+  // Con su primera variante el producto pasa a "Maneja variantes", para que su
+  // interruptor en el catalogo diga la verdad. El filtro hace que sea un no-op
+  // si ya lo tenia.
+  const { error: errorProducto } = await supabase
+    .from("productos")
+    .update({ permite_variantes: true })
+    .eq("id", input.producto_id)
+    .eq("tenant_id", tenantId)
+    .eq("permite_variantes", false);
+  if (errorProducto) throw errorProducto;
+
   return data.id as string;
 }
 

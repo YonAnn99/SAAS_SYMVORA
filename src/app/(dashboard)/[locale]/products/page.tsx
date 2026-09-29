@@ -1,13 +1,19 @@
 "use client";
 
 import { useModulos } from "@/hooks/use-modulos";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, Palette, Calendar, Wrench, SlidersHorizontal } from "lucide-react";
+import { Search, Package, Palette, Calendar, Wrench, SlidersHorizontal, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -119,6 +125,17 @@ export default function ProductsPage() {
     (activeTab === "lots" && !modulos.permite_lotes_caducidad);
   const currentTab = showInventoryTabs && !tabOculta ? activeTab : "catalog";
 
+  // "Agregar producto -> Producto variante": pasa a Variantes y le pide a esa
+  // pestaña abrir "Crear variante" (el dialogo y su hook viven alli). Solo se
+  // ofrece si la pestaña existe: modulo de variantes encendido y permiso.
+  const ofrecerVariante = showInventoryTabs && modulos.permite_variantes;
+  const [abrirCrearVariante, setAbrirCrearVariante] = useState(false);
+  const crearVariante = () => {
+    setActiveTab("variants");
+    setAbrirCrearVariante(true);
+  };
+  const crearVarianteAtendido = useCallback(() => setAbrirCrearVariante(false), []);
+
   const exportColumns = [
     { header: "Nombre", accessor: (p: Producto) => p.nombre },
     {
@@ -171,13 +188,55 @@ export default function ProductsPage() {
             </SpecularActionButton>
           )}
           <span id="tutorial-add-product-btn" className="flex flex-1 sm:flex-none">
-            <SpecularActionButton
-              tone="add"
-              className="h-8 w-full active:scale-[0.98] transition-transform"
-              onClick={openCreateDialog}
-            >
-              {t("products.addProduct")}
-            </SpecularActionButton>
+            {ofrecerVariante ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <SpecularActionButton
+                      tone="add"
+                      className="h-8 w-full gap-1.5 active:scale-[0.98] transition-transform"
+                    />
+                  }
+                >
+                  {t("products.addProduct")}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuItem
+                    className="cursor-pointer flex-col items-start gap-0.5"
+                    onClick={openCreateDialog}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <Package className="h-3.5 w-3.5" />
+                      Producto único
+                    </span>
+                    <span className="pl-5.5 text-xs text-muted-foreground">
+                      Un artículo con un solo precio y existencia
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer flex-col items-start gap-0.5"
+                    onClick={crearVariante}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <Palette className="h-3.5 w-3.5" />
+                      Producto variante
+                    </span>
+                    <span className="pl-5.5 text-xs text-muted-foreground">
+                      Tallas, colores o presentaciones de un producto
+                    </span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SpecularActionButton
+                tone="add"
+                className="h-8 w-full active:scale-[0.98] transition-transform"
+                onClick={openCreateDialog}
+              >
+                {t("products.addProduct")}
+              </SpecularActionButton>
+            )}
           </span>
         </div>
       </div>
@@ -276,7 +335,12 @@ export default function ProductsPage() {
         {showInventoryTabs && (
           <>
             <TabsContent value="variants">
-              <VariantsSection tenantId={tenantId} tenantLoading={tenantLoading} />
+              <VariantsSection
+                tenantId={tenantId}
+                tenantLoading={tenantLoading}
+                abrirCrear={abrirCrearVariante}
+                onAbrirCrearAtendido={crearVarianteAtendido}
+              />
             </TabsContent>
             <TabsContent value="lots">
               <LotsSection tenantId={tenantId} tenantLoading={tenantLoading} />
