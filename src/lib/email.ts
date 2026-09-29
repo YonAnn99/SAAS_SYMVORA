@@ -381,9 +381,9 @@ export async function sendInviteKeyEmail(params: {
 
 const CATEGORIA_LABELS: Record<string, string> = {
   general: "General",
-  bug: "Bug",
+  bug: "Error",
   mejora: "Mejora",
-  feature: "Feature",
+  feature: "Aporte de valor",
 };
 
 const PRIORIDAD_LABELS: Record<string, string> = {

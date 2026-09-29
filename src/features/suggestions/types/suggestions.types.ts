@@ -10,9 +10,9 @@ export interface SuggestionFormData {
 
 export const SUGGESTION_CATEGORIAS: { value: SuggestionCategoria; label: string }[] = [
   { value: "general", label: "General" },
-  { value: "bug", label: "Bug" },
+  { value: "bug", label: "Error" },
   { value: "mejora", label: "Mejora" },
-  { value: "feature", label: "Feature" },
+  { value: "feature", label: "Aporte de valor" },
 ];
 
 export const SUGGESTION_PRIORIDADES: { value: SuggestionPrioridad; label: string }[] = [

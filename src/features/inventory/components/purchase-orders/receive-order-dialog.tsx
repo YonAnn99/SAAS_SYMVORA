@@ -230,10 +230,15 @@ export function ReceiveOrderDialog({
           <Input
             value={numeroFactura}
             onChange={(e) => setNumeroFactura(e.target.value)}
-            placeholder="La que trae la mercancía (opcional)"
+            placeholder="Ej. A-1234"
             disabled={saving}
             className="h-8 text-sm"
           />
+          {/* El texto de ejemplo anterior ("La que trae la mercancía") se leía
+              como una opción para elegir; es un campo libre. */}
+          <p className="text-[11px] text-muted-foreground">
+            Folio de la factura o nota del proveedor (opcional).
+          </p>
         </div>
 
         <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">

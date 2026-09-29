@@ -102,6 +102,10 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
           <div className="space-y-1.5">
             <Label className="text-xs">{t("suggestions.category")}</Label>
             <Select
+              // Sin `items`, el boton mostraba el valor crudo ("general").
+              items={Object.fromEntries(
+                SUGGESTION_CATEGORIAS.map((c) => [c.value, t(`suggestions.categories.${c.value}`)])
+              )}
               value={formData.categoria}
               onValueChange={(v) =>
                 setFormData((prev) => ({ ...prev, categoria: v as SuggestionCategoria }))
@@ -123,6 +127,9 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
           <div className="space-y-1.5">
             <Label className="text-xs">{t("suggestions.priority")}</Label>
             <Select
+              items={Object.fromEntries(
+                SUGGESTION_PRIORIDADES.map((p) => [p.value, t(`suggestions.priorities.${p.value}`)])
+              )}
               value={formData.prioridad}
               onValueChange={(v) =>
                 setFormData((prev) => ({ ...prev, prioridad: v as SuggestionPrioridad }))

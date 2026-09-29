@@ -383,7 +383,7 @@
   },
   "suggestions": {
     "title": "Sugerencias",
-    "subtitle": "Reporta bugs, sugiere mejoras o pide nuevas features",
+    "subtitle": "Reporta errores, sugiere mejoras o propón aportes de valor",
     "new": "Nueva sugerencia",
     "category": "Categoría",
     "priority": "Prioridad",
@@ -395,9 +395,9 @@
     "sent": "Tu sugerencia fue enviada a hola@symvora.com.mx. ¡Gracias!",
     "categories": {
       "general": "General",
-      "bug": "Bug",
+      "bug": "Error",
       "mejora": "Mejora",
-      "feature": "Feature"
+      "feature": "Aporte de valor"
     },
     "priorities": {
       "baja": "Baja",
