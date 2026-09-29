@@ -24,6 +24,26 @@ describe("Cart Store", () => {
     unidad_medida: "PIEZA" as const,
   };
 
+  it("el descuento del ticket se guarda como intención y se limpia al vaciar", () => {
+    const s = useCartStore.getState();
+    s.addItem(mockItem);
+    s.setDescuentoTicket({ tipo: "porcentaje", valor: 10 });
+    // Agregar un artículo no lo toca: sigue siendo 10 %, no un monto fijo.
+    useCartStore.getState().addItem(mockItem2);
+    expect(useCartStore.getState().descuentoTicket).toEqual({ tipo: "porcentaje", valor: 10 });
+    useCartStore.getState().clearCart();
+    expect(useCartStore.getState().descuentoTicket).toBeNull();
+  });
+
+  it("al quitar el último artículo se va también el descuento", () => {
+    const s = useCartStore.getState();
+    s.addItem(mockItem);
+    s.setDescuentoTicket({ tipo: "monto", valor: 5 });
+    useCartStore.getState().removeItem(cartLineKey("test-product-1", null));
+    // Si no, el siguiente cliente heredaría un descuento que no ve.
+    expect(useCartStore.getState().descuentoTicket).toBeNull();
+  });
+
   it("should start with empty cart", () => {
     const { items, getItemCount } = useCartStore.getState();
     expect(items).toEqual([]);

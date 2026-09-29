@@ -58,7 +58,8 @@
     "supplier": "Supplier",
     "cashRegister": "Cash register",
     "sending": "Sending...",
-    "reprint": "Reprint"
+    "reprint": "Reprint",
+    "autoClose": "Automatic close"
   },
   "search": {
     "placeholder": "Search products, customers, routes...",

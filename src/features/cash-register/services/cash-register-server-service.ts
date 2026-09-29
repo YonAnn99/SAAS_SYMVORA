@@ -79,6 +79,42 @@ function horaCierreAutomatico(corte: Date): Date {
   return new Date(corte.getTime() - 1000);
 }
 
+/** Hora del cierre automatico, en CDMX. */
+const HORA_CIERRE = "04:30";
+
+/**
+ * El instante del cierre automatico: las 04:30 CDMX MAS RECIENTES que no sean
+ * posteriores a `ahora`.
+ *
+ * Antes se cerraba a la medianoche y quien cerraba su caja pasadas las 12 no
+ * alcanzaba a cuadrar: el sistema se la cerraba a media cuenta. A las 4:30 ya
+ * termino cualquier turno de noche. Se cierran TODAS las cajas abiertas antes
+ * de ese momento, aunque se hayan abierto despues de medianoche.
+ *
+ * "La mas reciente" y no "la de hoy": si Vercel retrasa el cron (se le vio 39
+ * minutos tarde), el corte sigue siendo las 4:30 de hoy; y si por lo que sea
+ * corriera ANTES de las 4:30, toma las 4:30 de ayer y no cierra cajas del dia.
+ *
+ * Mismo cuidado que `getCdmxMidnight`: la fecha de CDMX sale de Intl y el
+ * instante se arma con el desfase explicito, asi da igual la zona del servidor.
+ */
+function getCorteCierre(ahora: Date = new Date()): Date {
+  const hoy = getCdmxMidnight(ahora);
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CDMX_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(hoy);
+  const valor = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "";
+  const corteHoy = new Date(
+    `${valor("year")}-${valor("month")}-${valor("day")}T${HORA_CIERRE}:00${CDMX_OFFSET}`
+  );
+  return corteHoy.getTime() <= ahora.getTime()
+    ? corteHoy
+    : new Date(corteHoy.getTime() - 24 * 60 * 60 * 1000);
+}
+
 function isRegisterFromPreviousDay(fechaApertura: string): boolean {
   const apertura = new Date(fechaApertura);
   const cdmxMidnight = getCdmxMidnight();
@@ -147,8 +183,8 @@ async function fetchTenantName(
 }
 
 /**
- * Cajas abiertas antes de `corte` (la medianoche CDMX con la que corre el
- * cron). Se recibe de fuera para que la seleccion y la hora de cierre que se
+ * Cajas abiertas antes de `corte` (las 4:30 CDMX con las que corre el cron,
+ * ver `getCorteCierre`). Se recibe de fuera para que la seleccion y la hora de cierre que se
  * guarda salgan del MISMO instante.
  */
 export async function fetchOpenRegistersFromPreviousDays(
@@ -254,7 +290,7 @@ export async function autoCloseRegister(
     saldoEsperado: number;
     userId: string;
     tenantId: string;
-    /** Ver `horaCierreAutomatico`: 23:59:59 del dia que termino. */
+    /** El corte de las 4:30 CDMX (ver `getCorteCierre`). */
     fechaCierre: Date;
   }
 ): Promise<boolean> {
@@ -272,7 +308,7 @@ export async function autoCloseRegister(
       saldo_esperado: payload.saldoEsperado,
       saldo_real: payload.saldoEsperado,
       diferencia: 0,
-      notas_cierre: "Cierre automático del sistema a las 23:59",
+      notas_cierre: "Cierre automático del sistema a las 4:30 a. m.",
     })
     .eq("id", cajaId)
     // Si alguien la cerro a mano mientras corria el cron, no se pisa su corte
@@ -325,4 +361,10 @@ export async function logAutoCloseActivity(
   if (error) console.error("[auto-close] Error logging activity:", error.message);
 }
 
-export { isRegisterFromPreviousDay, getCdmxMidnight, getCdmxDate, horaCierreAutomatico };
+export {
+  isRegisterFromPreviousDay,
+  getCdmxMidnight,
+  getCdmxDate,
+  getCorteCierre,
+  horaCierreAutomatico,
+};

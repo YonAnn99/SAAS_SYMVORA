@@ -241,7 +241,7 @@ export function NewPurchaseDialog({
                 value={selectedSupplier}
                 onValueChange={(v) => setSelectedSupplier(v || "")}
               >
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue placeholder="Seleccionar proveedor">
                     {selectedSupplierName}
                   </SelectValue>

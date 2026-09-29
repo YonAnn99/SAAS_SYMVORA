@@ -109,7 +109,7 @@ export function MovementDialog({
               value={movementType}
               onValueChange={(v) => setMovementType(v as "ENTRADA" | "SALIDA")}
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -132,7 +132,7 @@ export function MovementDialog({
                 value={concepto}
                 onValueChange={(v) => esConceptoSalida(v) && setConcepto(v)}
               >
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

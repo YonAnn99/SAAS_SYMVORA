@@ -107,7 +107,7 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
                 setFormData((prev) => ({ ...prev, categoria: v as SuggestionCategoria }))
               }
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -128,7 +128,7 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
                 setFormData((prev) => ({ ...prev, prioridad: v as SuggestionPrioridad }))
               }
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

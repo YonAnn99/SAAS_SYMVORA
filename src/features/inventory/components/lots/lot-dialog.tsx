@@ -14,12 +14,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxInputGroup,
+  ComboboxItem,
+  ComboboxItemIndicator,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxPortal,
+  ComboboxPositioner,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
 import { toast } from "sonner";
 import type {
   Lote,
@@ -76,10 +82,11 @@ export function LotDialog({
     return () => window.clearTimeout(timeout);
   }, [open, editingLot]);
 
-  const selectedProductName = useMemo(
-    () => products.find((p) => p.id === formData.producto_id)?.nombre ?? formData.producto_id,
+  const productoElegido = useMemo(
+    () => products.find((p) => p.id === formData.producto_id) ?? null,
     [products, formData.producto_id]
   );
+  const sinProductos = products.length === 0;
 
   const updateField = (field: keyof LoteFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -127,24 +134,59 @@ export function LotDialog({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Producto *</Label>
-            <Select
-              value={formData.producto_id}
-              onValueChange={(v) => updateField("producto_id", v ?? "")}
-              disabled={Boolean(editingLot)}
-            >
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Seleccionar producto">
-                  {selectedProductName}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Con buscador: con cientos de productos una lista sin filtro no
+                sirve. Mismo patron que el selector de Nueva compra. */}
+            {sinProductos ? (
+              <p className="rounded-lg border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                Primero agrega productos en la pestaña Catálogo.
+              </p>
+            ) : (
+              <Combobox
+                items={products}
+                value={formData.producto_id || null}
+                onValueChange={(v) => updateField("producto_id", (v as string) ?? "")}
+                itemToStringLabel={(v) =>
+                  products.find((p) => p.id === v)?.nombre ?? ""
+                }
+                filter={(candidato, query) =>
+                  (candidato as unknown as ProductoOption).nombre
+                    .toLowerCase()
+                    .includes(query.toLowerCase())
+                }
+                disabled={Boolean(editingLot)}
+              >
+                <ComboboxInputGroup className="h-8 w-full">
+                  <ComboboxInput placeholder="Buscar producto..." />
+                  <ComboboxTrigger />
+                </ComboboxInputGroup>
+                <ComboboxPortal>
+                  <ComboboxPositioner>
+                    <ComboboxPopup>
+                      <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                      <ComboboxList>
+                        {(p: ProductoOption) => (
+                          <ComboboxItem key={p.id} value={p.id}>
+                            <ComboboxItemIndicator />
+                            <span className="min-w-0 flex-1 truncate">{p.nombre}</span>
+                            {p.permite_lotes && (
+                              <span className="shrink-0 text-[10px] text-muted-foreground/70">
+                                Con lotes
+                              </span>
+                            )}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxPopup>
+                  </ComboboxPositioner>
+                </ComboboxPortal>
+              </Combobox>
+            )}
+            {!editingLot && productoElegido && !productoElegido.permite_lotes && (
+              <p className="text-[11px] text-muted-foreground">
+                Al guardar se activará &quot;Maneja lotes y caducidad&quot; en
+                este producto.
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -216,7 +258,7 @@ export function LotDialog({
             tone="add"
             className="h-8"
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || (!editingLot && sinProductos)}
           >
             {saving
               ? "Guardando..."

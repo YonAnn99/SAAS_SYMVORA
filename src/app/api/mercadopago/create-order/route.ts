@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
-import { requireTenantAccess } from "@/lib/supabase/auth";
+import { requireTenantAccess, tienePermisoEfectivo } from "@/lib/supabase/auth";
+import { TOPE_DESCUENTO_CAJERO_PCT } from "@/features/pos/descuento-ticket";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { createOrder } from "@/features/payments/services/mercadopago/orders";
 import {
@@ -81,6 +82,27 @@ export async function POST(request: NextRequest) {
       body.items,
       body.lista_precio_id ?? null
     );
+
+    // Tope del descuento manual (migracion 094). En el cobro con terminal se
+    // valida AQUI y no al confirmar el pago: `confirm_terminal_payment` corre
+    // sin sesion, y rechazar ahi dejaria cobrado en la terminal algo sin venta.
+    if (computed.descuento > 0) {
+      const sinTope = await tienePermisoEfectivo(
+        auth.userId,
+        auth.role,
+        "sales.discount_unlimited"
+      );
+      const maximo =
+        Math.round(computed.subtotal * TOPE_DESCUENTO_CAJERO_PCT) / 100;
+      if (!sinTope && computed.descuento > maximo) {
+        return NextResponse.json(
+          {
+            error: `El descuento supera el máximo permitido (${TOPE_DESCUENTO_CAJERO_PCT} % del ticket)`,
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     const externalReference = crypto.randomUUID();
 

@@ -7,7 +7,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
  * creo una venta cuando solo volvio a sacar su ticket, y es el unico sitio
  * al que se acude cuando algo huele mal.
  */
-type ActivityAction = "CREATE" | "UPDATE" | "DELETE" | "REIMPRIMIR";
+// DESCUENTO: descuento manual en el POS (migracion 094). La base solo acepta
+// las acciones de `activity_logs_action_check`: una nueva va primero alli.
+type ActivityAction = "CREATE" | "UPDATE" | "DELETE" | "REIMPRIMIR" | "DESCUENTO";
 type ActivityEntity = "producto" | "venta" | "compra" | "cliente" | "proveedor" | "usuario" | "caja" | "config" | "orden_compra" | "movimiento_caja" | "traspaso";
 
 interface LogActivityParams {

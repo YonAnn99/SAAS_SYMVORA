@@ -101,3 +101,34 @@ export async function requireTenantAccess(
 
   return { ok: true, userId: user.id, role, isDemo };
 }
+
+/**
+ * Si el usuario tiene un permiso, con la MISMA regla que `authorize()` en la
+ * base: primero su excepcion por usuario (gana en ambos sentidos) y, si no
+ * tiene, lo que da su rol. Para rutas que corren con la service role y no
+ * pueden llamar a `authorize()` (que lee el JWT de la sesion).
+ */
+export async function tienePermisoEfectivo(
+  userId: string,
+  role: UserRole | undefined,
+  permission: string
+): Promise<boolean> {
+  const serviceClient = createSupabaseServiceRoleClient();
+
+  const { data: excepcion } = await serviceClient
+    .from("user_permission_overrides")
+    .select("granted")
+    .eq("user_id", userId)
+    .eq("permission", permission)
+    .maybeSingle();
+  if (excepcion) return Boolean(excepcion.granted);
+
+  if (!role) return false;
+  const { data: porRol } = await serviceClient
+    .from("role_permissions")
+    .select("permission")
+    .eq("role", role)
+    .eq("permission", permission)
+    .maybeSingle();
+  return Boolean(porRol);
+}

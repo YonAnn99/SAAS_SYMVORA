@@ -32,6 +32,8 @@ import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
 import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 
 import { completeSale } from "@/features/pos/services/pos-service";
+import { numeroOperacion } from "@/features/pos/ticket-format";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
@@ -86,7 +88,7 @@ export default function POSPage() {
     seleccionada,
     activas,
   });
-  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart } =
+  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart, descuentoTicket } =
     usePosCart(tenantId);
   const {
     products,
@@ -439,6 +441,25 @@ export default function POSPage() {
         reference: referenciaTicket,
       });
       toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
+      // Un descuento manual queda en la Bitacora: quien lo dio, cuanto y en
+      // que venta. No se espera: que falle la Bitacora no frena el cobro.
+      if (descuentoTicket && totals.descuento > 0) {
+        void logActivity({
+          action: "DESCUENTO",
+          entity: "venta",
+          entityId: referenciaTicket ?? undefined,
+          entityName: referenciaTicket
+            ? `Venta #${numeroOperacion(referenciaTicket) ?? ""}`
+            : "Venta",
+          details: {
+            tipo: descuentoTicket.tipo,
+            valor: descuentoTicket.valor,
+            monto: totals.descuento,
+            subtotal: totals.subtotal,
+            total: totals.total,
+          },
+        });
+      }
       clearCart();
       setSelectedCustomer("none");
       setSelectedPayment("");

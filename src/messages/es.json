@@ -58,7 +58,8 @@
     "supplier": "Proveedor",
     "cashRegister": "Caja",
     "sending": "Enviando...",
-    "reprint": "Reimprimir"
+    "reprint": "Reimprimir",
+    "autoClose": "Cierre automático"
   },
   "search": {
     "placeholder": "Buscar productos, clientes, rutas...",

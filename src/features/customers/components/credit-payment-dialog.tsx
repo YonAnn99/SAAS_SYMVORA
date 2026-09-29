@@ -77,7 +77,7 @@ export function CreditPaymentDialog({
               value={metodoPago}
               onValueChange={(v) => setMetodoPago(v as CreditMetodoPago)}
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

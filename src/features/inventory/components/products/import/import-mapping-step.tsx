@@ -49,7 +49,7 @@ export function ImportMappingStep({
               value={mapping[field] || NONE_VALUE}
               onValueChange={(value) => value && updateField(field, value)}
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

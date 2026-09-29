@@ -566,7 +566,7 @@ export default function UsersPage() {
             <div className="space-y-1.5">
               <Label className="text-xs">{t("users.role")}</Label>
               <Select value={inviteRole} onValueChange={(v) => setInviteRole(v || "CAJERO")}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -497,7 +497,7 @@ export function ProductDialog({
                 value={formData.unidad_medida}
                 onValueChange={(v) => v && updateField("unidad_medida", v)}
               >
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

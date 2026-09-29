@@ -136,7 +136,7 @@ export function VariantDialog({
               onValueChange={(v) => updateField("producto_id", v ?? "")}
               disabled={Boolean(editingVariant)}
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue placeholder="Seleccionar producto">
                   {selectedProductName}
                 </SelectValue>

@@ -314,7 +314,7 @@ export function PurchaseOrderDialog({
                 value={formData.proveedor_id}
                 onValueChange={(v) => updateField("proveedor_id", v ?? "")}
               >
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue placeholder="Seleccionar proveedor">
                     {selectedProveedorName}
                   </SelectValue>

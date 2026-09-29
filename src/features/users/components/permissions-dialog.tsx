@@ -37,7 +37,7 @@ interface PermissionsDialogProps {
 
 /**
  * Permisos que el rol concede de fábrica. Espejo de `role_permissions` (al día
- * con la migración 088). Decide qué switches salen encendidos sin excepción;
+ * con la migración 094). Decide qué switches salen encendidos sin excepción;
  * si se desfasa, el diálogo enseña apagado lo que el usuario sí tiene. Ya pasó:
  * al CAJERO le faltó `cash.manage` desde la 062 hasta la 088.
  */
@@ -45,6 +45,7 @@ const ROLE_BASE: Record<UserRole, string[]> = {
   SUPER_ADMIN: [],
   ORG_ADMIN: [
     "sales.create", "sales.view_reports", "sales.void", "sales.view_all",
+    "sales.discount_unlimited",
     "inventory.view", "inventory.manage", "purchases.manage",
     "cash.manage", "finances.manage", "org.manage_settings", "org.manage_members",
     "activity.view",

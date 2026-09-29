@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { CartItem } from "../types/pos.types";
 import { articulosDeLinea } from "@/lib/unidades";
+import type { DescuentoTicket } from "../descuento-ticket";
 
 export type { CartItem } from "../types/pos.types";
 
@@ -19,6 +20,12 @@ export function cartLineKey(productId: string, varianteId: string | null): strin
 interface CartStore {
   items: CartItem[];
   includeIva: boolean;
+  /**
+   * Descuento manual a toda la compra, como intencion ("10 %" o "$50"). Se
+   * reparte entre los renglones en `usePosCart` (ver `repartirDescuento`).
+   */
+  descuentoTicket: DescuentoTicket | null;
+  setDescuentoTicket: (descuento: DescuentoTicket | null) => void;
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => void;
   removeItem: (key: string) => void;
   updateQuantity: (key: string, cantidad: number) => void;
@@ -34,6 +41,9 @@ interface CartStore {
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   includeIva: false,
+  descuentoTicket: null,
+
+  setDescuentoTicket: (descuento) => set({ descuentoTicket: descuento }),
 
   addItem: (item: Omit<CartItem, "descuento"> & { descuento?: number }) => {
     set((state) => {
@@ -62,11 +72,17 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
 
   removeItem: (key) => {
-    set((state) => ({
-      items: state.items.filter(
+    set((state) => {
+      const items = state.items.filter(
         (i) => cartLineKey(i.productId, i.varianteId) !== key
-      ),
-    }));
+      );
+      // Al quitar el ultimo articulo se va tambien el descuento: si no, el
+      // siguiente cliente heredaria el descuento del anterior sin verlo.
+      return {
+        items,
+        descuentoTicket: items.length > 0 ? state.descuentoTicket : null,
+      };
+    });
   },
 
   updateQuantity: (key, cantidad) => {
@@ -90,7 +106,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }));
   },
 
-  clearCart: () => set({ items: [], includeIva: false }),
+  clearCart: () => set({ items: [], includeIva: false, descuentoTicket: null }),
 
   setIncludeIva: (value) => set({ includeIva: value }),
 

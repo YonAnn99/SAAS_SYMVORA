@@ -14,6 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { CartItem, SaleTotals } from "../types/pos.types";
 import { cartLineKey } from "@/features/pos/stores/cart";
+import { DescuentoTicketControl } from "./descuento-ticket-control";
 import { esFraccionable, formatearCantidad, normalizarCantidad } from "@/lib/unidades";
 
 /**
@@ -181,14 +182,11 @@ export function PosCart({
               <span className="text-muted-foreground">{t("pos.subtotal")}</span>
               <span className="font-mono">${totals.subtotal.toFixed(2)}</span>
             </div>
-            {totals.descuento > 0 && (
-              <div className="flex justify-between text-xs text-destructive">
-                <span>{t("common.discount")}</span>
-                <span className="font-mono">
-                  -${totals.descuento.toFixed(2)}
-                </span>
-              </div>
-            )}
+            {/* Descuento manual a toda la compra (% o monto fijo). */}
+            <DescuentoTicketControl
+              subtotal={totals.subtotal}
+              monto={totals.descuento}
+            />
             <div className="flex items-center justify-between text-xs">
               <label className="flex items-center gap-1.5 text-muted-foreground cursor-pointer select-none">
                 <Checkbox

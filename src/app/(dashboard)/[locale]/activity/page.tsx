@@ -41,6 +41,8 @@ import {
   ClipboardList,
   Banknote,
   Printer,
+  BadgePercent,
+  Clock,
   ArrowLeftRight,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -76,6 +78,8 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   UPDATE: Pencil,
   DELETE: Trash2,
   REIMPRIMIR: Printer,
+  DESCUENTO: BadgePercent,
+  AUTO_CLOSE: Clock,
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -85,6 +89,10 @@ const ACTION_COLORS: Record<string, string> = {
   // Ambar, no verde: no es una alta, es algo que conviene mirar dos veces.
   REIMPRIMIR:
     "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+  // Ambar por lo mismo: un descuento manual es dinero que no entro.
+  DESCUENTO:
+    "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+  AUTO_CLOSE: "bg-muted text-muted-foreground",
 };
 
 const ACTION_KEYS: Record<string, string> = {
@@ -92,6 +100,8 @@ const ACTION_KEYS: Record<string, string> = {
   UPDATE: "common.update",
   DELETE: "common.delete",
   REIMPRIMIR: "common.reprint",
+  DESCUENTO: "common.discount",
+  AUTO_CLOSE: "common.autoClose",
 };
 
 const ENTITY_KEYS: Record<string, string> = {

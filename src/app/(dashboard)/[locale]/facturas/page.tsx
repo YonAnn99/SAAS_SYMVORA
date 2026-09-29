@@ -569,7 +569,7 @@ export default function FacturasPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">Forma de pago</Label>
                 <Select value={formaPago} onValueChange={(v) => setFormaPago(v || "01")}>
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-8 w-full text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -586,7 +586,7 @@ export default function FacturasPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">Método de pago</Label>
                 <Select value={metodoPago} onValueChange={(v) => setMetodoPago((v || "PUE") as "PUE" | "PPD")}>
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-8 w-full text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -635,7 +635,7 @@ export default function FacturasPage() {
                         value={linea.producto_id}
                         onValueChange={(v) => updateLinea(index, "producto_id", v || "")}
                       >
-                        <SelectTrigger className="h-7 text-xs">
+                        <SelectTrigger className="h-7 w-full text-xs">
                           <SelectValue placeholder="Seleccionar">
                             {productos.find((p) => p.id === linea.producto_id)?.nombre ?? linea.producto_id}
                           </SelectValue>

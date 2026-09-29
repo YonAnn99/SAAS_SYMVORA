@@ -8,28 +8,27 @@ import {
   fetchOpenRegistersFromPreviousDays,
   autoCloseRegister,
   logAutoCloseActivity,
-  getCdmxMidnight,
-  horaCierreAutomatico,
+  getCorteCierre,
   type AutoCloseResult,
 } from "@/features/cash-register/services/cash-register-server-service";
 import { destinatariosCierreAutomatico } from "@/features/cash-register/avisos-cierre";
 
 /**
- * Cierre automático de cajas al final del día (hora CDMX).
+ * Cierre automático de cajas a las 4:30 a. m. (hora CDMX).
  *
- * Lo dispara el cron diario de Vercel (`vercel.json`) a las 06:00 UTC, que son
- * las 00:00 en Ciudad de México (México no tiene horario de verano).
+ * Lo dispara el cron diario de Vercel (`vercel.json`) a las 10:30 UTC, que son
+ * las 04:30 en Ciudad de México (México no tiene horario de verano).
  *
- * POR QUÉ A LAS 00:00 Y NO A LAS 23:59: Vercel no ejecuta el cron al minuto
- * (se vio correr 39 minutos tarde). Programado a las 23:59 podía caer antes o
- * después de medianoche, y la regla "abiertas antes de hoy" cambiaba de
- * significado según el retraso. A las 00:00 siempre corre DESPUÉS, así que
- * "antes de la medianoche que acaba de pasar" es exactamente "el día que
- * terminó". La hora que se guarda es las 23:59:59 de ese día
- * (`horaCierreAutomatico`), no la de ejecución.
+ * POR QUÉ A LAS 4:30 Y NO A MEDIANOCHE: antes corría a las 00:00 y quien
+ * cerraba su caja pasadas las 12 no alcanzaba a cuadrar sus números. A las
+ * 4:30 ya terminó cualquier turno de noche.
  *
- * Cierra TODAS las cajas ABIERTA cuya fecha_apertura sea de un día anterior
- * al día actual en CDMX. Para cada caja:
+ * El corte es "las 4:30 más recientes" (`getCorteCierre`), no la hora de
+ * ejecución: Vercel no corre el cron al minuto (se le vio 39 minutos tarde),
+ * y así qué cajas se cierran y la hora que se guarda no dependen del retraso.
+ *
+ * Cierra TODAS las cajas ABIERTA cuya fecha_apertura sea anterior al corte,
+ * aunque se hayan abierto después de medianoche. Para cada caja:
  *   - Calcula totales (ventas, entradas, salidas, saldo esperado)
  *   - Cierra con saldo_real = saldo_esperado (diferencia = 0)
  *   - Crea movimiento "Cierre automático del sistema"
@@ -37,7 +36,7 @@ import { destinatariosCierreAutomatico } from "@/features/cash-register/avisos-c
  *   - Envía email al usuario dueño de la caja
  *   - Envía email al SUPER_ADMIN del negocio (uno solo si la caja es suya)
  *
- * HORARIO: `vercel.json` la programa a las 06:00 UTC.
+ * HORARIO: `vercel.json` la programa a las 10:30 UTC (04:30 CDMX).
  * Los cron de Vercel SOLO entienden UTC.
  *
  * REQUIERE `CRON_SECRET` en las variables de entorno de Vercel.
@@ -103,8 +102,9 @@ export async function GET(request: Request) {
   const supabase = createSupabaseServiceRoleClient();
 
   // Un solo instante para todo: que cajas se cierran y que hora se guarda.
-  const corte = getCdmxMidnight();
-  const fechaCierre = horaCierreAutomatico(corte);
+  const corte = getCorteCierre();
+  // Se guarda la hora del corte (4:30), no la de ejecucion: ver arriba.
+  const fechaCierre = corte;
   const registersToClose = await fetchOpenRegistersFromPreviousDays(corte);
 
   const candidatas = registersToClose.slice(0, MAX_POR_EJECUCION);

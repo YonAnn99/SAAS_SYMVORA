@@ -23,6 +23,15 @@ export async function fetchLots(tenantId: string): Promise<Lote[]> {
   return data ?? [];
 }
 
+/**
+ * Los productos a los que se les puede registrar un lote: TODOS los fisicos.
+ *
+ * Antes solo salian los que tenian activado "Maneja lotes y caducidad", y con
+ * ninguno activado el selector abria vacio sin explicar por que. Ese
+ * interruptor solo decide si el producto aparece aqui (no cambia nada en el
+ * punto de venta), asi que se ofrecen todos y `createLot` lo activa al
+ * registrar el primer lote. Los servicios quedan fuera: no caducan.
+ */
 export async function fetchLotProducts(
   tenantId: string
 ): Promise<ProductoOption[]> {
@@ -31,7 +40,7 @@ export async function fetchLotProducts(
     .from("productos")
     .select("id, nombre, permite_variantes, permite_lotes")
     .eq("tenant_id", tenantId)
-    .eq("permite_lotes", true)
+    .eq("es_servicio", false)
     .order("nombre");
   return data ?? [];
 }
@@ -45,6 +54,17 @@ export async function createLot(
     .from("lotes")
     .insert({ tenant_id: tenantId, ...input });
   if (error) throw error;
+
+  // Con su primer lote el producto pasa a "Maneja lotes y caducidad", para que
+  // su interruptor en el catalogo diga la verdad. El filtro hace que sea un
+  // no-op si ya lo tenia.
+  const { error: errorProducto } = await supabase
+    .from("productos")
+    .update({ permite_lotes: true })
+    .eq("id", input.producto_id)
+    .eq("tenant_id", tenantId)
+    .eq("permite_lotes", false);
+  if (errorProducto) throw errorProducto;
 }
 
 export async function updateLot(lotId: string, input: LoteInput): Promise<void> {

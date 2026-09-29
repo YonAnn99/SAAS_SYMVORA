@@ -173,7 +173,7 @@ export function AdjustmentDialog({
               value={formData.producto_id}
               onValueChange={(v) => handleProductChange(v ?? "")}
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue placeholder="Seleccionar producto">
                   {selectedProductName}
                 </SelectValue>
@@ -195,7 +195,7 @@ export function AdjustmentDialog({
                 value={formData.variante_id}
                 onValueChange={(v) => updateField("variante_id", v ?? "")}
               >
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue placeholder="Sin variante">
                     {selectedVariantName || "Sin variante"}
                   </SelectValue>
@@ -219,7 +219,7 @@ export function AdjustmentDialog({
                 value={formData.lote_id}
                 onValueChange={(v) => updateField("lote_id", v ?? "")}
               >
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue placeholder="Sin lote">
                     {selectedLotName || "Sin lote"}
                   </SelectValue>
@@ -246,7 +246,7 @@ export function AdjustmentDialog({
               value={formData.motivo}
               onValueChange={(v) => updateField("motivo", v ?? "")}
             >
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 w-full text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

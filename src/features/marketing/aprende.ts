@@ -286,7 +286,7 @@ export const GUIAS: Guia[] = [
         id: "cierre-automatico",
         titulo: "Cierre automático",
         pasos: [
-          { titulo: "Cajas olvidadas", texto: "Si una caja se queda abierta, el sistema la cierra al final del día (23:59, hora del centro de México) con el saldo esperado, y avisa por correo al usuario y al dueño." },
+          { titulo: "Cajas olvidadas", texto: "Si una caja se queda abierta, el sistema la cierra a las 4:30 a. m. (hora del centro de México), para darte tiempo de cuadrar si cierras pasada la medianoche, con el saldo esperado, y avisa por correo al usuario y al dueño." },
         ],
       },
     ],

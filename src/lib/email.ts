@@ -943,7 +943,7 @@ export async function sendPasswordChangedAlertEmail(params: {
 // =============================================
 // Cierre automático de caja
 // ---------------------------------------------
-// Notificaciones cuando el sistema cierra una caja automáticamente a las 23:59
+// Notificaciones cuando el sistema cierra una caja automáticamente a las 4:30 a. m.
 // =============================================
 
 /**
@@ -982,7 +982,7 @@ export async function sendAutoCloseToUserEmail(params: {
     preheader: `Tu caja fue cerrada automáticamente — ${esc(params.businessName)}`,
     heading: `Cierre automático de caja, ${esc(params.userName)}`,
     intro:
-      `Tu caja${enSucursal} abierta el ${fecha} fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). A continuación el resumen del corte:`,
+      `Tu caja${enSucursal} abierta el ${fecha} fue cerrada automáticamente por el sistema a las 4:30 a. m. (hora CDMX). A continuación el resumen del corte:`,
     highlight: `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
         <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Fondo inicial: <strong>${formatMXN(params.saldoEsperado - params.totalVentas - params.totalEntradas + params.totalSalidas)}</strong></td></tr>
@@ -1054,7 +1054,7 @@ export async function sendAutoCloseToSuperAdminEmail(params: {
     preheader: `Caja de ${esc(params.userName)} (${roleLabel}) cerrada automáticamente — ${esc(params.businessName)}`,
     heading: `Caja cerrada automáticamente: ${esc(params.userName)}`,
     intro:
-      `La caja de <strong>${esc(params.userName)}</strong> (${esc(params.userEmail)}, ${roleLabel})${enSucursalSA}, abierta el ${fecha}, fue cerrada automáticamente por el sistema a las 23:59 (hora CDMX). Resumen del corte:`,
+      `La caja de <strong>${esc(params.userName)}</strong> (${esc(params.userEmail)}, ${roleLabel})${enSucursalSA}, abierta el ${fecha}, fue cerrada automáticamente por el sistema a las 4:30 a. m. (hora CDMX). Resumen del corte:`,
     highlight: `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
         <tr><td style="font-size:14px;color:${BRAND.body};padding:4px 0;">Fondo inicial: <strong>${formatMXN(params.saldoEsperado - params.totalVentas - params.totalEntradas + params.totalSalidas)}</strong></td></tr>

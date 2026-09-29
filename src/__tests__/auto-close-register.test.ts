@@ -2,8 +2,49 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   getCdmxDate,
   getCdmxMidnight,
+  getCorteCierre,
   isRegisterFromPreviousDay,
 } from "@/features/cash-register/services/cash-register-server-service";
+
+describe("Auto-close caja - corte de las 4:30 CDMX", () => {
+  it("después de las 4:30 toma las 4:30 de hoy", () => {
+    // 04:45 CDMX del 15 de enero = 10:45 UTC
+    const corte = getCorteCierre(new Date("2026-01-15T10:45:00.000Z"));
+    expect(corte.toISOString()).toBe("2026-01-15T10:30:00.000Z");
+  });
+
+  it("con el cron retrasado sigue siendo las 4:30 de hoy", () => {
+    // Vercel se ha visto correr 39 minutos tarde.
+    const corte = getCorteCierre(new Date("2026-01-15T11:09:00.000Z"));
+    expect(corte.toISOString()).toBe("2026-01-15T10:30:00.000Z");
+  });
+
+  it("justo a las 4:30 es ese mismo corte", () => {
+    const corte = getCorteCierre(new Date("2026-01-15T10:30:00.000Z"));
+    expect(corte.toISOString()).toBe("2026-01-15T10:30:00.000Z");
+  });
+
+  it("antes de las 4:30 toma las de ayer y no cierra cajas del día", () => {
+    // 03:00 CDMX del 15 = 09:00 UTC
+    const corte = getCorteCierre(new Date("2026-01-15T09:00:00.000Z"));
+    expect(corte.toISOString()).toBe("2026-01-14T10:30:00.000Z");
+  });
+
+  it("cambio de año", () => {
+    // 04:40 CDMX del 1 de enero
+    const corte = getCorteCierre(new Date("2026-01-01T10:40:00.000Z"));
+    expect(corte.toISOString()).toBe("2026-01-01T10:30:00.000Z");
+    // 02:00 CDMX del 1 de enero: el corte es el 31 de diciembre
+    const antes = getCorteCierre(new Date("2026-01-01T08:00:00.000Z"));
+    expect(antes.toISOString()).toBe("2025-12-31T10:30:00.000Z");
+  });
+
+  it("una caja abierta a las 2:00 a. m. queda antes del corte y se cierra", () => {
+    const corte = getCorteCierre(new Date("2026-01-15T10:35:00.000Z"));
+    const apertura = new Date("2026-01-15T08:00:00.000Z"); // 02:00 CDMX
+    expect(apertura < corte).toBe(true);
+  });
+});
 
 describe("Auto-close caja - CDMX timezone logic", () => {
   // Helper to create a date in CDMX timezone
