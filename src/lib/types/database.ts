@@ -731,6 +731,30 @@ export type Database = {
           compra_id?: string | null;
         };
       };
+      /** Enlace corto al PDF de una orden de compra (migracion 095). */
+      pdf_enlaces: {
+        Row: {
+          codigo: string;
+          tenant_id: string;
+          orden_id: string;
+          ruta_storage: string;
+          creado_en: string;
+        };
+        Insert: {
+          codigo: string;
+          tenant_id: string;
+          orden_id: string;
+          ruta_storage: string;
+          creado_en?: string;
+        };
+        Update: {
+          codigo?: string;
+          tenant_id?: string;
+          orden_id?: string;
+          ruta_storage?: string;
+          creado_en?: string;
+        };
+      };
       lotes: {
         Row: {
           id: string;

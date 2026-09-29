@@ -1,4 +1,6 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site";
+import { generarCodigoEnlace } from "../codigo-enlace";
 import type { ProductoOpcion } from "../purchase-order-items";
 import type {
   DetalleOrdenCompra,
@@ -186,9 +188,15 @@ export async function updateOrder(
 }
 
 /**
- * Sube el PDF de una orden y devuelve su enlace publico (migracion 092).
+ * Sube el PDF de una orden y devuelve su enlace para el proveedor.
  *
- * Cada envio lleva un nombre nuevo y aleatorio: el enlace no se puede adivinar
+ * El enlace es corto y con el dominio de SYMVORA
+ * (`https://www.symvora.com.mx/pedido/<codigo>.pdf`, migracion 095), no la URL
+ * de Supabase Storage: esa era larguisima y con un dominio ajeno que podia
+ * parecer sospechoso. El bucket es privado; el PDF lo entrega la ruta
+ * `src/app/pedido/[archivo]/route.ts`.
+ *
+ * Cada envio lleva un codigo nuevo y aleatorio: el enlace no se puede adivinar
  * y reenviar una orden no pisa el PDF que el proveedor ya recibio.
  */
 export async function subirPdfOrden(
@@ -197,12 +205,22 @@ export async function subirPdfOrden(
   pdf: Blob
 ): Promise<string> {
   const supabase = createSupabaseBrowserClient();
-  const ruta = `${tenantId}/${ordenId}/${crypto.randomUUID()}.pdf`;
+  const codigo = generarCodigoEnlace();
+  const ruta = `${tenantId}/${ordenId}/${codigo}.pdf`;
   const { error } = await supabase.storage
     .from("ordenes-compra")
     .upload(ruta, pdf, { contentType: "application/pdf" });
   if (error) throw error;
-  return supabase.storage.from("ordenes-compra").getPublicUrl(ruta).data.publicUrl;
+
+  const { error: errorEnlace } = await supabase.from("pdf_enlaces").insert({
+    codigo,
+    tenant_id: tenantId,
+    orden_id: ordenId,
+    ruta_storage: ruta,
+  });
+  if (errorEnlace) throw errorEnlace;
+
+  return `${getSiteUrl()}/pedido/${codigo}.pdf`;
 }
 
 export async function updateOrderStatus(
