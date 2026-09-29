@@ -24,6 +24,7 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
+import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 
@@ -341,6 +342,7 @@ export default function SettingsPage() {
                   dragDropText={t("auth.logoDragDrop")}
                   maxSizeText={t("auth.logoMaxSize")}
                 />
+                <AvisoDerechosLogo />
                 {logoUploading && (
                   <p className="text-xs text-muted-foreground mt-2">
                     {t("common.loading")}

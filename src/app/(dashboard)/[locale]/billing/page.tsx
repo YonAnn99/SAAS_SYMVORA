@@ -41,6 +41,8 @@ import {
   promoAplica,
 } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
+import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
+import { ofreceDescarga } from "@/features/payments/exportacion-datos";
 
 interface Subscription {
   id: string;
@@ -684,6 +686,12 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
           </CardContent>
         </Card>
       </div>
+
+      {/* Periodo de gracia de los Terminos (seccion 6): una cuenta vencida o
+          cancelada solo llega a esta pagina, asi que aqui puede bajar sus datos. */}
+      {tenantId && subscription && ofreceDescarga(subscription.status) && (
+        <DescargaDatosCuenta tenantId={tenantId} subscription={subscription} />
+      )}
 
       <Card className="animate-fade-in-up stagger-4">
         <CardHeader className="pb-3">

@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function TerminosPage() {
   return (
-    <LegalShell title="Términos y Condiciones" updatedAt="12 de agosto de 2026">
+    <LegalShell title="Términos y Condiciones" updatedAt="29 de septiembre de 2026">
       <p>
         Estos Términos y Condiciones regulan el uso de la Plataforma SYMVORA y de los
         servicios que en ella se ofrecen. Al crear una cuenta, el usuario acepta los
@@ -95,11 +95,32 @@ export default function TerminosPage() {
         también a los cargos derivados del fin del periodo de prueba.
       </p>
 
+      <h2>5.3 Servicios y pasarelas de pago de terceros</h2>
+      <p>
+        La Plataforma puede integrarse con servicios y pasarelas de pago de terceros
+        (incluyendo Conekta, Mercado Pago u otros proveedores). El usuario reconoce que
+        el procesamiento de dichas transacciones está sujeto a los términos,
+        condiciones y políticas de privacidad de dichos proveedores. SYMVORA no es
+        responsable por demoras, contratiempos, contracargos o fallas técnicas
+        imputables directamente a la pasarela de pago o al sistema bancario.
+      </p>
+
       <h2>6. Cancelación y terminación</h2>
       <p>
         El usuario podrá cancelar su suscripción en cualquier momento conforme a las
         condiciones del plan contratado. SYMVORA podrá suspender o dar por terminada la
         cuenta ante el incumplimiento de estos Términos y Condiciones.
+      </p>
+      <p>
+        Una vez cancelada la cuenta o vencido el acceso por falta de pago, el usuario
+        dispondrá de un periodo de gracia de treinta (30) días naturales para descargar
+        o exportar su información comercial en formatos estándar (CSV/Excel/PDF), a
+        través de la Plataforma o solicitándola a{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="underline">{CONTACT_EMAIL}</a>.
+        Concluido dicho plazo, SYMVORA podrá proceder con el borrado definitivo o la
+        anonimización de los datos de la base de datos de producción, sin
+        responsabilidad para SYMVORA y sin que ello contravenga lo establecido en el
+        Aviso de Privacidad.
       </p>
 
       <h2>7. Propiedad intelectual</h2>
@@ -127,6 +148,52 @@ export default function TerminosPage() {
         Aviso de Privacidad.
       </p>
 
+      <h2>7.2 Contenido cargado por el usuario</h2>
+      <p>
+        El usuario declara y garantiza ser el titular legítimo, o contar con la licencia
+        o autorización necesaria para su uso, de los logotipos, nombres comerciales,
+        marcas, imágenes y demás contenido que cargue o registre en la Plataforma
+        (incluyendo el logo y el nombre de su negocio y las imágenes de sus productos).
+        SYMVORA no revisa ni verifica previamente dicho contenido y no asume
+        responsabilidad alguna sobre su legitimidad.
+      </p>
+      <p>
+        El usuario otorga a SYMVORA una licencia no exclusiva, gratuita y limitada a la
+        vigencia de su cuenta, únicamente para almacenar, reproducir y mostrar dicho
+        contenido dentro de la Plataforma y en los documentos que ésta genera a nombre
+        del usuario (como tickets de venta, órdenes de compra y reportes), con el solo
+        fin de prestar el servicio contratado.
+      </p>
+      <p>
+        El usuario acepta deslindar y mantener en paz y a salvo a SYMVORA de cualquier
+        reclamo, demanda, procedimiento o sanción, incluidos los que inicien o impongan
+        el Instituto Mexicano de la Propiedad Industrial (IMPI), el Instituto Nacional
+        del Derecho de Autor (INDAUTOR) u otra autoridad, derivados de la infracción de
+        derechos de propiedad intelectual, propiedad industrial o marcas de terceros
+        por el contenido que el usuario cargue, en los términos de la sección 17.
+      </p>
+
+      <h2>7.3 Reclamaciones de terceros (retiro de contenido)</h2>
+      <p>
+        Si un tercero considera que un contenido cargado en la Plataforma infringe sus
+        derechos sobre una marca, logotipo, nombre comercial u obra, podrá notificarlo
+        a <a href={`mailto:${LEGAL_EMAIL}`} className="underline">{LEGAL_EMAIL}</a>,
+        indicando: (i) su nombre e identificación o, en su caso, los de su
+        representante; (ii) la documentación que acredite su titularidad, como el
+        registro ante el IMPI o el INDAUTOR; (iii) la identificación del contenido y
+        del negocio donde aparece; y (iv) una declaración, bajo protesta de decir
+        verdad, de que la información proporcionada es exacta.
+      </p>
+      <p>
+        Recibida una reclamación fundada, SYMVORA se reserva el derecho de retirar o
+        deshabilitar el archivo o contenido señalado, solicitar al usuario su
+        sustitución y, en caso de reincidencia o de infracciones graves, suspender o
+        cancelar la cuenta, sin responsabilidad para SYMVORA y sin que ello dé lugar a
+        reembolso alguno. SYMVORA notificará al usuario la reclamación y la medida
+        adoptada; el usuario podrá responder aportando las pruebas de su derecho, y si
+        éstas resultan suficientes, el contenido podrá restablecerse.
+      </p>
+
       <h2>8. Limitación de responsabilidad</h2>
       <p>
         La Plataforma se proporciona &quot;tal cual&quot; y &quot;según disponibilidad&quot;. En la medida
@@ -138,14 +205,18 @@ export default function TerminosPage() {
 
       <h2>9. Ley aplicable y jurisdicción</h2>
       <p>
-        Estos Términos y Condiciones se rigen por las leyes de los Estados Unidos
-        Mexicanos. Para cualquier controversia, las partes se someten a la jurisdicción
-        de los tribunales competentes de [Ciudad], México.
+        Estos Términos y Condiciones se rigen e interpretan de acuerdo con las leyes
+        vigentes de los Estados Unidos Mexicanos. Para la resolución de cualquier
+        controversia, litigio o reclamación derivada de estos Términos o del uso de la
+        Plataforma SYMVORA, las partes se someten expresamente a la jurisdicción de los
+        tribunales competentes de Ecatepec de Morelos, Estado de México, México,
+        renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus
+        domicilios presentes o futuros.
       </p>
 
       <h2>10. Contacto</h2>
       <p>
-        Para cualquier duda sobre estos Términos y Condiciones, contacte a
+        Para cualquier duda sobre estos Términos y Condiciones, contacte a{" "}
         <a href={`mailto:${LEGAL_EMAIL}`} className="underline">{LEGAL_EMAIL}</a>.
       </p>
 
@@ -253,7 +324,9 @@ export default function TerminosPage() {
         parte del usuario o de las personas a las que haya dado acceso; (ii) la
         violación por parte del usuario de estos Términos y Condiciones o de la
         legislación aplicable; (iii) la inexactitud o falsedad de los datos
-        proporcionados por el usuario; o (iv) la infracción de derechos de terceros.
+        proporcionados por el usuario; o (iv) la infracción de derechos de terceros,
+        incluidos los derechos de propiedad intelectual, propiedad industrial o marcas
+        sobre el contenido que el usuario cargue en la Plataforma (ver sección 7.2).
       </p>
     </LegalShell>
   );

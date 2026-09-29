@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { FileUpload } from "@/components/ui/file-upload";
+import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -339,6 +340,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         dragDropText={t("auth.logoDragDrop")}
         maxSizeText={t("auth.logoMaxSize")}
       />
+      <AvisoDerechosLogo />
 
       {logoUploading && (
         <p className="text-xs text-muted-foreground animate-pulse text-center">

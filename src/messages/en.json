@@ -100,6 +100,8 @@
     "logo": "Business logo",
     "logoDragDrop": "Drag your logo here or click to select",
     "logoMaxSize": "Max 2MB · JPG, PNG, SVG",
+    "logoRights": "By uploading it you confirm you own this logo or have permission to use it.",
+    "logoRightsLink": "Terms, section 7.2",
     "businessType": "Business type",
     "businessTypePlaceholder": "Select your business type",
     "businessTypes": {
