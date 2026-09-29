@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
-import { Heart, Package, Pencil, Trash2 } from "lucide-react";
+import { Heart, Package, Pencil } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -14,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -55,6 +57,12 @@ interface ProductsTableProps {
   /** Ids marcados con el corazón por el usuario actual. */
   favoritos: ReadonlySet<string>;
   onToggleFavorito: (product: Producto) => void;
+  /** Ids marcados para exportar (CSV/PDF "Solo seleccionados"). */
+  seleccionados: ReadonlySet<string>;
+  onToggleSeleccion: (id: string) => void;
+  /** Marca o desmarca todos los productos VISIBLES (con los filtros actuales). */
+  onSeleccionarVisibles: (marcar: boolean) => void;
+  onLimpiarSeleccion: () => void;
 }
 
 export function ProductsTable({
@@ -69,20 +77,51 @@ export function ProductsTable({
   guardando,
   favoritos,
   onToggleFavorito,
+  seleccionados,
+  onToggleSeleccion,
+  onSeleccionarVisibles,
+  onLimpiarSeleccion,
 }: ProductsTableProps) {
   const t = useTranslations();
   const { modulos } = useModulos();
 
+  // La casilla de la cabecera mira solo lo VISIBLE: marcada si estan todos,
+  // mixta si hay algunos, vacia si ninguno.
+  const visiblesMarcados = filteredProducts.filter((p) =>
+    seleccionados.has(p.id)
+  ).length;
+  const todosVisibles =
+    filteredProducts.length > 0 && visiblesMarcados === filteredProducts.length;
+  const algunosVisibles = visiblesMarcados > 0 && !todosVisibles;
+
   return (
     <Card className="animate-fade-in-up stagger-3">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm font-medium">
             {t("products.title")}
           </CardTitle>
-          <span className="text-xs text-muted-foreground font-mono">
-            {products.length} productos
-          </span>
+          <div className="flex items-center gap-2 text-xs">
+            {seleccionados.size > 0 && (
+              <>
+                <span className="font-medium text-foreground">
+                  {seleccionados.size}{" "}
+                  {seleccionados.size === 1 ? "seleccionado" : "seleccionados"}
+                </span>
+                <button
+                  type="button"
+                  onClick={onLimpiarSeleccion}
+                  className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Quitar selección
+                </button>
+                <span className="text-muted-foreground">·</span>
+              </>
+            )}
+            <span className="text-muted-foreground font-mono">
+              {products.length} productos
+            </span>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -110,6 +149,14 @@ export function ProductsTable({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8 pr-0">
+                    <Checkbox
+                      checked={todosVisibles}
+                      indeterminate={algunosVisibles}
+                      onCheckedChange={() => onSeleccionarVisibles(!todosVisibles)}
+                      aria-label="Seleccionar todos los productos visibles"
+                    />
+                  </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
                     {t("products.name")}
                   </TableHead>
@@ -149,7 +196,17 @@ export function ProductsTable({
                   });
 
                   return (
-                  <TableRow key={product.id}>
+                  <TableRow
+                    key={product.id}
+                    data-state={seleccionados.has(product.id) ? "selected" : undefined}
+                  >
+                    <TableCell className="w-8 pr-0">
+                      <Checkbox
+                        checked={seleccionados.has(product.id)}
+                        onCheckedChange={() => onToggleSeleccion(product.id)}
+                        aria-label={`Seleccionar ${product.nombre}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium text-sm">
                       <div className="flex items-center gap-2.5">
                         {product.imagen_url ? (
@@ -245,14 +302,13 @@ export function ProductsTable({
                           <Pencil className="h-3 w-3 mr-1" />
                           {t("common.edit")}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => onDelete(product)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {/* Mantener presionado = confirmar: ya no abre el
+                            dialogo "¿Seguro?" (ver `BotonEliminar`). */}
+                        <BotonEliminar
+                          nombre={product.nombre}
+                          detalle="No se puede deshacer"
+                          onEliminar={() => onDelete(product)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

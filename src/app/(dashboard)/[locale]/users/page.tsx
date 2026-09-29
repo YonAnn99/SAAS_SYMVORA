@@ -36,7 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Shield, UserCog, Trash2, Key, RefreshCw, SlidersHorizontal, Store } from "lucide-react";
+import { Users, Shield, UserCog, Key, RefreshCw, SlidersHorizontal, Store } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PermissionsDialog } from "@/features/users/components/permissions-dialog";
 import { AsignarSucursalesDialog } from "@/features/users/components/asignar-sucursales-dialog";
@@ -87,8 +88,6 @@ export default function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("CAJERO");
   const [inviting, setInviting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<Member | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [confirmRoleChange, setConfirmRoleChange] = useState<{ member: Member; newRole: string } | null>(null);
   const [changingRole, setChangingRole] = useState(false);
 
@@ -212,13 +211,14 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteMember = async () => {
-    if (!confirmDelete || !tenantId) return;
+  // Sin dialogo de confirmacion: mantener presionado el boton de la fila
+  // (`BotonEliminar`) ya es la confirmacion.
+  const handleDeleteMember = async (member: Member) => {
+    if (!tenantId) return;
 
-    setDeleting(true);
     try {
       const response = await fetch(
-        `/api/users/${confirmDelete.user_id}?tenantId=${tenantId}`,
+        `/api/users/${member.user_id}?tenantId=${tenantId}`,
         { method: "DELETE" }
       );
 
@@ -228,12 +228,9 @@ export default function UsersPage() {
       }
 
       toast.success("Miembro eliminado");
-      setConfirmDelete(null);
       fetchMemberships();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al eliminar");
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -446,14 +443,11 @@ export default function UsersPage() {
                             <Store className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => setConfirmDelete(membership)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <BotonEliminar
+                          nombre={membership.user_email ?? "este miembro"}
+                          detalle="Pierde el acceso al negocio"
+                          onEliminar={() => handleDeleteMember(membership)}
+                        />
                       </TableCell>
                     )}
                   </TableRow>
@@ -511,14 +505,11 @@ export default function UsersPage() {
                         {new Date(key.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => handleRevokeKey(key.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <BotonEliminar
+                          nombre={`la clave de ${key.email}`}
+                          detalle="Ya no servirá para entrar"
+                          onEliminar={() => handleRevokeKey(key.id)}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -593,31 +584,6 @@ export default function UsersPage() {
             </Button>
             <SpecularActionButton tone="add" className="h-8 active:scale-[0.98] transition-transform" onClick={handleInvite} disabled={inviting}>
               {inviting ? t("common.loading") : t("common.confirm")}
-            </SpecularActionButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm delete dialog */}
-      <Dialog open={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-base">{t("users.confirmDelete") || "Eliminar miembro"}</DialogTitle>
-            <DialogDescription className="text-xs">
-              {t("users.confirmDeleteDesc", { email: confirmDelete?.user_email || "" })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" size="sm" className="h-8" onClick={() => setConfirmDelete(null)}>
-              {t("common.cancel")}
-            </Button>
-            <SpecularActionButton
-              tone="destructive"
-              className="h-8"
-              onClick={handleDeleteMember}
-              disabled={deleting}
-            >
-              {deleting ? t("common.loading") : t("common.delete")}
             </SpecularActionButton>
           </DialogFooter>
         </DialogContent>

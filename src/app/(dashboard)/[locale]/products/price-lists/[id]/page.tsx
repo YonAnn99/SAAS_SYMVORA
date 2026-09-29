@@ -2,7 +2,8 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { ArrowLeft, Info, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Info, Pencil, Plus, Search } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -325,15 +326,12 @@ export default function PriceListDetailPage({
                     </EditableTextCell>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => void quitar(f.producto_id, f.variante_id)}
-                      title="Quitar de la lista"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
+                    {/* Quita el precio especial de la lista (el producto sigue
+                        existiendo): mantener presionado confirma. */}
+                    <BotonEliminar
+                      nombre={`${f.nombre} de la lista`}
+                      onEliminar={() => quitar(f.producto_id, f.variante_id)}
+                    />
                   </TableCell>
                 </TableRow>
               ))

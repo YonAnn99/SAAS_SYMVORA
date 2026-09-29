@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, FileText, Loader2, Pencil, Send, Trash2 } from "lucide-react";
+import { Check, FileText, Loader2, Pencil, Send } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { WhatsAppLogo } from "@/components/marketing/whatsapp-logo";
 import { normalizarTelefonoMx } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
@@ -234,14 +235,11 @@ export function PurchaseOrdersTable({
                               Recibir
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-destructive hover:text-destructive"
-                            onClick={() => onDelete(order)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <BotonEliminar
+                            nombre={`la orden ${order.numero_orden}`}
+                            detalle="No se puede deshacer"
+                            onEliminar={() => onDelete(order)}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

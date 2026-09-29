@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Pencil } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -189,14 +190,11 @@ export function LotsTable({
                           <Pencil className="h-3 w-3 mr-1" />
                           Editar
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => onDelete(lot)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <BotonEliminar
+                          nombre={`el lote ${lot.numero_lote}`}
+                          detalle="No se puede deshacer"
+                          onEliminar={() => onDelete(lot)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

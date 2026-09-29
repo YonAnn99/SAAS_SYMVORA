@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ShoppingCart, CheckCircle, Trash2, Pencil, Undo2 } from "lucide-react";
+import { ShoppingCart, CheckCircle, Pencil, Undo2 } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -172,15 +173,11 @@ export function PurchasesTable({
                               <Undo2 className="h-3.5 w-3.5 text-amber-600" />
                             </Button>
                           ) : (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => onDelete(purchase.id)}
-                              title={t("purchases.deletePurchase")}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                            </Button>
+                            <BotonEliminar
+                              nombre={`la compra${purchase.numero_factura ? ` ${purchase.numero_factura}` : ""}`}
+                              detalle="No se puede deshacer"
+                              onEliminar={() => onDelete(purchase.id)}
+                            />
                           ))}
                       </div>
                     </TableCell>

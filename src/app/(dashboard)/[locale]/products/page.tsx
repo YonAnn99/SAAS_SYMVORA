@@ -14,7 +14,6 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useProducts } from "@/features/inventory";
 import { ProductDialog } from "@/features/inventory";
-import { ProductDeleteDialog } from "@/features/inventory";
 import { ProductsTable } from "@/features/inventory";
 import { QuickFilters } from "@/features/inventory";
 import { ImportProductsDialog } from "@/features/inventory";
@@ -51,8 +50,6 @@ export default function ProductsPage() {
     setShowDialog,
     editingProduct,
     saving,
-    deleteConfirm,
-    setDeleteConfirm,
     refetch,
     openCreateDialog,
     openEditDialog,
@@ -77,6 +74,28 @@ export default function ProductsPage() {
   // migración 053 en la base de datos — este gate solo evita enseñar pestañas
   // que no se pueden usar.
   const canManageInventory = can("inventory.manage");
+
+  // Productos marcados para exportar "Solo seleccionados". Se conserva al
+  // buscar o filtrar, para juntar productos de varias busquedas; al exportar se
+  // cruza con `products`, asi un producto borrado se ignora solo.
+  const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
+  const productosSeleccionados = products.filter((p) => seleccionados.has(p.id));
+  const toggleSeleccion = (id: string) =>
+    setSeleccionados((prev) => {
+      const siguiente = new Set(prev);
+      if (siguiente.has(id)) siguiente.delete(id);
+      else siguiente.add(id);
+      return siguiente;
+    });
+  const seleccionarVisibles = (marcar: boolean) =>
+    setSeleccionados((prev) => {
+      const siguiente = new Set(prev);
+      for (const p of filteredProducts) {
+        if (marcar) siguiente.add(p.id);
+        else siguiente.delete(p.id);
+      }
+      return siguiente;
+    });
 
   // No se pinta la barra hasta resolver el rol. Es la misma lección del fix
   // del sidebar (2026-09-04): calcular con `role` aún en null mostraba unos
@@ -220,6 +239,8 @@ export default function ProductsPage() {
           columns={exportColumns}
           title="Productos"
           filename="productos"
+          seleccion={productosSeleccionados}
+          nombreFilas="productos"
         />
         <QuickFilters
           filters={filters}
@@ -236,13 +257,18 @@ export default function ProductsPage() {
         filteredProducts={filteredProducts}
         loading={loading}
         onEdit={openEditDialog}
-        onDelete={setDeleteConfirm}
+        onDelete={handleDelete}
         onAdd={openCreateDialog}
         onInlineSave={handleInlineSave}
         canEdit={canManageInventory}
         guardando={guardandoInline}
         favoritos={favoritos}
         onToggleFavorito={handleToggleFavorito}
+        // Solo cuentan los que siguen existiendo (uno borrado deja de contar).
+        seleccionados={new Set(productosSeleccionados.map((p) => p.id))}
+        onToggleSeleccion={toggleSeleccion}
+        onSeleccionarVisibles={seleccionarVisibles}
+        onLimpiarSeleccion={() => setSeleccionados(new Set())}
       />
 
         </TabsContent>
@@ -270,13 +296,6 @@ export default function ProductsPage() {
         saving={saving}
         onSave={handleSave}
         tenantId={tenantId ?? ""}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <ProductDeleteDialog
-        product={deleteConfirm}
-        onOpenChange={(open) => !open && setDeleteConfirm(null)}
-        onConfirm={handleDelete}
       />
 
       {/* Import Catalog Dialog */}

@@ -10,7 +10,6 @@ import {
   fetchOrderDetails,
 } from "@/features/inventory";
 import { PurchaseOrderDialog } from "@/features/inventory";
-import { PurchaseOrderDeleteDialog } from "@/features/inventory";
 import { PurchaseOrdersTable } from "@/features/inventory";
 import { ReceiveOrderDialog } from "@/features/inventory";
 import { PurchaseOrderDetailDialog } from "@/features/inventory";
@@ -37,8 +36,6 @@ export default function PurchaseOrdersPage() {
     setShowDialog,
     editingOrder,
     saving,
-    deleteConfirm,
-    setDeleteConfirm,
     openCreateDialog,
     openEditDialog,
     handleSave,
@@ -107,7 +104,8 @@ export default function PurchaseOrdersPage() {
         loading={loading}
         getSupplierName={getSupplierName}
         onEdit={handleEdit}
-        onDelete={setDeleteConfirm}
+        // Mantener presionado el boton de la fila ya es la confirmacion.
+        onDelete={handleDelete}
         onAdd={handleAdd}
         onStatusChange={handleStatusChange}
         onReceive={(order) => void openReceiveDialog(order)}
@@ -157,13 +155,6 @@ export default function PurchaseOrdersPage() {
         existingOrders={orders}
         saving={saving}
         onSave={handleSave}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <PurchaseOrderDeleteDialog
-        order={deleteConfirm}
-        onOpenChange={(open) => !open && setDeleteConfirm(null)}
-        onConfirm={handleDelete}
       />
     </div>
   );

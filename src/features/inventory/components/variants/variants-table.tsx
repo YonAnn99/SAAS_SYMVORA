@@ -1,6 +1,7 @@
 "use client";
 
-import { Palette, Pencil, Trash2 } from "lucide-react";
+import { Palette, Pencil } from "lucide-react";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -140,14 +141,11 @@ export function VariantsTable({
                           <Pencil className="h-3 w-3 mr-1" />
                           Editar
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => onDelete(variant)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <BotonEliminar
+                          nombre={`la variante ${[variant.talla, variant.color].filter(Boolean).join(" / ") || ""}`.trim()}
+                          detalle="No se puede deshacer"
+                          onEliminar={() => onDelete(variant)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

@@ -6,11 +6,9 @@ import { Search } from "lucide-react";
 import {
   useVariants,
   VariantDialog,
-  VariantDeleteDialog,
   VariantsTable,
   useLots,
   LotDialog,
-  LotDeleteDialog,
   LotsTable,
   useInventoryAdjustments,
   AdjustmentDialog,
@@ -35,8 +33,6 @@ export function VariantsSection({ tenantId, tenantLoading }: InventorySectionPro
     setShowDialog,
     editingVariant,
     saving,
-    deleteConfirm,
-    setDeleteConfirm,
     openCreateDialog,
     openEditDialog,
     handleSave,
@@ -70,7 +66,8 @@ export function VariantsSection({ tenantId, tenantLoading }: InventorySectionPro
         loading={loading}
         getProductName={getProductName}
         onEdit={openEditDialog}
-        onDelete={setDeleteConfirm}
+        // Mantener presionado el boton de la fila ya es la confirmacion.
+        onDelete={handleDelete}
         onAdd={openCreateDialog}
       />
 
@@ -81,12 +78,6 @@ export function VariantsSection({ tenantId, tenantLoading }: InventorySectionPro
         products={products}
         saving={saving}
         onSave={handleSave}
-      />
-
-      <VariantDeleteDialog
-        variant={deleteConfirm}
-        onOpenChange={(open) => !open && setDeleteConfirm(null)}
-        onConfirm={handleDelete}
       />
     </div>
   );
@@ -105,8 +96,6 @@ export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) 
     setShowDialog,
     editingLot,
     saving,
-    deleteConfirm,
-    setDeleteConfirm,
     openCreateDialog,
     openEditDialog,
     handleSave,
@@ -140,7 +129,7 @@ export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) 
         loading={loading}
         getProductName={getProductName}
         onEdit={openEditDialog}
-        onDelete={setDeleteConfirm}
+        onDelete={handleDelete}
         onAdd={openCreateDialog}
       />
 
@@ -151,12 +140,6 @@ export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) 
         products={products}
         saving={saving}
         onSave={handleSave}
-      />
-
-      <LotDeleteDialog
-        lot={deleteConfirm}
-        onOpenChange={(open) => !open && setDeleteConfirm(null)}
-        onConfirm={handleDelete}
       />
     </div>
   );

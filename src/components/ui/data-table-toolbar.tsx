@@ -1,7 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Download, FileText, FileSpreadsheet } from "lucide-react";
+import { ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { exportToCSV } from "@/lib/export/csv";
 import { exportToPDF } from "@/lib/export/pdf";
 import { toast } from "sonner";
@@ -16,52 +22,89 @@ interface DataTableToolbarProps<T> {
   columns: ExportColumn<T>[];
   title: string;
   filename: string;
+  /**
+   * Filas marcadas en la tabla. Si se pasa, CSV y PDF abren un menu con
+   * "Toda la lista" o "Solo seleccionados"; sin ella, exportan todo al clic,
+   * como siempre.
+   */
+  seleccion?: T[];
+  /** Como se llaman las filas en los avisos ("productos"). */
+  nombreFilas?: string;
 }
+
+type Formato = "csv" | "pdf";
 
 export function DataTableToolbar<T>({
   data,
   columns,
   title,
   filename,
+  seleccion,
+  nombreFilas = "registros",
 }: DataTableToolbarProps<T>) {
-  const handleExportCSV = () => {
+  const exportar = (formato: Formato, filas: T[], soloSeleccion: boolean) => {
+    const archivo = soloSeleccion ? `${filename}-seleccionados` : filename;
+    const etiqueta = formato === "csv" ? "CSV" : "PDF";
     try {
-      exportToCSV(data, columns, filename);
-      toast.success("CSV exportado correctamente");
+      if (formato === "csv") exportToCSV(filas, columns, archivo);
+      else exportToPDF(filas, columns, title, archivo);
+      toast.success(`${etiqueta} exportado: ${filas.length} ${nombreFilas}`);
     } catch {
-      toast.error("Error al exportar CSV");
+      toast.error(`Error al exportar ${etiqueta}`);
     }
   };
 
-  const handleExportPDF = () => {
-    try {
-      exportToPDF(data, columns, title, filename);
-      toast.success("PDF exportado correctamente");
-    } catch {
-      toast.error("Error al exportar PDF");
+  const boton = (formato: Formato) => {
+    const Icono = formato === "csv" ? FileSpreadsheet : FileText;
+    const etiqueta = formato === "csv" ? "CSV" : "PDF";
+
+    // Sin seleccion posible: el boton de siempre.
+    if (!seleccion) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportar(formato, data, false)}
+          className="h-8 gap-1.5"
+        >
+          <Icono className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{etiqueta}</span>
+        </Button>
+      );
     }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<Button variant="outline" size="sm" className="h-8 gap-1.5" />}
+        >
+          <Icono className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{etiqueta}</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => exportar(formato, data, false)}
+          >
+            Toda la lista ({data.length})
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={seleccion.length === 0}
+            onClick={() => exportar(formato, seleccion, true)}
+          >
+            Solo seleccionados ({seleccion.length})
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleExportCSV}
-        className="h-8 gap-1.5"
-      >
-        <FileSpreadsheet className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">CSV</span>
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleExportPDF}
-        className="h-8 gap-1.5"
-      >
-        <FileText className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">PDF</span>
-      </Button>
+      {boton("csv")}
+      {boton("pdf")}
     </div>
   );
 }
