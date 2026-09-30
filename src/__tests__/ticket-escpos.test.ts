@@ -66,4 +66,31 @@ describe("ticket de venta en ESC/POS", () => {
     expect(txt).not.toContain("Cambio $");
     expect(txt).toContain("*** REIMPRESI");
   });
+  it("con descuento imprime el importe sin descontar, el subtotal y la linea de descuento", () => {
+    const txt = comoTexto(
+      ticketVentaEscPos({
+        receipt: {
+          ...base,
+          items: [{ ...base.items[0], descuento: 4.4 }],
+          total: 39.6,
+          descuentoEtiqueta: "Descuento (10 %)",
+        },
+        negocio: { nombre: "Pruebas SYMVORA" },
+        ancho: 58,
+        metodoPagoTexto: "Efectivo",
+      })
+    );
+    expect(txt).toContain("44.00");
+    expect(txt).toContain("Subtotal $");
+    expect(txt).toContain("Descuento (10 %) $");
+    expect(txt).toContain("-4.40");
+    expect(txt).toContain("39.60");
+  });
+
+  it("sin descuento ni IVA no agrega el desglose", () => {
+    const txt = comoTexto(
+      ticketVentaEscPos({ receipt: base, negocio: { nombre: "X" }, ancho: 58, metodoPagoTexto: "Efectivo" })
+    );
+    expect(txt).not.toContain("Subtotal $");
+  });
 });

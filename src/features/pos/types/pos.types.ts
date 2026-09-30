@@ -88,6 +88,11 @@ export interface SaleReceipt {
    * falsa: es practica estandar en punto de venta diferenciarlo del original.
    */
   esReimpresion?: boolean;
+  /**
+   * Como se nombra el descuento del ticket ("Descuento (10 %)"). Solo lo trae
+   * el cobro; la reimpresion no guarda el porcentaje y dice "Descuento".
+   */
+  descuentoEtiqueta?: string | null;
 }
 
 /** Variante tal como la necesita el POS (subconjunto de `variantes_producto`). */

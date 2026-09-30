@@ -93,7 +93,11 @@ export function PosCart({
   const t = useTranslations();
 
   return (
-    <Card className="flex-1 flex flex-col">
+    // `overflow-visible` (la Card trae `overflow-hidden`): con overflow oculto
+    // su alto minimo es 0 y, en pantallas bajas, el panel la aplastaba hasta
+    // no ver ningun articulo. Asi su minimo es el de la lista (3 renglones) y
+    // lo que se desplaza es el panel.
+    <Card className="flex-1 flex flex-col overflow-visible">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-sm font-medium">
           <span>{t("pos.cart")}</span>
@@ -103,7 +107,7 @@ export function PosCart({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col overflow-hidden pt-0">
+      <CardContent className="flex-1 flex flex-col pt-0">
         {items.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm text-muted-foreground">
@@ -111,7 +115,7 @@ export function PosCart({
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto space-y-3">
+          <div className="flex-1 min-h-32 overflow-y-auto space-y-3">
             {items.map((item) => (
               <div
                 key={cartLineKey(item.productId, item.varianteId)}

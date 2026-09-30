@@ -7,11 +7,12 @@
 
 import { abreviatura, formatearCantidad } from "@/lib/unidades";
 import {
+  desgloseTicket,
   fechaTicket,
   formatearImporte,
+  importeLinea,
   muestraEfectivo,
   numeroOperacion,
-  subtotalLinea,
   totalArticulos,
 } from "../ticket-format";
 import type { SaleReceipt } from "../types/pos.types";
@@ -79,7 +80,7 @@ export function ticketVentaEscPos({
         [
           `x${formatearCantidad(item.cantidad, item.unidad_medida)}`,
           `${formatearImporte(item.precioUnitario)}/${abreviatura(item.unidad_medida, 1)}`,
-          formatearImporte(subtotalLinea(item)),
+          formatearImporte(importeLinea(item)),
         ],
         [0, anchoMonto, anchoSubtotal],
         cols
@@ -89,6 +90,24 @@ export function ticketVentaEscPos({
 
   t.separador();
   t.linea(izquierdaDerecha("Cant. total de items", String(totalArticulos(receipt.items)), cols));
+
+  // Mismo desglose que el ticket en pantalla: solo con descuento o IVA.
+  const desglose = desgloseTicket(receipt.items, receipt.total);
+  if (desglose.descuento > 0 || desglose.impuesto > 0) {
+    t.linea(izquierdaDerecha("Subtotal $", formatearImporte(desglose.subtotal), cols));
+    if (desglose.descuento > 0) {
+      t.linea(
+        izquierdaDerecha(
+          `${receipt.descuentoEtiqueta ?? "Descuento"} $`,
+          `-${formatearImporte(desglose.descuento)}`,
+          cols
+        )
+      );
+    }
+    if (desglose.impuesto > 0) {
+      t.linea(izquierdaDerecha("IVA $", formatearImporte(desglose.impuesto), cols));
+    }
+  }
 
   // Total en letra grande: ocupa el doble, asi que se arma a media anchura.
   t.negritas(true).grande(true)

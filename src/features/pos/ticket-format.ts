@@ -45,6 +45,44 @@ export function subtotalLinea(item: CartItem): number {
   return item.precioUnitario * item.cantidad - (item.descuento ?? 0);
 }
 
+/**
+ * Importe de una linea SIN descontar: precio x cantidad, a centavos. Es lo que
+ * imprime el ticket por renglon; el descuento va aparte, en su propia linea,
+ * para que el cliente pueda cuadrar precio x cantidad con lo que lee.
+ */
+export function importeLinea(item: CartItem): number {
+  return Math.round(item.precioUnitario * item.cantidad * 100) / 100;
+}
+
+export interface DesgloseTicket {
+  /** Suma de los importes sin descontar. */
+  subtotal: number;
+  /** Descuento total (la suma de lo repartido entre renglones). */
+  descuento: number;
+  /** IVA cobrado; 0 si la venta no lo llevo. */
+  impuesto: number;
+}
+
+/**
+ * Subtotal, descuento e IVA del ticket a partir de los renglones y el total.
+ *
+ * El descuento del ticket viaja repartido en los renglones (`item.descuento`),
+ * y asi lo guarda `detalle_ventas`: por eso sirve igual para la venta recien
+ * cobrada que para una reimpresion. El IVA es lo que queda entre el total y lo
+ * ya descontado.
+ */
+export function desgloseTicket(items: CartItem[], total: number): DesgloseTicket {
+  const c = (n: number) => Math.round(n * 100);
+  const subtotal = items.reduce((s, item) => s + c(importeLinea(item)), 0);
+  const descuento = items.reduce((s, item) => s + c(item.descuento ?? 0), 0);
+  const impuesto = c(total) - (subtotal - descuento);
+  return {
+    subtotal: subtotal / 100,
+    descuento: descuento / 100,
+    impuesto: impuesto > 0 ? impuesto / 100 : 0,
+  };
+}
+
 /** Importes siempre con dos decimales; el ticket se lee en columna. */
 export function formatearImporte(valor: number): string {
   return valor.toFixed(2);

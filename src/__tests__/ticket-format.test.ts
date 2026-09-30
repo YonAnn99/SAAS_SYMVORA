@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  desgloseTicket,
   formatearImporte,
+  importeLinea,
   muestraEfectivo,
   numeroOperacion,
   subtotalLinea,
@@ -110,5 +112,28 @@ describe("muestraEfectivo", () => {
 
   it("un monto recibido de 0 sí es un dato, no una ausencia", () => {
     expect(muestraEfectivo("EFECTIVO", 0)).toBe(true);
+  });
+});
+
+describe("importeLinea", () => {
+  it("es precio x cantidad, sin descontar", () => {
+    expect(importeLinea(item("Alpura", 2, 40, 8))).toBe(80);
+  });
+});
+
+describe("desgloseTicket", () => {
+  it("con descuento del ticket: subtotal sin descontar y el descuento aparte", () => {
+    // 10 % de $130 repartido: 8 en Alpura y 5 en Barra.
+    const items = [item("Alpura", 2, 40, 8), item("Barra", 1, 50, 5)];
+    expect(desgloseTicket(items, 117)).toEqual({ subtotal: 130, descuento: 13, impuesto: 0 });
+  });
+
+  it("con IVA: el impuesto es lo que queda entre el total y lo ya descontado", () => {
+    const items = [item("Alpura", 2, 40, 8), item("Barra", 1, 50, 5)];
+    expect(desgloseTicket(items, 135.72)).toEqual({ subtotal: 130, descuento: 13, impuesto: 18.72 });
+  });
+
+  it("sin descuento ni IVA todo cuadra con el total", () => {
+    expect(desgloseTicket([item("Café", 2, 70)], 140)).toEqual({ subtotal: 140, descuento: 0, impuesto: 0 });
   });
 });

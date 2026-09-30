@@ -56,6 +56,7 @@ import {
 import { ProductGrid } from "@/features/pos/components/product-grid";
 import { TerminalPaymentDialog } from "@/features/pos/components/terminal-payment-dialog";
 import { TicketReceipt } from "@/features/pos/components/ticket-receipt";
+import { etiquetaDescuento } from "@/features/pos/descuento-ticket";
 import { NewCustomerDialog } from "@/features/customers/components/new-customer-dialog";
 import {
   Sheet,
@@ -470,6 +471,7 @@ export default function POSPage() {
           montoRecibido: isEfectivo ? montoRecibidoNum : null,
           cambio: isEfectivo ? cambio : null,
           reference: venta?.id ?? null,
+          descuentoEtiqueta: totals.descuento > 0 ? etiquetaDescuento(descuentoTicket) : null,
         },
         descuento: descuentoTicket,
         montoDescuento: totals.descuento,
@@ -667,7 +669,10 @@ export default function POSPage() {
       {/* Right: Cart (desktop only — on mobile it lives in the bottom sheet below) */}
       <div className="hidden lg:flex lg:w-80 shrink-0 flex-col animate-fade-in-up stagger-2">
         <CheckoutPanel
-          className="h-full"
+          // Con poca altura el panel se desplaza en vez de aplastar el carrito.
+          // `-mx-1 px-1`: el scroll recorta tambien a lo ancho y se comia los
+          // anillos de foco.
+          className="h-full overflow-y-auto -mx-1 px-1"
           customers={customers}
           selectedCustomer={selectedCustomer}
           onSelectCustomer={setSelectedCustomer}

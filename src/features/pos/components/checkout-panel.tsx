@@ -123,24 +123,28 @@ export function CheckoutPanel({
         </div>
       )}
 
-      <SpecularActionButton
-        tone="money"
-        className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
-        disabled={disabledComplete}
-        onClick={onCompleteSale}
-      >
-        {processingSale ? t("common.loading") : t("pos.completeSale")}
-      </SpecularActionButton>
+      {/* En escritorio el panel se desplaza cuando la pantalla es baja: el
+          boton de cobrar queda pegado abajo para no tener que buscarlo. */}
+      <div className="lg:sticky lg:bottom-0 lg:z-10 lg:bg-background lg:pb-1">
+        <SpecularActionButton
+          tone="money"
+          className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
+          disabled={disabledComplete}
+          onClick={onCompleteSale}
+        >
+          {processingSale ? t("common.loading") : t("pos.completeSale")}
+        </SpecularActionButton>
 
-      <Button
-        variant="ghost"
-        className="mt-1.5 w-full h-8 text-xs text-muted-foreground"
-        size="sm"
-        onClick={onClearCart}
-        disabled={items.length === 0}
-      >
-        {t("pos.clearCart")}
-      </Button>
+        <Button
+          variant="ghost"
+          className="mt-1.5 w-full h-8 text-xs text-muted-foreground"
+          size="sm"
+          onClick={onClearCart}
+          disabled={items.length === 0}
+        >
+          {t("pos.clearCart")}
+        </Button>
+      </div>
     </div>
   );
 }

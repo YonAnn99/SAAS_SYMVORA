@@ -21,11 +21,12 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { Link } from "@/i18n/navigation";
 import {
   clavePagoI18n,
+  desgloseTicket,
   fechaTicket,
   formatearImporte,
+  importeLinea,
   muestraEfectivo,
   numeroOperacion,
-  subtotalLinea,
   totalArticulos,
 } from "../ticket-format";
 import type { SaleReceipt } from "../types/pos.types";
@@ -116,6 +117,9 @@ export function TicketReceipt({
   const fecha = fechaTicket(receipt.fecha ?? undefined);
   const operacion = numeroOperacion(receipt.reference);
   const articulos = totalArticulos(receipt.items);
+  const desglose = desgloseTicket(receipt.items, receipt.total);
+  // Sin descuento ni IVA el total ES el subtotal: repetirlo solo alarga el papel.
+  const conDesglose = desglose.descuento > 0 || desglose.impuesto > 0;
   const conEfectivo = muestraEfectivo(
     receipt.paymentMethod,
     receipt.montoRecibido
@@ -182,7 +186,7 @@ export function TicketReceipt({
                     {formatearImporte(item.precioUnitario)}/{abreviatura(item.unidad_medida, 1)}
                   </span>
                   <span className="ticket-col-der">
-                    {formatearImporte(subtotalLinea(item))}
+                    {formatearImporte(importeLinea(item))}
                   </span>
                 </span>
               </td>
@@ -195,6 +199,27 @@ export function TicketReceipt({
         <span>Cant. total de items</span>
         <span>{articulos}</span>
       </div>
+
+      {conDesglose && (
+        <>
+          <div className="ticket-fila">
+            <span>Subtotal $</span>
+            <span>{formatearImporte(desglose.subtotal)}</span>
+          </div>
+          {desglose.descuento > 0 && (
+            <div className="ticket-fila">
+              <span>{receipt.descuentoEtiqueta ?? "Descuento"} $</span>
+              <span>-{formatearImporte(desglose.descuento)}</span>
+            </div>
+          )}
+          {desglose.impuesto > 0 && (
+            <div className="ticket-fila">
+              <span>IVA $</span>
+              <span>{formatearImporte(desglose.impuesto)}</span>
+            </div>
+          )}
+        </>
+      )}
 
       <div className="ticket-total">
         <span>Total $</span>
