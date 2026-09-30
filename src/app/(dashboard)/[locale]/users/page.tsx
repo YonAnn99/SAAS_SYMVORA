@@ -45,6 +45,7 @@ import { SucursalesCheckboxes } from "@/features/users/components/sucursales-che
 import { useSucursal } from "@/contexts/sucursal-context";
 import type { UserRole } from "@/lib/types/database";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
@@ -169,6 +170,10 @@ export default function UsersPage() {
     fetchMemberships();
     fetchInviteKeys();
   }, [fetchMemberships, fetchInviteKeys]);
+
+  // Desde la busqueda rapida (Ctrl/Cmd+K). Invitar es solo del dueño, igual
+  // que su boton.
+  useAccionRapida("invitar-usuario", () => canManage && setShowInviteDialog(true), !loading);
 
   const handleInvite = async () => {
     if (!inviteEmail || !tenantId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) {

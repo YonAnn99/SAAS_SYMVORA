@@ -4,7 +4,9 @@ import { ArrowLeftRight, BarChart3, Plus, Store, Warehouse } from "lucide-react"
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { SucursalesCard } from "@/features/sucursales/components/sucursales-card";
@@ -30,8 +32,7 @@ import { TraspasosSucursal } from "@/features/sucursales/components/traspasos-su
 export default function BranchesPage() {
   const { tenantId, loading } = useCurrentTenant();
   const { hayVarias } = useSucursal();
-
-  if (loading || !tenantId) return null;
+  const [pestana, setPestana] = useState("resumen");
 
   // Lleva al formulario de alta de `SucursalesCard` y deja el cursor en
   // "Nombre", listo para escribir.
@@ -40,6 +41,23 @@ export default function BranchesPage() {
     campo?.scrollIntoView({ behavior: "smooth", block: "center" });
     campo?.focus({ preventScroll: true });
   };
+
+  // Desde la busqueda rapida (Ctrl/Cmd+K). Con varios locales el formulario
+  // vive en la pestaña "Alta y cierre": se cambia y se espera a que se pinte.
+  useAccionRapida(
+    "alta-sucursal",
+    () => {
+      if (hayVarias) {
+        setPestana("locales");
+        window.setTimeout(irAlAlta, 150);
+      } else {
+        irAlAlta();
+      }
+    },
+    !loading && Boolean(tenantId)
+  );
+
+  if (loading || !tenantId) return null;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -86,7 +104,11 @@ export default function BranchesPage() {
           <SucursalesCard />
         </div>
       ) : (
-        <Tabs defaultValue="resumen" className="w-full animate-fade-in-up stagger-2">
+        <Tabs
+          value={pestana}
+          onValueChange={(v) => setPestana(String(v))}
+          className="w-full animate-fade-in-up stagger-2"
+        >
           <TabsList>
             <TabsTrigger value="resumen" className="gap-1.5 text-xs">
               <BarChart3 className="h-3.5 w-3.5" />

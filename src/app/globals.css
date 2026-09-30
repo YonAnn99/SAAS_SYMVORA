@@ -973,7 +973,8 @@ html[data-transicion-tema]::view-transition-new(root) {
   inset: 0;
   z-index: 200;
   pointer-events: none;
-  background: #16a34a;
+  /* Verde en la venta, azul en el alta de productos (`lib/celebracion.ts`). */
+  background: var(--destello-color, #16a34a);
   opacity: 0.9;
   animation:
     tema-circulo-blur 600ms cubic-bezier(0.4, 0, 0.2, 1) both,

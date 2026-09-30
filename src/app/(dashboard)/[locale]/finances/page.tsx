@@ -3,9 +3,11 @@
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { toast } from "sonner";
 
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { useCashRegister } from "@/features/cash-register/hooks/use-cash-register";
 import { CloseRegisterDialog } from "@/features/cash-register/components/close-register-dialog";
 import { MovementDialog } from "@/features/cash-register/components/movement-dialog";
@@ -46,6 +48,33 @@ export default function FinancesPage() {
       cash.setShowOpenDialog(true);
     }
   }, [cash.loading, tenantLoading, cash.activeRegister, cash, tutorialActivo, tutorialMinimizado]);
+
+  // Desde la busqueda rapida (Ctrl/Cmd+K): "abrir caja", "corte", "retiro"...
+  const cajaLista = !cash.loading && !tenantLoading;
+  useAccionRapida(
+    "abrir-caja",
+    () => {
+      if (cash.activeRegister) toast.info("Ya tienes una caja abierta");
+      else cash.setShowOpenDialog(true);
+    },
+    cajaLista
+  );
+  useAccionRapida(
+    "cerrar-caja",
+    () => {
+      if (cash.activeRegister) cash.setShowCloseDialog(true);
+      else toast.info("No hay una caja abierta para cerrar");
+    },
+    cajaLista
+  );
+  useAccionRapida(
+    "movimiento-caja",
+    () => {
+      if (cash.activeRegister) cash.setShowMovementDialog(true);
+      else toast.info("Primero abre la caja para registrar un depósito o retiro");
+    },
+    cajaLista
+  );
 
   if (cash.loading || tenantLoading) {
     return (

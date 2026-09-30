@@ -101,7 +101,7 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
 
   const handleSave = useCallback(
     async (input: ProductInput) => {
-      if (!tenantId) return;
+      if (!tenantId) return false;
 
       // CON VARIAS SUCURSALES, el campo de existencias habla de UN local y no
       // se manda en el producto: `productos.stock_actual` es la suma que
@@ -115,7 +115,7 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
           const cambio = stock !== Number(editingProduct.stock_actual);
           if (cambio && destino.tipo === "bloqueado") {
             toast.error(destino.motivo);
-            return;
+            return false;
           }
           if (cambio && destino.tipo === "sucursal") destinoStock = destino.sucursalId;
         } else if (stock > 0) {
@@ -124,7 +124,7 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
             toast.error(
               "Elige en el selector de arriba a qué sucursal entran las existencias iniciales, o déjalas en 0 y repártelas después."
             );
-            return;
+            return false;
           }
         }
       }
@@ -176,10 +176,12 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
           });
           toast.success("Producto creado");
         }
-        setShowDialog(false);
         void refetch();
+        // Cerrar lo decide el dialogo: al crear, tras la animacion.
+        return true;
       } catch (error: unknown) {
         toast.error(mensajeDeError(error));
+        return false;
       } finally {
         setSaving(false);
       }

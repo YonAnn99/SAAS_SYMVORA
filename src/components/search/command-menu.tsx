@@ -4,10 +4,66 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Command } from "cmdk";
-import { Search } from "lucide-react";
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  ClipboardList,
+  CreditCard,
+  FileSpreadsheet,
+  Layers,
+  Lightbulb,
+  LockKeyhole,
+  Package,
+  Palette,
+  Search,
+  ShoppingCart,
+  SlidersHorizontal,
+  Smartphone,
+  Store,
+  Tags,
+  Truck,
+  UnlockKeyhole,
+  UserPlus,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useModulos } from "@/hooks/use-modulos";
 import { filterNavigation } from "@/lib/navigation";
+import {
+  PALABRAS_CLAVE_MODULOS,
+  accionesDisponibles,
+  coincideBusqueda,
+  type IconoAccion,
+} from "@/lib/acciones-rapidas";
+
+const ICONOS_ACCION: Record<IconoAccion, LucideIcon> = {
+  "caja-abrir": UnlockKeyhole,
+  "caja-cerrar": LockKeyhole,
+  movimiento: ArrowLeftRight,
+  venta: ShoppingCart,
+  producto: Package,
+  variante: Palette,
+  lote: CalendarClock,
+  ajuste: Wrench,
+  importar: FileSpreadsheet,
+  precios: Tags,
+  compra: ShoppingCart,
+  proveedor: Truck,
+  orden: ClipboardList,
+  usuario: UserPlus,
+  sucursal: Store,
+  modulos: SlidersHorizontal,
+  terminal: Smartphone,
+  suscripcion: CreditCard,
+  sugerencia: Lightbulb,
+};
+
+const CLASE_GRUPO =
+  "text-xs text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-medium";
+const CLASE_ITEM =
+  "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground";
 
 interface CommandMenuProps {
   open: boolean;
@@ -33,6 +89,11 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
     tenantLoading || permsLoading
       ? []
       : filterNavigation(role, can);
+
+  // Los botones del sistema que se pueden buscar por lo que hacen ("abrir
+  // caja", "corte"...). Mismo filtro de permisos, mas los modulos encendidos.
+  const { modulos } = useModulos();
+  const acciones = tenantLoading || permsLoading ? [] : accionesDisponibles(can, modulos);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -69,14 +130,14 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
       <div className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2">
         <Command
           className="overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
-          filter={(value, search) => {
-            if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-            return 0;
-          }}
+          // Sin acentos, por palabras sueltas y tambien por palabras clave.
+          filter={(value, search, keywords) => coincideBusqueda(value, search, keywords)}
         >
           <div className="flex items-center border-b border-border px-4">
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
             <Command.Input
+              // Ctrl/Cmd+K y a escribir: sin foco, lo tecleado se perdia.
+              autoFocus
               value={search}
               onValueChange={setSearch}
               placeholder={t("search.placeholder")}
@@ -91,7 +152,7 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
               {t("search.noResults")}
             </Command.Empty>
 
-            <Command.Group heading={t("search.navigation")} className="text-xs text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:font-medium">
+            <Command.Group heading={t("search.navigation")} className={CLASE_GRUPO}>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const label = t(item.name);
@@ -101,8 +162,9 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
                     // Se busca por el nombre traducido, no por un id interno:
                     // quien teclea "reportes" espera encontrar Reportes.
                     value={label}
+                    keywords={PALABRAS_CLAVE_MODULOS[item.href]}
                     onSelect={() => runAction(item.href)}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+                    className={CLASE_ITEM}
                   >
                     <Icon className="h-4 w-4 text-muted-foreground" />
                     <span>{label}</span>
@@ -110,6 +172,26 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
                 );
               })}
             </Command.Group>
+
+            {acciones.length > 0 && (
+              <Command.Group heading="Acciones" className={CLASE_GRUPO}>
+                {acciones.map((accion) => {
+                  const Icon = ICONOS_ACCION[accion.icono] ?? Layers;
+                  return (
+                    <Command.Item
+                      key={accion.id}
+                      value={accion.etiqueta}
+                      keywords={accion.palabrasClave}
+                      onSelect={() => runAction(accion.href)}
+                      className={CLASE_ITEM}
+                    >
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <span>{accion.etiqueta}</span>
+                    </Command.Item>
+                  );
+                })}
+              </Command.Group>
+            )}
           </Command.List>
         </Command>
       </div>

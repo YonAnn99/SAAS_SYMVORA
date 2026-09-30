@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
+import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
+import { COLOR_ALTA, SONIDO_ALTA, celebrarAlta, precargarSonido } from "@/lib/celebracion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,7 +45,8 @@ interface VariantDialogProps {
   editingVariant: VarianteProducto | null;
   products: ProductoOption[];
   saving: boolean;
-  onSave: (input: VarianteInput) => void;
+  /** `true` si quedo guardada. Cerrar lo decide el dialogo. */
+  onSave: (input: VarianteInput) => Promise<boolean>;
 }
 
 export function VariantDialog({
@@ -100,18 +103,19 @@ export function VariantDialog({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  /** Valida y guarda. `true` si quedo guardada. */
+  const handleSave = async (): Promise<boolean> => {
     if (!formData.producto_id) {
       toast.error("Selecciona un producto");
-      return;
+      return false;
     }
 
     if (!formData.precio_venta || parseFloat(formData.precio_venta) <= 0) {
       toast.error("El precio de venta debe ser mayor a 0");
-      return;
+      return false;
     }
 
-    onSave({
+    return onSave({
       producto_id: formData.producto_id,
       sku: formData.sku || null,
       codigo_barras: formData.codigo_barras || null,
@@ -121,6 +125,28 @@ export function VariantDialog({
       costo_compra: parseFloat(formData.costo_compra) || 0,
       stock_actual: parseFloat(formData.stock_actual) || 0,
     });
+  };
+
+  // Al crear se confirma deslizando, con sonido: se deja descargado al abrir.
+  useEffect(() => {
+    if (open && !editingVariant) precargarSonido(SONIDO_ALTA);
+  }, [open, editingVariant]);
+
+  // Editar: boton de siempre, y se cierra al guardar.
+  const guardarEdicion = async () => {
+    if (await handleSave()) handleOpenChange(false);
+  };
+
+  // Crear: si algo no pasa se rechaza, para que la pastilla muestre el error
+  // y regrese (el aviso ya salio).
+  const crearDeslizando = async () => {
+    if (!(await handleSave())) throw new Error("No se guardó");
+  };
+
+  // Tras la pastilla azul: sonido y destello, y se cierra como en el POS.
+  const trasCrear = (origen: DOMRect | null) => {
+    celebrarAlta(origen);
+    window.setTimeout(() => handleOpenChange(false), 900);
   };
 
   return (
@@ -270,28 +296,48 @@ export function VariantDialog({
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            onClick={() => handleOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <SpecularActionButton
-            tone="add"
-            className="h-8"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving
-              ? "Guardando..."
-              : editingVariant
-                ? "Guardar cambios"
-                : "Crear variante"}
-          </SpecularActionButton>
-        </DialogFooter>
+        {editingVariant ? (
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => handleOpenChange(false)}
+            >
+              Cancelar
+            </Button>
+            <SpecularActionButton
+              tone="add"
+              className="h-8"
+              onClick={() => void guardarEdicion()}
+              disabled={saving}
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </SpecularActionButton>
+          </DialogFooter>
+        ) : (
+          // Mismo "desliza para confirmar" que cobrar en el POS, en azul.
+          <div className="flex flex-col items-stretch gap-2">
+            <DeslizarParaConfirmar
+              label="Desliza para crear variante"
+              doneLabel="Variante creada"
+              errorLabel="No se guardó"
+              successColor={COLOR_ALTA}
+              disabled={sinProductos}
+              onConfirm={crearDeslizando}
+              onDone={trasCrear}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 self-center text-muted-foreground"
+              onClick={() => handleOpenChange(false)}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

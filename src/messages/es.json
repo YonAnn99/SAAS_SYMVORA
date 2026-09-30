@@ -62,7 +62,7 @@
     "autoClose": "Cierre automático"
   },
   "search": {
-    "placeholder": "Buscar productos, clientes, rutas...",
+    "placeholder": "Buscar módulos o acciones: abrir caja, agregar producto...",
     "noResults": "No se encontraron resultados",
     "navigation": "Navegación",
     "products": "Productos",
@@ -706,7 +706,7 @@
     },
     "hero": {
       "title": "Tu sistema todo en uno para tu tienda",
-      "highlight": "hecho para tu comercio",
+      "highlight": "hecho para tu",
       "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
       "ctaPrimary": "Prueba {dias} días gratis",
       "ctaSecondary": "Ver demo",

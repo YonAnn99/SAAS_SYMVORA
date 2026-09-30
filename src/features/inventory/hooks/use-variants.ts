@@ -86,7 +86,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
 
   const handleSave = useCallback(
     async (input: VarianteInput) => {
-      if (!tenantId) return;
+      if (!tenantId) return false;
 
       // Con varias sucursales el stock de la talla es el DE UN LOCAL y viaja
       // aparte (ver el mismo razonamiento en `useProducts.handleSave`).
@@ -98,7 +98,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
           const cambio = stock !== Number(editingVariant.stock_actual);
           if (cambio && destino.tipo === "bloqueado") {
             toast.error(destino.motivo);
-            return;
+            return false;
           }
           if (cambio && destino.tipo === "sucursal") destinoStock = destino.sucursalId;
         } else if (stock > 0) {
@@ -107,7 +107,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
             toast.error(
               "Elige en el selector a qué sucursal entran las existencias iniciales, o déjalas en 0."
             );
-            return;
+            return false;
           }
         }
       }
@@ -159,8 +159,9 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
           });
           toast.success("Variante creada");
         }
-        setShowDialog(false);
         void refetch();
+        // Cerrar lo decide el dialogo: al crear, tras la animacion.
+        return true;
       } catch (error: unknown) {
         const isUnique = error instanceof Error && error.message.includes("23505");
         toast.error(
@@ -170,6 +171,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
               ? "Error al guardar la variante"
               : "Error al guardar la variante"
         );
+        return false;
       } finally {
         setSaving(false);
       }

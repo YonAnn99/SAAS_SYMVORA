@@ -62,7 +62,7 @@
     "autoClose": "Automatic close"
   },
   "search": {
-    "placeholder": "Search products, customers, routes...",
+    "placeholder": "Search modules or actions: open register, add product...",
     "noResults": "No results found",
     "navigation": "Navigation",
     "products": "Products",
@@ -706,7 +706,7 @@
     },
     "hero": {
       "title": "Your all in one system for your store",
-      "highlight": "built for your store",
+      "highlight": "built for your",
       "subtitle": "Point of sale, inventory and finance — all in one, no per-sale commissions, with Spanish support.",
       "ctaPrimary": "{dias}-day free trial",
       "ctaSecondary": "See demo",

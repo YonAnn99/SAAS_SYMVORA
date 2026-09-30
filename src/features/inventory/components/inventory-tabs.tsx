@@ -19,24 +19,34 @@ import {
 export interface InventorySectionProps {
   tenantId: string | null;
   tenantLoading: boolean;
-}
-
-interface VariantsSectionProps extends InventorySectionProps {
   /**
-   * Pide abrir "Crear variante" (lo usa "Agregar producto -> Producto
-   * variante" en la pagina). Se atiende una vez y se avisa con
-   * `onAbrirCrearAtendido`, para que no se reabra al volver a esta pestaña.
+   * Pide abrir la ventana de "crear" de la pestaña (lo usan "Agregar producto
+   * -> Producto variante" y la busqueda rapida). Se atiende una vez y se avisa
+   * con `onAbrirCrearAtendido`, para que no se reabra al volver a la pestaña.
    */
   abrirCrear?: boolean;
   onAbrirCrearAtendido?: () => void;
 }
 
+/** Atiende `abrirCrear`: abre el dialogo de crear y avisa a la pagina. */
+function useAbrirCrearPedido(
+  abrirCrear: boolean | undefined,
+  abrir: () => void,
+  onAtendido: (() => void) | undefined
+) {
+  useEffect(() => {
+    if (!abrirCrear) return;
+    abrir();
+    onAtendido?.();
+  }, [abrirCrear, abrir, onAtendido]);
+}
+
 export function VariantsSection({
   tenantId,
   tenantLoading,
-  abrirCrear = false,
+  abrirCrear,
   onAbrirCrearAtendido,
-}: VariantsSectionProps) {
+}: InventorySectionProps) {
   const {
     variants,
     products,
@@ -55,11 +65,7 @@ export function VariantsSection({
     handleDelete,
   } = useVariants(tenantId, tenantLoading);
 
-  useEffect(() => {
-    if (!abrirCrear) return;
-    openCreateDialog();
-    onAbrirCrearAtendido?.();
-  }, [abrirCrear, openCreateDialog, onAbrirCrearAtendido]);
+  useAbrirCrearPedido(abrirCrear, openCreateDialog, onAbrirCrearAtendido);
 
   return (
     <div className="space-y-4">
@@ -105,7 +111,12 @@ export function VariantsSection({
   );
 }
 
-export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) {
+export function LotsSection({
+  tenantId,
+  tenantLoading,
+  abrirCrear,
+  onAbrirCrearAtendido,
+}: InventorySectionProps) {
   const {
     lots,
     products,
@@ -123,6 +134,8 @@ export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) 
     handleSave,
     handleDelete,
   } = useLots(tenantId, tenantLoading);
+
+  useAbrirCrearPedido(abrirCrear, openCreateDialog, onAbrirCrearAtendido);
 
   return (
     <div className="space-y-4">
@@ -167,7 +180,12 @@ export function LotsSection({ tenantId, tenantLoading }: InventorySectionProps) 
   );
 }
 
-export function AdjustmentsSection({ tenantId, tenantLoading }: InventorySectionProps) {
+export function AdjustmentsSection({
+  tenantId,
+  tenantLoading,
+  abrirCrear,
+  onAbrirCrearAtendido,
+}: InventorySectionProps) {
   const {
     adjustments,
     products,
@@ -185,6 +203,8 @@ export function AdjustmentsSection({ tenantId, tenantLoading }: InventorySection
     openCreateDialog,
     handleSave,
   } = useInventoryAdjustments(tenantId, tenantLoading);
+
+  useAbrirCrearPedido(abrirCrear, openCreateDialog, onAbrirCrearAtendido);
 
   return (
     <div className="space-y-4">

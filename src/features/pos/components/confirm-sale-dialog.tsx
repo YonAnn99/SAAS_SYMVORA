@@ -1,11 +1,10 @@
 "use client";
 
 import { formatearCantidad } from "@/lib/unidades";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import SlideCommit from "@/components/ui/slide-commit";
+import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
 import { precargarSonidoVenta } from "../celebracion-venta";
 import {
   Dialog,
@@ -52,22 +51,6 @@ export function ConfirmSaleDialog({
   onVentaConfirmada,
 }: ConfirmSaleDialogProps) {
   const t = useTranslations();
-  const { resolvedTheme } = useTheme();
-  const oscuro = resolvedTheme === "dark";
-
-  // El slider hace sus cuentas con un ancho en pixeles: se mide el pie para
-  // que ocupe todo el ancho del dialogo, tambien en celular.
-  // Con un ref de callback: el contenido del dialogo se monta cuando abre, y
-  // asi se mide en cuanto existe el elemento (no antes).
-  const [pie, setPie] = useState<HTMLDivElement | null>(null);
-  const [ancho, setAncho] = useState(0);
-  useEffect(() => {
-    if (!pie) return;
-    const medir = () => setAncho(Math.round(pie.getBoundingClientRect().width));
-    const observador = new ResizeObserver(medir);
-    observador.observe(pie);
-    return () => observador.disconnect();
-  }, [pie]);
   useEffect(() => {
     if (open) precargarSonidoVenta();
   }, [open]);
@@ -142,32 +125,14 @@ export function ConfirmSaleDialog({
             registra la venta la manija gira; al quedar, se vuelve la pastilla
             verde "Venta completada" (y la pagina suena y destella). */}
         <div className="flex flex-col items-stretch gap-2">
-          <div ref={setPie} className="w-full">
-            {ancho > 0 && (
-              <SlideCommit
-                width={ancho}
-                height={52}
-                radius={26}
-                label={`Desliza para cobrar $${totals.total.toFixed(2)}`}
-                doneLabel="Venta completada"
-                errorLabel="No se completó"
-                // Oscuro como la referencia; claro, invertido (igual que las
-                // pestañas). Van en hex: el componente calcula el color del
-                // texto a partir de ellos.
-                trackColor={oscuro ? "#262626" : "#f4f4f5"}
-                handleColor={oscuro ? "#f5f5f5" : "#18181b"}
-                successColor="#22c55e"
-                dangerColor="#e5484d"
-                // La pastilla verde se queda: el dialogo se cierra solo.
-                holdMs={0}
-                disabled={items.length === 0}
-                onConfirm={onConfirm}
-                onDone={() =>
-                  onVentaConfirmada?.(pie?.getBoundingClientRect() ?? null)
-                }
-              />
-            )}
-          </div>
+          <DeslizarParaConfirmar
+            label={`Desliza para cobrar $${totals.total.toFixed(2)}`}
+            doneLabel="Venta completada"
+            successColor="#22c55e"
+            disabled={items.length === 0}
+            onConfirm={onConfirm}
+            onDone={onVentaConfirmada}
+          />
           <Button
             variant="ghost"
             size="sm"

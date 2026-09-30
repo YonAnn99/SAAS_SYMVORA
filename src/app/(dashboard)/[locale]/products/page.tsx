@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { useProducts } from "@/features/inventory";
 import { ProductDialog } from "@/features/inventory";
 import { ProductsTable } from "@/features/inventory";
@@ -125,16 +126,43 @@ export default function ProductsPage() {
     (activeTab === "lots" && !modulos.permite_lotes_caducidad);
   const currentTab = showInventoryTabs && !tabOculta ? activeTab : "catalog";
 
-  // "Agregar producto -> Producto variante": pasa a Variantes y le pide a esa
-  // pestaña abrir "Crear variante" (el dialogo y su hook viven alli). Solo se
-  // ofrece si la pestaña existe: modulo de variantes encendido y permiso.
+  // "Agregar producto -> Producto variante" (y la busqueda rapida para lotes y
+  // ajustes): pasa a la pestaña y le pide abrir su ventana de crear (el dialogo
+  // y su hook viven alli). Solo se ofrece si la pestaña existe.
   const ofrecerVariante = showInventoryTabs && modulos.permite_variantes;
-  const [abrirCrearVariante, setAbrirCrearVariante] = useState(false);
-  const crearVariante = () => {
-    setActiveTab("variants");
-    setAbrirCrearVariante(true);
+  const [pedidoCrear, setPedidoCrear] = useState<
+    "variants" | "lots" | "adjustments" | null
+  >(null);
+  const crearEnPestana = (pestana: "variants" | "lots" | "adjustments") => {
+    setActiveTab(pestana);
+    setPedidoCrear(pestana);
   };
-  const crearVarianteAtendido = useCallback(() => setAbrirCrearVariante(false), []);
+  const crearVariante = () => crearEnPestana("variants");
+  const pedidoAtendido = useCallback(() => setPedidoCrear(null), []);
+
+  // Desde la busqueda rapida (Ctrl/Cmd+K).
+  const listo = !loading && !permsLoading;
+  useAccionRapida("agregar-producto", openCreateDialog, listo);
+  useAccionRapida(
+    "importar-catalogo",
+    () => canImport && setShowImportDialog(true),
+    listo
+  );
+  useAccionRapida(
+    "agregar-variante",
+    () => ofrecerVariante && crearVariante(),
+    listo
+  );
+  useAccionRapida(
+    "agregar-lote",
+    () => showInventoryTabs && modulos.permite_lotes_caducidad && crearEnPestana("lots"),
+    listo
+  );
+  useAccionRapida(
+    "nuevo-ajuste",
+    () => showInventoryTabs && crearEnPestana("adjustments"),
+    listo
+  );
 
   const exportColumns = [
     { header: "Nombre", accessor: (p: Producto) => p.nombre },
@@ -338,15 +366,25 @@ export default function ProductsPage() {
               <VariantsSection
                 tenantId={tenantId}
                 tenantLoading={tenantLoading}
-                abrirCrear={abrirCrearVariante}
-                onAbrirCrearAtendido={crearVarianteAtendido}
+                abrirCrear={pedidoCrear === "variants"}
+                onAbrirCrearAtendido={pedidoAtendido}
               />
             </TabsContent>
             <TabsContent value="lots">
-              <LotsSection tenantId={tenantId} tenantLoading={tenantLoading} />
+              <LotsSection
+                tenantId={tenantId}
+                tenantLoading={tenantLoading}
+                abrirCrear={pedidoCrear === "lots"}
+                onAbrirCrearAtendido={pedidoAtendido}
+              />
             </TabsContent>
             <TabsContent value="adjustments">
-              <AdjustmentsSection tenantId={tenantId} tenantLoading={tenantLoading} />
+              <AdjustmentsSection
+                tenantId={tenantId}
+                tenantLoading={tenantLoading}
+                abrirCrear={pedidoCrear === "adjustments"}
+                onAbrirCrearAtendido={pedidoAtendido}
+              />
             </TabsContent>
           </>
         )}

@@ -5,6 +5,7 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import {
   usePurchaseOrders,
   fetchOrderDetails,
@@ -62,6 +63,9 @@ export default function PurchaseOrdersPage() {
     setEditingDetails([]);
     openCreateDialog();
   };
+
+  // Desde la busqueda rapida (Ctrl/Cmd+K).
+  useAccionRapida("nueva-orden", handleAdd, !loading);
 
   return (
     <div className="space-y-6 md:space-y-8">

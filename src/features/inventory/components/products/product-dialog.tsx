@@ -7,6 +7,8 @@ import { useModulos } from "@/hooks/use-modulos";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
+import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
+import { COLOR_ALTA, SONIDO_ALTA, celebrarAlta, precargarSonido } from "@/lib/celebracion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,7 +52,8 @@ interface ProductDialogProps {
   onOpenChange: (open: boolean) => void;
   editingProduct: Producto | null;
   saving: boolean;
-  onSave: (input: ProductInput) => void;
+  /** `true` si quedo guardado. Cerrar lo decide el dialogo. */
+  onSave: (input: ProductInput) => Promise<boolean>;
   tenantId: string;
 }
 
@@ -165,6 +168,11 @@ export function ProductDialog({
     onOpenChange(next);
   };
 
+  // Al crear se confirma deslizando, con sonido: se deja descargado al abrir.
+  useEffect(() => {
+    if (open && !editingProduct) precargarSonido(SONIDO_ALTA);
+  }, [open, editingProduct]);
+
   useEffect(() => {
     if (!open) return;
     const timeout = window.setTimeout(() => {
@@ -264,7 +272,8 @@ export function ProductDialog({
     setImagenOriginal(null);
   };
 
-  const handleSave = async () => {
+  /** Valida, sube la imagen y guarda. `true` si quedo guardado. */
+  const handleSave = async (): Promise<boolean> => {
     const parsed = productSchema.safeParse({
       ...formData,
       precio_venta: parseFloat(formData.precio_venta) || 0,
@@ -275,7 +284,7 @@ export function ProductDialog({
 
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
-      return;
+      return false;
     }
 
     let imagen_url = editingProduct?.imagen_url ?? null;
@@ -289,7 +298,7 @@ export function ProductDialog({
           "Error al subir la imagen: " +
             (error instanceof Error ? error.message : "inténtalo de nuevo")
         );
-        return;
+        return false;
       } finally {
         setUploadingImage(false);
       }
@@ -297,7 +306,7 @@ export function ProductDialog({
       imagen_url = null;
     }
 
-    onSave({
+    return onSave({
       nombre: formData.nombre,
       descripcion: formData.descripcion || null,
       codigo_barras: formData.codigo_barras || null,
@@ -313,6 +322,24 @@ export function ProductDialog({
       permite_variantes: formData.permite_variantes,
       imagen_url,
     });
+  };
+
+  // Editar: boton de siempre, y se cierra al guardar.
+  const guardarEdicion = async () => {
+    if (await handleSave()) handleOpenChange(false);
+  };
+
+  // Crear: se desliza. Si algo no pasa (validacion, imagen, base) se rechaza
+  // para que la pastilla muestre el error y regrese; el aviso ya salio.
+  const crearDeslizando = async () => {
+    if (!(await handleSave())) throw new Error("No se guardó");
+  };
+
+  // Tras la pastilla azul: sonido y destello desde el control, y se cierra
+  // cuando el destello ya cubrio la pantalla (mismo ritmo que el POS).
+  const trasCrear = (origen: DOMRect | null) => {
+    celebrarAlta(origen);
+    window.setTimeout(() => handleOpenChange(false), 900);
   };
 
   // Margen en vivo mientras se escribe. Sale del mismo módulo que usan
@@ -655,30 +682,51 @@ export function ProductDialog({
           </div>
           )}
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            onClick={() => handleOpenChange(false)}
-          >
-            {t("common.cancel")}
-          </Button>
-          <SpecularActionButton
-            tone="add"
-            className="h-8"
-            onClick={handleSave}
-            disabled={saving || uploadingImage}
-          >
-            {uploadingImage
-              ? "Subiendo imagen..."
-              : saving
-                ? t("common.loading")
-                : editingProduct
-                  ? "Guardar cambios"
-                  : "Crear producto"}
-          </SpecularActionButton>
-        </DialogFooter>
+        {editingProduct ? (
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => handleOpenChange(false)}
+            >
+              {t("common.cancel")}
+            </Button>
+            <SpecularActionButton
+              tone="add"
+              className="h-8"
+              onClick={() => void guardarEdicion()}
+              disabled={saving || uploadingImage}
+            >
+              {uploadingImage
+                ? "Subiendo imagen..."
+                : saving
+                  ? t("common.loading")
+                  : "Guardar cambios"}
+            </SpecularActionButton>
+          </DialogFooter>
+        ) : (
+          // Mismo "desliza para confirmar" que cobrar en el POS, en azul.
+          <div className="flex flex-col items-stretch gap-2">
+            <DeslizarParaConfirmar
+              label="Desliza para crear producto"
+              doneLabel="Producto creado"
+              errorLabel="No se guardó"
+              successColor={COLOR_ALTA}
+              onConfirm={crearDeslizando}
+              onDone={trasCrear}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 self-center text-muted-foreground"
+              onClick={() => handleOpenChange(false)}
+              disabled={saving || uploadingImage}
+            >
+              {t("common.cancel")}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

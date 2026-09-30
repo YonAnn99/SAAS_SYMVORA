@@ -11,6 +11,7 @@ import { NewPurchaseDialog } from "@/features/inventory";
 import { NewSupplierDialog } from "@/features/inventory";
 import { PurchaseDetailDialog } from "@/features/inventory";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { useAccionRapida } from "@/hooks/use-accion-rapida";
 
 export default function PurchasesPage() {
   const t = useTranslations();
@@ -38,6 +39,18 @@ export default function PurchasesPage() {
     variants,
   } = usePurchases(tenantId, tenantLoading);
   const [compraAbierta, setCompraAbierta] = useState<string | null>(null);
+  const [pestana, setPestana] = useState("purchases");
+
+  // Desde la busqueda rapida (Ctrl/Cmd+K).
+  useAccionRapida("nueva-compra", () => setShowNewPurchaseDialog(true), !loading);
+  useAccionRapida(
+    "agregar-proveedor",
+    () => {
+      setPestana("suppliers");
+      setShowNewSupplierDialog(true);
+    },
+    !loading
+  );
 
   if (loading) {
     return (
@@ -58,7 +71,11 @@ export default function PurchasesPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="purchases" className="w-full animate-fade-in-up stagger-2">
+      <Tabs
+        value={pestana}
+        onValueChange={(v) => setPestana(String(v))}
+        className="w-full animate-fade-in-up stagger-2"
+      >
         <TabsList>
           <TabsTrigger value="purchases" className="gap-1.5 text-xs">
             <ShoppingCart className="h-3.5 w-3.5" />

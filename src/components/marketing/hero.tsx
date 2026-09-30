@@ -6,6 +6,7 @@ import * as m from "motion/react-m";
 import { ArrowRight, Play } from "lucide-react";
 import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./animations";
 import { PosMockup } from "./pos-mockup";
+import { GiroGiratorio } from "./giro-giratorio";
 import { SinLimites } from "./sin-limites";
 import { PromoBadgeEnLinea } from "./promo-badge";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, SECUNDARIA } from "./boton-capsula";
@@ -31,30 +32,23 @@ export function Hero() {
 
         {/* Headline */}
         <h1
-          className="entrada-suave text-4xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-neutral-50 max-w-3xl leading-[1.05] tracking-tighter"
+          className="entrada-suave text-4xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-white max-w-3xl leading-[1.05] tracking-tighter"
         >
-          {t("landing.hero.title")}{" "}
-          <span className="relative text-primary">
-            {t("landing.hero.highlight")}
-            <svg
-              className="absolute -bottom-1.5 left-0 w-full h-3 text-primary/30"
-              preserveAspectRatio="none"
-              viewBox="0 0 100 10"
-              aria-hidden="true"
-            >
-              <path
-                d="M0 5 Q 50 10 100 5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-              />
-            </svg>
-          </span>
+          {/* Renglones fijos: "...para tu tienda" / "hecho para tu" / giro. El
+              giro va SIEMPRE en su propio renglon: frases como "tienda de
+              cosmeticos" no caben junto a "para tu", y si unas veces cupiera y
+              otras no, el titulo cambiaria de alto y todo lo de abajo brincaria
+              cada 2 segundos. */}
+          {t("landing.hero.title")}
+          <br />
+          {t("landing.hero.highlight")}
+          {/* El giro rota en bucle: farmacia, papeleria, ferreteria... */}
+          <GiroGiratorio />
         </h1>
 
         {/* Subtitle */}
         <p
-          className="entrada-suave [animation-delay:80ms] text-lg sm:text-xl text-neutral-500 dark:text-neutral-400 max-w-xl leading-relaxed"
+          className="entrada-suave [animation-delay:80ms] text-lg sm:text-xl text-neutral-600 dark:text-white max-w-xl leading-relaxed"
         >
           {t("landing.hero.subtitle")}
         </p>
