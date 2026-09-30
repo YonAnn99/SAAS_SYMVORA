@@ -21,6 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { PurchaseWithRelations } from "../../types/inventory.types";
+import { PurchaseSwipeList } from "./purchase-swipe-list";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { purchaseStatusColors } from "../../services/purchase-service";
 
 interface PurchasesTableProps {
@@ -44,6 +46,19 @@ export function PurchasesTable({
   onOpen,
 }: PurchasesTableProps) {
   const t = useTranslations();
+  const confirmar = useConfirmar();
+
+  // Devolver no se deshace: cancela la compra, regresa el stock y, si aplica,
+  // el efectivo a la caja. Se pregunta antes, igual que al eliminar.
+  const devolver = async (purchase: PurchaseWithRelations) => {
+    const si = await confirmar({
+      titulo: `¿Devolver la compra de ${purchase.proveedor?.nombre || "este proveedor"}?`,
+      descripcion: "La compra se cancela y el stock regresa al inventario. Si se pagó con la caja todavía abierta, el efectivo vuelve a la caja.",
+      accion: "Devolver",
+      tono: "aviso",
+    });
+    if (si) onCancel(purchase.id);
+  };
 
   const canEdit = (estado: string) => estado === "PENDIENTE";
   const canMarkAsReceived = (estado: string) => estado === "PENDIENTE";
@@ -77,7 +92,21 @@ export function PurchasesTable({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Celular: una pastilla por compra. Tocar abre el desglose;
+              deslizar a la izquierda devuelve (o elimina, si no tiene
+              desglose). */}
+          <div className="md:hidden">
+            <PurchaseSwipeList
+              compras={purchases}
+              onOpen={onOpen}
+              onEdit={onEdit}
+              onUpdateStatus={onUpdateStatus}
+              onCancel={onCancel}
+              onDelete={onDelete}
+            />
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -167,7 +196,7 @@ export function PurchasesTable({
                               variant="outline"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() => onCancel(purchase.id)}
+                              onClick={() => void devolver(purchase)}
                               title="Cancelar y devolver el stock al inventario"
                             >
                               <Undo2 className="h-3.5 w-3.5 text-amber-600" />
@@ -186,6 +215,7 @@ export function PurchasesTable({
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </CardContent>
     </Card>

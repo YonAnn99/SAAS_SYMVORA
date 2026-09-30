@@ -45,33 +45,13 @@ import { SucursalesCheckboxes } from "@/features/users/components/sucursales-che
 import { useSucursal } from "@/contexts/sucursal-context";
 import type { UserRole } from "@/lib/types/database";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { roleColors, type InviteKey, type Member } from "@/features/users/tipos-usuarios";
+import { MemberSwipeList } from "@/features/users/components/member-swipe-list";
+import { InviteKeySwipeList } from "@/features/users/components/invite-key-swipe-list";
 import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
-
-const roleColors: Record<string, string> = {
-  SUPER_ADMIN: "bg-[#FDEBEC] text-[#9F2F2D] dark:bg-[#9F2F2D]/20 dark:text-[#F2A5A4]",
-  ORG_ADMIN: "bg-[#E1F3FE] text-[#1F6C9F] dark:bg-[#1F6C9F]/20 dark:text-[#7BB8DA]",
-  CAJERO: "bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]",
-};
-
-interface Member {
-  id: string;
-  tenant_id: string;
-  user_id: string;
-  role: string;
-  creado_en: string;
-  user_email: string;
-}
-
-interface InviteKey {
-  id: string;
-  email: string;
-  key: string;
-  role: string;
-  created_at: string;
-}
 
 export default function UsersPage() {
   const t = useTranslations();
@@ -218,8 +198,8 @@ export default function UsersPage() {
 
   // Sin dialogo de confirmacion: mantener presionado el boton de la fila
   // (`BotonEliminar`) ya es la confirmacion.
-  const handleDeleteMember = async (member: Member) => {
-    if (!tenantId) return;
+  const handleDeleteMember = async (member: Member): Promise<boolean> => {
+    if (!tenantId) return false;
 
     try {
       const response = await fetch(
@@ -234,8 +214,11 @@ export default function UsersPage() {
 
       toast.success("Miembro eliminado");
       fetchMemberships();
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al eliminar");
+      // La pastilla del celular se colapsa antes: con `false` reaparece.
+      return false;
     }
   };
 
@@ -271,8 +254,8 @@ export default function UsersPage() {
     }
   };
 
-  const handleRevokeKey = async (keyId: string) => {
-    if (!tenantId) return;
+  const handleRevokeKey = async (keyId: string): Promise<boolean> => {
+    if (!tenantId) return false;
 
     try {
       const response = await fetch(
@@ -287,8 +270,10 @@ export default function UsersPage() {
 
       toast.success("Clave revocada");
       fetchInviteKeys();
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al revocar clave");
+      return false;
     }
   };
 
@@ -366,7 +351,28 @@ export default function UsersPage() {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Celular: una pastilla por usuario (permisos/eliminar al
+                deslizar, sucursales a un costado). */}
+            <div className="md:hidden">
+              <MemberSwipeList
+                miembros={memberships}
+                canManage={canManage}
+                currentUserId={currentUserId}
+                hayVarias={hayVarias}
+                sucursalesDe={(m) => nombresDe(asignaciones[m.user_id])}
+                onPermisos={setPermissionsFor}
+                onSucursales={setSucursalesFor}
+                onCambiarRol={(m) =>
+                  setConfirmRoleChange({
+                    member: m,
+                    newRole: m.role === "CAJERO" ? "ORG_ADMIN" : "CAJERO",
+                  })
+                }
+                onEliminar={handleDeleteMember}
+              />
+            </div>
+            <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -451,7 +457,9 @@ export default function UsersPage() {
                         <BotonEliminar
                           nombre={membership.user_email ?? "este miembro"}
                           detalle="Pierde el acceso al negocio"
-                          onEliminar={() => handleDeleteMember(membership)}
+                          onEliminar={async () => {
+                            await handleDeleteMember(membership);
+                          }}
                         />
                       </TableCell>
                     )}
@@ -460,6 +468,7 @@ export default function UsersPage() {
               </TableBody>
             </Table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -479,7 +488,14 @@ export default function UsersPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            {/* Celular: una pastilla por clave; deslizar la elimina. */}
+            <div className="md:hidden">
+              <InviteKeySwipeList
+                claves={inviteKeys}
+                onEliminar={(k) => handleRevokeKey(k.id)}
+              />
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -513,7 +529,9 @@ export default function UsersPage() {
                         <BotonEliminar
                           nombre={`la clave de ${key.email}`}
                           detalle="Ya no servirá para entrar"
-                          onEliminar={() => handleRevokeKey(key.id)}
+                          onEliminar={async () => {
+                            await handleRevokeKey(key.id);
+                          }}
                         />
                       </TableCell>
                     </TableRow>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirmar } from "@/components/ui/confirmar";
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { ArrowLeft, MoreVertical, Tag } from "lucide-react";
@@ -35,6 +36,16 @@ export default function PriceListsPage() {
 
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState("");
+  const confirmar = useConfirmar();
+
+  // Borrar una lista no se deshace (sus precios especiales se pierden).
+  async function eliminarConfirmado(lista: Parameters<typeof eliminar>[0]) {
+    const si = await confirmar({
+      titulo: `¿Eliminar la lista ${lista.nombre}?`,
+      descripcion: "Se pierden sus precios especiales. Esta acción no se puede deshacer.",
+    });
+    if (si) await eliminar(lista);
+  }
 
   async function confirmarCreacion() {
     const lista = await crear(nombre);
@@ -134,7 +145,7 @@ export default function PriceListsPage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={() => void eliminar(l)}
+                      onClick={() => void eliminarConfirmado(l)}
                     >
                       Eliminar
                     </DropdownMenuItem>

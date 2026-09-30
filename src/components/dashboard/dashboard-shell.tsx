@@ -14,6 +14,7 @@ import { DemoBanner } from "@/components/demo/demo-banner";
 import { OpenRegisterPrompt } from "@/features/cash-register/components/open-register-prompt";
 import { TenantProvider } from "@/contexts/tenant-context";
 import { SucursalProvider } from "@/contexts/sucursal-context";
+import { ConfirmarProvider } from "@/components/ui/confirmar";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -26,6 +27,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           saber qué sucursales cargar. */}
       <SucursalProvider>
       <TutorialProvider>
+      {/* Una sola ventana de "¿Seguro?" para todo el panel (ver `confirmar.tsx`). */}
+      <ConfirmarProvider>
         <DemoBanner />
         <PolicyUpdateBanner />
         <AvisoEstadoPago />
@@ -57,6 +60,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TutorialDialog />
           <TutorialMinimized />
         </div>
+      </ConfirmarProvider>
       </TutorialProvider>
       </SucursalProvider>
     </TenantProvider>

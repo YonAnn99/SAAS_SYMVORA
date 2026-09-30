@@ -328,8 +328,12 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
         toast.success("Producto eliminado");
         setDeleteConfirm(null);
         void refetch();
+        return true;
       } catch {
         toast.error("Error al eliminar el producto");
+        // La fila deslizable del celular se colapsa ANTES de borrar: con
+        // `false` sabe que tiene que reaparecer.
+        return false;
       }
     },
     [refetch]

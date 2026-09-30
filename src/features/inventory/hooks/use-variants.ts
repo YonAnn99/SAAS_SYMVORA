@@ -192,8 +192,12 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
         toast.success("Variante eliminada");
         setDeleteConfirm(null);
         void refetch();
+        return true;
       } catch {
         toast.error("Error al eliminar la variante");
+        // La fila deslizable del celular se colapsa ANTES de borrar: con
+        // `false` sabe que tiene que reaparecer.
+        return false;
       }
     },
     [refetch]

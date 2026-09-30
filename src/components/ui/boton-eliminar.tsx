@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * El boton de eliminar de todo el sistema: se MANTIENE presionado para
- * confirmar (Hold Button de React Bits, `hold-button.tsx`). Mantenerlo 1.5 s
- * es la confirmacion, asi que no hace falta el dialogo "¿Seguro?"; soltarlo
- * antes no hace nada, y un toque corto solo avisa como se usa.
+ * El boton de eliminar de todo el sistema: se MANTIENE presionado (Hold
+ * Button de React Bits, `hold-button.tsx`) y, al completarse, abre la ventana
+ * "¿Seguro?" (`useConfirmar`): dos pasos a proposito, porque borrar no se
+ * deshace. Soltarlo antes no hace nada, y un toque corto solo avisa como se
+ * usa.
  *
  * Solo para borrar datos GUARDADOS (productos, ordenes, usuarios...). Quitar
  * un renglon de un formulario sin guardar (carrito del POS, renglones de una
@@ -13,9 +14,10 @@
  */
 
 import { useState } from "react";
-import { Check, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import HoldButton from "@/components/ui/hold-button";
+import { useConfirmar } from "@/components/ui/confirmar";
 import { cn } from "@/lib/utils";
 
 interface BotonEliminarProps {
@@ -39,9 +41,15 @@ export function BotonEliminar({
   className,
 }: BotonEliminarProps) {
   const [borrando, setBorrando] = useState(false);
+  const confirmar = useConfirmar();
   const ayuda = `Mantén presionado para eliminar ${nombre}${detalle ? `. ${detalle}` : ""}`;
 
   const eliminar = async () => {
+    const si = await confirmar({
+      titulo: `¿Eliminar ${nombre}?`,
+      descripcion: detalle ? `${detalle}.` : undefined,
+    });
+    if (!si) return;
     setBorrando(true);
     try {
       await onEliminar();
@@ -61,7 +69,9 @@ export function BotonEliminar({
         textColor="#e5484d"
         fillTextColor="#ffffff"
         icon={<Trash2 className="h-3.5 w-3.5" />}
-        doneIcon={<Check className="h-3.5 w-3.5" />}
+        // Al completarse NO muestra palomita: todavia falta confirmar en la
+        // ventana, y una palomita diria que ya se borro.
+        doneIcon={<Trash2 className="h-3.5 w-3.5" />}
         doneLabel={conTexto ? "Eliminado" : undefined}
         disabled={disabled || borrando}
         onHold={() => void eliminar()}

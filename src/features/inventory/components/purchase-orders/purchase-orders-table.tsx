@@ -26,6 +26,7 @@ import {
   orderEstadoColors,
   orderEstadoLabels,
 } from "../../services/purchase-order-service";
+import { PurchaseOrderSwipeList } from "./purchase-order-swipe-list";
 
 interface PurchaseOrdersTableProps {
   orders: OrdenCompra[];
@@ -33,7 +34,8 @@ interface PurchaseOrdersTableProps {
   loading: boolean;
   getSupplierName: (supplierId: string) => string;
   onEdit: (order: OrdenCompra) => void;
-  onDelete: (order: OrdenCompra) => void;
+  /** `false` si no se pudo borrar (la fila deslizable del celular reaparece). */
+  onDelete: (order: OrdenCompra) => void | Promise<boolean | void>;
   onAdd: () => void;
   onStatusChange: (order: OrdenCompra, newStatus: OrdenCompra["estado"]) => void;
   /** Abre el diálogo de recepción. */
@@ -101,7 +103,24 @@ export function PurchaseOrdersTable({
             </SpecularActionButton>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Celular: una pastilla por orden. Izquierda: eliminar/WhatsApp;
+              derecha: recibir; lapiz: editar el borrador; tocar: desglose. */}
+          <div className="md:hidden">
+            <PurchaseOrderSwipeList
+              ordenes={filteredOrders}
+              getSupplierName={getSupplierName}
+              getSupplierPhone={getSupplierPhone}
+              enviandoId={enviandoId}
+              onOpen={onOpen}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onWhatsApp={onWhatsApp}
+              onStatusChange={onStatusChange}
+              onReceive={onReceive}
+            />
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -238,7 +257,9 @@ export function PurchaseOrdersTable({
                           <BotonEliminar
                             nombre={`la orden ${order.numero_orden}`}
                             detalle="No se puede deshacer"
-                            onEliminar={() => onDelete(order)}
+                            onEliminar={async () => {
+                              await onDelete(order);
+                            }}
                           />
                         </div>
                       </TableCell>
@@ -248,6 +269,7 @@ export function PurchaseOrdersTable({
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </CardContent>
     </Card>

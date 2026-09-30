@@ -25,6 +25,7 @@ import { ProductsTable } from "@/features/inventory";
 import { QuickFilters } from "@/features/inventory";
 import { ImportProductsDialog } from "@/features/inventory";
 import { ProductsFilterDialog } from "@/features/inventory/components/products/products-filter-dialog";
+import { BarraProductosMovil } from "@/features/inventory/components/products/barra-productos-movil";
 import { Button } from "@/components/ui/button";
 import {
   VariantsSection,
@@ -190,17 +191,21 @@ export default function ProductsPage() {
             Gestiona tu catálogo de productos
           </p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        {/* En celular, cuadricula de 2x2 con los cuatro del mismo tamaño:
+            arriba sucursal y Agregar producto (lo del dia), abajo Importar y
+            Lista de precios. El orden visual sale de `order-*`; desde `sm`
+            vuelve a ser una fila con el orden de siempre. */}
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           {/* Con varias sucursales, la columna de existencias es la del local
               elegido aqui. No se dibuja en un negocio de un solo local. */}
-          <SucursalSelector className="w-[170px] h-8" />
+          <SucursalSelector className="order-1 h-8 w-full sm:order-none sm:w-[170px]" />
           {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
               Va el primero porque es lo que menos se usa a diario; los dos de
               la derecha son los del trabajo del día. */}
           {canManageInventory && (
             <SpecularActionButton
               tone="money"
-              className="h-8 active:scale-[0.98] transition-transform flex-1 sm:flex-none"
+              className="order-4 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
               onClick={() => router.push("/products/price-lists")}
             >
               Lista de precios
@@ -209,13 +214,13 @@ export default function ProductsPage() {
           {canImport && (
             <SpecularActionButton
               tone="neutral"
-              className="h-8 active:scale-[0.98] transition-transform flex-1 sm:flex-none"
+              className="order-3 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
               onClick={() => setShowImportDialog(true)}
             >
               {t("products.import.title")}
             </SpecularActionButton>
           )}
-          <span id="tutorial-add-product-btn" className="flex flex-1 sm:flex-none">
+          <span id="tutorial-add-product-btn" className="order-2 flex sm:order-none">
             {ofrecerVariante ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -296,8 +301,38 @@ export default function ProductsPage() {
         )}
 
         <TabsContent value="catalog" className="space-y-6 md:space-y-8">
-      {/* Search + Export */}
-      <div className="flex items-center gap-2 animate-fade-in-up stagger-2">
+      {/* Celular: busqueda + Filtros/CSV/PDF en un renglon y los filtros
+          como etiquetas (Multi Select de beUI) en otro. La barra de abajo, de
+          ~970 px en un solo renglon, desbordaba la pantalla. */}
+      <div className="animate-fade-in-up stagger-2 md:hidden">
+        <BarraProductosMovil
+          search={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          onFiltersChange={setFilters}
+          activeFilterCount={activeFilterCount}
+          onAbrirFiltros={() => setShowFilters(true)}
+          stockCounts={stockCounts}
+          sinMinimoCount={sinMinimoCount}
+          favoritosCount={favoritosCount}
+          categories={categories}
+          sinCategoriaCount={sinCategoriaCount}
+          placeholderBusqueda={t("common.search")}
+          exportar={
+            <DataTableToolbar
+              data={filteredProducts}
+              columns={exportColumns}
+              title="Productos"
+              filename="productos"
+              seleccion={productosSeleccionados}
+              nombreFilas="productos"
+            />
+          }
+        />
+      </div>
+
+      {/* Search + Export (tablet y escritorio) */}
+      <div className="hidden items-center gap-2 animate-fade-in-up stagger-2 md:flex">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input

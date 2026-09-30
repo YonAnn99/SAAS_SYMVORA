@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Proveedor } from "../../types/inventory.types";
+import { SupplierSwipeList } from "./supplier-swipe-list";
 
 interface SuppliersTableProps {
   suppliers: Proveedor[];
@@ -49,7 +50,12 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Celular: una pastilla por proveedor; deslizar (o tocar) edita. */}
+          <div className="md:hidden">
+            <SupplierSwipeList proveedores={suppliers} onEdit={onEdit} />
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -97,6 +103,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </CardContent>
     </Card>

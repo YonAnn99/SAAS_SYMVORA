@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { VarianteProducto } from "../../types/inventory.types";
+import { VariantSwipeList } from "./variant-swipe-list";
 
 interface VariantsTableProps {
   variants: VarianteProducto[];
@@ -26,7 +27,8 @@ interface VariantsTableProps {
   loading: boolean;
   getProductName: (productId: string) => string;
   onEdit: (variant: VarianteProducto) => void;
-  onDelete: (variant: VarianteProducto) => void;
+  /** `false` si no se pudo borrar (la fila deslizable del celular reaparece). */
+  onDelete: (variant: VarianteProducto) => void | Promise<boolean | void>;
   onAdd: () => void;
 }
 
@@ -72,7 +74,18 @@ export function VariantsTable({
             </SpecularActionButton>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Celular: una pastilla deslizable por variante (editar/eliminar al
+              deslizar), como en el Catalogo. */}
+          <div className="md:hidden">
+            <VariantSwipeList
+              variantes={filteredVariants}
+              getProductName={getProductName}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -144,7 +157,9 @@ export function VariantsTable({
                         <BotonEliminar
                           nombre={`la variante ${[variant.talla, variant.color].filter(Boolean).join(" / ") || ""}`.trim()}
                           detalle="No se puede deshacer"
-                          onEliminar={() => onDelete(variant)}
+                          onEliminar={async () => {
+                            await onDelete(variant);
+                          }}
                         />
                       </div>
                     </TableCell>
@@ -153,6 +168,7 @@ export function VariantsTable({
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </CardContent>
     </Card>

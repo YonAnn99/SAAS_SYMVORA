@@ -378,8 +378,12 @@ export function usePurchaseOrders(
         toast.success("Orden eliminada");
         setDeleteConfirm(null);
         void refetch();
+        return true;
       } catch {
         toast.error("Error al eliminar la orden");
+        // La fila deslizable del celular se colapsa ANTES de borrar: con
+        // `false` sabe que tiene que reaparecer.
+        return false;
       }
     },
     [refetch]

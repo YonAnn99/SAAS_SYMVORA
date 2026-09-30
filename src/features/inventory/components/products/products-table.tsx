@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
-import { Heart, Package, Pencil } from "lucide-react";
+import { Package, Pencil } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -26,20 +25,22 @@ import {
 } from "@/components/ui/table";
 import type { Producto } from "../../types/inventory.types";
 import { calcularMargenProducto } from "@/lib/profit";
-import { stockStatus } from "@/features/inventory/stock-status";
 import {
   unidadesPermitidas,
   valorParaEditar,
   type CampoInline,
 } from "@/features/inventory/inline-edit";
 import { EditableSelectCell, EditableTextCell } from "./editable-cell";
+import { FavoriteButton, StockBadge } from "./product-badges";
+import { ProductSwipeList } from "./product-swipe-list";
 
 interface ProductsTableProps {
   products: Producto[];
   filteredProducts: Producto[];
   loading: boolean;
   onEdit: (product: Producto) => void;
-  onDelete: (product: Producto) => void;
+  /** `false` si no se pudo borrar (la fila deslizable del celular reaparece). */
+  onDelete: (product: Producto) => void | Promise<boolean | void>;
   onAdd: () => void;
   /** Guardado de una sola celda. */
   onInlineSave: (
@@ -145,7 +146,24 @@ export function ProductsTable({
             </SpecularActionButton>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Celular: una pastilla deslizable por producto (editar/eliminar al
+              deslizar). La tabla de 9 columnas obligaba a desplazarse de lado. */}
+          <div className="md:hidden">
+            <ProductSwipeList
+              productos={filteredProducts}
+              seleccionados={seleccionados}
+              onToggleSeleccion={onToggleSeleccion}
+              onSeleccionarVisibles={onSeleccionarVisibles}
+              todosVisibles={todosVisibles}
+              algunosVisibles={algunosVisibles}
+              favoritos={favoritos}
+              onToggleFavorito={onToggleFavorito}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -307,7 +325,9 @@ export function ProductsTable({
                         <BotonEliminar
                           nombre={product.nombre}
                           detalle="No se puede deshacer"
-                          onEliminar={() => onDelete(product)}
+                          onEliminar={async () => {
+                            await onDelete(product);
+                          }}
                         />
                       </div>
                     </TableCell>
@@ -317,6 +337,7 @@ export function ProductsTable({
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </CardContent>
     </Card>
@@ -356,105 +377,5 @@ function ProductMarginCell({
     <span className={tone} title={`Ganas $${margen.gananciaUnitaria.toFixed(2)} por unidad`}>
       {margen.margenPct.toFixed(1)}%
     </span>
-  );
-}
-
-/**
- * Etiqueta de stock, en CUATRO estados.
- *
- * Antes eran dos (`stock <= minimo ? "Stock bajo" : "OK"`), lo que mostraba un
- * producto agotado como "Stock bajo" — y el filtro del diálogo lo clasificaba
- * como "Agotado". Ahora ambos leen de `stockStatus()`, así que no pueden
- * contradecirse.
- *
- * El cuarto es "Servicio": una asesoría o un envío a domicilio salían con la
- * etiqueta roja de "Agotado" porque nadie miraba `es_servicio`.
- */
-function StockBadge({
-  product,
-}: {
-  product: { stock_actual: number; stock_minimo: number; es_servicio?: boolean };
-}) {
-  const status = stockStatus(product);
-
-  if (status === "servicio") {
-    return (
-      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-        Servicio
-      </Badge>
-    );
-  }
-
-  if (status === "agotado") {
-    return (
-      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-        Agotado
-      </Badge>
-    );
-  }
-
-  if (status === "bajo") {
-    return (
-      <Badge
-        variant="secondary"
-        className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
-      >
-        Stock bajo
-      </Badge>
-    );
-  }
-
-  return (
-    <Badge
-      variant="secondary"
-      className="text-[10px] px-1.5 py-0 bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]"
-    >
-      OK
-    </Badge>
-  );
-}
-
-/**
- * El corazón de favoritos.
- *
- * SOBRE EL RELLENO: cuando está marcado se pinta con `fill-current` sobre
- * `text-foreground`, que en el tema oscuro ES BLANCO y en el claro casi negro.
- * Un blanco fijo (`fill-white`) cumpliría lo pedido a la vista en oscuro pero
- * desaparecería por completo sobre el fondo claro.
- *
- * Va a `h-7`, la misma altura que Editar y la papelera, para que la fila no
- * cambie de alto.
- */
-function FavoriteButton({
-  esFavorito,
-  onToggle,
-  nombre,
-}: {
-  esFavorito: boolean;
-  onToggle: () => void;
-  nombre: string;
-}) {
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-7 px-1.5 text-xs"
-      onClick={onToggle}
-      aria-pressed={esFavorito}
-      aria-label={
-        esFavorito
-          ? `Quitar ${nombre} de favoritos`
-          : `Marcar ${nombre} como favorito`
-      }
-      title={esFavorito ? "Quitar de favoritos" : "Marcar como favorito"}
-    >
-      <Heart
-        className={`h-3.5 w-3.5 ${
-          esFavorito
-            ? "fill-current text-foreground"
-            : "text-muted-foreground"
-        }`}
-      />
-    </Button>
   );
 }
