@@ -23,6 +23,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useModulos } from "@/hooks/use-modulos";
 import { sucursalDelPos } from "@/features/sucursales/seleccion";
 import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
+import { BotonImpresora } from "@/features/pos/components/boton-impresora";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { esFraccionable } from "@/lib/unidades";
@@ -622,13 +623,18 @@ export default function POSPage() {
           selectedPriceList={selectedPriceList}
           onPriceListChange={setSelectedPriceList}
           sucursalSlot={
-            modoDueno ? (
-              <PosSucursalSelector
-                sucursales={activas}
-                value={sucursalMostrador}
-                onChange={cambiarSucursal}
-              />
-            ) : null
+            <>
+              {modoDueno && (
+                <PosSucursalSelector
+                  sucursales={activas}
+                  value={sucursalMostrador}
+                  onChange={cambiarSucursal}
+                />
+              )}
+              {/* Impresora de tickets de este equipo: con ella el ticket sale
+                  directo, sin la ventana de impresion del navegador. */}
+              <BotonImpresora />
+            </>
           }
         />
 
@@ -841,6 +847,8 @@ export default function POSPage() {
           if (!open) setSaleReceipt(null);
         }}
         receipt={saleReceipt}
+        // Venta recien cobrada: con impresora conectada sale sola.
+        autoImprimir
       />
     </div>
 

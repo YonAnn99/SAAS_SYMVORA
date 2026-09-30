@@ -1,10 +1,11 @@
 "use client";
 
 import { abreviatura, formatearCantidad } from "@/lib/unidades";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
-import { Check, Printer } from "lucide-react";
+import { Check, Loader2, Printer } from "lucide-react";
+import { toast } from "sonner";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -26,20 +27,75 @@ import {
   totalArticulos,
 } from "../ticket-format";
 import type { SaleReceipt } from "../types/pos.types";
+import { useImpresora } from "../impresora/use-impresora";
+import { imprimirTicketVenta } from "../impresora/imprimir-ticket";
 
 interface TicketReceiptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receipt: SaleReceipt | null;
+  /**
+   * Venta recien cobrada en el POS: con impresora conectada y "Imprimir al
+   * cobrar" activo, el ticket sale solo al abrirse. La reimpresion desde
+   * Reportes no lo pasa: ahi nunca imprime sin pedirlo.
+   */
+  autoImprimir?: boolean;
 }
 
 export function TicketReceipt({
   open,
   onOpenChange,
   receipt,
+  autoImprimir = false,
 }: TicketReceiptProps) {
   const t = useTranslations();
   const { tenantName, tenantLogo, tenantAddress } = useCurrentTenant();
+  const impresora = useImpresora();
+  // Directo solo si hay impresora guardada y ESTE navegador tiene su conexion
+  // (en iPhone, por ejemplo, no): si no, la ventana de impresion de siempre.
+  const directo =
+    impresora.config !== null && impresora.soportadas.includes(impresora.config.tipo);
+  const [imprimiendo, setImprimiendo] = useState(false);
+  const [impreso, setImpreso] = useState<string | null>(null);
+  const autoHecho = useRef<string | null>(null);
+
+  const imprimirDirecto = async () => {
+    if (!receipt || !impresora.config) return;
+    setImprimiendo(true);
+    try {
+      await imprimirTicketVenta({
+        config: impresora.config,
+        receipt,
+        negocio: { nombre: tenantName ?? "", direccion: tenantAddress },
+        metodoPagoTexto: t(clavePagoI18n(receipt.paymentMethod)),
+        logoUrl: tenantLogo,
+      });
+      setImpreso(receipt.reference ?? "impreso");
+    } catch {
+      // Apagada o fuera de alcance: la ventana normal queda como respaldo.
+      toast.error("No se pudo imprimir en la impresora de tickets", {
+        action: { label: "Usar ventana de impresión", onClick: () => window.print() },
+      });
+    } finally {
+      setImprimiendo(false);
+    }
+  };
+
+  const imprimir = () => {
+    if (directo) void imprimirDirecto();
+    else window.print();
+  };
+
+  // Impresion automatica al cobrar: una sola vez por venta.
+  const claveVenta = receipt ? receipt.reference ?? String(receipt.total) : null;
+  useEffect(() => {
+    if (!open || !autoImprimir || !directo || !impresora.config?.auto || !claveVenta) return;
+    if (autoHecho.current === claveVenta) return;
+    autoHecho.current = claveVenta;
+    void imprimirDirecto();
+    // Solo al abrir el ticket de una venta nueva.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, claveVenta, autoImprimir, directo]);
 
   // `document` no existe en el servidor: el portal solo puede crearse ya
   // montado en el cliente.
@@ -206,12 +262,26 @@ export function TicketReceipt({
             <SpecularActionButton
               tone="money"
               className="h-8 w-full sm:w-auto"
-              onClick={() => window.print()}
+              onClick={imprimir}
+              disabled={imprimiendo}
             >
-              <Printer className="h-3.5 w-3.5 mr-1.5" />
-              Imprimir
+              {imprimiendo ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Printer className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              {impreso === (receipt.reference ?? "impreso") ? "Reimprimir" : "Imprimir"}
             </SpecularActionButton>
           </DialogFooter>
+          {directo && (
+            <p className="-mt-2 text-center text-[11px] text-muted-foreground">
+              {imprimiendo
+                ? `Imprimiendo en ${impresora.config?.nombre ?? "la impresora"}…`
+                : impreso === (receipt.reference ?? "impreso")
+                  ? `Impreso en ${impresora.config?.nombre ?? "la impresora"}`
+                  : `Se imprime directo en ${impresora.config?.nombre ?? "la impresora"}`}
+            </p>
+          )}
         </DialogContent>
       </Dialog>
 
