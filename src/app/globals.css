@@ -1051,3 +1051,83 @@ html {
 html.dark {
   color-scheme: dark;
 }
+
+/* ── Ventanas en tablet/escritorio: "Center Morph Modal" de beUI ─────────────
+   beui.dev/components/motion/center-morph-modal. La superficie completa se
+   despliega desde su centro exacto hacia los cuatro bordes y se pliega igual
+   al cerrar. Mismos valores que beUI (clip 48% -> 0, 0.43 s, curva
+   0.2/0/0.2/1, opacidad fija, radio constante), aplicados al Popup de Base UI
+   con CSS: Base UI espera a que termine la salida antes de desmontar.
+
+   Al abrir va SIN fill-mode: terminado, el clip-path desaparece y no recorta
+   el anillo del borde, sombras ni anillos de foco. El -1px deja ver el anillo
+   (`ring-1` es una sombra por fuera) durante la animacion. Al cerrar, con
+   `forwards`, para que no reaparezca abierta un cuadro antes de desmontarse. */
+.dialogo-despliegue {
+  --dialogo-radio: var(--radius-xl);
+}
+.dialogo-despliegue[data-open] {
+  animation: dialogo-desplegar 0.43s cubic-bezier(0.2, 0, 0.2, 1);
+}
+.dialogo-despliegue[data-closed] {
+  animation: dialogo-plegar 0.43s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+/* La X llega al final del despliegue y se va primero. */
+.dialogo-despliegue[data-open] > [data-slot="dialog-close"] {
+  animation: dialogo-x-entrada 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+}
+.dialogo-despliegue[data-closed] > [data-slot="dialog-close"] {
+  animation: dialogo-x-salida 0.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dialogo-desplegar {
+  from {
+    clip-path: inset(48% 48% 48% 48% round var(--dialogo-radio));
+  }
+  to {
+    clip-path: inset(-1px -1px -1px -1px round calc(var(--dialogo-radio) + 1px));
+  }
+}
+@keyframes dialogo-plegar {
+  from {
+    clip-path: inset(-1px -1px -1px -1px round calc(var(--dialogo-radio) + 1px));
+  }
+  to {
+    clip-path: inset(48% 48% 48% 48% round var(--dialogo-radio));
+  }
+}
+@keyframes dialogo-x-entrada {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+@keyframes dialogo-x-salida {
+  to {
+    opacity: 0;
+    scale: 0.88;
+  }
+}
+@keyframes dialogo-desvanecer-entrada {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dialogo-desvanecer-salida {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogo-despliegue[data-open] {
+    animation: dialogo-desvanecer-entrada 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .dialogo-despliegue[data-closed] {
+    animation: dialogo-desvanecer-salida 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .dialogo-despliegue[data-open] > [data-slot="dialog-close"],
+  .dialogo-despliegue[data-closed] > [data-slot="dialog-close"] {
+    animation: none;
+  }
+}

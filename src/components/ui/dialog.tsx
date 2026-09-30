@@ -33,7 +33,8 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        // 0.28 s con la curva EASE_OUT de beUI: acompaña el despliegue de la ventana.
+        "fixed inset-0 isolate z-50 bg-black/10 duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         !noBlur && "supports-backdrop-filter:backdrop-blur-xs",
         className
       )}
@@ -130,30 +131,41 @@ function HojaMovil({
         className="fixed inset-x-0 bottom-0 z-50 outline-none duration-300 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom motion-reduce:animate-none"
         {...props}
       >
+        {/* Superficie (alto, esquinas, arrastre) y, dentro, el asa FUERA del
+            area con scroll. Antes el asa era `sticky` con margenes negativos
+            dentro del mismo scroll: al enfocar el primer campo el navegador
+            desplazaba unos pixeles y el asa tapaba la parte de arriba del
+            titulo. */}
         <div
           ref={superficie}
           className={cn(
-            "relative grid gap-4 bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10",
-            className,
-            // Lo de escritorio (max-w, mx, max-h, esquinas) no aplica aqui.
-            "mx-0 w-full max-w-none rounded-t-3xl rounded-b-none overflow-y-auto overscroll-contain",
-            "pb-[max(1rem,env(safe-area-inset-bottom))]",
-            expandida ? "h-[92dvh] max-h-[92dvh]" : "max-h-[85dvh]"
+            "relative flex w-full flex-col overflow-hidden rounded-t-3xl bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10",
+            expandida ? "h-[92dvh]" : "max-h-[85dvh]"
           )}
           style={{ transition: `height 0.4s ${CURVA_CAJON}` }}
         >
-          {/* El asa: franja tactil de lado a lado, pegada arriba al desplazar. */}
+          {/* El asa: franja tactil de lado a lado, siempre arriba. */}
           <div
             onPointerDown={alPresionar}
             onPointerMove={alMover}
             onPointerUp={alSoltar}
             onPointerCancel={alSoltar}
-            className="sticky top-0 z-10 -mx-4 -mt-4 -mb-2 flex cursor-grab touch-none select-none justify-center bg-popover pt-2.5 pb-2 active:cursor-grabbing"
+            className="flex shrink-0 cursor-grab touch-none select-none justify-center pt-2.5 pb-1 active:cursor-grabbing"
             aria-hidden="true"
           >
             <div className="h-1.5 w-10 rounded-full bg-muted-foreground/40" />
           </div>
-          {children}
+          <div
+            className={cn(
+              "grid min-h-0 flex-1 gap-4 p-4 pt-2",
+              className,
+              // Lo de escritorio (max-w, mx, max-h, esquinas) no aplica aqui.
+              "mx-0 w-full max-w-none max-h-none rounded-none overflow-y-auto overscroll-contain",
+              "pb-[max(1rem,env(safe-area-inset-bottom))]"
+            )}
+          >
+            {children}
+          </div>
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot="dialog-close"
@@ -182,10 +194,17 @@ function DialogContent({
   children,
   showCloseButton = true,
   noBlur,
+  despliegue = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
   noBlur?: boolean
+  /**
+   * Tablet/escritorio: la ventana se despliega desde su centro (el "Center
+   * Morph Modal" de beUI, `.dialogo-despliegue` en globals.css). `false` para
+   * las que traen su propia animacion o no van centradas (el tutorial).
+   */
+  despliegue?: boolean
 }) {
   // En celular, hoja deslizable desde abajo; en tablet y escritorio, la ventana
   // centrada de siempre.
@@ -204,7 +223,8 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm",
+          despliegue && "dialogo-despliegue",
           className
         )}
         {...props}

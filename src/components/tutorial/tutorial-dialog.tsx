@@ -152,6 +152,7 @@ export function TutorialDialog() {
           ref={contentRef}
           noBlur
           showCloseButton={false}
+          despliegue={false}
           className={cn(
             "sm:max-w-[380px] p-0 gap-0 overflow-hidden",
             "data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-2",
