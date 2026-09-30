@@ -18,6 +18,7 @@ import { calcularMargenProducto } from "@/lib/profit";
 import { FileUpload } from "@/components/ui/file-upload";
 import { IMAGEN_PRODUCTO } from "@/lib/imagen-validacion";
 import { Sparkles, Undo2 } from "lucide-react";
+import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,20 @@ import {
   type ProductInput,
 } from "../../services/product-service";
 import { generateNextBarcode, generateNextSku } from "../../services/product-service";
+
+/** En que seccion del formulario vive cada campo (para abrirla si falta). */
+const SECCION_DE_CAMPO: Record<string, number> = {
+  nombre: 0,
+  descripcion: 0,
+  unidad_medida: 0,
+  categoria: 0,
+  precio_venta: 1,
+  costo_compra: 1,
+  stock_actual: 2,
+  stock_minimo: 2,
+  codigo_barras: 3,
+  sku: 3,
+};
 
 interface ProductDialogProps {
   open: boolean;
@@ -157,8 +172,12 @@ export function ProductDialog({
     }
   };
 
+  // Seccion abierta (0 = Datos del producto). Siempre se empieza por ahi.
+  const [seccion, setSeccion] = useState(0);
+
   const handleOpenChange = (next: boolean) => {
     if (!next) {
+      setSeccion(0);
       setFormData(defaultProductFormData);
       setImagenFile(null);
       setImagenPreview(null);
@@ -274,6 +293,14 @@ export function ProductDialog({
 
   /** Valida, sube la imagen y guarda. `true` si quedo guardado. */
   const handleSave = async (): Promise<boolean> => {
+    // Precio VACIO no es precio 0: antes se guardaba en 0 sin avisar, y con el
+    // precio dentro de una seccion cerrada es facil pasarlo por alto. Un 0
+    // escrito a proposito (regalo, promocion) sigue valiendo.
+    if (formData.nombre.trim() && formData.precio_venta.trim() === "") {
+      toast.error("Captura el precio de venta");
+      setSeccion(SECCION_DE_CAMPO.precio_venta);
+      return false;
+    }
     const parsed = productSchema.safeParse({
       ...formData,
       precio_venta: parseFloat(formData.precio_venta) || 0,
@@ -283,7 +310,11 @@ export function ProductDialog({
     });
 
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      const issue = parsed.error.issues[0];
+      toast.error(issue.message);
+      // El dato que falta puede estar en una seccion cerrada: se abre esa.
+      const campo = String(issue.path[0] ?? "");
+      if (campo in SECCION_DE_CAMPO) setSeccion(SECCION_DE_CAMPO[campo]);
       return false;
     }
 
@@ -369,6 +400,27 @@ export function ProductDialog({
         ? "Total del negocio. Elige una sucursal en el selector para editarlas."
         : "Elige una sucursal en el selector para cargar existencias iniciales, o déjalas en 0.";
 
+  // Lo que se ve de cada seccion cerrada.
+  const resumenDatos = [
+    formData.unidad_medida ? t(`products.units.${formData.unidad_medida}`) : null,
+    formData.categoria || null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const resumenPrecio = formData.precio_venta
+    ? `$${parseFloat(formData.precio_venta || "0").toFixed(2)}${
+        margenEnVivo && !margenEnVivo.esPerdida
+          ? ` · margen ${margenEnVivo.margenPct.toFixed(1)}%`
+          : margenEnVivo?.esPerdida
+            ? " · con pérdida"
+            : ""
+      }`
+    : "Sin precio";
+  const resumenInventario = formData.es_servicio
+    ? "Servicio"
+    : `${formData.stock_actual || 0} en stock`;
+  const resumenCodigos = [formData.codigo_barras, formData.sku].filter(Boolean).join(" · ");
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
@@ -382,7 +434,12 @@ export function ProductDialog({
               : "Agrega un nuevo producto a tu catálogo"}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        {/* En secciones desplegables (una abierta a la vez), como la creacion
+            de cuenta: la ventana con todos los campos seguidos era muy larga.
+            Cerrada, cada seccion resume lo capturado. */}
+        <Accordion variante="panel" activeIndex={seccion} onActiveIndexChange={setSeccion}>
+          <AccordionItem title="Datos del producto" index={0} resumen={resumenDatos}>
+            <div className="space-y-4 pt-1">
           <div className="space-y-1.5">
             <Label className="text-xs">Nombre *</Label>
             <Input
@@ -400,121 +457,6 @@ export function ProductDialog({
               onChange={(e) => updateField("descripcion", e.target.value)}
               className="text-sm min-h-[60px]"
             />
-          </div>
-          {/* `allowCamera` dibuja "Tomar foto" solo en móvil. El texto de ayuda
-              ya no habla de 2MB ni de formatos: entra cualquier foto de celular
-              y sale un webp cuadrado, y decía "JPG, PNG" mientras aceptaba SVG. */}
-          <FileUpload
-            label="Imagen del producto"
-            preview={imagenPreview}
-            onFileSelect={handleImagenSelect}
-            onFileRemove={handleImagenRemove}
-            dragDropText="Arrastra una foto del producto o haz clic para seleccionar"
-            maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
-            opciones={IMAGEN_PRODUCTO}
-            accept="image/*"
-            allowCamera
-          />
-
-          {/* Quitar el fondo es OPCIONAL y cuesta dinero por imagen, así que
-              solo aparece cuando hay una foto recién elegida y solo actúa si el
-              cliente lo pide. Sobre la imagen ya guardada de un producto que se
-              está editando no se ofrece: ya está en Storage y reprocesarla sería
-              pagar por algo que nadie pidió. */}
-          {imagenFile && (
-            <div className="flex items-center gap-2">
-              {imagenOriginal ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs"
-                  onClick={handleRestaurarOriginal}
-                >
-                  <Undo2 className="mr-1.5 h-3.5 w-3.5" />
-                  Restaurar original
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs"
-                  disabled={quitandoFondo}
-                  onClick={() => void handleQuitarFondo()}
-                >
-                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  {quitandoFondo ? "Quitando fondo..." : "Quitar fondo"}
-                </Button>
-              )}
-              {imagenOriginal && !conMarcaDeAgua && (
-                <span className="text-xs text-muted-foreground">
-                  Fondo eliminado
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* La llave de sandbox marca TODAS las imágenes. Se avisa en el
-              momento y con "Restaurar original" a un clic, en vez de dejar que
-              el comerciante guarde una foto marcada sin enterarse. Desaparece
-              solo el día que se use la llave live. */}
-          {conMarcaDeAgua && (
-            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-              Imagen de prueba: lleva marca de agua. No la guardes en tu
-              catálogo — usa &quot;Restaurar original&quot;.
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">
-                  Código de barras
-                  {!editingProduct && autoBarcode && formData.codigo_barras && (
-                    <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
-                  )}
-                </Label>
-                {!editingProduct && (
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox
-                      id="auto-barcode"
-                      checked={autoBarcode}
-                      onCheckedChange={(checked) => handleAutoBarcodeToggle(Boolean(checked))}
-                    />
-                    <label
-                      htmlFor="auto-barcode"
-                      className="text-[11px] text-muted-foreground cursor-pointer select-none"
-                    >
-                      Automático
-                    </label>
-                  </div>
-                )}
-              </div>
-              <Input
-                ref={barcodeInputRef}
-                placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : "EAN-13"}
-                value={formData.codigo_barras}
-                onChange={(e) => updateField("codigo_barras", e.target.value)}
-                className="h-8 text-sm font-mono"
-                readOnly={!editingProduct && autoBarcode}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">
-                  SKU
-                  {!editingProduct && formData.sku && (
-                    <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
-                  )}
-                </Label>
-              </div>
-              <Input
-                placeholder="SKU-001"
-                value={formData.sku}
-                onChange={(e) => updateField("sku", e.target.value)}
-                className="h-8 text-sm font-mono"
-              />
-            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -547,6 +489,10 @@ export function ProductDialog({
               />
             </div>
           </div>
+            </div>
+          </AccordionItem>
+          <AccordionItem title="Precio y costo" index={1} resumen={resumenPrecio}>
+            <div className="space-y-4 pt-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Precio de venta *</Label>
@@ -600,6 +546,10 @@ export function ProductDialog({
               )}
             </div>
           )}
+            </div>
+          </AccordionItem>
+          <AccordionItem title="Inventario" index={2} resumen={resumenInventario}>
+            <div className="space-y-4 pt-1">
           {/* En un servicio los campos de stock DESAPARECEN, no se deshabilitan:
               dejarlos en gris seguiría sugiriendo que importan, y no importan —
               la venta de un servicio ya no descuenta existencias. */}
@@ -681,7 +631,131 @@ export function ProductDialog({
             </p>
           </div>
           )}
-        </div>
+            </div>
+          </AccordionItem>
+          <AccordionItem title="Códigos" index={3} resumen={resumenCodigos}>
+            <div className="space-y-4 pt-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">
+                  Código de barras
+                  {!editingProduct && autoBarcode && formData.codigo_barras && (
+                    <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
+                  )}
+                </Label>
+                {!editingProduct && (
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      id="auto-barcode"
+                      checked={autoBarcode}
+                      onCheckedChange={(checked) => handleAutoBarcodeToggle(Boolean(checked))}
+                    />
+                    <label
+                      htmlFor="auto-barcode"
+                      className="text-[11px] text-muted-foreground cursor-pointer select-none"
+                    >
+                      Automático
+                    </label>
+                  </div>
+                )}
+              </div>
+              <Input
+                ref={barcodeInputRef}
+                placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : "EAN-13"}
+                value={formData.codigo_barras}
+                onChange={(e) => updateField("codigo_barras", e.target.value)}
+                className="h-8 text-sm font-mono"
+                readOnly={!editingProduct && autoBarcode}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">
+                  SKU
+                  {!editingProduct && formData.sku && (
+                    <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
+                  )}
+                </Label>
+              </div>
+              <Input
+                placeholder="SKU-001"
+                value={formData.sku}
+                onChange={(e) => updateField("sku", e.target.value)}
+                className="h-8 text-sm font-mono"
+              />
+            </div>
+          </div>
+            </div>
+          </AccordionItem>
+          <AccordionItem title="Imagen" index={4} resumen={imagenPreview ? "Con foto" : "Sin foto"}>
+            <div className="space-y-4 pt-1">
+          {/* `allowCamera` dibuja "Tomar foto" solo en móvil. El texto de ayuda
+              ya no habla de 2MB ni de formatos: entra cualquier foto de celular
+              y sale un webp cuadrado, y decía "JPG, PNG" mientras aceptaba SVG. */}
+          <FileUpload
+            preview={imagenPreview}
+            onFileSelect={handleImagenSelect}
+            onFileRemove={handleImagenRemove}
+            dragDropText="Arrastra una foto del producto o haz clic para seleccionar"
+            maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
+            opciones={IMAGEN_PRODUCTO}
+            accept="image/*"
+            allowCamera
+          />
+
+          {/* Quitar el fondo es OPCIONAL y cuesta dinero por imagen, así que
+              solo aparece cuando hay una foto recién elegida y solo actúa si el
+              cliente lo pide. Sobre la imagen ya guardada de un producto que se
+              está editando no se ofrece: ya está en Storage y reprocesarla sería
+              pagar por algo que nadie pidió. */}
+          {imagenFile && (
+            <div className="flex items-center gap-2">
+              {imagenOriginal ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleRestaurarOriginal}
+                >
+                  <Undo2 className="mr-1.5 h-3.5 w-3.5" />
+                  Restaurar original
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={quitandoFondo}
+                  onClick={() => void handleQuitarFondo()}
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  {quitandoFondo ? "Quitando fondo..." : "Quitar fondo"}
+                </Button>
+              )}
+              {imagenOriginal && !conMarcaDeAgua && (
+                <span className="text-xs text-muted-foreground">
+                  Fondo eliminado
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* La llave de sandbox marca TODAS las imágenes. Se avisa en el
+              momento y con "Restaurar original" a un clic, en vez de dejar que
+              el comerciante guarde una foto marcada sin enterarse. Desaparece
+              solo el día que se use la llave live. */}
+          {conMarcaDeAgua && (
+            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              Imagen de prueba: lleva marca de agua. No la guardes en tu
+              catálogo — usa &quot;Restaurar original&quot;.
+            </p>
+          )}
+            </div>
+          </AccordionItem>
+        </Accordion>
         {editingProduct ? (
           <DialogFooter>
             <Button

@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+import { useEsMovil } from "@/hooks/use-es-movil"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -41,6 +42,141 @@ function DialogOverlay({
   )
 }
 
+/** La curva de cajon de beUI (`EASE_DRAWER` en `lib/ease.ts`). */
+const CURVA_CAJON = "cubic-bezier(0.32, 0.72, 0, 1)"
+
+/**
+ * En celular, la ventana es una hoja que sube desde abajo (el Bottom Sheet de
+ * beUI, integrado aqui para que TODAS las ventanas lo hereden sin tocarlas):
+ *
+ *   asa hacia arriba  -> se expande (92 % de la pantalla)
+ *   asa hacia abajo   -> regresa a su altura; si ya estaba en ella, se cierra
+ *
+ * Solo se arrastra desde el asa (como en beUI): desplazar el contenido o
+ * seleccionar texto no mueve la ventana. Cerrar pasa por un `Close` de Base UI,
+ * asi cada ventana recibe su `onOpenChange(false)` como con la X.
+ */
+function HojaMovil({
+  className,
+  children,
+  showCloseButton,
+  noBlur,
+  ...props
+}: DialogPrimitive.Popup.Props & {
+  showCloseButton: boolean
+  noBlur?: boolean
+}) {
+  const superficie = React.useRef<HTMLDivElement>(null)
+  const cerrar = React.useRef<HTMLButtonElement>(null)
+  const [expandida, setExpandida] = React.useState(false)
+  const arrastre = React.useRef<{
+    y0: number
+    yPrevio: number
+    tPrevio: number
+    velocidad: number
+  } | null>(null)
+
+  const mover = (desplazamiento: number, animar: boolean) => {
+    const el = superficie.current
+    if (!el) return
+    el.style.transition = animar
+      ? `transform 0.4s ${CURVA_CAJON}, height 0.4s ${CURVA_CAJON}`
+      : "none"
+    el.style.transform = desplazamiento ? `translateY(${desplazamiento}px)` : ""
+  }
+
+  const alPresionar = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    arrastre.current = { y0: e.clientY, yPrevio: e.clientY, tPrevio: e.timeStamp, velocidad: 0 }
+  }
+
+  const alMover = (e: React.PointerEvent<HTMLDivElement>) => {
+    const a = arrastre.current
+    if (!a) return
+    const dy = e.clientY - a.y0
+    const dt = Math.max(1, e.timeStamp - a.tPrevio)
+    a.velocidad = (e.clientY - a.yPrevio) / dt
+    a.yPrevio = e.clientY
+    a.tPrevio = e.timeStamp
+    // Hacia abajo sigue al dedo; hacia arriba con resistencia (como beUI).
+    mover(dy > 0 ? dy : dy * 0.25, false)
+  }
+
+  const alSoltar = (e: React.PointerEvent<HTMLDivElement>) => {
+    const a = arrastre.current
+    arrastre.current = null
+    if (!a) return
+    const dy = e.clientY - a.y0
+    const v = a.velocidad // px/ms; positiva = hacia abajo
+
+    if (dy > 120 || v > 0.6) {
+      if (expandida) {
+        setExpandida(false)
+        mover(0, true)
+      } else {
+        cerrar.current?.click()
+      }
+      return
+    }
+    if (dy < -60 || v < -0.5) setExpandida(true)
+    mover(0, true)
+  }
+
+  return (
+    <DialogPortal>
+      <DialogOverlay noBlur={noBlur} />
+      <DialogPrimitive.Popup
+        data-slot="dialog-content"
+        className="fixed inset-x-0 bottom-0 z-50 outline-none duration-300 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom motion-reduce:animate-none"
+        {...props}
+      >
+        <div
+          ref={superficie}
+          className={cn(
+            "relative grid gap-4 bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10",
+            className,
+            // Lo de escritorio (max-w, mx, max-h, esquinas) no aplica aqui.
+            "mx-0 w-full max-w-none rounded-t-3xl rounded-b-none overflow-y-auto overscroll-contain",
+            "pb-[max(1rem,env(safe-area-inset-bottom))]",
+            expandida ? "h-[92dvh] max-h-[92dvh]" : "max-h-[85dvh]"
+          )}
+          style={{ transition: `height 0.4s ${CURVA_CAJON}` }}
+        >
+          {/* El asa: franja tactil de lado a lado, pegada arriba al desplazar. */}
+          <div
+            onPointerDown={alPresionar}
+            onPointerMove={alMover}
+            onPointerUp={alSoltar}
+            onPointerCancel={alSoltar}
+            className="sticky top-0 z-10 -mx-4 -mt-4 -mb-2 flex cursor-grab touch-none select-none justify-center bg-popover pt-2.5 pb-2 active:cursor-grabbing"
+            aria-hidden="true"
+          >
+            <div className="h-1.5 w-10 rounded-full bg-muted-foreground/40" />
+          </div>
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              render={
+                <Button
+                  variant="ghost"
+                  className="absolute top-3 right-2"
+                  size="icon-sm"
+                />
+              }
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          )}
+          {/* Cierre por arrastre: el mismo camino que la X. */}
+          <DialogPrimitive.Close ref={cerrar} tabIndex={-1} aria-hidden="true" className="sr-only" />
+        </div>
+      </DialogPrimitive.Popup>
+    </DialogPortal>
+  )
+}
+
 function DialogContent({
   className,
   children,
@@ -51,6 +187,17 @@ function DialogContent({
   showCloseButton?: boolean
   noBlur?: boolean
 }) {
+  // En celular, hoja deslizable desde abajo; en tablet y escritorio, la ventana
+  // centrada de siempre.
+  const esMovil = useEsMovil()
+  if (esMovil) {
+    return (
+      <HojaMovil className={className} showCloseButton={showCloseButton} noBlur={noBlur} {...props}>
+        {children}
+      </HojaMovil>
+    )
+  }
+
   return (
     <DialogPortal>
       <DialogOverlay noBlur={noBlur} />
@@ -107,6 +254,8 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        // En celular (hoja deslizable) los botones quedan siempre a la vista.
+        "max-sm:sticky max-sm:bottom-0 max-sm:z-10 max-sm:rounded-none max-sm:bg-popover",
         className
       )}
       {...props}
