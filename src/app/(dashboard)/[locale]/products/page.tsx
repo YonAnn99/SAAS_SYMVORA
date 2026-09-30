@@ -25,6 +25,7 @@ import { ProductsTable } from "@/features/inventory";
 import { QuickFilters } from "@/features/inventory";
 import { ImportProductsDialog } from "@/features/inventory";
 import { ProductsFilterDialog } from "@/features/inventory/components/products/products-filter-dialog";
+import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { BarraProductosMovil } from "@/features/inventory/components/products/barra-productos-movil";
 import { Button } from "@/components/ui/button";
 import {
@@ -339,8 +340,10 @@ export default function ProductsPage() {
             placeholder={t("common.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 text-sm"
+            className="pl-8 pr-9 h-8 text-sm"
           />
+          {/* La busqueda ya filtra por codigo de barras: el leido se escribe ahi. */}
+          <BotonEscanear modo="uno" titulo="Buscar por código" onCodigo={setSearch} />
         </div>
         <Button
           variant="outline"

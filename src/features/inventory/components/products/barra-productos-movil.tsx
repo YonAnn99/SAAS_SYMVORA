@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import {
   MultiSelect,
   MultiSelectContent,
@@ -107,8 +108,9 @@ export function BarraProductosMovil({
             placeholder={placeholderBusqueda}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-9 pl-8 text-sm"
+            className="h-9 pl-8 pr-9 text-sm"
           />
+          <BotonEscanear modo="uno" titulo="Buscar por código" onCodigo={onSearchChange} />
         </div>
         <Button
           variant="outline"

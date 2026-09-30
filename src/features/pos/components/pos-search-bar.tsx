@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BotonEscanear } from "@/components/escaner/boton-escanear";
+import type { ResultadoEscaneo } from "@/components/escaner/escaner-camara";
 
 /** Valor del desplegable cuando no hay lista elegida: precios normales. */
 export const SIN_LISTA = "none";
@@ -25,6 +27,8 @@ interface PosSearchBarProps {
   search: string;
   onSearchChange: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
+  /** Codigo leido con la camara (modo continuo): agrega y responde. */
+  onCodigoCamara?: (codigo: string) => ResultadoEscaneo;
   categories: string[];
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
@@ -43,6 +47,7 @@ export function PosSearchBar({
   search,
   onSearchChange,
   onKeyDown,
+  onCodigoCamara,
   categories,
   selectedCategory,
   onCategoryChange,
@@ -71,8 +76,15 @@ export function PosSearchBar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={onKeyDown}
-          className="pl-8 h-9"
+          className={onCodigoCamara ? "pl-8 pr-9 h-9" : "pl-8 h-9"}
         />
+        {onCodigoCamara && (
+          <BotonEscanear
+            modo="continuo"
+            titulo="Escanear productos"
+            onCodigo={onCodigoCamara}
+          />
+        )}
       </div>
       {sucursalSlot}
       {showCategorySelect && (

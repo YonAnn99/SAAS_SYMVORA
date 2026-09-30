@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
 import { COLOR_ALTA, SONIDO_ALTA, celebrarAlta, precargarSonido } from "@/lib/celebracion";
+import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -660,14 +661,25 @@ export function ProductDialog({
                   </div>
                 )}
               </div>
-              <Input
-                ref={barcodeInputRef}
-                placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : "EAN-13"}
-                value={formData.codigo_barras}
-                onChange={(e) => updateField("codigo_barras", e.target.value)}
-                className="h-8 text-sm font-mono"
-                readOnly={!editingProduct && autoBarcode}
-              />
+              <div className="relative">
+                <Input
+                  ref={barcodeInputRef}
+                  placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : "EAN-13"}
+                  value={formData.codigo_barras}
+                  onChange={(e) => updateField("codigo_barras", e.target.value)}
+                  className="h-8 pr-9 text-sm font-mono"
+                  readOnly={!editingProduct && autoBarcode}
+                />
+                <BotonEscanear
+                  modo="uno"
+                  titulo="Escanear código del producto"
+                  onCodigo={(codigo) => {
+                    // Se leyo el codigo real del empaque: manda sobre el automatico.
+                    if (autoBarcode) setAutoBarcode(false);
+                    updateField("codigo_barras", codigo);
+                  }}
+                />
+              </div>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">

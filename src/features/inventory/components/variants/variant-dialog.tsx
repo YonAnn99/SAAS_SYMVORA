@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
 import { COLOR_ALTA, SONIDO_ALTA, celebrarAlta, precargarSonido } from "@/lib/celebracion";
+import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -250,12 +251,19 @@ export function VariantDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Código de barras</Label>
-              <Input
-                placeholder="EAN-13"
-                value={formData.codigo_barras}
-                onChange={(e) => updateField("codigo_barras", e.target.value)}
-                className="h-8 text-sm font-mono"
-              />
+              <div className="relative">
+                <Input
+                  placeholder="EAN-13"
+                  value={formData.codigo_barras}
+                  onChange={(e) => updateField("codigo_barras", e.target.value)}
+                  className="h-8 pr-9 text-sm font-mono"
+                />
+                <BotonEscanear
+                  modo="uno"
+                  titulo="Escanear código de la variante"
+                  onCodigo={(codigo) => updateField("codigo_barras", codigo)}
+                />
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">

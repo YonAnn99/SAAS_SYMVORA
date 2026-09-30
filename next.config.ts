@@ -11,7 +11,9 @@ const isProd = process.env.NODE_ENV === "production";
 function securityHeaders() {
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://js.sentry-cdn.com https://browser.sentry-cdn.com" +
+    // 'wasm-unsafe-eval': el lector de codigos por camara (zxing, en iPhone y
+    // navegadores sin BarcodeDetector) compila WebAssembly. Solo WASM, no eval.
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://js.sentry-cdn.com https://browser.sentry-cdn.com" +
       (isDev ? " 'unsafe-eval'" : ""),
     "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com",
     "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://lh3.googleusercontent.com",

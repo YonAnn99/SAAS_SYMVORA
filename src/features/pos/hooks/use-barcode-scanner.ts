@@ -3,6 +3,41 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Producto } from "@/lib/types/database";
+import type { ResultadoEscaneo } from "@/components/escaner/escaner-camara";
+import type { VarianteProducto } from "../types/pos.types";
+
+export interface CodigoResuelto {
+  product: Producto;
+  /** La variante cuyo codigo propio coincidio; `null` = el del producto. */
+  variant: VarianteProducto | null;
+}
+
+/**
+ * De un codigo leido (lector fisico, camara o tecleado) al producto. Sin
+ * distinguir mayusculas ni espacios de los extremos.
+ *
+ * Primero el codigo del producto y despues el de las variantes: una talla con
+ * codigo propio entra directo, sin preguntar cual.
+ */
+export function resolverCodigo(
+  codigo: string,
+  products: Producto[],
+  variantsByProduct: Record<string, VarianteProducto[]>
+): CodigoResuelto | null {
+  const buscado = codigo.trim().toLowerCase();
+  if (!buscado) return null;
+
+  const product = products.find((p) => p.codigo_barras?.trim().toLowerCase() === buscado);
+  if (product) return { product, variant: null };
+
+  for (const [productoId, variantes] of Object.entries(variantsByProduct)) {
+    const variant = variantes.find((v) => v.codigo_barras?.trim().toLowerCase() === buscado);
+    if (!variant) continue;
+    const dueno = products.find((p) => p.id === productoId);
+    if (dueno) return { product: dueno, variant };
+  }
+  return null;
+}
 
 interface BarcodeScannerResult {
   search: string;
@@ -11,9 +46,13 @@ interface BarcodeScannerResult {
   handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
+/**
+ * El buscador del POS como lector: el lector fisico "teclea" el codigo y manda
+ * Enter. `agregarPorCodigo` es el mismo que usa la camara, asi que ambos
+ * siguen las mismas reglas (lista de precios, stock, variantes).
+ */
 export function useBarcodeScanner(
-  products: Producto[],
-  onAddProduct: (product: Producto) => void
+  agregarPorCodigo: (codigo: string) => ResultadoEscaneo
 ): BarcodeScannerResult {
   const [search, setSearch] = useState("");
 
@@ -22,18 +61,13 @@ export function useBarcodeScanner(
       toast.error("Escribe o escanea un código de barras");
       return;
     }
-
-    const match = products.find(
-      (p) => p.codigo_barras?.toLowerCase() === search.trim().toLowerCase()
-    );
-
-    if (match) {
-      onAddProduct(match);
-      setSearch("");
-      toast.success(`${match.nombre} agregado`);
-    } else {
-      toast.error("Producto no encontrado");
+    const r = agregarPorCodigo(search);
+    if (r.tipo === "error") {
+      toast.error(r.mensaje);
+      return;
     }
+    setSearch("");
+    if (r.tipo === "ok") toast.success(r.mensaje);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

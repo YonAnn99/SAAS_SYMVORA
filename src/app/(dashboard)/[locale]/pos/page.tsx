@@ -35,7 +35,8 @@ import { completeSale } from "@/features/pos/services/pos-service";
 import { numeroOperacion } from "@/features/pos/ticket-format";
 import { celebrarVenta } from "@/features/pos/celebracion-venta";
 import { logActivity } from "@/lib/supabase/activity-logger";
-import { useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
+import { resolverCodigo, useBarcodeScanner } from "@/features/pos/hooks/use-barcode-scanner";
+import type { ResultadoEscaneo } from "@/components/escaner/escaner-camara";
 import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
 import { usePosCatalog } from "@/features/pos/hooks/use-pos-catalog";
@@ -265,12 +266,45 @@ export default function POSPage() {
     [variantsByProduct, addResolved, idsDeLista, nombreListaElegida]
   );
 
+  // Un codigo leido, venga del lector fisico (Enter en el buscador) o de la
+  // camara. Mismas reglas que tocar el producto en la cuadricula, pero
+  // respondiendo en vez de avisar: la camara en modo continuo necesita saber
+  // si sonar bien, sonar mal o cerrarse para dejar paso a otra ventana.
+  const agregarPorCodigo = useCallback(
+    (codigo: string): ResultadoEscaneo => {
+      const encontrado = resolverCodigo(codigo, products, variantsByProduct);
+      if (!encontrado) {
+        return { tipo: "error", mensaje: `Código ${codigo.trim()} no encontrado` };
+      }
+      const { product, variant } = encontrado;
+      if (idsDeLista && !idsDeLista.has(product.id)) {
+        return { tipo: "error", mensaje: `"${product.nombre}" no está en ${nombreListaElegida}` };
+      }
+      const etiqueta = variant ? `${product.nombre} ${variantLabel(variant)}` : product.nombre;
+
+      // El codigo del producto, que tiene tallas: hay que elegir cual.
+      if (!variant && (variantsByProduct[product.id]?.length ?? 0) > 0) {
+        setVariantPickerFor(product);
+        return { tipo: "salir", mensaje: `Elige la variante de ${product.nombre}` };
+      }
+      const stock = variant ? variant.stock_actual : product.stock_actual;
+      if (!product.es_servicio && stock <= 0) {
+        return { tipo: "error", mensaje: `${etiqueta}: sin stock` };
+      }
+      // Por medida (kg, l...) se pregunta la cantidad en su propia ventana.
+      if (esFraccionable(product.unidad_medida)) {
+        addResolved(product, variant);
+        return { tipo: "salir", mensaje: `Captura la cantidad de ${etiqueta}` };
+      }
+      addResolved(product, variant);
+      return { tipo: "ok", mensaje: `${etiqueta} agregado` };
+    },
+    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved]
+  );
+
   // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,
   // que manda Enter solo) hace lo mismo via `handleKeyDown`.
-  const { search, setSearch, handleKeyDown } = useBarcodeScanner(
-    products,
-    handleAddProduct
-  );
+  const { search, setSearch, handleKeyDown } = useBarcodeScanner(agregarPorCodigo);
 
   // Cambiar de local vacia la venta en curso: esos productos quiza no existen
   // en el otro, y la venta se rechazaria al cobrar por falta de stock.
@@ -615,6 +649,7 @@ export default function POSPage() {
           search={search}
           onSearchChange={setSearch}
           onKeyDown={handleKeyDown}
+          onCodigoCamara={agregarPorCodigo}
           categories={categories}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
