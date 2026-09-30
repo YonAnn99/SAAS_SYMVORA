@@ -34,7 +34,7 @@ export function Hero() {
         <h1
           className="entrada-suave text-4xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-white max-w-3xl leading-[1.05] tracking-tighter"
         >
-          {/* Renglones fijos: "...para tu tienda" / "hecho para tu" / giro. El
+          {/* Renglones fijos: "Tu sistema todo en uno," / "hecho para tu" / giro. El
               giro va SIEMPRE en su propio renglon: frases como "tienda de
               cosmeticos" no caben junto a "para tu", y si unas veces cupiera y
               otras no, el titulo cambiaria de alto y todo lo de abajo brincaria
@@ -102,8 +102,13 @@ export function Hero() {
       </div>
 
       {/* Right Column - POS Mockup (40%) */}
+      {/* En escritorio, arriba y a la altura del titulo ("Tu sistema todo en
+          uno"), no centrada contra toda la columna izquierda. `lg:pt-3` baja el
+          borde del mockup a la linea de las mayusculas del H1. */}
       <m.div
-        className="w-full lg:w-2/5 relative min-h-[360px] sm:min-h-[420px] lg:min-h-[500px] mt-8 lg:mt-0 flex items-center justify-center"
+        // Solo con las columnas lado a lado: en celular y tablet vertical se
+        // apilaba bajo todo el texto y estorbaba mas de lo que aportaba.
+        className="hidden lg:flex w-full lg:w-2/5 relative lg:pt-3 lg:self-start lg:items-start justify-center"
         initial={{ opacity: 0, x: 40 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.3 }}

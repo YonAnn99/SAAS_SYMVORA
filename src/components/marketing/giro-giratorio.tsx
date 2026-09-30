@@ -58,8 +58,10 @@ export function GiroGiratorio() {
   const alCambiar = useCallback((i: number) => setIndice(i), []);
 
   return (
-    // `flex` (bloque): siempre en su propio renglon, ver `hero.tsx`.
-    <span className="relative mt-2 flex w-fit max-w-full">
+    // `flex` (bloque): siempre en su propio renglon, ver `hero.tsx`. En
+    // celular un poco mas chica: "tienda de cosmeticos" no cabria en 320 px, y
+    // partirla en dos renglones cambiaria el alto (el salto que se veia).
+    <span className="relative mt-2 flex w-fit max-w-full max-sm:text-[0.82em]">
       {/* Medidor: invisible y fuera del flujo. */}
       <span
         ref={medidor}
@@ -79,7 +81,11 @@ export function GiroGiratorio() {
         exit={{ y: "-120%" }}
         transition={{ type: "spring", damping: 30, stiffness: 400 }}
         onNext={alCambiar}
-        mainClassName="max-w-full justify-center overflow-hidden rounded-xl bg-[#2563EB] px-3 pb-1 text-white transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        // Nunca se parte: mientras la pastilla se ensancha para una palabra
+        // larga, lo que sobra se recorta en vez de bajar a otro renglon.
+        wrap={false}
+        // El azul del boton principal ("Prueba 14 dias gratis", `PRINCIPAL`).
+        mainClassName="max-w-full justify-center overflow-hidden rounded-xl bg-primary px-3 pb-1 text-white transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
         splitLevelClassName="overflow-hidden pb-1"
         style={ancho ? { width: ancho } : undefined}
       />

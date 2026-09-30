@@ -49,6 +49,11 @@ export interface RotatingTextProps
   auto?: boolean;
   splitBy?: string;
   onNext?: (index: number) => void;
+  /**
+   * `false`: el texto nunca se parte en renglones (anadido en SYMVORA). Asi el
+   * alto no cambia aunque el contenedor sea mas angosto un instante.
+   */
+  wrap?: boolean;
   mainClassName?: string;
   splitLevelClassName?: string;
   elementLevelClassName?: string;
@@ -71,6 +76,7 @@ const RotatingText = forwardRef<RotatingTextRef, RotatingTextProps>(
       auto = true,
       splitBy = 'characters',
       onNext,
+      wrap = true,
       mainClassName,
       splitLevelClassName,
       elementLevelClassName,
@@ -189,9 +195,11 @@ const RotatingText = forwardRef<RotatingTextRef, RotatingTextProps>(
       return () => clearInterval(intervalId);
     }, [next, rotationInterval, auto]);
 
+    const envoltura = wrap ? 'flex-wrap whitespace-pre-wrap' : 'flex-nowrap whitespace-nowrap';
+
     return (
       <m.span
-        className={cn('flex flex-wrap whitespace-pre-wrap relative', mainClassName)}
+        className={cn('flex relative', envoltura, mainClassName)}
         {...rest}
         transition={transition}
       >
@@ -199,7 +207,7 @@ const RotatingText = forwardRef<RotatingTextRef, RotatingTextProps>(
         <AnimatePresence mode={animatePresenceMode} initial={animatePresenceInitial}>
           <m.span
             key={currentTextIndex}
-            className={cn(splitBy === 'lines' ? 'flex flex-col w-full' : 'flex flex-wrap whitespace-pre-wrap relative')}
+            className={cn(splitBy === 'lines' ? 'flex flex-col w-full' : cn('flex relative', envoltura))}
             aria-hidden="true"
           >
             {elements.map((wordObj, wordIndex, array) => {
