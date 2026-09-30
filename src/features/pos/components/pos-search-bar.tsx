@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { Heart, Layers, LayoutGrid, Search, Tag } from "lucide-react";
-import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -32,7 +31,6 @@ interface PosSearchBarProps {
   favoritosCount?: number;
   viewMode: PosViewMode;
   onViewModeChange: (mode: PosViewMode) => void;
-  onSearchSubmit: () => void;
   priceLists: OpcionListaPrecios[];
   /** `SIN_LISTA` o el id de la lista elegida. */
   selectedPriceList: string;
@@ -51,7 +49,6 @@ export function PosSearchBar({
   favoritosCount = 0,
   viewMode,
   onViewModeChange,
-  onSearchSubmit,
   priceLists,
   selectedPriceList,
   onPriceListChange,
@@ -183,10 +180,6 @@ export function PosSearchBar({
           <span className="hidden md:inline">Desglosado</span>
         </button>
       </div>
-
-      <SpecularActionButton tone="add" className="h-9" onClick={onSearchSubmit}>
-        {t("pos.addItem")}
-      </SpecularActionButton>
     </div>
   );
 }

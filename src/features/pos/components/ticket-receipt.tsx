@@ -17,6 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { usePermissions } from "@/hooks/use-permissions";
+import { Link } from "@/i18n/navigation";
 import {
   clavePagoI18n,
   fechaTicket,
@@ -51,6 +53,7 @@ export function TicketReceipt({
   const t = useTranslations();
   const { tenantName, tenantLogo, tenantAddress } = useCurrentTenant();
   const impresora = useImpresora();
+  const { can } = usePermissions();
   // Directo solo si hay impresora guardada y ESTE navegador tiene su conexion
   // (en iPhone, por ejemplo, no): si no, la ventana de impresion de siempre.
   const directo =
@@ -273,6 +276,16 @@ export function TicketReceipt({
               {impreso === (receipt.reference ?? "impreso") ? "Reimprimir" : "Imprimir"}
             </SpecularActionButton>
           </DialogFooter>
+          {/* Sin impresora pero con un navegador que podria usarla: se dice
+              donde conectarla (el boton dejo de estar en la barra del POS). */}
+          {!directo && impresora.soportadas.length > 0 && can("org.manage_settings") && (
+            <p className="-mt-2 text-center text-[11px] text-muted-foreground">
+              ¿Tienes impresora de tickets?{" "}
+              <Link href="/settings?tab=printer" className="underline hover:text-foreground">
+                Conéctala en Configuración → Impresora
+              </Link>
+            </p>
+          )}
           {directo && (
             <p className="-mt-2 text-center text-[11px] text-muted-foreground">
               {imprimiendo

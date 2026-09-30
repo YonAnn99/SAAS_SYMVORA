@@ -46,7 +46,8 @@ export type IconoAccion =
   | "modulos"
   | "terminal"
   | "suscripcion"
-  | "sugerencia";
+  | "sugerencia"
+  | "impresora";
 
 /** Parametro de la URL con el que la pagina sabe que ventana abrir. */
 export const PARAM_ACCION = "accion";
@@ -192,6 +193,14 @@ export const ACCIONES_RAPIDAS: AccionRapida[] = [
     href: "/settings?tab=payments",
     permiso: "org.manage_settings",
     icono: "terminal",
+  },
+  {
+    id: "impresora",
+    etiqueta: "Conectar impresora de tickets",
+    palabrasClave: ["impresora", "ticket", "termica", "bluetooth", "imprimir"],
+    href: "/settings?tab=printer",
+    permiso: "org.manage_settings",
+    icono: "impresora",
   },
   {
     id: "pagar-suscripcion",

@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Puzzle, Smartphone } from "lucide-react";
+import { Building2, Printer, Puzzle, Smartphone } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { MercadoPagoPointSettings } from "@/features/payments/components/mercado-pago-point-settings";
+import { ImpresoraConfig } from "@/features/pos/components/impresora-config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -28,7 +29,7 @@ import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 
-const PESTANAS = ["general", "modules", "payments"];
+const PESTANAS = ["general", "modules", "payments", "printer"];
 
 export default function SettingsPage() {
   // La pestaña sale de `?tab=`: asi /settings/payments (que redirige con
@@ -270,6 +271,11 @@ export default function SettingsPage() {
             <Smartphone className="h-3.5 w-3.5" />
             {t("settings.mercadoPagoPoint")}
           </TabsTrigger>
+          {/* Antes era un boton en la barra del Punto de venta. */}
+          <TabsTrigger value="printer" className="gap-1.5 text-xs">
+            <Printer className="h-3.5 w-3.5" />
+            Impresora
+          </TabsTrigger>
         </TabsList>
 
         {/* General settings */}
@@ -394,6 +400,10 @@ export default function SettingsPage() {
             Pago se consulta nada mas cuando hace falta. */}
         <TabsContent value="payments">
           {pestana === "payments" && <MercadoPagoPointSettings />}
+        </TabsContent>
+
+        <TabsContent value="printer">
+          {pestana === "printer" && <ImpresoraConfig />}
         </TabsContent>
       </Tabs>
     </div>

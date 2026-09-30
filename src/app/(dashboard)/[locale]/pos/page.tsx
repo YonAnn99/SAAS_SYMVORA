@@ -23,7 +23,6 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useModulos } from "@/hooks/use-modulos";
 import { sucursalDelPos } from "@/features/sucursales/seleccion";
 import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
-import { BotonImpresora } from "@/features/pos/components/boton-impresora";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { esFraccionable } from "@/lib/unidades";
@@ -265,7 +264,9 @@ export default function POSPage() {
     [variantsByProduct, addResolved, idsDeLista, nombreListaElegida]
   );
 
-  const { search, setSearch, handleSearch, handleKeyDown } = useBarcodeScanner(
+  // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,
+  // que manda Enter solo) hace lo mismo via `handleKeyDown`.
+  const { search, setSearch, handleKeyDown } = useBarcodeScanner(
     products,
     handleAddProduct
   );
@@ -618,23 +619,17 @@ export default function POSPage() {
           favoritosCount={favoritosCount}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
-          onSearchSubmit={handleSearch}
           priceLists={priceLists}
           selectedPriceList={selectedPriceList}
           onPriceListChange={setSelectedPriceList}
           sucursalSlot={
-            <>
-              {modoDueno && (
-                <PosSucursalSelector
-                  sucursales={activas}
-                  value={sucursalMostrador}
-                  onChange={cambiarSucursal}
-                />
-              )}
-              {/* Impresora de tickets de este equipo: con ella el ticket sale
-                  directo, sin la ventana de impresion del navegador. */}
-              <BotonImpresora />
-            </>
+            modoDueno ? (
+              <PosSucursalSelector
+                sucursales={activas}
+                value={sucursalMostrador}
+                onChange={cambiarSucursal}
+              />
+            ) : null
           }
         />
 

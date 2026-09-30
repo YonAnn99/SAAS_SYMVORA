@@ -1,11 +1,14 @@
 "use client";
 
 /**
- * Configurar la impresora de tickets de ESTE equipo: conectarla (Bluetooth,
- * USB o puerto serie, solo las que el navegador soporta), el ancho del papel,
- * si imprime sola al cobrar y una hoja de prueba. Incluye la guia para
- * Windows + USB y el aviso para iPhone, donde el navegador no deja imprimir
- * directo.
+ * Configuracion -> Impresora: la impresora de tickets de ESTE equipo.
+ * Conectarla (Bluetooth, USB o puerto serie, solo las que el navegador
+ * soporta), el ancho del papel, si imprime sola al cobrar y una hoja de
+ * prueba. Incluye la guia para Windows + USB y el aviso para iPhone, donde el
+ * navegador no deja imprimir directo.
+ *
+ * Antes vivia en un boton de la barra del POS; se movio aqui para
+ * despejarla.
  */
 
 import { useState } from "react";
@@ -13,13 +16,7 @@ import { Bluetooth, Cable, Loader2, Printer, Usb } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import type { TipoConexion } from "../impresora/conexiones";
 import { imprimirPrueba } from "../impresora/imprimir-ticket";
@@ -44,12 +41,7 @@ const TEXTO_ESTADO = {
   error: "No responde",
 } as const;
 
-interface ImpresoraDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function ImpresoraDialog({ open, onOpenChange }: ImpresoraDialogProps) {
+export function ImpresoraConfig() {
   const { tenantName } = useCurrentTenant();
   const { config, estado, mensaje, soportadas } = useImpresora();
   const [probando, setProbando] = useState(false);
@@ -77,18 +69,18 @@ export function ImpresoraDialog({ open, onOpenChange }: ImpresoraDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Printer className="h-4 w-4" /> Impresora de tickets
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Con la impresora conectada, el ticket sale directo, sin la ventana de impresión.
-            Se guarda en este equipo.
-          </DialogDescription>
-        </DialogHeader>
-
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <Printer className="h-4 w-4" /> Impresora de tickets
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Con la impresora conectada, el ticket sale directo al cobrar, sin la ventana de
+          impresión. Se guarda en <strong>este equipo</strong>: para la caja de un cajero,
+          inicia sesión una vez en ese equipo y conéctala aquí.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="max-w-md">
         <div className="space-y-4 text-sm">
           {config && (
             <div className="rounded-lg border border-border px-3 py-2">
@@ -217,7 +209,7 @@ export function ImpresoraDialog({ open, onOpenChange }: ImpresoraDialogProps) {
             </ol>
           </details>
         </div>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

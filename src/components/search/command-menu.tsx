@@ -15,6 +15,7 @@ import {
   LockKeyhole,
   Package,
   Palette,
+  Printer,
   Search,
   ShoppingCart,
   SlidersHorizontal,
@@ -58,6 +59,7 @@ const ICONOS_ACCION: Record<IconoAccion, LucideIcon> = {
   terminal: Smartphone,
   suscripcion: CreditCard,
   sugerencia: Lightbulb,
+  impresora: Printer,
 };
 
 const CLASE_GRUPO =
