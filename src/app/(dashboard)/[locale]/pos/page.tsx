@@ -58,6 +58,7 @@ import { ProductGrid } from "@/features/pos/components/product-grid";
 import { TerminalPaymentDialog } from "@/features/pos/components/terminal-payment-dialog";
 import { TicketReceipt } from "@/features/pos/components/ticket-receipt";
 import { etiquetaDescuento } from "@/features/pos/descuento-ticket";
+import { productoEnFavoritos } from "@/features/pos/favoritos-pos";
 import { NewCustomerDialog } from "@/features/customers/components/new-customer-dialog";
 import {
   Sheet,
@@ -99,6 +100,7 @@ export default function POSPage() {
     customers,
     priceLists,
     favoritos,
+    variantesFavoritas,
     favoritosCount,
     userId,
     loadingProducts,
@@ -369,7 +371,7 @@ export default function POSPage() {
           selectedCategory === "all"
             ? true
             : selectedCategory === "favorites"
-            ? favoritos.has(p.id)
+            ? productoEnFavoritos(p.id, favoritos, variantesFavoritas, variantsByProduct[p.id])
             : p.categoria === selectedCategory;
 
         if (!matchesCategory) return false;
@@ -394,7 +396,7 @@ export default function POSPage() {
             v.color?.toLowerCase().includes(term)
         );
       }),
-    [productosDeLista, selectedCategory, search, favoritos, variantsByProduct]
+    [productosDeLista, selectedCategory, search, favoritos, variantesFavoritas, variantsByProduct]
   );
 
   // Las categorias salen de lo que la lista deja ver, no del catalogo entero:
@@ -676,6 +678,8 @@ export default function POSPage() {
           hasSearch={Boolean(search)}
           viewMode={viewMode}
           isFavoritesFilter={selectedCategory === "favorites"}
+          favoritos={favoritos}
+          variantesFavoritas={variantesFavoritas}
           onAddProduct={handleAddProduct}
           onAddVariant={(product, variant) => {
             if (idsDeLista && !idsDeLista.has(product.id)) {

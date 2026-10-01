@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
@@ -73,6 +73,17 @@ interface ProductsTableProps {
   onEditVariante?: (variante: VarianteProducto) => void;
   /** `true` si se borro. */
   onDeleteVariante?: (variante: VarianteProducto) => Promise<boolean>;
+  /** Corazones por variante del usuario actual. */
+  variantesFavoritas?: ReadonlySet<string>;
+  onToggleFavoritaVariante?: (variante: VarianteProducto) => void;
+  /** Edicion en la celda de una variante (precio o stock). */
+  onInlineSaveVariante?: (
+    variante: VarianteProducto,
+    campo: "precio_venta" | "stock_actual",
+    texto: string
+  ) => void | Promise<void>;
+  /** Ids de variantes con un guardado en vuelo. */
+  guardandoVariantes?: ReadonlySet<string>;
 }
 
 export function ProductsTable({
@@ -94,6 +105,10 @@ export function ProductsTable({
   variantesPorProducto = {},
   onEditVariante,
   onDeleteVariante,
+  variantesFavoritas = new Set<string>(),
+  onToggleFavoritaVariante,
+  onInlineSaveVariante,
+  guardandoVariantes = new Set<string>(),
 }: ProductsTableProps) {
   const t = useTranslations();
   const { modulos } = useModulos();
@@ -109,6 +124,14 @@ export function ProductsTable({
   // Celular: el producto cuya hoja de variantes esta abierta.
   const [hojaDe, setHojaDe] = useState<string | null>(null);
   const productoHoja = hojaDe ? products.find((p) => p.id === hojaDe) ?? null : null;
+  // Misma celda editable que los productos, para precio y stock de variante.
+  const celdaVariante = (v: VarianteProducto, campo: "precio_venta" | "stock_actual") => ({
+    canEdit: canEdit && Boolean(onInlineSaveVariante),
+    saving: guardandoVariantes.has(v.id),
+    hint: t("products.inlineEditHint"),
+    value: String(v[campo]),
+    onCommit: (texto: string) => void onInlineSaveVariante?.(v, campo, texto),
+  });
   const conteoVariantes = Object.fromEntries(
     Object.entries(variantesPorProducto).map(([id, vs]) => [id, vs.length])
   );
@@ -197,6 +220,8 @@ export function ProductsTable({
               onOpenChange={(abierta) => !abierta && setHojaDe(null)}
               onEdit={(v) => onEditVariante?.(v)}
               onDelete={async (v) => (onDeleteVariante ? onDeleteVariante(v) : false)}
+              favoritas={variantesFavoritas}
+              onToggleFavorita={onToggleFavoritaVariante}
             />
           </div>
           <div className="hidden overflow-x-auto md:block">
@@ -399,78 +424,90 @@ export function ProductsTable({
                       </div>
                     </TableCell>
                   </TableRow>
-                  {variantes.length > 0 && (
-                    <TableRow className="border-0 hover:bg-transparent">
-                      <TableCell colSpan={9} className="p-0">
-                        {/* Mismo despliegue que las secciones de "Crear producto"
-                            (`accordion.tsx`): 0fr -> 1fr de alto, sin tope. */}
-                        <div
-                          id={idPanel}
-                          style={{
-                            display: "grid",
-                            gridTemplateRows: abierto ? "1fr" : "0fr",
-                            opacity: abierto ? 1 : 0,
-                            transition: "grid-template-rows 0.3s ease, opacity 0.2s ease",
-                          }}
-                          inert={!abierto || undefined}
-                        >
-                          <div className="min-h-0 overflow-hidden">
-                            <div className="mx-3 mb-3 ml-14 rounded-xl border border-border bg-muted/30">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="hover:bg-transparent">
-                                    <TableHead className="h-8 text-[11px] uppercase tracking-wider">Atributos</TableHead>
-                                    <TableHead className="h-8 text-[11px] uppercase tracking-wider">SKU</TableHead>
-                                    <TableHead className="h-8 text-right text-[11px] uppercase tracking-wider">Precio</TableHead>
-                                    <TableHead className="h-8 text-right text-[11px] uppercase tracking-wider">Stock</TableHead>
-                                    <TableHead className="h-8 text-right text-[11px] uppercase tracking-wider">{t("common.actions")}</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {variantes.map((v) => (
-                                    <TableRow key={v.id}>
-                                      <TableCell className="py-1.5 text-sm">
-                                        <AtributosVariante variant={v} vacio="Sin atributos" />
-                                      </TableCell>
-                                      <TableCell className="py-1.5 text-sm font-mono text-muted-foreground">
-                                        {v.sku || "-"}
-                                      </TableCell>
-                                      <TableCell className="py-1.5 text-right text-sm font-mono">
-                                        ${v.precio_venta.toFixed(2)}
-                                      </TableCell>
-                                      <TableCell className="py-1.5 text-right text-sm font-mono">
-                                        {v.stock_actual}
-                                      </TableCell>
-                                      <TableCell className="py-1.5 text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 text-xs"
-                                            onClick={() => onEditVariante?.(v)}
-                                          >
-                                            <Pencil className="h-3 w-3 mr-1" />
-                                            {t("common.edit")}
-                                          </Button>
-                                          <BotonEliminar
-                                            nombre={`la variante ${etiquetaAtributos(v) || product.nombre}`}
-                                            detalle="No se puede deshacer"
-                                            onEliminar={async () => {
-                                              await onDeleteVariante?.(v);
-                                            }}
-                                          />
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </div>
+                  {/* Variantes: filas de la MISMA tabla, alineadas con las
+                      columnas del producto (codigo, precio, margen, stock,
+                      estado y acciones). Se pliegan celda por celda: el alto
+                      de una fila de tabla no se puede animar. */}
+                  {variantes.map((v, i) => (
+                    <TableRow
+                      key={v.id}
+                      inert={!abierto || undefined}
+                      aria-hidden={!abierto || undefined}
+                      className={
+                        abierto
+                          ? "bg-muted/20 hover:bg-muted/40"
+                          : "border-0 hover:bg-transparent"
+                      }
+                    >
+                      <CeldaPlegable abierta={abierto} className="w-8" />
+                      <CeldaPlegable abierta={abierto}>
+                        <div id={i === 0 ? idPanel : undefined} className="flex items-center gap-2 pl-[54px] text-[13px]">
+                          <span className="text-muted-foreground/60" aria-hidden="true">└</span>
+                          <AtributosVariante variant={v} vacio="Sin atributos" />
                         </div>
-                      </TableCell>
+                      </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto} className="text-[13px] font-mono text-muted-foreground">
+                        {v.codigo_barras || "-"}
+                      </CeldaPlegable>
+                      {/* La unidad es del producto: se ve, pero se cambia en su fila. */}
+                      <CeldaPlegable abierta={abierto} className="text-[13px] text-muted-foreground">
+                        {t(`products.units.${product.unidad_medida}`)}
+                      </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto} className="text-right text-[13px] font-mono">
+                        <EditableTextCell
+                          {...celdaVariante(v, "precio_venta")}
+                          numerico
+                          className="text-right font-mono tabular-nums"
+                        >
+                          ${v.precio_venta.toFixed(2)}
+                        </EditableTextCell>
+                      </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto} className="text-right text-[13px] font-mono">
+                        <ProductMarginCell
+                          product={{ precio_venta: v.precio_venta, costo_compra: v.costo_compra }}
+                        />
+                      </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto} className="text-right text-[13px] font-mono tabular-nums">
+                        <EditableTextCell
+                          {...celdaVariante(v, "stock_actual")}
+                          numerico
+                          className="text-right font-mono tabular-nums"
+                        >
+                          {v.stock_actual}
+                        </EditableTextCell>
+                      </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto}>
+                        <StockBadge
+                          product={{ stock_actual: v.stock_actual, stock_minimo: product.stock_minimo }}
+                        />
+                      </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto} className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <FavoriteButton
+                            esFavorito={variantesFavoritas.has(v.id)}
+                            onToggle={() => onToggleFavoritaVariante?.(v)}
+                            nombre={`${product.nombre} ${etiquetaAtributos(v)}`.trim()}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => onEditVariante?.(v)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            {t("common.edit")}
+                          </Button>
+                          <BotonEliminar
+                            nombre={`la variante ${etiquetaAtributos(v) || product.nombre}`}
+                            detalle="No se puede deshacer"
+                            onEliminar={async () => {
+                              await onDeleteVariante?.(v);
+                            }}
+                          />
+                        </div>
+                      </CeldaPlegable>
                     </TableRow>
-                  )}
+                  ))}
                   </Fragment>
                   );
                 })}
@@ -491,6 +528,38 @@ export function ProductsTable({
  * le puso costo no es un producto que deje toda la venta como ganancia, y
  * mostrarlo así invitaría a decisiones sobre un número falso.
  */
+/**
+ * Celda de una fila de variante que se pliega: el mismo despliegue de
+ * `accordion.tsx` (grid-template-rows 0fr -> 1fr) con el relleno POR DENTRO,
+ * asi plegada mide 0 de alto aunque sea una celda de tabla.
+ */
+function CeldaPlegable({
+  abierta,
+  className,
+  children,
+}: {
+  abierta: boolean;
+  className?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <TableCell className="p-0 align-middle">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateRows: abierta ? "1fr" : "0fr",
+          opacity: abierta ? 1 : 0,
+          transition: "grid-template-rows 0.3s ease, opacity 0.2s ease",
+        }}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className={`px-2 py-1.5 ${className ?? ""}`}>{children}</div>
+        </div>
+      </div>
+    </TableCell>
+  );
+}
+
 function ProductMarginCell({
   product,
 }: {

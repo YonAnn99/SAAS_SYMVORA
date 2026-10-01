@@ -13,7 +13,11 @@ import {
   fetchPosPriceLists,
   type ListaParaPos,
 } from "@/features/inventory/services/price-list-service";
-import { fetchFavoritos } from "@/features/inventory/services/favorites-service";
+import {
+  fetchFavoritos,
+  fetchVariantesFavoritas,
+} from "@/features/inventory/services/favorites-service";
+import { productoEnFavoritos } from "../favoritos-pos";
 
 export interface PosCatalogState {
   products: Producto[];
@@ -24,6 +28,9 @@ export interface PosCatalogState {
   priceLists: ListaParaPos[];
   /** Ids de los productos favoritos del usuario actual. */
   favoritos: ReadonlySet<string>;
+  /** Ids de las variantes favoritas del usuario actual (migracion 098). */
+  variantesFavoritas: ReadonlySet<string>;
+  /** Productos que salen en "Favoritos": favoritos o con alguna variante favorita. */
   favoritosCount: number;
   userId: string;
   loadingProducts: boolean;
@@ -58,6 +65,7 @@ export function usePosCatalog(
   const [variants, setVariants] = useState<VarianteProducto[]>([]);
   const [priceLists, setPriceLists] = useState<ListaParaPos[]>([]);
   const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set());
+  const [variantesFavoritas, setVariantesFavoritas] = useState<Set<string>>(() => new Set());
 
   const refetch = useCallback(async () => {
     // Antes este `return` estaba ANTES del `try`, asi que el `finally` no
@@ -106,12 +114,14 @@ export function usePosCatalog(
         customersResult,
         priceListsResult,
         favoritosResult,
+        variantesFavoritasResult,
       ] = await Promise.all([
         fetchPosProducts(tenantId, stockLocal),
         fetchPosVariants(tenantId, stockLocal),
         fetchCustomers(tenantId),
         fetchPosPriceLists(tenantId),
         fetchFavoritos(tenantId),
+        fetchVariantesFavoritas(tenantId),
       ]);
 
       const activeCajaId = activeRegister?.id ?? null;
@@ -122,6 +132,7 @@ export function usePosCatalog(
       setCustomers(customersResult);
       setPriceLists(priceListsResult);
       setFavoritos(favoritosResult);
+      setVariantesFavoritas(variantesFavoritasResult);
       setCajaId(activeCajaId);
       setCajaSucursalId(activeRegister?.sucursal_id ?? null);
     } catch (error) {
@@ -161,8 +172,11 @@ export function usePosCatalog(
   }, [variants]);
 
   const favoritosCount = useMemo(
-    () => products.filter((p) => favoritos.has(p.id)).length,
-    [products, favoritos]
+    () =>
+      products.filter((p) =>
+        productoEnFavoritos(p.id, favoritos, variantesFavoritas, variantsByProduct[p.id])
+      ).length,
+    [products, favoritos, variantesFavoritas, variantsByProduct]
   );
 
   return {
@@ -171,6 +185,7 @@ export function usePosCatalog(
     customers,
     priceLists,
     favoritos,
+    variantesFavoritas,
     favoritosCount,
     userId,
     loadingProducts,

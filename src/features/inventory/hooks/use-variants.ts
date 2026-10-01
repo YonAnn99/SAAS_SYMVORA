@@ -13,9 +13,20 @@ import {
   fetchVariantProducts,
   fetchVariants,
   updateVariant,
+  updateVariantCampos,
   type VarianteInput,
 } from "../services/variant-service";
 import { etiquetaAtributos } from "../atributos-variante";
+import {
+  fetchVariantesFavoritas,
+  toggleVarianteFavorita,
+} from "../services/favorites-service";
+import { mensajeDeError } from "../error-message";
+import { createAdjustment } from "../services/inventory-adjustment-service";
+import { deltaStock, parsearCampo } from "../inline-edit";
+
+/** Lo que se edita en la celda de una variante en el catalogo. */
+export type CampoInlineVariante = "precio_venta" | "stock_actual";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import {
@@ -49,6 +60,10 @@ export function useVariants(
   const [deleteConfirm, setDeleteConfirm] = useState<VarianteProducto | null>(
     null
   );
+  // Celdas de variante con un guardado en vuelo (edicion en la celda).
+  const [guardandoVariantes, setGuardandoVariantes] = useState<Set<string>>(() => new Set());
+  // Corazones por variante (migracion 098), del usuario actual.
+  const [favoritas, setFavoritas] = useState<Set<string>>(() => new Set());
 
   // Mismo criterio que la pestaña de productos: con un local elegido, cada
   // talla muestra lo que hay EN ESE local.
@@ -57,7 +72,7 @@ export function useVariants(
   const refetch = useCallback(async () => {
     if (!tenantId) return;
     const sumarSuyas = !seleccionada && restringido;
-    const [variantsData, productsData, stockLocal] = await Promise.all([
+    const [variantsData, productsData, stockLocal, favoritasData] = await Promise.all([
       fetchVariants(tenantId),
       fetchVariantProducts(tenantId),
       seleccionada
@@ -65,7 +80,9 @@ export function useVariants(
         : sumarSuyas
           ? fetchStockSucursal(permitidas)
           : Promise.resolve(null),
+      fetchVariantesFavoritas(tenantId),
     ]);
+    setFavoritas(favoritasData);
     setVariants(
       !stockLocal
         ? variantsData
@@ -282,6 +299,86 @@ export function useVariants(
     [refetch, onCambio]
   );
 
+  /**
+   * Edicion en la celda del catalogo (precio o stock), como los productos
+   * (`useProducts.handleInlineSave`): optimista, se revierte si falla, y el
+   * stock pasa por el libro de ajustes del local que se esta viendo.
+   */
+  const handleInlineSaveVariante = useCallback(
+    async (variant: VarianteProducto, campo: CampoInlineVariante, texto: string) => {
+      const parseo = parsearCampo(campo, texto);
+      if (!parseo.ok) {
+        toast.error(parseo.error);
+        return;
+      }
+      const valor = parseo.valor as number;
+      if (Number(variant[campo]) === valor) return;
+
+      const destino = destinoDeEdicionDeStock(hayVarias, seleccionada);
+      if (campo === "stock_actual" && destino.tipo === "bloqueado") {
+        toast.error(destino.motivo);
+        return;
+      }
+
+      const anterior = variant[campo];
+      setVariants((prev) => prev.map((v) => (v.id === variant.id ? { ...v, [campo]: valor } : v)));
+      setGuardandoVariantes((prev) => new Set(prev).add(variant.id));
+      try {
+        if (campo === "stock_actual") {
+          await createAdjustment({
+            productoId: variant.producto_id,
+            cantidadAjuste: deltaStock(Number(variant.stock_actual), valor),
+            motivo: "CONTEO_FISICO",
+            notas: "Edición rápida desde el catálogo",
+            varianteId: variant.id,
+            loteId: null,
+            sucursalId: destino.tipo === "sucursal" ? destino.sucursalId : null,
+          });
+        } else {
+          await updateVariantCampos(variant.id, { precio_venta: valor });
+        }
+        void refetch();
+        onCambio?.();
+      } catch (error: unknown) {
+        setVariants((prev) => prev.map((v) => (v.id === variant.id ? { ...v, [campo]: anterior } : v)));
+        toast.error(mensajeDeError(error));
+      } finally {
+        setGuardandoVariantes((prev) => {
+          const sig = new Set(prev);
+          sig.delete(variant.id);
+          return sig;
+        });
+      }
+    },
+    [hayVarias, seleccionada, refetch, onCambio]
+  );
+
+  /** Optimista: si falla, el corazon regresa y se avisa. */
+  const toggleFavorita = useCallback(
+    async (variant: VarianteProducto) => {
+      if (!tenantId) return;
+      const era = favoritas.has(variant.id);
+      setFavoritas((prev) => {
+        const sig = new Set(prev);
+        if (era) sig.delete(variant.id);
+        else sig.add(variant.id);
+        return sig;
+      });
+      try {
+        await toggleVarianteFavorita(tenantId, variant.id, !era);
+      } catch (error: unknown) {
+        setFavoritas((prev) => {
+          const rev = new Set(prev);
+          if (era) rev.add(variant.id);
+          else rev.delete(variant.id);
+          return rev;
+        });
+        toast.error(mensajeDeError(error));
+      }
+    },
+    [tenantId, favoritas]
+  );
+
   const filteredVariants = useMemo(
     () =>
       variants.filter(
@@ -319,5 +416,9 @@ export function useVariants(
     handleSave,
     handleSaveMany,
     handleDelete,
+    favoritas,
+    toggleFavorita,
+    handleInlineSaveVariante,
+    guardandoVariantes,
   };
 }

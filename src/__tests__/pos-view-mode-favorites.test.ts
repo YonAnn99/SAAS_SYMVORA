@@ -43,3 +43,21 @@ describe("filtrado de favoritos en el POS", () => {
     expect(filtrados).toHaveLength(0);
   });
 });
+
+describe("favoritos con variantes (098)", () => {
+  // Import diferido en el bloque: el resto del archivo no lo necesita.
+  it("un producto entra si él o alguna de sus variantes es favorita", async () => {
+    const { productoEnFavoritos } = await import("@/features/pos/favoritos-pos");
+    const variantes = [{ id: "v-m" }, { id: "v-l" }];
+    expect(productoEnFavoritos("barra", new Set(), new Set(["v-l"]), variantes)).toBe(true);
+    expect(productoEnFavoritos("barra", new Set(["barra"]), new Set(), variantes)).toBe(true);
+    expect(productoEnFavoritos("barra", new Set(), new Set(["otra"]), variantes)).toBe(false);
+  });
+
+  it("en Desglosado muestra solo las variantes favoritas si el producto no lo es", async () => {
+    const { variantesVisiblesEnFavoritos } = await import("@/features/pos/favoritos-pos");
+    const variantes = [{ id: "v-m" }, { id: "v-l" }];
+    expect(variantesVisiblesEnFavoritos("barra", variantes, new Set(), new Set(["v-l"]))).toEqual([{ id: "v-l" }]);
+    expect(variantesVisiblesEnFavoritos("barra", variantes, new Set(["barra"]), new Set())).toEqual(variantes);
+  });
+});

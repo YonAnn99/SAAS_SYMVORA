@@ -11,6 +11,7 @@ import { stockStatus } from "@/features/inventory/stock-status";
 import type { Producto, VarianteProducto } from "../types/pos.types";
 import { variantLabel, variantPrice } from "./variant-picker-dialog";
 import type { PosViewMode } from "./pos-search-bar";
+import { variantesVisiblesEnFavoritos } from "../favoritos-pos";
 
 /**
  * Las columnas se calculan sobre el ancho REAL del contenedor (`@container`),
@@ -75,6 +76,9 @@ interface ProductGridProps {
   variantsByProduct?: Record<string, VarianteProducto[]>;
   variantCountByProduct?: Record<string, number>;
   precioDe?: (product: Producto, variant?: VarianteProducto | null) => number;
+  /** Con el filtro Favoritos en Desglosado: solo las variantes favoritas. */
+  favoritos?: ReadonlySet<string>;
+  variantesFavoritas?: ReadonlySet<string>;
 }
 
 export function ProductGrid({
@@ -88,6 +92,8 @@ export function ProductGrid({
   variantsByProduct,
   variantCountByProduct,
   precioDe,
+  favoritos,
+  variantesFavoritas,
 }: ProductGridProps) {
   const t = useTranslations();
 
@@ -106,7 +112,14 @@ export function ProductGrid({
     // Modo desglosado
     const items: PosGridItem[] = [];
     for (const product of products) {
-      const variants = variantsByProduct?.[product.id] ?? [];
+      const todas = variantsByProduct?.[product.id] ?? [];
+      // Favoritos: si el producto no es favorito, solo sus variantes favoritas
+      // (marcar "Talla M" no debe traer todas las tallas).
+      const soloFavoritas =
+        isFavoritesFilter && favoritos && variantesFavoritas && !favoritos.has(product.id);
+      const variants = soloFavoritas
+        ? variantesVisiblesEnFavoritos(product.id, todas, favoritos, variantesFavoritas)
+        : todas;
       if (variants.length === 0) {
         // Producto sin variantes creadas
         items.push({
@@ -127,8 +140,9 @@ export function ProductGrid({
             familyColor,
           });
         }
-        // Si el producto base tiene stock sin clasificar disponible
-        if (Number(product.stock_actual) > 0) {
+        // Si el producto base tiene stock sin clasificar disponible (no en
+        // Favoritos por variante: ahi solo van las variantes marcadas).
+        if (!soloFavoritas && Number(product.stock_actual) > 0) {
           items.push({
             kind: "product-general" as const,
             key: `gen-${product.id}`,
@@ -139,7 +153,7 @@ export function ProductGrid({
       }
     }
     return items;
-  }, [products, variantsByProduct, variantCountByProduct, viewMode]);
+  }, [products, variantsByProduct, variantCountByProduct, viewMode, isFavoritesFilter, favoritos, variantesFavoritas]);
 
   return (
     <div className="@container flex-1 rounded-lg border border-border bg-card p-4 overflow-y-auto animate-fade-in-up stagger-2">

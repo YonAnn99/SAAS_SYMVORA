@@ -398,6 +398,10 @@ export default function ProductsPage() {
         variantesPorProducto={variantesPorProducto}
         onEditVariante={variantes.openEditDialog}
         onDeleteVariante={variantes.handleDelete}
+        variantesFavoritas={variantes.favoritas}
+        onToggleFavoritaVariante={variantes.toggleFavorita}
+        onInlineSaveVariante={variantes.handleInlineSaveVariante}
+        guardandoVariantes={variantes.guardandoVariantes}
       />
 
         </TabsContent>

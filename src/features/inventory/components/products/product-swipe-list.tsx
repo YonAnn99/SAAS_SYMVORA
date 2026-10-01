@@ -114,14 +114,14 @@ export function ProductSwipeList({
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
-                <span className="truncate">{product.nombre}</span>
-                {nVariantes > 0 && (
-                  <span className="shrink-0 rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
-                    {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
-                  </span>
-                )}
-              </p>
+              <p className="truncate text-sm font-medium">{product.nombre}</p>
+              {/* El distintivo va en el segundo renglon: junto al nombre, en
+                  pantallas angostas se encimaba con el precio. */}
+              {nVariantes > 0 && (
+                <span className="mt-0.5 inline-block rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
+                  {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
+                </span>
+              )}
               <p className="truncate text-xs opacity-60">
                 {t(`products.units.${product.unidad_medida}`)}
                 {" · "}

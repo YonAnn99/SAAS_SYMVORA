@@ -25,6 +25,8 @@ interface VariantesProductoHojaProps {
   onOpenChange: (abierta: boolean) => void;
   onEdit: (variante: VarianteProducto) => void;
   onDelete: (variante: VarianteProducto) => Promise<boolean>;
+  favoritas?: ReadonlySet<string>;
+  onToggleFavorita?: (variante: VarianteProducto) => void;
 }
 
 export function VariantesProductoHoja({
@@ -33,6 +35,8 @@ export function VariantesProductoHoja({
   onOpenChange,
   onEdit,
   onDelete,
+  favoritas,
+  onToggleFavorita,
 }: VariantesProductoHojaProps) {
   const t = useTranslations();
   const abierta = producto !== null;
@@ -75,6 +79,9 @@ export function VariantesProductoHoja({
               variantes={variantes}
               getProductName={() => producto.nombre}
               conProducto={false}
+              tocarParaEditar
+              favoritas={favoritas}
+              onToggleFavorita={onToggleFavorita}
               onEdit={onEdit}
               onDelete={async (v) => {
                 const ok = await onDelete(v);

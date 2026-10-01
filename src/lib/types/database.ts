@@ -206,6 +206,27 @@ export type Database = {
           creado_en?: string;
         };
       };
+      /** Migracion 098: corazones por variante, privados de cada usuario. */
+      variantes_favoritas: {
+        Row: {
+          tenant_id: string;
+          user_id: string;
+          variante_id: string;
+          creado_en: string;
+        };
+        Insert: {
+          tenant_id: string;
+          user_id?: string;
+          variante_id: string;
+          creado_en?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          user_id?: string;
+          variante_id?: string;
+          creado_en?: string;
+        };
+      };
       listas_precios: {
         Row: {
           id: string;

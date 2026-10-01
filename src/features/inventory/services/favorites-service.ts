@@ -49,3 +49,38 @@ export async function toggleFavorito(
     .eq("producto_id", productoId);
   if (error) throw error;
 }
+
+// --- Variantes (migracion 098) -------------------------------------------------
+
+/** Los ids de variantes que el usuario actual tiene marcadas. */
+export async function fetchVariantesFavoritas(tenantId: string): Promise<Set<string>> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("variantes_favoritas")
+    .select("variante_id")
+    .eq("tenant_id", tenantId);
+  // Igual que los de producto: sin la tabla, nadie tiene favoritas.
+  if (error) return new Set();
+  return new Set((data ?? []).map((f) => f.variante_id as string));
+}
+
+export async function toggleVarianteFavorita(
+  tenantId: string,
+  varianteId: string,
+  activar: boolean
+): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  if (activar) {
+    const { error } = await supabase
+      .from("variantes_favoritas")
+      .insert({ tenant_id: tenantId, variante_id: varianteId });
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from("variantes_favoritas")
+    .delete()
+    .eq("tenant_id", tenantId)
+    .eq("variante_id", varianteId);
+  if (error) throw error;
+}

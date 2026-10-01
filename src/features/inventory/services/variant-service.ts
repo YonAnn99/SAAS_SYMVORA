@@ -113,6 +113,16 @@ export async function updateVariant(
   if (error) throw error;
 }
 
+/** Campos sueltos (edicion en la celda del catalogo). */
+export async function updateVariantCampos(
+  variantId: string,
+  campos: Partial<Pick<VarianteInput, "precio_venta" | "costo_compra">>
+): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.from("variantes_producto").update(campos).eq("id", variantId);
+  if (error) throw error;
+}
+
 export async function deleteVariant(variantId: string): Promise<void> {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase

@@ -12,8 +12,10 @@
 import {
   FilaDeslizable,
   TEXTO_PISTA_DESLIZAR,
+  noArrastrar,
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
+import { FavoriteButton } from "../products/product-badges";
 import type { VarianteProducto } from "../../types/inventory.types";
 import { AtributosVariante } from "./atributos-variante-etiqueta";
 import { etiquetaAtributos } from "../../atributos-variante";
@@ -29,6 +31,11 @@ interface VariantSwipeListProps {
    * arriba, asi que cada fila se titula con sus atributos.
    */
   conProducto?: boolean;
+  /** Tocar la fila (sin deslizar) abre Editar. */
+  tocarParaEditar?: boolean;
+  /** Corazon por variante: se muestra si llega `onToggleFavorita`. */
+  favoritas?: ReadonlySet<string>;
+  onToggleFavorita?: (variant: VarianteProducto) => void;
 }
 
 export function VariantSwipeList({
@@ -37,6 +44,9 @@ export function VariantSwipeList({
   onEdit,
   onDelete,
   conProducto = true,
+  tocarParaEditar = false,
+  favoritas,
+  onToggleFavorita,
 }: VariantSwipeListProps) {
   const { verPista, alAbrir } = usePistaDeslizar();
 
@@ -57,6 +67,7 @@ export function VariantSwipeList({
             onEditar={() => onEdit(variant)}
             onEliminar={() => onDelete(variant)}
             onOpenChange={alAbrir}
+            onTap={tocarParaEditar ? () => onEdit(variant) : undefined}
           >
             <div className="min-w-0 flex-1">
               {conProducto ? (
@@ -88,6 +99,17 @@ export function VariantSwipeList({
               </span>
               <span className="text-xs opacity-60">{variant.stock_actual} en stock</span>
             </div>
+
+            {onToggleFavorita && (
+              // Fuera del arrastre: tocar el corazon no abre Editar ni mueve la fila.
+              <span onPointerDown={noArrastrar} className="-mr-2 flex shrink-0 items-center">
+                <FavoriteButton
+                  esFavorito={favoritas?.has(variant.id) ?? false}
+                  onToggle={() => onToggleFavorita(variant)}
+                  nombre={nombre}
+                />
+              </span>
+            )}
           </FilaDeslizable>
         );
       })}
