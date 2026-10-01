@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /**
  * Las variantes en celular: una pastilla deslizable por variante (ver
  * `components/ui/fila-deslizable.tsx`). La usa la hoja de variantes de un
@@ -69,6 +71,16 @@ export function VariantSwipeList({
             onOpenChange={alAbrir}
             onTap={tocarParaEditar ? () => onEdit(variant) : undefined}
           >
+            {variant.imagen_url && (
+              <Image
+                src={variant.imagen_url}
+                alt=""
+                width={36}
+                height={36}
+                draggable={false}
+                className="h-9 w-9 shrink-0 rounded-lg border border-border object-cover"
+              />
+            )}
             <div className="min-w-0 flex-1">
               {conProducto ? (
                 <>

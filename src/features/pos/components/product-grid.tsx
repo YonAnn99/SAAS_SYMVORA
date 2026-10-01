@@ -219,9 +219,10 @@ export function ProductGrid({
                   style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
                   <div className="relative w-full aspect-[4/3] shrink-0">
-                    {item.product.imagen_url ? (
+                    {/* La foto de la variante si tiene; si no, la del producto. */}
+                    {item.variant.imagen_url || item.product.imagen_url ? (
                       <Image
-                        src={item.product.imagen_url}
+                        src={(item.variant.imagen_url || item.product.imagen_url) as string}
                         alt={`${item.product.nombre} - ${variantLabel(item.variant)}`}
                         width={260}
                         height={195}

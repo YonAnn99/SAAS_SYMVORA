@@ -143,7 +143,7 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
               value={search}
               onValueChange={setSearch}
               placeholder={t("search.placeholder")}
-              className="flex h-12 w-full rounded-md bg-transparent py-3 pl-3 text-sm outline-none placeholder:text-muted-foreground"
+              className="flex h-12 w-full rounded-md bg-transparent py-3 pl-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <kbd className="pointer-events-none ml-2 hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
               ESC

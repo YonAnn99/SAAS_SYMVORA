@@ -19,6 +19,8 @@ export interface VarianteInput {
    * (`resumenCompatible`), para todo lo que ya lee esas columnas.
    */
   atributos?: Atributo[];
+  /** Foto de la variante (bucket `product-images`); `null` la quita. */
+  imagen_url?: string | null;
 }
 
 /**

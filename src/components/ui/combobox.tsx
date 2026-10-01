@@ -32,7 +32,8 @@ function ComboboxInput({
     <ComboboxPrimitive.Input
       data-slot="combobox-input"
       className={cn(
-        "h-full min-w-0 flex-1 bg-transparent text-sm outline-none select-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+        // Sin anillo propio: el recuadro del grupo ya marca el foco (focus-within).
+        "h-full min-w-0 flex-1 bg-transparent text-sm outline-none select-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       {...props}

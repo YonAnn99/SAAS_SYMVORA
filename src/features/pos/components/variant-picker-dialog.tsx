@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /**
  * Selector de variante al agregar un producto al carrito.
  *
@@ -80,7 +82,17 @@ export function VariantPickerDialog({
                 className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-left transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <Palette className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  {v.imagen_url ? (
+                    <Image
+                      src={v.imagen_url}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 shrink-0 rounded-md border border-border object-cover"
+                    />
+                  ) : (
+                    <Palette className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
                   <span className="truncate text-sm font-medium">
                     {variantLabel(v)}
                   </span>

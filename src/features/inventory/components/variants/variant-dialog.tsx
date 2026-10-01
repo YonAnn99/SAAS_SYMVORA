@@ -8,6 +8,9 @@ import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
 import { COLOR_ALTA, SONIDO_ALTA, celebrarAlta, precargarSonido } from "@/lib/celebracion";
 import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { EtiquetasInput } from "@/components/ui/etiquetas-input";
+import { FileUpload } from "@/components/ui/file-upload";
+import { IMAGEN_PRODUCTO } from "@/lib/imagen-validacion";
+import { subirImagenProducto } from "../../services/product-service";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -121,7 +124,7 @@ export function VariantDialog({
   onSave,
   onSaveMany,
 }: VariantDialogProps) {
-  const { tenantGiro } = useCurrentTenant();
+  const { tenantGiro, tenantId } = useCurrentTenant();
   const [productoId, setProductoId] = useState("");
   const [filas, setFilas] = useState<FilaAtributo[]>([]);
   const [sku, setSku] = useState("");
@@ -130,6 +133,11 @@ export function VariantDialog({
   const [costo, setCosto] = useState("");
   const [stock, setStock] = useState("0");
   const [ajustes, setAjustes] = useState<Record<string, AjusteFila>>({});
+  // Foto (opcional): la que se eligio o tomo y si se quito la que tenia.
+  const [imagenFile, setImagenFile] = useState<File | null>(null);
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null);
+  const [imagenQuitada, setImagenQuitada] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
 
   const tiposDelProducto = (id: string): string[] => {
     const v = variantes.find((x) => x.producto_id === id && atributosDeVariante(x).length > 0);
@@ -145,6 +153,9 @@ export function VariantDialog({
     setCosto("");
     setStock("0");
     setAjustes({});
+    setImagenFile(null);
+    setImagenPreview(null);
+    setImagenQuitada(false);
   };
 
   const sincronizar = (variant: VarianteProducto | null) => {
@@ -167,6 +178,9 @@ export function VariantDialog({
     setCosto(variant.costo_compra.toString());
     setStock(variant.stock_actual.toString());
     setAjustes({});
+    setImagenFile(null);
+    setImagenPreview(variant.imagen_url ?? null);
+    setImagenQuitada(false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -268,6 +282,27 @@ export function VariantDialog({
       return false;
     }
     const precioGeneral = parseFloat(precio);
+    if (!enLote && !(precioGeneral > 0)) {
+      toast.error("El precio de venta debe ser mayor a 0");
+      return false;
+    }
+
+    // Foto: se sube UNA vez (en lote, la misma para todas las combinaciones).
+    let imagen_url: string | null = editingVariant?.imagen_url ?? null;
+    if (imagenFile) {
+      if (!tenantId) return false;
+      setSubiendo(true);
+      try {
+        imagen_url = await subirImagenProducto(imagenFile, tenantId);
+      } catch {
+        toast.error("No se pudo subir la foto. Revisa tu conexión e intenta de nuevo.");
+        return false;
+      } finally {
+        setSubiendo(false);
+      }
+    } else if (imagenQuitada) {
+      imagen_url = null;
+    }
 
     if (enLote) {
       const inputs = combosActivos.map((combo) => {
@@ -276,6 +311,7 @@ export function VariantDialog({
           sku: skuDeCombinacion(baseSku, combo.map((x) => x.valor)),
           precio_venta: parseFloat(a.precio ?? "") || precioGeneral || 0,
           stock_actual: parseFloat(a.stock ?? "") || parseFloat(stock) || 0,
+          imagen_url,
         });
       });
       if (inputs.some((i) => !(i.precio_venta > 0))) {
@@ -285,15 +321,12 @@ export function VariantDialog({
       return onSaveMany(inputs);
     }
 
-    if (!(precioGeneral > 0)) {
-      toast.error("El precio de venta debe ser mayor a 0");
-      return false;
-    }
     const combo = combosActivos[0];
     return onSave(
       armar(combo, {
         sku: sku || (editando ? null : skuDeCombinacion(baseSku, combo.map((x) => x.valor))),
         codigo_barras: codigo || null,
+        imagen_url,
       })
     );
   };
@@ -469,6 +502,36 @@ export function VariantDialog({
             </div>
           )}
 
+          {/* Foto de la variante: subir o (en celular) tomarla con la camara. */}
+          {productoId && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Foto (opcional)</Label>
+              <FileUpload
+                preview={imagenPreview}
+                onFileSelect={(file) => {
+                  setImagenFile(file);
+                  setImagenQuitada(false);
+                  setImagenPreview(URL.createObjectURL(file));
+                }}
+                onFileRemove={() => {
+                  setImagenFile(null);
+                  setImagenPreview(null);
+                  setImagenQuitada(true);
+                }}
+                dragDropText="Arrastra una foto de la variante o haz clic para seleccionar"
+                maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
+                opciones={IMAGEN_PRODUCTO}
+                accept="image/*"
+                allowCamera
+              />
+              {enLote && imagenPreview && (
+                <p className="text-[11px] text-muted-foreground">
+                  La foto se usará en las {combosActivos.length} variantes; puedes cambiar la de cada una al editarla.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Una sola variante: SKU y codigo de barras */}
           {productoId && !enLote && (
             <div className="grid grid-cols-2 gap-3">
@@ -600,8 +663,8 @@ export function VariantDialog({
             <Button variant="outline" size="sm" className="h-8" onClick={() => handleOpenChange(false)}>
               Cancelar
             </Button>
-            <SpecularActionButton tone="add" className="h-8" onClick={() => void guardarEdicion()} disabled={saving}>
-              {saving ? "Guardando..." : "Guardar cambios"}
+            <SpecularActionButton tone="add" className="h-8" onClick={() => void guardarEdicion()} disabled={saving || subiendo}>
+              {subiendo ? "Subiendo foto..." : saving ? "Guardando..." : "Guardar cambios"}
             </SpecularActionButton>
           </DialogFooter>
         ) : (

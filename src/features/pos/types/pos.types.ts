@@ -105,4 +105,6 @@ export interface VarianteProducto {
   stock_actual: number;
   /** Codigo propio de la talla/color: al escanearlo entra esa variante directo. */
   codigo_barras?: string | null;
+  /** Foto propia de la variante; sin ella se usa la del producto. */
+  imagen_url?: string | null;
 }

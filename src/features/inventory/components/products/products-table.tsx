@@ -443,6 +443,15 @@ export function ProductsTable({
                       <CeldaPlegable abierta={abierto}>
                         <div id={i === 0 ? idPanel : undefined} className="flex items-center gap-2 pl-[54px] text-[13px]">
                           <span className="text-muted-foreground/60" aria-hidden="true">└</span>
+                          {v.imagen_url && (
+                            <Image
+                              src={v.imagen_url}
+                              alt=""
+                              width={24}
+                              height={24}
+                              className="h-6 w-6 shrink-0 rounded border border-border object-cover"
+                            />
+                          )}
                           <AtributosVariante variant={v} vacio="Sin atributos" />
                         </div>
                       </CeldaPlegable>

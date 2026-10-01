@@ -182,7 +182,7 @@ export async function fetchPosVariants(
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from("variantes_producto")
-    .select("id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras")
+    .select("id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras, imagen_url")
     .eq("tenant_id", tenantId)
     .order("talla");
 

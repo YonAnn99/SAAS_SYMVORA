@@ -422,9 +422,17 @@
   }
 }
 
-/* Focus rings */
-:focus-visible {
-  @apply outline-none ring-2 ring-offset-2 ring-primary;
+/* Focus rings.
+   En `@layer base` (antes iba sin capa y repetida dos veces): sin capa le
+   ganaba a las utilidades, asi que pisaba el foco propio de cada campo (Input,
+   Select, Combobox) y les ponia ENCIMA este anillo. Y `ring-offset-2` sin
+   color usa el blanco por defecto de Tailwind: ese era el recuadro blanco que
+   aparecia al hacer clic en los desplegables. El separador ahora es
+   transparente. Lo que trae su propio `focus-visible:` ya se queda con el suyo. */
+@layer base {
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-primary ring-offset-transparent;
+  }
 }
 
 /* Stagger delays */
@@ -537,10 +545,6 @@
   }
 }
 
-/* Focus rings */
-:focus-visible {
-  @apply outline-none ring-2 ring-offset-2 ring-primary;
-}
 
 /* Stagger delays */
 .stagger-1 { animation-delay: 0ms; }

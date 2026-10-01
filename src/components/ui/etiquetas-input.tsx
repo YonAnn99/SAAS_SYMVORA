@@ -96,7 +96,7 @@ export function EtiquetasInput({
             onBlur={() => agregar(texto)}
             placeholder={valores.length === 0 ? placeholder : ""}
             aria-label={ariaLabel}
-            className="h-6 min-w-[6rem] flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
+            className="h-6 min-w-[6rem] flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         )}
       </div>
