@@ -436,6 +436,7 @@ export default function ProductsPage() {
         saving={saving}
         onSave={handleSave}
         tenantId={tenantId ?? ""}
+        categorias={categories}
       />
 
       {/* Import Catalog Dialog */}

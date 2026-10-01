@@ -14,6 +14,8 @@ import {
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
 import type { VarianteProducto } from "../../types/inventory.types";
+import { AtributosVariante } from "./atributos-variante-etiqueta";
+import { etiquetaAtributos } from "../../atributos-variante";
 
 interface VariantSwipeListProps {
   variantes: VarianteProducto[];
@@ -39,8 +41,7 @@ export function VariantSwipeList({
 
       {variantes.map((variant) => {
         const producto = getProductName(variant.producto_id);
-        const nombre =
-          [variant.talla, variant.color].filter(Boolean).join(" / ") || "Variante";
+        const nombre = etiquetaAtributos(variant) || "Variante";
 
         return (
           <FilaDeslizable
@@ -53,24 +54,13 @@ export function VariantSwipeList({
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{producto}</p>
               <p className="flex min-w-0 items-center gap-1.5 text-xs opacity-60">
-                {variant.talla && <span className="shrink-0">{variant.talla}</span>}
-                {variant.talla && variant.color && <span aria-hidden="true">·</span>}
-                {variant.color && (
-                  <span className="flex min-w-0 items-center gap-1">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full border"
-                      style={{ backgroundColor: variant.color }}
-                    />
-                    <span className="truncate">{variant.color}</span>
-                  </span>
-                )}
+                <AtributosVariante variant={variant} vacio="Sin atributos" />
                 {variant.sku && (
                   <>
                     <span aria-hidden="true">·</span>
                     <span className="truncate font-mono">{variant.sku}</span>
                   </>
                 )}
-                {!variant.talla && !variant.color && !variant.sku && <span>Sin talla ni color</span>}
               </p>
             </div>
 

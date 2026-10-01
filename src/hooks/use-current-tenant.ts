@@ -11,6 +11,8 @@ interface TenantInfo {
   tenantLogo: string | null;
   /** Domicilio del negocio. Lo imprime el pie del ticket del POS. */
   tenantAddress: string | null;
+  /** `tenants.giro_comercial` (ROPA, ABARROTES...). */
+  tenantGiro: string | null;
   role: UserRole | null;
   loading: boolean;
   error: string | null;
@@ -23,6 +25,7 @@ export function useCurrentTenant(): TenantInfo {
     tenantName,
     tenantLogo,
     tenantAddress,
+    tenantGiro,
     role,
     loading,
     error,
@@ -33,6 +36,7 @@ export function useCurrentTenant(): TenantInfo {
     tenantName,
     tenantLogo,
     tenantAddress,
+    tenantGiro,
     role,
     loading,
     error,

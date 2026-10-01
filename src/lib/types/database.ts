@@ -809,6 +809,8 @@ export type Database = {
           costo_compra: number;
           stock_actual: number;
           imagen_url: string | null;
+          /** Migracion 097: [{tipo, valor}] en orden. talla/color son su resumen. */
+          atributos?: { tipo: string; valor: string }[];
           creado_en: string;
           actualizado_en: string;
         };
@@ -824,6 +826,7 @@ export type Database = {
           costo_compra?: number;
           stock_actual?: number;
           imagen_url?: string | null;
+          atributos?: { tipo: string; valor: string }[];
           creado_en?: string;
           actualizado_en?: string;
         };
@@ -839,6 +842,7 @@ export type Database = {
           costo_compra?: number;
           stock_actual?: number;
           imagen_url?: string | null;
+          atributos?: { tipo: string; valor: string }[];
           creado_en?: string;
           actualizado_en?: string;
         };

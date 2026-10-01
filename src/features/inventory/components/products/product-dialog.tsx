@@ -10,6 +10,7 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
 import { COLOR_ALTA, SONIDO_ALTA, celebrarAlta, precargarSonido } from "@/lib/celebracion";
 import { BotonEscanear } from "@/components/escaner/boton-escanear";
+import { SelectorCategoria } from "./selector-categoria";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,6 +72,8 @@ interface ProductDialogProps {
   /** `true` si quedo guardado. Cerrar lo decide el dialogo. */
   onSave: (input: ProductInput) => Promise<boolean>;
   tenantId: string;
+  /** Categorias que ya usan los productos (para el desplegable). */
+  categorias?: string[];
 }
 
 export function ProductDialog({
@@ -80,6 +83,7 @@ export function ProductDialog({
   saving,
   onSave,
   tenantId,
+  categorias = [],
 }: ProductDialogProps) {
   const t = useTranslations();
   // Modulos del negocio (Configuracion -> Modulos): deciden que unidades y que
@@ -482,11 +486,10 @@ export function ProductDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Categoría</Label>
-              <Input
-                placeholder="Ej: Bebidas"
+              <SelectorCategoria
                 value={formData.categoria}
-                onChange={(e) => updateField("categoria", e.target.value)}
-                className="h-8 text-sm"
+                onChange={(c) => updateField("categoria", c)}
+                categorias={categorias}
               />
             </div>
           </div>

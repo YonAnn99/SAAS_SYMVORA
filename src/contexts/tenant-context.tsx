@@ -12,6 +12,8 @@ export interface TenantInfo {
   tenantLogo: string | null;
   /** Domicilio del negocio. Lo imprime el pie del ticket del POS. */
   tenantAddress: string | null;
+  /** `tenants.giro_comercial` (ROPA, ABARROTES...): sugiere atributos de variante. */
+  tenantGiro: string | null;
   role: UserRole | null;
   loading: boolean;
   error: string | null;
@@ -27,6 +29,7 @@ const EMPTY_STATE: TenantInfo = {
   tenantName: "",
   tenantLogo: null,
   tenantAddress: null,
+  tenantGiro: null,
   role: null,
   loading: true,
   error: null,
@@ -57,7 +60,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         .from("tenant_memberships")
         .select(
           `tenant_id, role,
-           tenants!inner(nombre_comercial, logo_url, direccion)`
+           tenants!inner(nombre_comercial, logo_url, direccion, giro_comercial)`
         )
         .eq("user_id", user.id)
         .limit(1)
@@ -76,6 +79,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         nombre_comercial: string;
         logo_url: string | null;
         direccion: string | null;
+        giro_comercial: string | null;
       };
 
       const resuelto = {
@@ -84,6 +88,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         tenantName: tenantData?.nombre_comercial || "Negocio",
         tenantLogo: tenantData?.logo_url || null,
         tenantAddress: tenantData?.direccion || null,
+        tenantGiro: tenantData?.giro_comercial || null,
         role: membership.role as UserRole,
       };
 

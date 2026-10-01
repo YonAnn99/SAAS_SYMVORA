@@ -15,6 +15,7 @@ import {
   updateVariant,
   type VarianteInput,
 } from "../services/variant-service";
+import { etiquetaAtributos } from "../atributos-variante";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { destinoPorDefecto } from "@/features/sucursales/seleccion";
 import {
@@ -139,7 +140,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
             action: "UPDATE",
             entity: "producto",
             entityId: editingVariant.id,
-            entityName: `${input.talla || ""} ${input.color || ""}`.trim() || "Variante",
+            entityName: etiquetaAtributos(input) || "Variante",
           });
           toast.success("Variante actualizada");
         } else {
@@ -155,7 +156,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
           await logActivity({
             action: "CREATE",
             entity: "producto",
-            entityName: `${input.talla || ""} ${input.color || ""}`.trim() || "Variante",
+            entityName: etiquetaAtributos(input) || "Variante",
           });
           toast.success("Variante creada");
         }
@@ -166,7 +167,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
         const isUnique = error instanceof Error && error.message.includes("23505");
         toast.error(
           isUnique
-            ? "Ya existe una variante con esa talla y color para este producto"
+            ? "Ya existe una variante con esos atributos para este producto"
             : error instanceof Error
               ? "Error al guardar la variante"
               : "Error al guardar la variante"
@@ -179,6 +180,72 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
     [tenantId, editingVariant, refetch, hayVarias, seleccionada, activas]
   );
 
+  /**
+   * Varias variantes a la vez (una por combinacion de atributos). Mismas reglas
+   * de stock por sucursal que `handleSave`; se detiene en la primera que falle
+   * y dice cual, para no dejar a medias sin avisar.
+   */
+  const handleSaveMany = useCallback(
+    async (inputs: VarianteInput[]) => {
+      if (!tenantId || inputs.length === 0) return false;
+      const hayStock = inputs.some((i) => Number(i.stock_actual ?? 0) > 0);
+      let destinoStock: string | null = null;
+      if (hayVarias && hayStock) {
+        destinoStock = destinoPorDefecto(seleccionada, activas);
+        if (!destinoStock) {
+          toast.error(
+            "Elige en el selector a qué sucursal entran las existencias iniciales, o déjalas en 0."
+          );
+          return false;
+        }
+      }
+
+      setSaving(true);
+      let creadas = 0;
+      try {
+        for (const input of inputs) {
+          const stock = Number(input.stock_actual ?? 0);
+          const datos: VarianteInput = hayVarias ? { ...input, stock_actual: 0 } : input;
+          try {
+            const nuevaId = await createVariant(tenantId, datos);
+            if (destinoStock && stock > 0) {
+              await establecerStockSucursal({
+                sucursalId: destinoStock,
+                productoId: datos.producto_id,
+                varianteId: nuevaId,
+                cantidad: stock,
+              });
+            }
+            await logActivity({
+              action: "CREATE",
+              entity: "producto",
+              entityName: etiquetaAtributos(input) || "Variante",
+            });
+            creadas++;
+          } catch (error: unknown) {
+            const nombre = etiquetaAtributos(input) || "la variante";
+            const duplicada = error instanceof Error
+              ? error.message.includes("23505")
+              : String((error as { code?: string })?.code) === "23505";
+            toast.error(
+              duplicada
+                ? `"${nombre}" ya existe para este producto${creadas ? ` (se crearon ${creadas} antes)` : ""}`
+                : `No se pudo crear "${nombre}"${creadas ? ` (se crearon ${creadas} antes)` : ""}`
+            );
+            if (creadas) void refetch();
+            return false;
+          }
+        }
+        toast.success(creadas === 1 ? "Variante creada" : `${creadas} variantes creadas`);
+        void refetch();
+        return true;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [tenantId, hayVarias, seleccionada, activas, refetch]
+  );
+
   const handleDelete = useCallback(
     async (variant: VarianteProducto) => {
       try {
@@ -187,7 +254,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
           action: "DELETE",
           entity: "producto",
           entityId: variant.id,
-          entityName: `${variant.talla || ""} ${variant.color || ""}`.trim() || "Variante",
+          entityName: etiquetaAtributos(variant) || "Variante",
         });
         toast.success("Variante eliminada");
         setDeleteConfirm(null);
@@ -207,8 +274,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
     () =>
       variants.filter(
         (variant) =>
-          variant.talla?.toLowerCase().includes(search.toLowerCase()) ||
-          variant.color?.toLowerCase().includes(search.toLowerCase()) ||
+          etiquetaAtributos(variant).toLowerCase().includes(search.toLowerCase()) ||
           variant.sku?.toLowerCase().includes(search.toLowerCase())
       ),
     [variants, search]
@@ -239,6 +305,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
     openCreateDialog,
     openEditDialog,
     handleSave,
+    handleSaveMany,
     handleDelete,
   };
 }

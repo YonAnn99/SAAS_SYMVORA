@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/table";
 import type { VarianteProducto } from "../../types/inventory.types";
 import { VariantSwipeList } from "./variant-swipe-list";
+import { AtributosVariante } from "./atributos-variante-etiqueta";
+import { etiquetaAtributos } from "../../atributos-variante";
 
 interface VariantsTableProps {
   variants: VarianteProducto[];
@@ -93,10 +95,7 @@ export function VariantsTable({
                     Producto
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Talla
-                  </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">
-                    Color
+                    Atributos
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
                     SKU
@@ -119,20 +118,7 @@ export function VariantsTable({
                       {getProductName(variant.producto_id)}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {variant.talla || "-"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {variant.color ? (
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-3 w-3 rounded-full border"
-                            style={{ backgroundColor: variant.color }}
-                          />
-                          {variant.color}
-                        </div>
-                      ) : (
-                        "-"
-                      )}
+                      <AtributosVariante variant={variant} />
                     </TableCell>
                     <TableCell className="text-sm font-mono text-muted-foreground">
                       {variant.sku || "-"}
@@ -155,7 +141,7 @@ export function VariantsTable({
                           Editar
                         </Button>
                         <BotonEliminar
-                          nombre={`la variante ${[variant.talla, variant.color].filter(Boolean).join(" / ") || ""}`.trim()}
+                          nombre={`la variante ${etiquetaAtributos(variant)}`.trim()}
                           detalle="No se puede deshacer"
                           onEliminar={async () => {
                             await onDelete(variant);

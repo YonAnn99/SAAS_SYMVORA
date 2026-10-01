@@ -3,6 +3,7 @@ import type {
   ProductoOption,
   VarianteProducto,
 } from "../types/inventory.types";
+import type { Atributo } from "../atributos-variante";
 
 export interface VarianteInput {
   producto_id: string;
@@ -13,6 +14,24 @@ export interface VarianteInput {
   precio_venta: number;
   costo_compra: number;
   stock_actual: number;
+  /**
+   * Migracion 097. `talla`/`color` se mandan igual, como resumen compatible
+   * (`resumenCompatible`), para todo lo que ya lee esas columnas.
+   */
+  atributos?: Atributo[];
+}
+
+/**
+ * La columna `atributos` no existe todavia (migracion 097 sin aplicar): se
+ * reintenta sin ella y la variante queda solo con su resumen talla/color.
+ */
+function faltaColumnaAtributos(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return (
+    error.code === "PGRST204" ||
+    error.code === "42703" ||
+    /atributos/.test(error.message ?? "")
+  );
 }
 
 export async function fetchVariants(tenantId: string): Promise<VarianteProducto[]> {
@@ -47,12 +66,21 @@ export async function createVariant(
   input: VarianteInput
 ): Promise<string> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("variantes_producto")
     .insert({ tenant_id: tenantId, ...input })
     .select("id")
     .single();
-  if (error) throw error;
+  if (faltaColumnaAtributos(error) && input.atributos) {
+    const { atributos: _sin, ...resto } = input;
+    void _sin;
+    ({ data, error } = await supabase
+      .from("variantes_producto")
+      .insert({ tenant_id: tenantId, ...resto })
+      .select("id")
+      .single());
+  }
+  if (error || !data) throw error ?? new Error("No se creó la variante");
 
   // Con su primera variante el producto pasa a "Maneja variantes", para que su
   // interruptor en el catalogo diga la verdad. El filtro hace que sea un no-op
@@ -73,10 +101,15 @@ export async function updateVariant(
   input: VarianteInput
 ): Promise<void> {
   const supabase = createSupabaseBrowserClient();
-  const { error } = await supabase
+  let { error } = await supabase
     .from("variantes_producto")
     .update(input)
     .eq("id", variantId);
+  if (faltaColumnaAtributos(error) && input.atributos) {
+    const { atributos: _sin, ...resto } = input;
+    void _sin;
+    ({ error } = await supabase.from("variantes_producto").update(resto).eq("id", variantId));
+  }
   if (error) throw error;
 }
 
