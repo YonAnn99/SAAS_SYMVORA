@@ -99,7 +99,6 @@ export function Features() {
         itemDistance={esMovil ? 60 : 90}
         itemStackDistance={esMovil ? 16 : 28}
         stackPosition={esMovil ? "14%" : "18%"}
-        scaleEndPosition={esMovil ? "8%" : "10%"}
         baseScale={0.88}
         itemScale={0.03}
       >
