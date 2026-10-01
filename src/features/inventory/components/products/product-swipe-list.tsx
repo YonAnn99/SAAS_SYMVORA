@@ -20,6 +20,7 @@ import {
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Producto } from "../../types/inventory.types";
 import { FavoriteButton, StockBadge } from "./product-badges";
@@ -36,6 +37,10 @@ interface ProductSwipeListProps {
   onEdit: (product: Producto) => void;
   /** `false` si no se pudo borrar: la fila reaparece. */
   onDelete: (product: Producto) => void | Promise<boolean | void>;
+  /** Cuantas variantes tiene cada producto (los que no aparecen, ninguna). */
+  conteoVariantes?: Record<string, number>;
+  /** Tocar un producto con variantes abre su hoja de variantes. */
+  onVerVariantes?: (product: Producto) => void;
 }
 
 export function ProductSwipeList({
@@ -49,6 +54,8 @@ export function ProductSwipeList({
   onToggleFavorito,
   onEdit,
   onDelete,
+  conteoVariantes = {},
+  onVerVariantes,
 }: ProductSwipeListProps) {
   const t = useTranslations();
   const { verPista, alAbrir } = usePistaDeslizar();
@@ -72,13 +79,16 @@ export function ProductSwipeList({
         )}
       </div>
 
-      {productos.map((product) => (
+      {productos.map((product) => {
+        const nVariantes = conteoVariantes[product.id] ?? 0;
+        return (
           <FilaDeslizable
             key={product.id}
             label={product.nombre}
             onEditar={() => onEdit(product)}
             onEliminar={() => onDelete(product)}
             onOpenChange={alAbrir}
+            onTap={nVariantes > 0 && onVerVariantes ? () => onVerVariantes(product) : undefined}
           >
             <span onPointerDown={noArrastrar} className="flex shrink-0 items-center">
               <Checkbox
@@ -104,7 +114,14 @@ export function ProductSwipeList({
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{product.nombre}</p>
+              <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                <span className="truncate">{product.nombre}</span>
+                {nVariantes > 0 && (
+                  <span className="shrink-0 rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
+                    {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
+                  </span>
+                )}
+              </p>
               <p className="truncate text-xs opacity-60">
                 {t(`products.units.${product.unidad_medida}`)}
                 {" · "}
@@ -126,8 +143,12 @@ export function ProductSwipeList({
                 nombre={product.nombre}
               />
             </span>
+            {nVariantes > 0 && (
+              <ChevronRight className="-mr-1 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
+            )}
           </FilaDeslizable>
-      ))}
+        );
+      })}
     </div>
   );
 }

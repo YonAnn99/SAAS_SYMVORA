@@ -28,7 +28,15 @@ import {
   fetchStockSucursal,
 } from "@/features/sucursales/services/stock-sucursal-service";
 
-export function useVariants(tenantId: string | null, tenantLoading: boolean) {
+/**
+ * `onCambio`: se llama tras crear, editar o borrar. El catalogo lo usa para
+ * refrescar los productos (el stock del padre puede cambiar con sus variantes).
+ */
+export function useVariants(
+  tenantId: string | null,
+  tenantLoading: boolean,
+  onCambio?: () => void
+) {
   const [variants, setVariants] = useState<VarianteProducto[]>([]);
   const [products, setProducts] = useState<ProductoOption[]>([]);
   const [search, setSearch] = useState("");
@@ -161,6 +169,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
           toast.success("Variante creada");
         }
         void refetch();
+        onCambio?.();
         // Cerrar lo decide el dialogo: al crear, tras la animacion.
         return true;
       } catch (error: unknown) {
@@ -177,7 +186,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
         setSaving(false);
       }
     },
-    [tenantId, editingVariant, refetch, hayVarias, seleccionada, activas]
+    [tenantId, editingVariant, refetch, hayVarias, seleccionada, activas, onCambio]
   );
 
   /**
@@ -233,17 +242,19 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
                 : `No se pudo crear "${nombre}"${creadas ? ` (se crearon ${creadas} antes)` : ""}`
             );
             if (creadas) void refetch();
+        onCambio?.();
             return false;
           }
         }
         toast.success(creadas === 1 ? "Variante creada" : `${creadas} variantes creadas`);
         void refetch();
+        onCambio?.();
         return true;
       } finally {
         setSaving(false);
       }
     },
-    [tenantId, hayVarias, seleccionada, activas, refetch]
+    [tenantId, hayVarias, seleccionada, activas, refetch, onCambio]
   );
 
   const handleDelete = useCallback(
@@ -259,6 +270,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
         toast.success("Variante eliminada");
         setDeleteConfirm(null);
         void refetch();
+        onCambio?.();
         return true;
       } catch {
         toast.error("Error al eliminar la variante");
@@ -267,7 +279,7 @@ export function useVariants(tenantId: string | null, tenantLoading: boolean) {
         return false;
       }
     },
-    [refetch]
+    [refetch, onCambio]
   );
 
   const filteredVariants = useMemo(

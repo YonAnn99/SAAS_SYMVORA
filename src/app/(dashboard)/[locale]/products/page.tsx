@@ -1,7 +1,7 @@
 "use client";
 
 import { useModulos } from "@/hooks/use-modulos";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -28,11 +28,10 @@ import { ProductsFilterDialog } from "@/features/inventory/components/products/p
 import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { BarraProductosMovil } from "@/features/inventory/components/products/barra-productos-movil";
 import { Button } from "@/components/ui/button";
-import {
-  VariantsSection,
-  LotsSection,
-  AdjustmentsSection,
-} from "@/features/inventory";
+import { LotsSection, AdjustmentsSection } from "@/features/inventory";
+import { useVariants } from "@/features/inventory/hooks/use-variants";
+import { VariantDialog } from "@/features/inventory/components/variants/variant-dialog";
+import type { VarianteProducto } from "@/features/inventory/types/inventory.types";
 import type { Producto } from "@/features/inventory";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 
@@ -71,6 +70,17 @@ export default function ProductsPage() {
     handleToggleFavorito,
     handleDelete,
   } = useProducts(tenantId, tenantLoading);
+
+  // Variantes: ya no tienen pestaña propia. Se despliegan bajo su producto en
+  // el catalogo (escritorio) o en una hoja (celular), y se crean desde
+  // "Agregar producto -> Producto variante". Al cambiarlas se refrescan los
+  // productos: el stock del padre puede cambiar.
+  const variantes = useVariants(tenantId, tenantLoading, refetch);
+  const variantesPorProducto = useMemo(() => {
+    const mapa: Record<string, VarianteProducto[]> = {};
+    for (const v of variantes.variants) (mapa[v.producto_id] ??= []).push(v);
+    return mapa;
+  }, [variantes.variants]);
 
   // Por PERMISO EFECTIVO, no por rol. Esta página se quedó atrás cuando el
   // sidebar y el middleware pasaron a permisos (migración 055): conceder
@@ -115,7 +125,7 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(
-    requestedTab && ["variants", "lots", "adjustments"].includes(requestedTab)
+    requestedTab && ["lots", "adjustments"].includes(requestedTab)
       ? requestedTab
       : "catalog"
   );
@@ -123,23 +133,20 @@ export default function ProductsPage() {
   // Modulos (Configuracion -> Modulos): sin variantes o sin lotes, su pestaña
   // no se ofrece. Los datos siguen ahi; al encenderlo vuelve la pestaña.
   const { modulos } = useModulos();
-  const tabOculta =
-    (activeTab === "variants" && !modulos.permite_variantes) ||
-    (activeTab === "lots" && !modulos.permite_lotes_caducidad);
+  const tabOculta = activeTab === "lots" && !modulos.permite_lotes_caducidad;
   const currentTab = showInventoryTabs && !tabOculta ? activeTab : "catalog";
 
   // "Agregar producto -> Producto variante" (y la busqueda rapida para lotes y
   // ajustes): pasa a la pestaña y le pide abrir su ventana de crear (el dialogo
   // y su hook viven alli). Solo se ofrece si la pestaña existe.
   const ofrecerVariante = showInventoryTabs && modulos.permite_variantes;
-  const [pedidoCrear, setPedidoCrear] = useState<
-    "variants" | "lots" | "adjustments" | null
-  >(null);
-  const crearEnPestana = (pestana: "variants" | "lots" | "adjustments") => {
+  const [pedidoCrear, setPedidoCrear] = useState<"lots" | "adjustments" | null>(null);
+  const crearEnPestana = (pestana: "lots" | "adjustments") => {
     setActiveTab(pestana);
     setPedidoCrear(pestana);
   };
-  const crearVariante = () => crearEnPestana("variants");
+  // Sin pestaña de variantes: abre su ventana aqui mismo.
+  const crearVariante = variantes.openCreateDialog;
   const pedidoAtendido = useCallback(() => setPedidoCrear(null), []);
 
   // Desde la busqueda rapida (Ctrl/Cmd+K).
@@ -282,12 +289,6 @@ export default function ProductsPage() {
               <Package className="h-3.5 w-3.5" />
               Catálogo
             </TabsTrigger>
-            {modulos.permite_variantes && (
-              <TabsTrigger value="variants" className="gap-1.5 text-xs">
-                <Palette className="h-3.5 w-3.5" />
-                Variantes
-              </TabsTrigger>
-            )}
             {modulos.permite_lotes_caducidad && (
               <TabsTrigger value="lots" className="gap-1.5 text-xs">
                 <Calendar className="h-3.5 w-3.5" />
@@ -394,20 +395,15 @@ export default function ProductsPage() {
         onToggleSeleccion={toggleSeleccion}
         onSeleccionarVisibles={seleccionarVisibles}
         onLimpiarSeleccion={() => setSeleccionados(new Set())}
+        variantesPorProducto={variantesPorProducto}
+        onEditVariante={variantes.openEditDialog}
+        onDeleteVariante={variantes.handleDelete}
       />
 
         </TabsContent>
 
         {showInventoryTabs && (
           <>
-            <TabsContent value="variants">
-              <VariantsSection
-                tenantId={tenantId}
-                tenantLoading={tenantLoading}
-                abrirCrear={pedidoCrear === "variants"}
-                onAbrirCrearAtendido={pedidoAtendido}
-              />
-            </TabsContent>
             <TabsContent value="lots">
               <LotsSection
                 tenantId={tenantId}
@@ -429,6 +425,18 @@ export default function ProductsPage() {
       </Tabs>
 
       {/* Create/Edit Dialog */}
+      {/* Crear / editar variante (antes vivia en su pestaña). */}
+      <VariantDialog
+        open={variantes.showDialog}
+        onOpenChange={variantes.setShowDialog}
+        editingVariant={variantes.editingVariant}
+        products={variantes.products}
+        variantes={variantes.variants}
+        saving={variantes.saving}
+        onSave={variantes.handleSave}
+        onSaveMany={variantes.handleSaveMany}
+      />
+
       <ProductDialog
         open={showDialog}
         onOpenChange={setShowDialog}

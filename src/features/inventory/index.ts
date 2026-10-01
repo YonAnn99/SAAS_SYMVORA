@@ -20,7 +20,6 @@ export * from "./components/products/products-table";
 export * from "./components/products/quick-filters";
 export * from "./components/products/import/import-products-dialog";
 export * from "./components/variants/variant-dialog";
-export * from "./components/variants/variants-table";
 export * from "./components/lots/lot-dialog";
 export * from "./components/lots/lots-table";
 export * from "./components/inventory-adjustments/adjustment-dialog";
@@ -35,11 +34,10 @@ export * from "./components/purchase-orders/purchase-orders-table";
 export * from "./components/purchase-orders/receive-order-dialog";
 export * from "./components/purchase-orders/purchase-order-detail-dialog";
 
-// Secciones de inventario (Variantes/Lotes/Ajustes). Viven aquí y no en
+// Secciones de inventario (Lotes/Ajustes; las variantes se ven en el catalogo). Viven aquí y no en
 // components/settings desde el 2026-09-11: son información de productos, así
 // que se muestran dentro de /products, no de /settings.
 export {
-  VariantsSection,
   LotsSection,
   AdjustmentsSection,
   type InventorySectionProps,

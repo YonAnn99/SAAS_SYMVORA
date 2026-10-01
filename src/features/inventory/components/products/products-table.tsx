@@ -1,9 +1,10 @@
 "use client";
 
+import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
-import { Package, Pencil } from "lucide-react";
+import { ChevronRight, Package, Pencil } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Producto } from "../../types/inventory.types";
+import type { Producto, VarianteProducto } from "../../types/inventory.types";
+import { AtributosVariante } from "../variants/atributos-variante-etiqueta";
+import { etiquetaAtributos } from "../../atributos-variante";
+import { VariantesProductoHoja } from "./variantes-producto-hoja";
 import { calcularMargenProducto } from "@/lib/profit";
 import {
   unidadesPermitidas,
@@ -64,6 +68,11 @@ interface ProductsTableProps {
   /** Marca o desmarca todos los productos VISIBLES (con los filtros actuales). */
   onSeleccionarVisibles: (marcar: boolean) => void;
   onLimpiarSeleccion: () => void;
+  /** Variantes agrupadas por producto: se despliegan bajo su fila. */
+  variantesPorProducto?: Record<string, VarianteProducto[]>;
+  onEditVariante?: (variante: VarianteProducto) => void;
+  /** `true` si se borro. */
+  onDeleteVariante?: (variante: VarianteProducto) => Promise<boolean>;
 }
 
 export function ProductsTable({
@@ -82,9 +91,27 @@ export function ProductsTable({
   onToggleSeleccion,
   onSeleccionarVisibles,
   onLimpiarSeleccion,
+  variantesPorProducto = {},
+  onEditVariante,
+  onDeleteVariante,
 }: ProductsTableProps) {
   const t = useTranslations();
   const { modulos } = useModulos();
+  // Escritorio: productos con sus variantes desplegadas (varios a la vez).
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
+  const alternar = (id: string) =>
+    setAbiertos((prev) => {
+      const sig = new Set(prev);
+      if (sig.has(id)) sig.delete(id);
+      else sig.add(id);
+      return sig;
+    });
+  // Celular: el producto cuya hoja de variantes esta abierta.
+  const [hojaDe, setHojaDe] = useState<string | null>(null);
+  const productoHoja = hojaDe ? products.find((p) => p.id === hojaDe) ?? null : null;
+  const conteoVariantes = Object.fromEntries(
+    Object.entries(variantesPorProducto).map(([id, vs]) => [id, vs.length])
+  );
 
   // La casilla de la cabecera mira solo lo VISIBLE: marcada si estan todos,
   // mixta si hay algunos, vacia si ninguno.
@@ -161,6 +188,15 @@ export function ProductsTable({
               onToggleFavorito={onToggleFavorito}
               onEdit={onEdit}
               onDelete={onDelete}
+              conteoVariantes={conteoVariantes}
+              onVerVariantes={(p) => setHojaDe(p.id)}
+            />
+            <VariantesProductoHoja
+              producto={productoHoja}
+              variantes={hojaDe ? variantesPorProducto[hojaDe] ?? [] : []}
+              onOpenChange={(abierta) => !abierta && setHojaDe(null)}
+              onEdit={(v) => onEditVariante?.(v)}
+              onDelete={async (v) => (onDeleteVariante ? onDeleteVariante(v) : false)}
             />
           </div>
           <div className="hidden overflow-x-auto md:block">
@@ -213,9 +249,13 @@ export function ProductsTable({
                       void onInlineSave(product, campo, texto),
                   });
 
+                  const variantes = variantesPorProducto[product.id] ?? [];
+                  const abierto = abiertos.has(product.id);
+                  const idPanel = `variantes-${product.id}`;
+
                   return (
+                  <Fragment key={product.id}>
                   <TableRow
-                    key={product.id}
                     data-state={seleccionados.has(product.id) ? "selected" : undefined}
                   >
                     <TableCell className="w-8 pr-0">
@@ -227,6 +267,23 @@ export function ProductsTable({
                     </TableCell>
                     <TableCell className="font-medium text-sm">
                       <div className="flex items-center gap-2.5">
+                        {/* Con variantes: la flechita las despliega debajo. */}
+                        {variantes.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => alternar(product.id)}
+                            aria-expanded={abierto}
+                            aria-controls={idPanel}
+                            aria-label={`${abierto ? "Ocultar" : "Ver"} variantes de ${product.nombre}`}
+                            className="-ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          >
+                            <ChevronRight
+                              className={`h-4 w-4 transition-transform duration-200 ${abierto ? "rotate-90" : ""}`}
+                            />
+                          </button>
+                        ) : (
+                          <span className="-ml-1 w-6 shrink-0" aria-hidden="true" />
+                        )}
                         {product.imagen_url ? (
                           <Image
                             src={product.imagen_url}
@@ -245,6 +302,16 @@ export function ProductsTable({
                         <EditableTextCell {...celda("nombre")} className="min-w-0 flex-1">
                           <span className="block truncate">{product.nombre}</span>
                         </EditableTextCell>
+                        {variantes.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => alternar(product.id)}
+                            className="shrink-0 rounded-full bg-[#1e3a8a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#1e3a8a]/15 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/25"
+                            tabIndex={-1}
+                          >
+                            {variantes.length === 1 ? "1 variante" : `${variantes.length} variantes`}
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                     {/* Codigo de barras NO es editable desde aqui: identifica
@@ -332,6 +399,79 @@ export function ProductsTable({
                       </div>
                     </TableCell>
                   </TableRow>
+                  {variantes.length > 0 && (
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableCell colSpan={9} className="p-0">
+                        {/* Mismo despliegue que las secciones de "Crear producto"
+                            (`accordion.tsx`): 0fr -> 1fr de alto, sin tope. */}
+                        <div
+                          id={idPanel}
+                          style={{
+                            display: "grid",
+                            gridTemplateRows: abierto ? "1fr" : "0fr",
+                            opacity: abierto ? 1 : 0,
+                            transition: "grid-template-rows 0.3s ease, opacity 0.2s ease",
+                          }}
+                          inert={!abierto || undefined}
+                        >
+                          <div className="min-h-0 overflow-hidden">
+                            <div className="mx-3 mb-3 ml-14 rounded-xl border border-border bg-muted/30">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="hover:bg-transparent">
+                                    <TableHead className="h-8 text-[11px] uppercase tracking-wider">Atributos</TableHead>
+                                    <TableHead className="h-8 text-[11px] uppercase tracking-wider">SKU</TableHead>
+                                    <TableHead className="h-8 text-right text-[11px] uppercase tracking-wider">Precio</TableHead>
+                                    <TableHead className="h-8 text-right text-[11px] uppercase tracking-wider">Stock</TableHead>
+                                    <TableHead className="h-8 text-right text-[11px] uppercase tracking-wider">{t("common.actions")}</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {variantes.map((v) => (
+                                    <TableRow key={v.id}>
+                                      <TableCell className="py-1.5 text-sm">
+                                        <AtributosVariante variant={v} vacio="Sin atributos" />
+                                      </TableCell>
+                                      <TableCell className="py-1.5 text-sm font-mono text-muted-foreground">
+                                        {v.sku || "-"}
+                                      </TableCell>
+                                      <TableCell className="py-1.5 text-right text-sm font-mono">
+                                        ${v.precio_venta.toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="py-1.5 text-right text-sm font-mono">
+                                        {v.stock_actual}
+                                      </TableCell>
+                                      <TableCell className="py-1.5 text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 text-xs"
+                                            onClick={() => onEditVariante?.(v)}
+                                          >
+                                            <Pencil className="h-3 w-3 mr-1" />
+                                            {t("common.edit")}
+                                          </Button>
+                                          <BotonEliminar
+                                            nombre={`la variante ${etiquetaAtributos(v) || product.nombre}`}
+                                            detalle="No se puede deshacer"
+                                            onEliminar={async () => {
+                                              await onDeleteVariante?.(v);
+                                            }}
+                                          />
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  </Fragment>
                   );
                 })}
               </TableBody>

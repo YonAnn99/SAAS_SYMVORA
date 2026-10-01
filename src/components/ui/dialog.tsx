@@ -172,7 +172,9 @@ function HojaMovil({
               render={
                 <Button
                   variant="ghost"
-                  className="absolute top-3 right-2"
+                  // z-20: por encima de un encabezado `sticky` del contenido (p. ej. el
+                  // producto anclado de la hoja de variantes), que lo tapaba.
+                  className="absolute top-3 right-2 z-20"
                   size="icon-sm"
                 />
               }

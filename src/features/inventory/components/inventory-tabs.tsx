@@ -5,9 +5,6 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import {
-  useVariants,
-  VariantDialog,
-  VariantsTable,
   useLots,
   LotDialog,
   LotsTable,
@@ -20,8 +17,8 @@ export interface InventorySectionProps {
   tenantId: string | null;
   tenantLoading: boolean;
   /**
-   * Pide abrir la ventana de "crear" de la pestaña (lo usan "Agregar producto
-   * -> Producto variante" y la busqueda rapida). Se atiende una vez y se avisa
+   * Pide abrir la ventana de "crear" de la pestaña (lo usa la busqueda
+   * rapida). Se atiende una vez y se avisa
    * con `onAbrirCrearAtendido`, para que no se reabra al volver a la pestaña.
    */
   abrirCrear?: boolean;
@@ -39,79 +36,6 @@ function useAbrirCrearPedido(
     abrir();
     onAtendido?.();
   }, [abrirCrear, abrir, onAtendido]);
-}
-
-export function VariantsSection({
-  tenantId,
-  tenantLoading,
-  abrirCrear,
-  onAbrirCrearAtendido,
-}: InventorySectionProps) {
-  const {
-    variants,
-    products,
-    filteredVariants,
-    getProductName,
-    search,
-    setSearch,
-    loading,
-    showDialog,
-    setShowDialog,
-    editingVariant,
-    saving,
-    openCreateDialog,
-    openEditDialog,
-    handleSave,
-    handleSaveMany,
-    handleDelete,
-  } = useVariants(tenantId, tenantLoading);
-
-  useAbrirCrearPedido(abrirCrear, openCreateDialog, onAbrirCrearAtendido);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por atributo o SKU..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 text-sm"
-          />
-        </div>
-        <SpecularActionButton
-          tone="add"
-          className="h-8 active:scale-[0.98] transition-transform"
-          onClick={openCreateDialog}
-        >
-          Agregar variante
-        </SpecularActionButton>
-      </div>
-
-      <VariantsTable
-        variants={variants}
-        filteredVariants={filteredVariants}
-        loading={loading}
-        getProductName={getProductName}
-        onEdit={openEditDialog}
-        // Mantener presionado el boton de la fila ya es la confirmacion.
-        onDelete={handleDelete}
-        onAdd={openCreateDialog}
-      />
-
-      <VariantDialog
-        open={showDialog}
-        onOpenChange={setShowDialog}
-        editingVariant={editingVariant}
-        products={products}
-        variantes={variants}
-        saving={saving}
-        onSave={handleSave}
-        onSaveMany={handleSaveMany}
-      />
-    </div>
-  );
 }
 
 export function LotsSection({
