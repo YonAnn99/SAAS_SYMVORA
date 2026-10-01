@@ -20,6 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AboutUs } from "@/components/marketing/about-us";
+import { Carrusel } from "@/components/ui/carrusel";
 import {
   CAPSULA,
   CAPSULA_GRANDE,
@@ -163,25 +164,39 @@ export function NosotrosContenido() {
         </div>
       </section>
 
-      {/* Valores. */}
+      {/* Valores: carrusel de React Bits (se arrastra, avanza solo y gira en 3D). */}
       <section className="px-4 sm:px-6 lg:px-8 pb-16 sm:pb-24">
-        <div className="max-w-6xl mx-auto">
-          <Encabezado titulo="Lo que nos guía" />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {VALORES.map((valor) => {
-              const Icono = ICONO_VALOR[valor.id];
-              return (
-                <article key={valor.id} className={TARJETA}>
-                  <span className={ICONO_CAJA}>
-                    <Icono className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-4 text-base font-bold text-black dark:text-neutral-50">{valor.titulo}</h3>
-                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                    {valor.texto}
-                  </p>
-                </article>
-              );
-            })}
+        <div className="max-w-6xl mx-auto grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <Encabezado
+              titulo="Lo que nos guía"
+              texto="Siete valores que están detrás de cada decisión y de cada línea de código."
+            />
+            <ul className="mt-6 hidden flex-wrap gap-2 lg:flex" aria-hidden="true">
+              {VALORES.map((valor) => (
+                <li
+                  key={valor.id}
+                  className="text-sm text-neutral-500 dark:text-neutral-400 after:ml-2 after:text-neutral-300 after:content-['·'] last:after:content-none dark:after:text-neutral-700"
+                >
+                  {valor.titulo}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex justify-center lg:justify-end">
+            <Carrusel
+              className="w-full"
+              anchoMaximo={460}
+              items={VALORES.map((valor) => {
+                const Icono = ICONO_VALOR[valor.id];
+                return {
+                  id: valor.id,
+                  titulo: valor.titulo,
+                  texto: valor.texto,
+                  icono: <Icono className="h-5 w-5" aria-hidden="true" />,
+                };
+              })}
+            />
           </div>
         </div>
       </section>
