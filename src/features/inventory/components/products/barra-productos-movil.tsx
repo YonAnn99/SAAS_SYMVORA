@@ -112,20 +112,24 @@ export function BarraProductosMovil({
           />
           <BotonEscanear modo="uno" titulo="Buscar por código" onCodigo={onSearchChange} />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="relative h-9 w-9 shrink-0 p-0"
-          onClick={onAbrirFiltros}
-          aria-label="Filtros y orden"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
+        {/* El contador va FUERA del boton: el llenado (`.btn-llenado`) recorta lo
+            que sobresale y el circulo quedaba cortado. */}
+        <div className="relative shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 w-9 p-0"
+            onClick={onAbrirFiltros}
+            aria-label="Filtros y orden"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
           {activeFilterCount > 0 && (
-            <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1.5 text-[10px] font-medium leading-4 text-primary-foreground">
+            <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-primary px-1.5 text-[10px] font-medium leading-4 text-primary-foreground">
               {activeFilterCount}
             </span>
           )}
-        </Button>
+        </div>
         <div className="shrink-0">{exportar}</div>
       </div>
 

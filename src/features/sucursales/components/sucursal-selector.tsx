@@ -63,9 +63,24 @@ export function SucursalSelector({ className }: { className?: string }) {
       value={seleccionada ?? TODAS}
       onValueChange={(v) => setSeleccionada(v === TODAS ? null : v)}
     >
-      <SelectTrigger className={className ?? "w-[190px] h-9"}>
-        <Store className="h-3.5 w-3.5 mr-2 shrink-0" aria-hidden="true" />
-        <SelectValue />
+      {/* Ancho segun el contenido: con uno fijo (190 px) "Todas las
+          sucursales" no cabia junto al icono y la flecha, y se cortaba. */}
+      <SelectTrigger className={className ?? "h-9 w-auto min-w-[190px] max-w-[280px]"}>
+        <Store className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <SelectValue>
+          {(v: string | null) =>
+            !v || v === TODAS ? (
+              // En celular el selector va en media columna: junto al icono de
+              // tienda, "Todas" se entiende y no se corta.
+              <>
+                <span className="sm:hidden">Todas</span>
+                <span className="hidden sm:inline">Todas las sucursales</span>
+              </>
+            ) : (
+              items[v] ?? v
+            )
+          }
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={TODAS}>Todas las sucursales</SelectItem>

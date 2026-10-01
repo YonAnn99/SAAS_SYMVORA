@@ -199,7 +199,7 @@ export default function ProductsPage() {
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           {/* Con varias sucursales, la columna de existencias es la del local
               elegido aqui. No se dibuja en un negocio de un solo local. */}
-          <SucursalSelector className="order-1 h-8 w-full sm:order-none sm:w-[170px]" />
+          <SucursalSelector className="order-1 h-8 w-full sm:order-none sm:w-auto" />
           {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
               Va el primero porque es lo que menos se usa a diario; los dos de
               la derecha son los del trabajo del día. */}
@@ -214,7 +214,7 @@ export default function ProductsPage() {
           )}
           {canImport && (
             <SpecularActionButton
-              tone="neutral"
+              tone="add"
               className="order-3 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
               onClick={() => setShowImportDialog(true)}
             >

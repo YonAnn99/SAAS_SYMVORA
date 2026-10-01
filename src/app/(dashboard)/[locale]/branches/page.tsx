@@ -69,7 +69,7 @@ export default function BranchesPage() {
           </p>
         </div>
         {/* Con un solo local no hay nada que elegir. */}
-        {hayVarias && <SucursalSelector className="w-[200px] h-9" />}
+        {hayVarias && <SucursalSelector />}
       </div>
 
       {!hayVarias ? (

@@ -8,9 +8,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-[0_4px_12px_rgba(91,159,237,0.3)] active:shadow-[0_2px_4px_rgba(91,159,237,0.2)]",
+        // Los azules del sistema, como el CTA principal de la landing
+        // (`marketing/boton-capsula.ts`): negro que se llena de #1e3a8a en
+        // claro; azul que se llena de blanco en oscuro (`.btn-llenado`).
+        default:
+          "btn-llenado bg-primary text-primary-foreground " +
+          "[--llenado:#1e3a8a] [--llenado-texto:#FFFFFF] dark:[--llenado:#FFFFFF] dark:[--llenado-texto:#1E3A8A]",
+        // Contorno: como la secundaria de la landing, se llena de negro en
+        // claro y de blanco en oscuro, invirtiendo el texto.
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground hover:border-border/80 aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "btn-llenado border-border bg-background aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 " +
+          "[--llenado:#111111] [--llenado-texto:#FFFFFF] dark:[--llenado:#FFFFFF] dark:[--llenado-texto:#111111]",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_8%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
