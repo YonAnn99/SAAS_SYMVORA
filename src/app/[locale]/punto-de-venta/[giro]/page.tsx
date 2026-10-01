@@ -129,11 +129,6 @@ export default async function GiroPage({ params }: { params: Params }) {
               <span className="font-medium text-black dark:text-neutral-100">{giro.plural}</span>
             </nav>
 
-            <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" aria-hidden="true" />
-              Software para {giro.tu}
-            </span>
-
             <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-black dark:text-neutral-50 leading-[1.05]">
               Punto de venta para <span className="text-blue-600">{giro.plural}</span>
             </h1>

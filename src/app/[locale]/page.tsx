@@ -19,7 +19,6 @@ import { Benefits } from "@/components/marketing/benefits";
 import { Setup } from "@/components/marketing/setup";
 import { FAQ } from "@/components/marketing/faq";
 import { CTA } from "@/components/marketing/cta";
-import { AboutUs } from "@/components/marketing/about-us";
 import { VoiceNarrator } from "@/components/marketing/voice-narrator";
 import Footer from "@/components/ui/footer";
 import { JsonLd } from "@/components/marketing/json-ld";
@@ -126,7 +125,6 @@ export default async function LocalePage({
       <Setup />
       <FAQ />
       <CTA />
-      <AboutUs />
       <Footer />
       <JsonLd id="ld-software" data={software} />
       <JsonLd id="ld-faq" data={faqSchema} />

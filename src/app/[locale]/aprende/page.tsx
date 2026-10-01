@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { GraduationCap } from "lucide-react";
 import { AppFrame } from "@/components/ui/app-frame";
 import Footer from "@/components/ui/footer";
 import { AprendeIndice } from "@/components/marketing/aprende-indice";
@@ -26,11 +25,7 @@ export default async function AprendePage({ params }: { params: Promise<{ locale
       <section className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-              <GraduationCap className="w-3.5 h-3.5" aria-hidden="true" />
-              Aprende
-            </span>
-            <h1 className="mt-5 text-4xl sm:text-5xl font-bold tracking-tight text-black dark:text-neutral-50">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-black dark:text-neutral-50">
               Aprende a usar SYMVORA
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-600 dark:text-neutral-300">

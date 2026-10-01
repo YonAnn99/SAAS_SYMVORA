@@ -18,6 +18,8 @@ export const MARKETING_SEGMENTS = [
   // Guias de uso (/es/aprende): publicas y en www. Desde el sistema se enlazan
   // en relativo y esta lista las manda del host de la app al de marketing.
   "/aprende",
+  // Quienes somos (/es/nosotros): identidad, mision, valores. Publica.
+  "/nosotros",
 ];
 
 export function stripLocale(path: string): string {

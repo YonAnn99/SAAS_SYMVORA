@@ -22,10 +22,11 @@ const VoiceNarrator = dynamic(
 );
 
 /**
- * `inicio`: prefijo de las anclas del encabezado ("Productos", "Precios",
- * "Contáctanos"). En la landing va vacio (`#features`); en otras paginas que
- * reutilizan el marco —las de cada giro— es "/es", para que el enlace lleve a
- * la seccion de la landing y no a un ancla que ahi no existe.
+ * `inicio`: prefijo de las anclas del encabezado ("Precios", "Contáctanos").
+ * En la landing va vacio (`#pricing`); en otras paginas que reutilizan el
+ * marco —Aprende, Nosotros, las de cada giro— es "/es", para que el enlace
+ * lleve a la seccion de la landing y no a un ancla que ahi no existe.
+ * "Productos" se quito: hay un solo producto y es el que describe la landing.
  */
 export function AppFrame({
   children,
@@ -56,9 +57,9 @@ export function AppFrame({
       <div className="md:hidden">
         <BubbleMenu
           items={[
-            { label: "Productos", href: `${inicio}#features`, rotation: -8 },
-            { label: "Precios", href: `${inicio}#pricing`, rotation: 8 },
-            { label: "Aprende", href: "/es/aprende", rotation: -8 },
+            { label: "Precios", href: `${inicio}#pricing`, rotation: -8 },
+            { label: "Aprende", href: "/es/aprende", rotation: 8 },
+            { label: "Nosotros", href: "/es/nosotros", rotation: -8 },
             { label: "Contáctanos", href: `${inicio}#footer-contacto`, rotation: 8 },
             { label: "Iniciar sesión", href: "/login", rotation: -8 },
             { label: "Prueba gratis", href: "/signup", rotation: 8 },
@@ -105,9 +106,9 @@ export function AppFrame({
           </a>
 
           <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href={`${inicio}#features`} className="hover:text-white transition-colors">Productos</Link>
             <Link href={`${inicio}#pricing`} className="hover:text-white transition-colors">Precios</Link>
             <Link href="/es/aprende" className="hover:text-white transition-colors">Aprende</Link>
+            <Link href="/es/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
             <Link href={`${inicio}#footer-contacto`} className="hover:text-white transition-colors">Contáctanos</Link>
           </nav>
 

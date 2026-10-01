@@ -82,16 +82,6 @@ export function SecuritySection() {
           variants={fadeInRight}
           transition={easeOutShort}
         >
-          <m.div
-            className="inline-flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full w-max border border-white/20"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={easeOutShort}
-          >
-            <span className="text-xs font-medium text-blue-400 uppercase tracking-widest">
-              {t("landing.security.badge")}
-            </span>
-          </m.div>
           <m.h2
             className="text-3xl sm:text-4xl font-bold leading-tight"
             initial={{ opacity: 0, y: 16 }}

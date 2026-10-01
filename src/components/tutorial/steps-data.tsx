@@ -50,7 +50,7 @@ export const tutorialSteps: TutorialStep[] = [
     navigates: false,
     moduleKey: "",
     image: {
-      src: "/lector-de-barras.png",
+      src: "/lector-de-barras.webp",
       alt: "Lector de código de barras escaneando la etiqueta de un producto",
     },
   },

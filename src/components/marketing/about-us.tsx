@@ -10,6 +10,7 @@ import {
   fadeInUpSmall,
   scaleIn,
 } from "./animations";
+import { GIROS } from "@/features/marketing/giros";
 
 export function AboutUs() {
   const t = useTranslations();
@@ -27,11 +28,6 @@ export function AboutUs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
           <div className="flex flex-col gap-8">
-            <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-500/20 w-fit">
-              <span className="text-xs font-medium text-blue-600 uppercase tracking-widest">
-                {t("landing.about.badge")}
-              </span>
-            </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black dark:text-neutral-50 leading-[1.1] max-w-xl">
               {t("landing.about.title")}
@@ -103,7 +99,7 @@ export function AboutUs() {
                 </div>
                 <div className="flex items-center justify-center gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800 w-full">
                   <div className="flex flex-col items-center">
-                    <p className="text-xl font-bold text-black dark:text-neutral-50">7+</p>
+                    <p className="text-xl font-bold text-black dark:text-neutral-50">{GIROS.length}</p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 text-center">
                       {t("landing.about.stats.industries")}
                     </p>

@@ -118,9 +118,6 @@ export function Features() {
             <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
               {t("landing.features.pos.description")}
             </p>
-            <span className="text-xs font-medium text-primary bg-primary/10 dark:bg-primary/10 px-3 py-1 rounded-full">
-              {t("landing.features.pos.stats")}
-            </span>
           </m.div>
           {/* Bar chart visual */}
           <m.div
@@ -177,14 +174,6 @@ export function Features() {
           >
             {t("landing.features.inventory.description")}
           </m.p>
-          <m.span
-            className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-3 py-1 rounded-full self-start"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, ...easeOutShort }}
-          >
-            {t("landing.features.inventory.stats")}
-          </m.span>
           <m.div
             className="mt-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 flex items-center justify-between"
             initial={{ opacity: 0, y: 16 }}
@@ -232,14 +221,6 @@ export function Features() {
           >
             {t("landing.features.purchases.description")}
           </m.p>
-          <m.span
-            className="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full self-start"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, ...easeOutShort }}
-          >
-            {t("landing.features.purchases.stats")}
-          </m.span>
           <m.svg
             className="absolute -right-4 -bottom-4 w-32 h-32 text-neutral-200 dark:text-neutral-800 group-hover:text-neutral-300 dark:group-hover:text-neutral-700 transition-colors"
             fill="none"
@@ -290,14 +271,6 @@ export function Features() {
           >
             {t("landing.features.catalogImport.description")}
           </m.p>
-          <m.span
-            className="text-xs font-medium text-sky-600 bg-sky-50 dark:bg-sky-500/10 px-3 py-1 rounded-full self-start"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, ...easeOutShort }}
-          >
-            {t("landing.features.catalogImport.stats")}
-          </m.span>
           <m.div
             className="mt-2 flex items-center gap-2"
             initial={{ opacity: 0, y: 16 }}
@@ -341,9 +314,6 @@ export function Features() {
             <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
               {t("landing.features.finances.description")}
             </p>
-            <span className="text-xs font-medium text-purple-600 bg-purple-50 dark:bg-purple-500/10 px-3 py-1 rounded-full self-start mb-4">
-              {t("landing.features.finances.stats")}
-            </span>
             <m.button
               className="mt-auto self-start text-sm font-medium text-black border border-black px-4 py-2 rounded hover:bg-black hover:text-white dark:text-neutral-50 dark:border-neutral-300 dark:hover:bg-neutral-50 dark:hover:text-black transition-colors"
               whileHover={{ backgroundColor: "black", color: "white", scale: 1.02 }}

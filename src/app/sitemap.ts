@@ -78,6 +78,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
+    // Quienes somos: identidad, mision y valores. Solo en español.
+    { url: `${BASE_URL}/es/nosotros`, lastModified, changeFrequency: "monthly" as const, priority: 0.5 },
     // Guias de uso: el indice y una por modulo, solo en español.
     { url: `${BASE_URL}${rutaGuia()}`, lastModified, changeFrequency: "monthly" as const, priority: 0.6 },
     ...GUIAS.map((guia) => ({

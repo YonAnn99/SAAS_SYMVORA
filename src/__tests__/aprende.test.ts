@@ -115,6 +115,8 @@ describe("publicación", () => {
     const leer = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
     expect(MARKETING_SEGMENTS).toContain("/aprende");
     expect(isMarketingPath("/es/aprende/primeros-pasos")).toBe(true);
+    // Nosotros también es pública: sin esto, en producción pediría sesión.
+    expect(isMarketingPath("/es/nosotros")).toBe(true);
     expect(leer("next.config.ts")).toMatch(/frame-src[^"]*https:\/\/www\.youtube-nocookie\.com/);
   });
 });
