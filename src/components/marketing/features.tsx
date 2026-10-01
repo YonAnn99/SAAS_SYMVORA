@@ -12,17 +12,35 @@ import {
   AlertTriangle,
   Upload,
 } from "lucide-react";
-import {
-  easeOutLong,
-  easeOutShort,
-  staggerContainer,
-  fadeInUp,
-  springIcon,
-} from "./animations";
+import { easeOutLong, easeOutShort } from "./animations";
+import ScrollStack, { ScrollStackItem } from "@/components/ui/scroll-stack";
+import { useEsMovil } from "@/hooks/use-es-movil";
+
+// Tarjeta de la pila: opaca, dos columnas desde `md` (texto | visual).
+const TARJETA =
+  "overflow-hidden rounded-3xl md:rounded-[32px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 " +
+  "shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] " +
+  "p-6 sm:p-8 md:p-10 md:min-h-[22rem] flex flex-col md:flex-row gap-6 md:gap-10";
+const TEXTO = "relative z-10 flex flex-col md:flex-1 md:justify-center";
+const ICONO = "w-12 h-12 rounded-xl flex items-center justify-center mb-5";
+const TITULO = "text-xl sm:text-2xl font-bold text-black dark:text-neutral-50 mb-3";
+const DESCRIPCION = "text-neutral-500 dark:text-neutral-400 leading-relaxed";
+const VISUAL = "relative z-10 flex md:flex-1 w-full";
+
+/** Brillo tenue del color del modulo en la esquina superior. */
+function Brillo({ className }: { className: string }) {
+  return (
+    <div
+      className={`pointer-events-none absolute -top-24 -right-16 w-72 h-72 rounded-full blur-3xl ${className}`}
+      aria-hidden="true"
+    />
+  );
+}
 
 export function Features() {
   const t = useTranslations();
   const reduceMotion = useReducedMotion();
+  const esMovil = useEsMovil();
 
   return (
     <m.section
@@ -73,276 +91,140 @@ export function Features() {
         </m.a>
       </m.div>
 
-      <m.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 auto-rows-min"
-        variants={staggerContainer}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }}
+      {/* Scroll Stack (React Bits): al bajar, cada modulo se apila sobre el
+          anterior. Tarjetas OPACAS (al apilarse no debe verse la de abajo) y
+          cada una con el acento de su modulo. */}
+      <ScrollStack
+        className="mx-auto max-w-5xl"
+        itemDistance={esMovil ? 60 : 90}
+        itemStackDistance={esMovil ? 16 : 28}
+        stackPosition={esMovil ? "14%" : "18%"}
+        scaleEndPosition={esMovil ? "8%" : "10%"}
+        baseScale={0.88}
+        itemScale={0.03}
       >
-        {/* Feature 1 - POS (Large - 8 cols) */}
-        <m.div
-          className="lg:col-span-8 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 lg:p-8 flex flex-col gap-6 group hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] transition-shadow relative overflow-hidden"
-          variants={fadeInUp}
-          transition={easeOutLong}
-          whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-        >
-          {/* Ambient glow */}
-          <m.div
-            className="absolute top-0 right-0 w-64 h-64 bg-primary/5 dark:bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-110 transition-transform duration-700"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
-            aria-hidden="true"
-          />
-          {/* Icon */}
-          <m.div
-            className="w-12 h-12 bg-primary/10 dark:bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2 z-10"
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, ...springIcon }}
-          >
-            <ShoppingCart className="w-6 h-6" aria-hidden="true" />
-          </m.div>
-          {/* Content */}
-          <m.div
-            className="z-10 max-w-md"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, ...easeOutShort }}
-          >
-            <h3 className="text-xl font-bold text-black dark:text-neutral-50 mb-2">
-              {t("landing.features.pos.title")}
-            </h3>
-            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
-              {t("landing.features.pos.description")}
-            </p>
-          </m.div>
-          {/* Bar chart visual */}
-          <m.div
-            className="mt-auto pt-6 border-t border-neutral-100 dark:border-neutral-800 flex items-end gap-2 h-32 w-full max-w-sm z-10"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, ...easeOutShort }}
-          >
+        {/* 1. Punto de venta: azul de la marca */}
+        <ScrollStackItem className={TARJETA}>
+          <Brillo className="bg-[#1e3a8a]/15 dark:bg-blue-500/10" />
+          <div className={TEXTO}>
+            <span className={`${ICONO} bg-[#1e3a8a]/10 text-[#1e3a8a] dark:bg-blue-500/10 dark:text-blue-400`}>
+              <ShoppingCart className="w-6 h-6" aria-hidden="true" />
+            </span>
+            <h3 className={TITULO}>{t("landing.features.pos.title")}</h3>
+            <p className={DESCRIPCION}>{t("landing.features.pos.description")}</p>
+          </div>
+          <div className={`${VISUAL} items-end gap-2 h-40 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-6 md:pt-0 md:pl-8`}>
             {[30, 45, 25, 60, 80, 100].map((h, i) => (
               <m.div
                 key={i}
-                className={`w-1/6 rounded-t-sm transition-colors ${
-                  i === 5
-                    ? "bg-primary group-hover:shadow-[0_0_15px_rgba(15,23,42,0.5)]"
-                    : "bg-primary/10 dark:bg-primary/5 hover:bg-primary/20 dark:hover:bg-primary/10"
+                className={`w-1/6 rounded-t-md ${
+                  i === 5 ? "bg-[#1e3a8a] dark:bg-blue-500" : "bg-[#1e3a8a]/10 dark:bg-blue-500/15"
                 }`}
                 style={{ height: `${h}%` }}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                transition={{ delay: i * 0.08 + 0.5, type: "spring", stiffness: 200, damping: 20 }}
+                initial={reduceMotion ? false : { height: 0 }}
+                whileInView={{ height: `${h}%` }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, type: "spring", stiffness: 200, damping: 20 }}
               />
             ))}
-          </m.div>
-        </m.div>
+          </div>
+        </ScrollStackItem>
 
-        {/* Feature 2 - Inventory (Small - 4 cols) */}
-        <m.div
-          className="lg:col-span-4 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
-          variants={fadeInUp}
-          transition={easeOutLong}
-          whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-        >
-          <m.div
-            className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-lg flex items-center justify-center mb-2"
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, ...springIcon }}
-          >
-            <Package className="w-6 h-6" aria-hidden="true" />
-          </m.div>
-          <m.h3
-            className="text-xl font-bold text-black dark:text-neutral-50"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, ...easeOutShort }}
-          >
-            {t("landing.features.inventory.title")}
-          </m.h3>
-          <m.p
-            className="text-neutral-500 dark:text-neutral-400 flex-grow leading-relaxed"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, ...easeOutShort }}
-          >
-            {t("landing.features.inventory.description")}
-          </m.p>
-          <m.div
-            className="mt-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 flex items-center justify-between"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, ...easeOutShort }}
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" aria-hidden="true" />
-              <span className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">
-                {t("landing.features.inventory.stockAlert")}
-              </span>
+        {/* 2. Inventario: ambar */}
+        <ScrollStackItem className={TARJETA}>
+          <Brillo className="bg-amber-500/15 dark:bg-amber-500/10" />
+          <div className={TEXTO}>
+            <span className={`${ICONO} bg-amber-50 text-amber-600 dark:bg-amber-500/10`}>
+              <Package className="w-6 h-6" aria-hidden="true" />
+            </span>
+            <h3 className={TITULO}>{t("landing.features.inventory.title")}</h3>
+            <p className={DESCRIPCION}>{t("landing.features.inventory.description")}</p>
+          </div>
+          <div className={`${VISUAL} items-center`}>
+            <div className="w-full rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" aria-hidden="true" />
+                <span className="truncate text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">
+                  {t("landing.features.inventory.stockAlert")}
+                </span>
+              </div>
+              <span className="text-sm font-bold text-black dark:text-neutral-50">SKU-892</span>
             </div>
-            <span className="text-sm font-bold text-black dark:text-neutral-50">SKU-892</span>
-          </m.div>
-        </m.div>
+          </div>
+        </ScrollStackItem>
 
-        {/* Feature 3 - Purchases (Medium - 6 cols) */}
-        <m.div
-          className="lg:col-span-6 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow relative overflow-hidden group"
-          variants={fadeInUp}
-          transition={easeOutLong}
-          whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-        >
-          <m.div
-            className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-lg flex items-center justify-center mb-2"
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, ...springIcon }}
-          >
-            <FileText className="w-6 h-6" aria-hidden="true" />
-          </m.div>
-          <m.h3
-            className="text-xl font-bold text-black dark:text-neutral-50"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, ...easeOutShort }}
-          >
-            {t("landing.features.purchases.title")}
-          </m.h3>
-          <m.p
-            className="text-neutral-500 dark:text-neutral-400 flex-grow leading-relaxed"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, ...easeOutShort }}
-          >
-            {t("landing.features.purchases.description")}
-          </m.p>
-          <m.svg
-            className="absolute -right-4 -bottom-4 w-32 h-32 text-neutral-200 dark:text-neutral-800 group-hover:text-neutral-300 dark:group-hover:text-neutral-700 transition-colors"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            viewBox="0 0 100 100"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
-            style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
-            aria-hidden="true"
-          >
-            <circle cx="20" cy="80" r="4" />
-            <circle cx="80" cy="20" r="4" />
-            <circle cx="50" cy="50" r="6" />
-            <path d="M22 78 L46 54 M54 46 L78 22" />
-          </m.svg>
-        </m.div>
+        {/* 3. Ordenes de compra: esmeralda */}
+        <ScrollStackItem className={TARJETA}>
+          <Brillo className="bg-emerald-500/15 dark:bg-emerald-500/10" />
+          <div className={TEXTO}>
+            <span className={`${ICONO} bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10`}>
+              <FileText className="w-6 h-6" aria-hidden="true" />
+            </span>
+            <h3 className={TITULO}>{t("landing.features.purchases.title")}</h3>
+            <p className={DESCRIPCION}>{t("landing.features.purchases.description")}</p>
+          </div>
+          <div className={`${VISUAL} items-center justify-center`}>
+            <svg
+              className="w-36 h-36 md:w-44 md:h-44 text-emerald-500/60 dark:text-emerald-400/50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 100 100"
+              aria-hidden="true"
+            >
+              <circle cx="20" cy="80" r="5" />
+              <circle cx="80" cy="20" r="5" />
+              <circle cx="50" cy="50" r="7" />
+              <path d="M24 76 L45 55 M55 45 L76 24" />
+            </svg>
+          </div>
+        </ScrollStackItem>
 
-        {/* Feature 4 - Catalog Import (Medium - 6 cols) */}
-        <m.div
-          className="lg:col-span-6 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow"
-          variants={fadeInUp}
-          transition={easeOutLong}
-          whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-        >
-          <m.div
-            className="w-12 h-12 bg-sky-50 dark:bg-sky-500/10 text-sky-600 rounded-lg flex items-center justify-center mb-2"
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, ...springIcon }}
-          >
-            <Upload className="w-6 h-6" aria-hidden="true" />
-          </m.div>
-          <m.h3
-            className="text-xl font-bold text-black dark:text-neutral-50"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, ...easeOutShort }}
-          >
-            {t("landing.features.catalogImport.title")}
-          </m.h3>
-          <m.p
-            className="text-neutral-500 dark:text-neutral-400 flex-grow leading-relaxed"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, ...easeOutShort }}
-          >
-            {t("landing.features.catalogImport.description")}
-          </m.p>
-          <m.div
-            className="mt-2 flex items-center gap-2"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, ...easeOutShort }}
-          >
-            <span className="text-xs font-mono px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+        {/* 4. Migra tu catalogo: celeste */}
+        <ScrollStackItem className={TARJETA}>
+          <Brillo className="bg-sky-500/15 dark:bg-sky-500/10" />
+          <div className={TEXTO}>
+            <span className={`${ICONO} bg-sky-50 text-sky-600 dark:bg-sky-500/10`}>
+              <Upload className="w-6 h-6" aria-hidden="true" />
+            </span>
+            <h3 className={TITULO}>{t("landing.features.catalogImport.title")}</h3>
+            <p className={DESCRIPCION}>{t("landing.features.catalogImport.description")}</p>
+          </div>
+          <div className={`${VISUAL} items-center justify-center gap-3`}>
+            <span className="text-sm font-mono px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
               CSV
             </span>
-            <ArrowRight className="w-3 h-3 text-neutral-400" aria-hidden="true" />
-            <span className="text-xs font-mono px-2 py-1 rounded bg-sky-50 dark:bg-sky-500/10 text-sky-600">
+            <ArrowRight className="w-4 h-4 text-neutral-400" aria-hidden="true" />
+            <span className="text-sm font-mono px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600">
               SYMVORA
             </span>
-          </m.div>
-        </m.div>
+          </div>
+        </ScrollStackItem>
 
-        {/* Feature 5 - Finances (Large - full width) */}
-        <m.div
-          className="lg:col-span-12 double-bezel bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-shadow"
-          variants={fadeInUp}
-          transition={easeOutLong}
-          whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.1)" }}
-        >
-          <m.div
-            className="flex-1 flex flex-col"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, ...easeOutShort }}
-          >
-            <m.div
-              className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 text-purple-600 rounded-lg flex items-center justify-center mb-6"
-              initial={{ scale: 0, rotate: -90 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.2, ...springIcon }}
-            >
+        {/* 5. Finanzas: morado con el azul de la marca */}
+        <ScrollStackItem className={TARJETA}>
+          <Brillo className="bg-purple-500/15 dark:bg-purple-500/10" />
+          <div className={TEXTO}>
+            <span className={`${ICONO} bg-purple-50 text-purple-600 dark:bg-purple-500/10`}>
               <BarChart3 className="w-6 h-6" aria-hidden="true" />
-            </m.div>
-            <h3 className="text-xl font-bold text-black dark:text-neutral-50 mb-2">
-              {t("landing.features.finances.title")}
-            </h3>
-            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
-              {t("landing.features.finances.description")}
-            </p>
-            <m.button
-              className="mt-auto self-start text-sm font-medium text-black border border-black px-4 py-2 rounded hover:bg-black hover:text-white dark:text-neutral-50 dark:border-neutral-300 dark:hover:bg-neutral-50 dark:hover:text-black transition-colors"
-              whileHover={{ backgroundColor: "black", color: "white", scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {t("landing.features.finances.viewDashboards")}
-            </m.button>
-          </m.div>
-          <m.div
-            className="flex-1 flex items-center justify-center min-h-[200px] relative"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, ...easeOutShort }}
-          >
-            <div className="w-48 h-48 rounded-full border-[16px] border-neutral-100 dark:border-neutral-800 relative">
+            </span>
+            <h3 className={TITULO}>{t("landing.features.finances.title")}</h3>
+            <p className={DESCRIPCION}>{t("landing.features.finances.description")}</p>
+          </div>
+          <div className={`${VISUAL} items-center justify-center`}>
+            <div className="w-40 h-40 md:w-48 md:h-48 rounded-full border-[14px] md:border-[16px] border-neutral-100 dark:border-neutral-800 relative">
               <m.div
-                className="absolute inset-[-16px] rounded-full border-[16px] border-transparent border-t-primary border-r-primary rotate-45 transition-transform duration-1000 hover:scale-105 cursor-pointer"
-                animate={{ rotate: 405 }}
+                className="absolute inset-[-14px] md:inset-[-16px] rounded-full border-[14px] md:border-[16px] border-transparent border-t-[#1e3a8a] border-r-[#1e3a8a] dark:border-t-blue-500 dark:border-r-blue-500 rotate-45"
+                animate={reduceMotion ? undefined : { rotate: 405 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
               />
               <m.div
-                className="absolute inset-[-16px] rounded-full border-[16px] border-transparent border-l-purple-500 rotate-[15deg] transition-transform duration-1000 hover:scale-105 cursor-pointer"
-                animate={{ rotate: -345 }}
+                className="absolute inset-[-14px] md:inset-[-16px] rounded-full border-[14px] md:border-[16px] border-transparent border-l-purple-500 rotate-[15deg]"
+                animate={reduceMotion ? undefined : { rotate: -345 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                style={{ animationPlayState: reduceMotion ? "paused" : "running" }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-black dark:text-neutral-50">
+                <span className="text-3xl md:text-4xl font-bold text-black dark:text-neutral-50">
                   87<span className="text-lg">%</span>
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 uppercase font-medium">
@@ -350,9 +232,9 @@ export function Features() {
                 </span>
               </div>
             </div>
-          </m.div>
-        </m.div>
-      </m.div>
+          </div>
+        </ScrollStackItem>
+      </ScrollStack>
     </m.section>
   );
 }
