@@ -97,8 +97,12 @@ export function Header({ onSearchOpen, onMenuClick }: HeaderProps) {
     router.replace(pathname, { locale });
   };
 
+  // En escritorio, sin desenfoque y con su propia curva: el panel tiene la
+  // esquina redondeada sobre la barra lateral, y el `backdrop-blur` arrastraba
+  // el color de la barra (lo que queda detrás de la esquina) hacia dentro del
+  // header. Aquí nada pasa por debajo, así que el blur no aportaba nada.
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/50 bg-gradient-to-r from-card to-card/50 px-4 md:px-6 backdrop-blur-sm">
+    <header className="flex h-16 items-center justify-between bg-gradient-to-r from-card to-card/50 px-4 md:px-6 backdrop-blur-sm lg:rounded-tl-[28px] lg:backdrop-blur-none">
       <div className="flex items-center gap-4">
         {/* Mobile menu button */}
         <Button

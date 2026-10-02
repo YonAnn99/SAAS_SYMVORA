@@ -29,7 +29,7 @@ export function LegalFooter() {
   return (
     // Colores por token del tema, nunca fijos: con `bg-neutral-50` el pie salia
     // como una franja BLANCA sobre el panel en modo oscuro.
-    <footer className="mt-6 border-t border-border bg-muted/30 px-4 py-2 md:px-6 md:py-3">
+    <footer className="mt-6 bg-muted/30 px-4 py-2 md:px-6 md:py-3">
       {/* `leading-4` fijo: con `text-[11px]` el interlineado heredado era
           16.5 px y el alto del pie no era exacto. `alto-panel.ts` cuenta con
           una linea de 16 px. */}

@@ -78,6 +78,8 @@
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
   --primary: #0F172A;           /* Deep Blue - Single Accent */
+  /* Barra lateral de escritorio: negra para contrastar con la pantalla clara. */
+  --nav-bg: #0A0A0A;
   --primary-foreground: #FAFAF9;
   --secondary: #F1F0EB;
   --secondary-foreground: #0F172A;
@@ -115,6 +117,8 @@
   --popover-foreground: #F0EFED;
   --primary: #1E3A8A;          /* Deep Blue 800 - muted for dark */
   --primary-foreground: #FAFAF9;
+  /* Barra lateral de escritorio: el azul SYMVORA de los botones. */
+  --nav-bg: #1E3A8A;
   --secondary: #1A1A1A;
   --secondary-foreground: #F0EFED;
   --muted: #1A1A1A;
@@ -279,6 +283,53 @@
 
 .animate-sidebar-item-in {
   animation: sidebar-item-in 360ms cubic-bezier(0.32,0.72,0,1) both;
+}
+
+/*
+ * Pestaña del menú lateral de escritorio (`sidebar.tsx`): un solo bloque del
+ * color de la pantalla (`--background`) que se desliza hasta la opción activa
+ * y se funde con el panel. Las dos esquinas curvas invertidas (arriba y abajo,
+ * pegadas al borde derecho) son las que hacen que "fluya" hacia el contenido.
+ * La posición y el alto los anima el componente (Rubber Segment, ver
+ * `rubber-bordes.ts`); la capa de texto activo va aparte, en el componente.
+ */
+.nav-pestana {
+  --nav-curva: 18px;
+  /* Fijo (= RADIO_PESTANA de sidebar.tsx): con 9999px, al estirarse se
+     volveria un semicirculo enorme. */
+  --nav-radio: 20px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  background: var(--background);
+  border-radius: var(--nav-radio) 0 0 var(--nav-radio);
+  pointer-events: none;
+  will-change: transform, height;
+}
+.nav-pestana::before,
+.nav-pestana::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  width: var(--nav-curva);
+  height: var(--nav-curva);
+}
+.nav-pestana::before {
+  top: calc(var(--nav-curva) * -1);
+  background: radial-gradient(
+    circle at 0 0,
+    transparent var(--nav-curva),
+    var(--background) calc(var(--nav-curva) + 0.5px)
+  );
+}
+.nav-pestana::after {
+  bottom: calc(var(--nav-curva) * -1);
+  background: radial-gradient(
+    circle at 0 100%,
+    transparent var(--nav-curva),
+    var(--background) calc(var(--nav-curva) + 0.5px)
+  );
 }
 
 /* Reduced motion: keep opacity, drop movement */

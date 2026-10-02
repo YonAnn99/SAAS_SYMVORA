@@ -33,9 +33,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <PolicyUpdateBanner />
         <AvisoEstadoPago />
         <OpenRegisterPrompt />
-        <div className="flex h-screen overflow-hidden">
+        {/* En escritorio el fondo es el de la barra lateral (`--nav-bg`) y la
+            columna de contenido lo tapa con la esquina izquierda redondeada:
+            el panel se ve "desbordado" sobre el menú y la pestaña activa del
+            menú se funde con él (ver `.nav-pestana` en globals.css). */}
+        <div className="flex h-screen overflow-hidden lg:bg-[var(--nav-bg)]">
           <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-hidden bg-background lg:rounded-l-[28px]">
             <Header onSearchOpen={() => setSearchOpen(true)} onMenuClick={() => setSidebarOpen(true)} />
             {/*
               El pie va DENTRO de `main` (el único elemento que hace scroll en

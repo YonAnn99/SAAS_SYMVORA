@@ -22,6 +22,8 @@ export const TIMEOUTS = {
   resend: 5_000,
   /** WhatsApp Cloud API (Meta): un aviso nunca debe frenar el correo ni el cron. */
   whatsapp: 5_000,
+  /** SMS (Twilio): mismo criterio que WhatsApp. */
+  sms: 5_000,
   /**
    * PAC (Finkok / SWSapien): el timbrado CFDI es legitimamente lento — hay un
    * SOAP y el SAT detras. 20s es generoso a proposito; por debajo se cortarian

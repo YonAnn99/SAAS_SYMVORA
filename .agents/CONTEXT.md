@@ -1309,3 +1309,48 @@ mismo, no uno nuevo. El noveno (`profile-dialog.tsx:70`) llegó con el commit de
 
 ⚠️ Si `vitest` reporta menos archivos de los esperados y "N errors" con
 `Failed to start forks worker`, es la máquina cargada, no fallos: volver a lanzarlo.
+
+---
+
+### Sesión 2026-09-30 → 2026-10-02 — POS, escáner con cámara, variantes con atributos, Nosotros, celular + avisos (WhatsApp/SMS), legales
+
+Commits `adf8ec9` → `daf94a5` más cambios sin commitear del SMS (ver abajo).
+
+**POS y ticket**
+- Descuento del carrito visible en el ticket (HTML y ESC/POS): `ticket-format.ts`, `ticket-receipt.tsx`, `impresora/ticket-escpos.ts`, con tests.
+- **Escáner de códigos con la cámara del celular** (`bb17eb1`): `src/components/escaner/{boton-escanear,escaner-camara}.tsx` + `src/lib/escaner/{detector,pitido,repetidos}.ts`. Usa `barcode-detector` (polyfill con ZXing; el `.wasm` va servido local en `public/zxing/zxing_reader.wasm`, por eso cambió la CSP en `next.config.ts`). Botón en POS, catálogo, diálogo de producto y de variante. Resuelve la promesa de la landing de "la cámara funciona como escáner" (antes era solo keyboard-wedge).
+- Favoritos del POS incluyen variantes (migración `098_variantes_favoritas.sql`, tabla aparte de `productos_favoritos`, RLS por usuario + negocio).
+
+**UI general**
+- Diálogos: animación nueva en escritorio (`components/ui/dialog.tsx` + `globals.css`); en móvil los modales son hojas inferiores con título.
+- `SpecularButton.tsx` (WebGL) **eliminado**: `specular-action-button.tsx` ahora es CSS puro con animación de "llenado". Ya no existe el riesgo de contextos WebGL en iOS (bug #30).
+- Selector de sucursal rediseñado; imágenes de `public/aprende/primeros-pasos/` convertidas a **WebP** (se arreglaron los PNG sin extensión y el duplicado `crear-procuto.png`; queda un `crear-producto` sin extensión por revisar).
+- Recuadro blanco de foco en inputs/combobox corregido (`f286888`).
+
+**Landing**
+- Página **Nosotros** (`/[locale]/nosotros`, `nosotros-contenido.tsx`) en el header (Precios · Aprende · Nosotros · Contáctanos), con carrusel propio (`components/ui/carrusel.tsx`).
+- Sección de módulos con **Scroll Stack** (`components/ui/scroll-stack.tsx`); se corrigió un bug de scroll que provocaba (`8222e60`). Se quitaron las etiquetas "pill".
+- **Footer**: los enlaces legales daban 404 (`/privacidad` sin locale). Ahora `components/ui/footer.tsx` recibe `locale` por prop y enlaza `/${locale}/aviso-privacidad`, `/terminos`, `/politica-cookies`.
+- **Doble scroll en páginas legales**: `html, body { overflow-x: hidden }` convertía al `body` en un segundo contenedor de scroll. Ahora es **`overflow-x: clip`** en `globals.css` — no volver a `hidden`.
+- `LegalShell` usa `AppFrame` + el footer de la landing. **Borrados** `components/marketing/navbar.tsx` y `components/marketing/footer.tsx` (el header viejo con Productos/Soluciones/Empresa). Ojo: las notas de CFDI de la sesión 2026-09-05 que mencionan `navbar.tsx` ya no aplican.
+
+**Variantes** (`68c017d`, `c0e7b15`, `9107f10`)
+- **Atributos libres** (Color, Sabor, Voltaje…): migración `097_atributos_variante.sql`, columna `variantes_producto.atributos jsonb` (arreglo ordenado `[{tipo, valor}]`). `talla`/`color` se siguen llenando como resumen compatible (`resumenCompatible` en `features/inventory/atributos-variante.ts`), así POS, ticket, historial, compras y el `UNIQUE(tenant_id, producto_id, talla, color)` siguen funcionando sin cambios. Componentes: `etiquetas-input.tsx`, `selector-categoria.tsx`, `variant-dialog.tsx` reescrito.
+- La pestaña Variantes se **unificó con el Catálogo**: las variantes se ven dentro de la tabla de productos (fila expandible en escritorio, hoja `variantes-producto-hoja.tsx` en móvil). `variants-table.tsx` eliminado; `/variants` redirige.
+- Foto propia por variante.
+
+**Celular del cliente + avisos** (`f3a17c3` y sin commitear)
+- **Celular obligatorio en "Crear cuenta"** con selector de lada (México +52 por defecto): `src/lib/telefono.ts` (22 países, E.164), `components/ui/telefono-input.tsx`, refine en `signupSchema`/`completarRegistroSchema`. También en Mi perfil (`components/profile/celular-perfil.tsx`, con interruptor de avisos) y aviso en `/billing` si falta.
+- Migración `099_contacto_usuario.sql`: tabla `contacto_usuarios` (PK `user_id`, `telefono` E.164 con CHECK, `pais`, `avisos_whatsapp` = interruptor "avisos al celular", `verificado_en` protegido por trigger); tabla `registros_pendientes` (borradores de registro, RLS sin políticas, se borran a los 30 días); columnas de seguimiento en `subscriptions` (`aviso_onboarding_en`, `checkout_iniciado_en`, `aviso_pago_abandonado_en`).
+- `POST /api/registro/borrador`: guarda el borrador del signup (honeypot `sitio_web`, rate limit 20/h por IP).
+- **WhatsApp Cloud API, APAGADO** hasta tener llaves de Meta: `lib/whatsapp-api.ts` + `lib/whatsapp-plantillas.ts` (8 plantillas). Enganchado tras los correos de fin de prueba, avisos de cobro, cierre de caja (manual y automático) y cambio de contraseña. Cron nuevo `/api/cron/seguimiento-whatsapp` (diario 17:00 UTC en `vercel.json`) con 3 flujos de abandono: registro incompleto (2 h), onboarding atascado (48 h sin productos/ventas), pago abandonado (12 h). Reglas puras en `lib/seguimiento-whatsapp.ts` con tests. Apagado no envía **ni marca** nada.
+- **SMS por Twilio (sin commitear, 2026-10-02)**, solo para el **aviso de cierre de caja**: `lib/sms-api.ts` (`smsActivo`, `enviarSMS` vía REST sin SDK, `TIMEOUTS.sms`), `lib/sms-texto.ts` (texto GSM-7 sin acentos, ≤160 caracteres = 1 segmento), `lib/avisos-celular.ts` (`avisarCorteDeCaja`: WhatsApp primero, SMS si WhatsApp está apagado o falla). Respeta el interruptor de Mi perfil. Apagado sin `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_FROM`. Tests en `src/__tests__/sms.test.ts`. El dueño cerrando su propia caja no genera aviso (comportamiento previo).
+- **Cartera de clientes interna** (migración `100_cartera_clientes.sql`): vista `interno.cartera_clientes` (dueño, celular, correo, negocio, giro, estatus, fechas, registros sin terminar). Esquema `interno` **no expuesto** por PostgREST; se consulta en el SQL Editor: `select * from interno.cartera_clientes;`. Es para uso del dueño de SYMVORA, no parte de la app.
+- Signup: el formulario se centra con `justify-content: safe center` (en móvil `flex-start`); fondo blanco en `.auth-form-scroll` porque el login queda debajo.
+
+**Legales**
+- Aviso de Privacidad: celular con lada, finalidades por WhatsApp/SMS, seguimiento de registros (30 días), transferencias a Meta (WhatsApp Business) y Twilio. Versión `privacy: "v1.3-2026-10-02"` en `lib/legal/versions.ts` (al desplegar reaparece el banner de cambios).
+
+**Líneas base al 2026-10-02**: `tsc` limpio · `vitest` **850 tests** · lint sin errores nuevos (el `set-state-in-effect` de `profile-dialog.tsx` es previo).
+
+**Pendientes de esta sesión** (también en `CLAUDE.md`): configurar Twilio y probar el SMS; activar WhatsApp en Meta; migración `096_acceso_por_estado_de_pago.sql` estaba **sin aplicar** (verificar con `list_migrations`); `public/aprende/primeros-pasos/crear-producto` sin extensión; nada de esto está commiteado salvo lo indicado.

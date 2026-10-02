@@ -14,7 +14,7 @@ type Guardar = ReturnType<typeof useContactoUsuario>["guardar"];
 
 /**
  * Celular del usuario en Mi perfil: editarlo y encender o apagar los avisos
- * por WhatsApp. Las cuentas creadas antes de que el registro lo pidiera lo ven
+ * al celular (SMS o WhatsApp). Las cuentas creadas antes de que el registro lo pidiera lo ven
  * vacio, con la invitacion a agregarlo.
  */
 export function CelularPerfil() {
@@ -30,8 +30,8 @@ export function CelularPerfil() {
       {contacto ? (
         <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
           <span className="flex items-center gap-2 text-xs">
-            <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" />
-            Recibir avisos de mi cuenta por WhatsApp
+            <MessageCircle className="h-3.5 w-3.5 text-primary" />
+            Recibir avisos de mi cuenta en mi celular
           </span>
           <Switch
             checked={contacto.avisos_whatsapp}
@@ -43,8 +43,8 @@ export function CelularPerfil() {
         </label>
       ) : (
         <p className="text-[11px] text-muted-foreground">
-          Agrega tu celular para recibir avisos de tu cuenta (fin de prueba, pagos, cortes de caja)
-          por WhatsApp.
+          Agrega tu celular para recibir avisos de tu cuenta, como tus cortes de caja, por SMS o
+          WhatsApp.
         </p>
       )}
     </div>
@@ -62,12 +62,12 @@ export function AvisoCelularFaltante() {
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-start gap-3">
-        <MessageCircle className="h-5 w-5 shrink-0 text-[#25D366] mt-0.5" />
+        <MessageCircle className="h-5 w-5 shrink-0 text-primary mt-0.5" />
         <div className="space-y-0.5">
           <p className="text-sm font-semibold">Agrega tu celular</p>
           <p className="text-xs text-muted-foreground">
-            Te avisaremos por WhatsApp de tus pagos y del estado de tu cuenta, y podremos darte
-            soporte directo. Puedes desactivarlo en Mi perfil.
+            Te enviaremos avisos de tu cuenta, como tus cortes de caja, por SMS o WhatsApp, y podremos
+            darte soporte directo. Puedes desactivarlo en Mi perfil.
           </p>
         </div>
       </div>

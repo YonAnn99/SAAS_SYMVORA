@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function AvisoPrivacidadPage() {
   return (
-    <LegalShell title="Aviso de Privacidad Integral" updatedAt="1 de octubre de 2026">
+    <LegalShell title="Aviso de Privacidad Integral" updatedAt="2 de octubre de 2026">
       <p>
         SYMVORA (&quot;la Plataforma&quot;, &quot;nosotros&quot;), con domicilio en [Domicilio del responsable],
         pone a disposición de sus usuarios el presente Aviso de Privacidad Integral, en
@@ -62,8 +62,8 @@ export default function AvisoPrivacidadPage() {
         <li>Gestionar la relación comercial: registro, facturación de servicios, cobros y soporte.</li>
         <li>Verificar su identidad y proteger la seguridad de su cuenta.</li>
         <li>
-          Enviarle por WhatsApp avisos sobre su cuenta (fin del periodo de prueba,
-          pagos, cortes de caja y seguridad) y darle soporte directo por ese medio.
+          Enviarle por WhatsApp o SMS avisos sobre su cuenta (fin del periodo de prueba,
+          pagos, cortes de caja y seguridad) y darle soporte directo por WhatsApp.
           Puede desactivar estos avisos en cualquier momento desde Mi perfil.
         </li>
         <li>Dar cumplimiento a obligaciones legales y fiscales.</li>
@@ -101,6 +101,10 @@ export default function AvisoPrivacidadPage() {
         <li>
           Proveedor de mensajería (Meta Platforms, a través de WhatsApp Business) para
           el envío de los avisos por WhatsApp descritos en las finalidades.
+        </li>
+        <li>
+          Proveedor de mensajes SMS (Twilio) para el envío de los avisos por SMS
+          descritos en las finalidades.
         </li>
         <li>
           Proveedor de protección contra bots (Cloudflare Turnstile) cuando esté

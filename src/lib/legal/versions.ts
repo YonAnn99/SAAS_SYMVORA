@@ -1,6 +1,6 @@
 export const LEGAL_DOCUMENT_VERSIONS = {
   terms: "v1.2-2026-09-29",
-  privacy: "v1.2-2026-10-01",
+  privacy: "v1.3-2026-10-02",
   cookies: "v1.0-2026-08-12",
 } as const;
 

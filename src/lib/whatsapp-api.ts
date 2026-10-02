@@ -87,6 +87,9 @@ export async function enviarPlantillaWhatsApp<N extends NombrePlantilla>(
  * Telefono para avisos de un usuario, o `null` si no dio numero o apago los
  * avisos. Cuando exista la verificacion por codigo, tambien exigira
  * `verificado_en`.
+ *
+ * `avisos_whatsapp` es el interruptor de "avisos al celular" de Mi perfil:
+ * vale para WhatsApp y para el SMS de respaldo (`lib/avisos-celular.ts`).
  */
 export async function contactoParaAvisos(supabase: Supabase, userId: string): Promise<string | null> {
   const { data } = await supabase

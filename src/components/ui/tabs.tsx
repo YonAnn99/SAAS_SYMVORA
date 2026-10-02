@@ -4,15 +4,14 @@ import * as React from "react"
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs"
 import { cva, type VariantProps } from "class-variance-authority"
 import {
-  animate,
   motion,
   useMotionValue,
   useReducedMotion,
   useTransform,
-  type MotionValue,
 } from "motion/react"
 
 import { cn } from "@/lib/utils"
+import { useRubberBordes, type Borde } from "@/components/ui/rubber-bordes"
 
 function Tabs({
   className,
@@ -64,21 +63,10 @@ const tabsListVariants = cva(
  * teclado). Aqui las pestañas siguen siendo las mismas; lo unico nuevo es el
  * indicador que se pinta detras. El arrastre del original queda fuera: en una
  * barra de pestañas se cambia con clic o teclado.
+ *
+ * La fisica (estirar, caer, aplastar) vive en `rubber-bordes.ts`, compartida
+ * con el menu lateral; aqui los bordes son izquierda (`inicio`) y derecha (`fin`).
  */
-const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1]
-const SPRING_UI = { type: "spring" as const, duration: 0.3, bounce: 0 }
-const SPRING_RELAX = { type: "spring" as const, duration: 0.16, bounce: 0 }
-/** Cuanto dura el estiramiento. */
-const DILATE = 0.19
-/** Cuando empieza a caer sobre el destino (se solapa con el estiramiento). */
-const HANDOFF = 0.15
-/** 100 = estira hasta abarcar origen y destino. */
-const STRETCH = 100
-/** Pixeles que el borde de atras pasa de largo antes de asentarse. */
-const SQUASH = 3
-
-type Borde = { l: number; r: number }
-
 /** Copia visual de una etiqueta, en la posicion de su pestaña. */
 type Copia = { html: string; left: number; width: number }
 
@@ -92,8 +80,13 @@ function RubberIndicator() {
   // salia al inicio y la pastilla nunca se medía ni se veía.
   const capaRef = React.useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion()
-  const edgeL = useMotionValue(0)
-  const edgeR = useMotionValue(0)
+  const {
+    inicio: edgeL,
+    fin: edgeR,
+    saltar: jump,
+    viajar: travel,
+    detener,
+  } = useRubberBordes()
   const anchoInterior = useMotionValue(0)
   // Igual que el original: no se mueve una pastilla detras del texto, se
   // recorta una capa completa (fondo de pastilla + texto en color activo).
@@ -107,58 +100,6 @@ function RubberIndicator() {
   const [visible, setVisible] = React.useState(false)
 
   const actual = React.useRef<Borde | null>(null)
-  const gen = React.useRef(0)
-  const handoff = React.useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
-  )
-
-  const jump = React.useCallback(
-    (b: Borde) => {
-      clearTimeout(handoff.current)
-      gen.current += 1
-      edgeL.jump(b.l)
-      edgeR.jump(b.r)
-    },
-    [edgeL, edgeR]
-  )
-
-  // Cae sobre el destino: el borde que va delante llega con un spring; el de
-  // atras pasa de largo SQUASH px y regresa (el "aplastado").
-  const land = React.useCallback(
-    (b: Borde) => {
-      const g = ++gen.current
-      const dir =
-        Math.sign((b.l + b.r) / 2 - (edgeL.get() + edgeR.get()) / 2) || 1
-      const [lead, leadTo, trail, trailTo]: [
-        MotionValue<number>,
-        number,
-        MotionValue<number>,
-        number,
-      ] = dir > 0 ? [edgeR, b.r, edgeL, b.l] : [edgeL, b.l, edgeR, b.r]
-      animate(lead, leadTo, { ...SPRING_UI, velocity: lead.getVelocity() })
-      animate(trail, trailTo + dir * SQUASH, {
-        ...SPRING_UI,
-        velocity: trail.getVelocity(),
-      }).then(() => {
-        if (gen.current === g) animate(trail, trailTo, SPRING_RELAX)
-      })
-    },
-    [edgeL, edgeR]
-  )
-
-  // Se estira hasta abarcar origen y destino y, antes de terminar, cae.
-  const travel = React.useCallback(
-    (a: Borde, b: Borde) => {
-      clearTimeout(handoff.current)
-      gen.current += 1
-      const u = STRETCH / 100
-      const tween = { duration: DILATE, ease: EASE_OUT }
-      animate(edgeL, b.l + (Math.min(a.l, b.l) - b.l) * u, tween)
-      animate(edgeR, b.r + (Math.max(a.r, b.r) - b.r) * u, tween)
-      handoff.current = setTimeout(() => land(b), HANDOFF * 1000)
-    },
-    [edgeL, edgeR, land]
-  )
 
   React.useLayoutEffect(() => {
     const list = capaRef.current?.parentElement
@@ -182,8 +123,8 @@ function RubberIndicator() {
       const relativo = (el: HTMLElement) => {
         const r = el.getBoundingClientRect()
         return {
-          l: r.left - caja.left - INSET,
-          r: r.right - caja.left - INSET,
+          inicio: r.left - caja.left - INSET,
+          fin: r.right - caja.left - INSET,
         }
       }
 
@@ -192,7 +133,7 @@ function RubberIndicator() {
       // Copia de cada etiqueta en su sitio; solo se actualiza si cambio.
       const nuevas = pestanas.map((p) => {
         const b = relativo(p)
-        return { html: p.innerHTML, left: b.l, width: b.r - b.l }
+        return { html: p.innerHTML, left: b.inicio, width: b.fin - b.inicio }
       })
       setCopias((previas) =>
         previas.length === nuevas.length &&
@@ -214,7 +155,7 @@ function RubberIndicator() {
         animar &&
         !reduce &&
         origen &&
-        (origen.l !== destino.l || origen.r !== destino.r)
+        (origen.inicio !== destino.inicio || origen.fin !== destino.fin)
       ) {
         travel(origen, destino)
       } else {
@@ -246,11 +187,9 @@ function RubberIndicator() {
     return () => {
       tamano.disconnect()
       cambio.disconnect()
-      clearTimeout(handoff.current)
-      edgeL.stop()
-      edgeR.stop()
+      detener()
     }
-  }, [reduce, travel, jump, anchoInterior, edgeL, edgeR])
+  }, [reduce, travel, jump, detener, anchoInterior])
 
   return (
     <motion.div
