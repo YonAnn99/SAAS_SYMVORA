@@ -44,8 +44,15 @@ describe("colores del pie legal", () => {
   });
 
   it("usa los tokens del tema", () => {
-    expect(footer).toContain("border-border");
+    // Sin borde superior desde el rediseño del panel; el fondo sigue siendo
+    // un token del tema.
+    expect(footer).toContain("bg-muted/30");
     expect(footer).toContain("text-muted-foreground");
+  });
+
+  it("ya no lleva la línea divisoria de arriba", () => {
+    // `alto-panel.ts` ya no cuenta ese píxel: si vuelve, el POS desplaza.
+    expect(footer).not.toMatch(/\bborder-t\b/);
   });
 });
 
@@ -114,10 +121,14 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
   const alto = leer("src/components/dashboard/alto-panel.ts");
   const header = leer("src/components/layout/header.tsx");
 
-  it("main no tiene relleno inferior", () => {
+  it("main solo deja relleno abajo para el dock de celular", () => {
     const etiquetaMain = shell.match(/<main[^>]*>/)?.[0] ?? "";
     expect(etiquetaMain).not.toMatch(/\b(md:)?p-\d/); // p-4 / md:p-6 incluyen el de abajo
-    expect(etiquetaMain).not.toMatch(/\b(md:)?pb-/);
+    // Escritorio: sin relleno inferior. Celular/tablet: el hueco exacto del
+    // dock, que es lo que descuenta `alto-panel.ts`.
+    expect(etiquetaMain).toContain("lg:pb-0");
+    expect(etiquetaMain).toContain("pb-[calc(4rem+env(safe-area-inset-bottom))]");
+    expect(etiquetaMain).not.toMatch(/\bmd:pb-/);
     expect(etiquetaMain).toContain("pt-4");
     expect(etiquetaMain).toContain("md:pt-6");
   });
@@ -128,8 +139,9 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
     expect(footer).toContain("py-2");
     expect(footer).toContain("md:py-3");
     expect(footer).toContain("leading-4");
-    expect(alto).toContain("h-[calc(100vh-137px)]");
-    expect(alto).toContain("md:h-[calc(100vh-153px)]");
+    expect(alto).toContain("h-[calc(100vh-200px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("md:h-[calc(100vh-216px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("lg:h-[calc(100vh-152px)]");
   });
 
   it.each([

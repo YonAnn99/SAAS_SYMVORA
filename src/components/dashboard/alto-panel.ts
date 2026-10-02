@@ -6,20 +6,27 @@
  *   100vh
  *   − 64 px  encabezado del panel (`h-16`, src/components/layout/header.tsx)
  *   − 16 px  relleno superior de <main> en celular (`pt-4`) | 24 px desde md (`md:pt-6`)
- *   − 57 px  pie legal en celular | 65 px desde md (src/components/dashboard/legal-footer.tsx):
- *            `mt-6` (24) + borde (1) + `py-2` (16) | `md:py-3` (24) + una linea `leading-4` (16)
+ *   − 56 px  pie legal en celular | 64 px desde md (src/components/dashboard/legal-footer.tsx):
+ *            `mt-6` (24) + `py-2` (16) | `md:py-3` (24) + una linea `leading-4` (16).
+ *            Ya sin borde superior (se quito para un panel mas limpio).
+ *   − 64 px  + safe area: SOLO por debajo de lg, el hueco del dock pegado al
+ *            borde inferior (`dock-movil.tsx`), que es el relleno inferior de
+ *            <main> (`pb-[calc(4rem+env(safe-area-inset-bottom))]`)
  *   ─────────
- *   = 100vh − 137 px (celular) | 100vh − 153 px (md en adelante)
+ *   = 100vh − 200 px − safe area (celular)
+ *   = 100vh − 216 px − safe area (md, tablet: aun con dock)
+ *   = 100vh − 152 px (lg en adelante: menu lateral, sin dock)
  *
- * <main> ya no tiene relleno inferior (dashboard-shell.tsx): el pie queda
- * pegado al fondo. Antes el POS usaba `100vh − 3.5rem` y medía ~120 px de
- * más, asi que la pagina se desplazaba y el pie quedaba fuera de la pantalla.
+ * En escritorio <main> no tiene relleno inferior (dashboard-shell.tsx): el pie
+ * queda pegado al fondo. Antes el POS usaba `100vh − 3.5rem` y medía ~120 px
+ * de más, asi que la pagina se desplazaba y el pie quedaba fuera de la pantalla.
  *
- * ⚠️ Si cambia el alto del encabezado, el relleno de <main> o el pie, hay que
- * rehacer esta cuenta. `legal-footer.test.ts` vigila que esas tres piezas
+ * ⚠️ Si cambia el alto del encabezado, el relleno de <main>, el pie o el dock,
+ * hay que rehacer esta cuenta. `legal-footer.test.ts` vigila que esas piezas
  * sigan como aqui se asume.
  *
  * Es una cadena literal a proposito: Tailwind escanea este archivo y genera
- * las dos clases. Armada con variables, no las encontraria.
+ * las clases. Armada con variables, no las encontraria.
  */
-export const ALTO_PANEL_COMPLETO = "h-[calc(100vh-137px)] md:h-[calc(100vh-153px)]";
+export const ALTO_PANEL_COMPLETO =
+  "h-[calc(100vh-200px-env(safe-area-inset-bottom))] md:h-[calc(100vh-216px-env(safe-area-inset-bottom))] lg:h-[calc(100vh-152px)]";

@@ -4,6 +4,7 @@ import {
   VISIBLE_NAVIGATION,
   filterNavigation,
   moduleLabelKeyForPath,
+  navegacionDock,
   stripLocale,
 } from "@/lib/navigation";
 import { tutorialSteps } from "@/components/tutorial/steps-data";
@@ -284,5 +285,28 @@ describe("filterNavigation", () => {
     // migracion 088 el dashboard pide `sales.view_reports`.
     expect(visibles).not.toContain("/dashboard");
     expect(visibles).toContain("/products");
+  });
+});
+
+describe("dock de celular", () => {
+  const todo = () => true;
+
+  it("el dueño lleva fijos POS, Productos, Finanzas y Órdenes", () => {
+    const { fijos } = navegacionDock(filterNavigation("SUPER_ADMIN", todo));
+    expect(fijos.map((i) => i.href)).toEqual(["/pos", "/products", "/finances", "/purchase-orders"]);
+  });
+
+  it("si no ve alguno de los preferidos, rellena con lo siguiente que sí ve", () => {
+    // Sin Finanzas ni compras: el dock no se queda con dos botones.
+    const sinCajaNiCompras = (p: string) => ["sales.create", "inventory.view", "billing.view"].includes(p);
+    const { fijos } = navegacionDock(filterNavigation("CAJERO", sinCajaNiCompras));
+    expect(fijos.map((i) => i.href)).toEqual(["/pos", "/products", "/customers", "/suggestions"]);
+  });
+
+  it("ningún módulo queda en el dock y en Más a la vez, ni se pierde", () => {
+    const visibles = filterNavigation("SUPER_ADMIN", todo);
+    const { fijos, resto } = navegacionDock(visibles);
+    expect(fijos.filter((i) => resto.includes(i))).toEqual([]);
+    expect(fijos.length + resto.length).toBe(visibles.length);
   });
 });

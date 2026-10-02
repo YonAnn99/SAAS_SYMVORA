@@ -174,3 +174,26 @@ export function filterNavigation(
     return !item.minRole || hasRole(role, item.minRole);
   });
 }
+
+/** Los 4 módulos fijos del dock de celular, en este orden (decisión del dueño). */
+export const DOCK_PREFERIDOS = ["/pos", "/products", "/finances", "/purchase-orders"];
+export const DOCK_FIJOS = 4;
+
+/**
+ * Reparte los módulos visibles entre el dock de celular (`fijos`) y la hoja
+ * "Más" (`resto`). Recibe la salida de `filterNavigation`, así respeta los
+ * mismos permisos que el menú lateral.
+ *
+ * Si la persona no ve alguno de los preferidos (un cajero no ve Finanzas ni
+ * Órdenes), el hueco se rellena con los siguientes módulos visibles en el
+ * orden del menú: un dock con dos botones dejaría la barra medio vacía y
+ * escondería en "Más" cosas que sí puede usar.
+ */
+export function navegacionDock(visibles: NavItem[]): { fijos: NavItem[]; resto: NavItem[] } {
+  const preferidos = DOCK_PREFERIDOS.map((href) => visibles.find((i) => i.href === href)).filter(
+    (i): i is NavItem => Boolean(i)
+  );
+  const relleno = visibles.filter((i) => !preferidos.includes(i));
+  const fijos = [...preferidos, ...relleno].slice(0, DOCK_FIJOS);
+  return { fijos, resto: visibles.filter((i) => !fijos.includes(i)) };
+}

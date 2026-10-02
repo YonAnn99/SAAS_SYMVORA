@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { DockMovil } from "@/components/layout/dock-movil";
 import { CommandMenu } from "@/components/search/command-menu";
 import { TutorialProvider } from "@/components/tutorial/tutorial-provider";
 import { TutorialDialog } from "@/components/tutorial/tutorial-dialog";
@@ -18,7 +19,6 @@ import { ConfirmarProvider } from "@/components/ui/confirmar";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
@@ -38,9 +38,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             el panel se ve "desbordado" sobre el menú y la pestaña activa del
             menú se funde con él (ver `.nav-pestana` en globals.css). */}
         <div className="flex h-screen overflow-hidden lg:bg-[var(--nav-bg)]">
-          <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
+          <Sidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
           <div className="flex flex-1 flex-col overflow-hidden bg-background lg:rounded-l-[28px]">
-            <Header onSearchOpen={() => setSearchOpen(true)} onMenuClick={() => setSidebarOpen(true)} />
+            <Header onSearchOpen={() => setSearchOpen(true)} />
             {/*
               El pie va DENTRO de `main` (el único elemento que hace scroll en
               este shell) para que NO quede clavado abajo comiéndose espacio de
@@ -53,13 +53,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               come el espacio sobrante, así que el pie cae al fondo cuando hay
               poco que mostrar y se va hacia abajo cuando hay mucho.
             */}
-            {/* Sin relleno inferior: el pie queda pegado al fondo (su `mt-6`
-                ya lo separa del contenido). Ver `alto-panel.ts`. */}
-            <main className="flex flex-1 flex-col overflow-y-auto px-4 pt-4 md:px-6 md:pt-6">
+            {/* Sin relleno inferior en escritorio: el pie queda pegado al fondo
+                (su `mt-6` ya lo separa del contenido). En celular y tablet el
+                relleno deja libre el hueco del dock (pegado abajo) para que no
+                tape el final de la pantalla. Ver `alto-panel.ts`. */}
+            <main className="flex flex-1 flex-col overflow-y-auto px-4 pt-4 pb-[calc(4rem+env(safe-area-inset-bottom))] md:px-6 md:pt-6 lg:pb-0">
               <div className="flex-1">{children}</div>
               <LegalFooter />
             </main>
           </div>
+          <DockMovil />
           <CommandMenu open={searchOpen} setOpen={setSearchOpen} />
           <TutorialDialog />
           <TutorialMinimized />
