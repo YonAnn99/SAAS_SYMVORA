@@ -25,6 +25,9 @@ export interface DatosNegocio {
   logoFile: File | null;
   promoCode: string;
   referralCode: string | null;
+  /** Celular en E.164 (`+525512345678`) y el pais de su lada (`MX`). */
+  telefono: string;
+  pais: string;
   /** Textos ya traducidos para los motivos de rechazo del codigo promocional. */
   mensajesPromo: { usado: string; expirado: string; invalido: string };
 }
@@ -137,6 +140,28 @@ export async function crearNegocio(datos: DatosNegocio): Promise<ResultadoCrearN
 
   if (rpcError) return { ok: false, error: rpcError.message };
   if (!tenant?.id) return { ok: false, error: "Error al crear el negocio" };
+
+  // Celular del dueño para los avisos por WhatsApp (migracion 099). Como el
+  // logo: si falla no se bloquea el alta, se puede agregar en Mi perfil.
+  const { error: contactoError } = await supabase.from("contacto_usuarios").upsert({
+    user_id: datos.userId,
+    telefono: datos.telefono,
+    pais: datos.pais,
+    avisos_whatsapp: true,
+    consentimiento_en: new Date().toISOString(),
+  });
+  if (contactoError) {
+    console.error("No se pudo guardar el celular:", contactoError);
+    toast.warning("No se pudo guardar tu celular. Podrás agregarlo después desde Mi perfil.");
+  }
+
+  // Cierra el borrador del registro: ya no hay a quien recordarle que termine.
+  fetch("/api/registro/borrador", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pais: datos.pais, telefono: datos.telefono, completado: true }),
+    keepalive: true,
+  }).catch(() => {});
 
   // Email de bienvenida (fire-and-forget): nunca bloquea ni rompe el signup.
   fetch("/api/email/welcome", {

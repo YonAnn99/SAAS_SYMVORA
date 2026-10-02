@@ -91,6 +91,7 @@
     "middleNameOptional": "Middle name (optional)",
     "lastName": "Last name",
     "maternalLastName": "Mother's last name",
+    "phone": "Mobile number",
     "businessName": "Business name",
     "businessNamePlaceholder": "My Business",
     "confirmEmail": "Confirm email",

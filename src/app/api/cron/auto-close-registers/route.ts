@@ -12,6 +12,8 @@ import {
   type AutoCloseResult,
 } from "@/features/cash-register/services/cash-register-server-service";
 import { destinatariosCierreAutomatico } from "@/features/cash-register/avisos-cierre";
+import { avisarDuenoPorWhatsApp } from "@/lib/whatsapp-api";
+import { formatMXN } from "@/lib/money";
 
 /**
  * Cierre automático de cajas a las 4:30 a. m. (hora CDMX).
@@ -207,6 +209,15 @@ export async function GET(request: Request) {
       }
 
       await Promise.allSettled(emailPromises);
+
+      // Al dueño, tambien por WhatsApp (apagado sin llaves de Meta; nunca lanza).
+      await avisarDuenoPorWhatsApp(supabase, reg.caja.tenant_id, "corte_caja", () => ({
+        negocio: superAdmin?.businessName ?? reg.tenantName,
+        sucursal: reg.sucursalNombre || "caja principal",
+        quien: `la caja de ${reg.userName} se cerró automáticamente`,
+        ventas: formatMXN(reg.totalVentas),
+        diferencia: "sin conteo (cierre automático)",
+      }));
 
       cerradas.push({
         cajaId: reg.caja.id,

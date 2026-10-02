@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { sendAvisoCobroEmail } from "@/lib/email";
+import { avisarDuenoPorWhatsApp, nombreDePila } from "@/lib/whatsapp-api";
+import { detalleAvisoCobro } from "@/lib/whatsapp-plantillas";
+import { getAppUrl } from "@/lib/site";
 import {
   avisoCobroPendiente,
   columnaAvisoCobro,
@@ -169,6 +172,18 @@ export async function GET(request: Request) {
         `[cron:avisos-cobro] correo enviado pero NO marcado (tenant ${fila.tenant_id}, ${tipo}): ${errorMarca.message}`
       );
     }
+
+    // El mismo aviso por WhatsApp (apagado sin llaves de Meta; nunca lanza).
+    await avisarDuenoPorWhatsApp(supabase, fila.tenant_id, "aviso_cobro", async (ownerId) => ({
+      nombre: await nombreDePila(supabase, ownerId),
+      negocio: destinatario.businessName,
+      detalle: detalleAvisoCobro(tipo, {
+        venceEl: fila.current_period_end ? new Date(fila.current_period_end) : null,
+        cobroFallido: sub.estado === "past_due",
+        limiteDatos: limiteConservacion(sub, ahora),
+      }),
+      enlace: `${getAppUrl()}/es/billing`,
+    }));
 
     enviados.push({ tenantId: fila.tenant_id, tipo });
   }

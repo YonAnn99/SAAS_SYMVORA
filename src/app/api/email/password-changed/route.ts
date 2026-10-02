@@ -6,6 +6,7 @@ import {
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { sendPasswordChangedAlertEmail } from "@/lib/email";
+import { avisarUsuarioPorWhatsApp } from "@/lib/whatsapp-api";
 
 export const maxDuration = 30;
 
@@ -59,6 +60,13 @@ export async function POST(request: Request) {
       userEmail: user.email,
       userRole: auth.role || undefined,
       isSelf: true,
+    });
+
+    // Aviso de seguridad tambien por WhatsApp a quien cambio su contraseña
+    // (apagado sin llaves de Meta; nunca lanza).
+    await avisarUsuarioPorWhatsApp(supabase, user.id, "cambio_contrasena", {
+      negocio: businessName,
+      correo: user.email,
     });
 
     // 2. Si el usuario que cambió contraseña no es SUPER_ADMIN, notificar también al SUPER_ADMIN

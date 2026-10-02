@@ -45,6 +45,7 @@ import {
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
+import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
 
 interface Subscription {
   id: string;
@@ -456,6 +457,10 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
           esperan tal como los dejaste.
         </div>
       )}
+
+      {/* Cuentas creadas antes de que el registro pidiera el celular: se le
+          pide aqui, donde el dueño llega a pagar (avisos de cobro por WhatsApp). */}
+      <AvisoCelularFaltante />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="animate-fade-in-up stagger-2">

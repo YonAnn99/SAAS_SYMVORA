@@ -9,6 +9,8 @@ import {
   diasRestantes,
   type TipoAviso,
 } from "@/lib/trial-notices";
+import { avisarDuenoPorWhatsApp, nombreDePila } from "@/lib/whatsapp-api";
+import { getAppUrl } from "@/lib/site";
 
 /**
  * Avisos de fin de prueba. Lo dispara el cron diario de Vercel (`vercel.json`).
@@ -185,6 +187,24 @@ export async function GET(request: Request) {
       console.error(
         `[cron:trial-notices] correo enviado pero NO marcado (tenant ${sub.tenant_id}, ${tipo}): ${errorMarca.message}`
       );
+    }
+
+    // El mismo aviso por WhatsApp si el dueño dio su celular. Apagado sin las
+    // llaves de Meta; nunca lanza ni cambia lo que ya hizo el correo.
+    const enlace = `${getAppUrl()}/es/billing`;
+    if (tipo === "por_vencer") {
+      await avisarDuenoPorWhatsApp(supabase, sub.tenant_id, "prueba_por_terminar", async (ownerId) => ({
+        nombre: await nombreDePila(supabase, ownerId),
+        negocio: destinatario.businessName,
+        dias: String(Math.max(1, diasRestantes(sub.trial_end, ahora))),
+        enlace,
+      }));
+    } else {
+      await avisarDuenoPorWhatsApp(supabase, sub.tenant_id, "prueba_terminada", async (ownerId) => ({
+        nombre: await nombreDePila(supabase, ownerId),
+        negocio: destinatario.businessName,
+        enlace,
+      }));
     }
 
     enviados.push({ tenantId: sub.tenant_id, tipo });

@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function AvisoPrivacidadPage() {
   return (
-    <LegalShell title="Aviso de Privacidad Integral" updatedAt="12 de agosto de 2026">
+    <LegalShell title="Aviso de Privacidad Integral" updatedAt="1 de octubre de 2026">
       <p>
         SYMVORA (&quot;la Plataforma&quot;, &quot;nosotros&quot;), con domicilio en [Domicilio del responsable],
         pone a disposición de sus usuarios el presente Aviso de Privacidad Integral, en
@@ -29,7 +29,7 @@ export default function AvisoPrivacidadPage() {
       <h2>2. Datos personales que recabamos</h2>
       <p>De los titulares (usuarios de la Plataforma) recabamos los siguientes datos:</p>
       <ul>
-        <li>Identificación: nombre(s) y apellidos, correo electrónico, teléfono.</li>
+        <li>Identificación: nombre(s) y apellidos, correo electrónico, número celular con lada de país.</li>
         <li>
           Datos de su negocio: nombre comercial, giro comercial, logotipo, datos
           fiscales (RFC, razón social, régimen fiscal, código postal) necesarios para la
@@ -61,11 +61,20 @@ export default function AvisoPrivacidadPage() {
         <li>Proveer, operar, administrar y dar mantenimiento a la Plataforma.</li>
         <li>Gestionar la relación comercial: registro, facturación de servicios, cobros y soporte.</li>
         <li>Verificar su identidad y proteger la seguridad de su cuenta.</li>
+        <li>
+          Enviarle por WhatsApp avisos sobre su cuenta (fin del periodo de prueba,
+          pagos, cortes de caja y seguridad) y darle soporte directo por ese medio.
+          Puede desactivar estos avisos en cualquier momento desde Mi perfil.
+        </li>
         <li>Dar cumplimiento a obligaciones legales y fiscales.</li>
       </ul>
       <p>
         De manera adicional, podremos usar sus datos para finalidades secundarias como
-        el envío de comunicaciones sobre la Plataforma y encuestas de satisfacción.
+        el envío de comunicaciones sobre la Plataforma y encuestas de satisfacción,
+        incluidos mensajes por WhatsApp para ayudarle a terminar su registro, empezar
+        a usar la Plataforma o completar un pago que dejó pendiente. Si deja su número
+        en el formulario de registro sin terminarlo, lo conservamos un máximo de 30
+        días con esta única finalidad.
         En todo caso, usted puede oponerse al uso de sus datos con fines secundarios o
         revocar su consentimiento enviando una solicitud a <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">{PRIVACY_EMAIL}</a>.
       </p>
@@ -89,6 +98,10 @@ export default function AvisoPrivacidadPage() {
         <li>Proveedor de infraestructura en la nube y base de datos (Supabase).</li>
         <li>Proveedor de alojamiento de la Plataforma (Vercel).</li>
         <li>Proveedor de cobros en línea (Conekta) para el procesamiento de pagos.</li>
+        <li>
+          Proveedor de mensajería (Meta Platforms, a través de WhatsApp Business) para
+          el envío de los avisos por WhatsApp descritos en las finalidades.
+        </li>
         <li>
           Proveedor de protección contra bots (Cloudflare Turnstile) cuando esté
           habilitado, para validar que los registros e inicios de sesión no sean

@@ -227,6 +227,38 @@ export type Database = {
           creado_en?: string;
         };
       };
+      contacto_usuarios: {
+        Row: {
+          user_id: string;
+          telefono: string;
+          pais: string;
+          avisos_whatsapp: boolean;
+          consentimiento_en: string | null;
+          verificado_en: string | null;
+          creado_en: string;
+          actualizado_en: string;
+        };
+        Insert: {
+          user_id?: string;
+          telefono: string;
+          pais?: string;
+          avisos_whatsapp?: boolean;
+          consentimiento_en?: string | null;
+          verificado_en?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+        Update: {
+          user_id?: string;
+          telefono?: string;
+          pais?: string;
+          avisos_whatsapp?: boolean;
+          consentimiento_en?: string | null;
+          verificado_en?: string | null;
+          creado_en?: string;
+          actualizado_en?: string;
+        };
+      };
       listas_precios: {
         Row: {
           id: string;

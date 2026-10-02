@@ -254,6 +254,10 @@
   padding: 20px 35px;
   scrollbar-width: thin;
   scrollbar-color: #ccc transparent;
+  /* Opaco a proposito: el login sigue DEBAJO del registro (z-index) y, cuando
+     aparece la barra de scroll, el form se recorre ~8 px y en la franja sin
+     fondo se asomaban sus campos y su boton. */
+  background-color: #fff;
 }
 
 .auth-form-center {
@@ -977,5 +981,22 @@
   .auth-container label,
   .auth-container a {
     color: var(--foreground) !important;
+  }
+}
+
+/* Campo trampa del borrador de registro: invisible y fuera del flujo. */
+.auth-container input.auth-trampa {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+  /* En celular el login no esta debajo y el form es transparente (tema). */
+  .auth-form-scroll {
+    background-color: transparent;
   }
 }

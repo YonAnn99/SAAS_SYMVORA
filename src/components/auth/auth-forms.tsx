@@ -24,6 +24,9 @@ import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
+import { TelefonoInput } from "@/components/ui/telefono-input";
+import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
+import { useBorradorRegistro } from "@/features/onboarding/borrador-registro";
 import "@/styles/auth-toggle.css";
 
 function GoogleIcon() {
@@ -130,6 +133,12 @@ export function AuthForms({
   const [segundoNombre, setSegundoNombre] = useState("");
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
+  // Celular obligatorio: lada (pais) + numero nacional; se guarda en E.164.
+  const [paisTelefono, setPaisTelefono] = useState(PAIS_POR_DEFECTO);
+  const [telefono, setTelefono] = useState("");
+  // Campo trampa del borrador: oculto para personas, los bots lo llenan.
+  const [sitioWeb, setSitioWeb] = useState("");
+  const guardarBorrador = useBorradorRegistro();
   const [nombreEstablecimiento, setNombreEstablecimiento] = useState("");
   // Slug de uno de los 20 giros (ver `GiroSelect`).
   const [giro, setGiro] = useState<string>(initialGiro ?? GIRO_POR_DEFECTO);
@@ -413,6 +422,8 @@ export function AuthForms({
       apellido_materno: apellidoMaterno,
       nombre_establecimiento: nombreEstablecimiento,
       giro,
+      pais: paisTelefono,
+      telefono,
       email: signupEmail,
       password: signupPassword,
       password_confirm: passwordConfirm,
@@ -424,6 +435,9 @@ export function AuthForms({
       setSignupLoading(false);
       return;
     }
+
+    // El esquema ya valido el celular: aqui siempre hay E.164.
+    const telefonoE164 = aE164(paisTelefono, telefono)!;
 
     const supabase = createSupabaseBrowserClient();
 
@@ -440,6 +454,7 @@ export function AuthForms({
           nombre: fullName,
           nombre_establecimiento: nombreEstablecimiento,
           giro,
+          telefono: telefonoE164,
         },
         captchaToken: signupCaptchaToken ?? undefined,
       },
@@ -467,6 +482,8 @@ export function AuthForms({
       logoFile,
       promoCode,
       referralCode,
+      telefono: telefonoE164,
+      pais: paisTelefono,
       mensajesPromo: {
         usado: t("auth.promoUsed"),
         expirado: t("auth.promoExpired"),
@@ -489,6 +506,18 @@ export function AuthForms({
   };
 
   const inputStyle = { width: "100%", marginBottom: "6px" };
+
+  // Borrador del registro para el seguimiento por WhatsApp (ver
+  // `useBorradorRegistro`): se manda al salir de los campos de contacto.
+  const guardarBorradorActual = () =>
+    guardarBorrador({
+      nombre: [nombre, apellidoPaterno].filter(Boolean).join(" "),
+      negocio: nombreEstablecimiento,
+      pais: paisTelefono,
+      telefono,
+      email: signupEmail,
+      sitioWeb,
+    });
 
   return (
     <div
@@ -561,6 +590,7 @@ export function AuthForms({
                     placeholder={t("auth.firstName") + " *"}
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
+                    onBlur={guardarBorradorActual}
                     required
                   />
                   <input
@@ -586,6 +616,29 @@ export function AuthForms({
                     required
                   />
                 </div>
+                <div className="auth-field-block">
+                  <TelefonoInput
+                    variante="auth"
+                    pais={paisTelefono}
+                    numero={telefono}
+                    onPaisChange={setPaisTelefono}
+                    onNumeroChange={setTelefono}
+                    onBlur={guardarBorradorActual}
+                    placeholder={t("auth.phone") + " *"}
+                    required
+                  />
+                </div>
+                {/* Campo trampa: fuera de la vista y del teclado; un bot lo llena. */}
+                <input
+                  type="text"
+                  name="sitio_web"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={sitioWeb}
+                  onChange={(e) => setSitioWeb(e.target.value)}
+                  className="auth-trampa"
+                />
               </AccordionItem>
 
               <AccordionItem title={t("auth.business") || "Empresa"} index={1}>
@@ -594,6 +647,7 @@ export function AuthForms({
                   placeholder={t("auth.businessName") + " *"}
                   value={nombreEstablecimiento}
                   onChange={(e) => setNombreEstablecimiento(e.target.value)}
+                  onBlur={guardarBorradorActual}
                   required
                   style={inputStyle}
                 />
@@ -649,6 +703,7 @@ export function AuthForms({
                   placeholder={t("auth.email") + " *"}
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
+                  onBlur={guardarBorradorActual}
                   required
                   style={inputStyle}
                 />

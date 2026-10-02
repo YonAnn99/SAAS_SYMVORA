@@ -20,6 +20,8 @@ export const TIMEOUTS = {
   mercadoPago: 8_000,
   /** Resend: envio de correo; nunca debe bloquear una respuesta HTTP. */
   resend: 5_000,
+  /** WhatsApp Cloud API (Meta): un aviso nunca debe frenar el correo ni el cron. */
+  whatsapp: 5_000,
   /**
    * PAC (Finkok / SWSapien): el timbrado CFDI es legitimamente lento — hay un
    * SOAP y el SAT detras. 20s es generoso a proposito; por debajo se cortarian

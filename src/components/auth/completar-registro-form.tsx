@@ -9,6 +9,8 @@ import { completarRegistroSchema } from "@/lib/validations/schemas";
 import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
+import { TelefonoInput } from "@/components/ui/telefono-input";
+import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
 import "@/styles/auth-toggle.css";
 
 
@@ -35,6 +37,8 @@ export function CompletarRegistroForm({
 
   const [nombre, setNombre] = useState(nombreInicial);
   const [nombreEstablecimiento, setNombreEstablecimiento] = useState("");
+  const [paisTelefono, setPaisTelefono] = useState(PAIS_POR_DEFECTO);
+  const [telefono, setTelefono] = useState("");
   // Slug de uno de los 20 giros (ver `GiroSelect`).
   const [giro, setGiro] = useState<string>(GIRO_POR_DEFECTO);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -71,6 +75,8 @@ export function CompletarRegistroForm({
       nombre,
       nombre_establecimiento: nombreEstablecimiento,
       giro,
+      pais: paisTelefono,
+      telefono,
       acceptTerms,
     });
     if (!validation.success) {
@@ -92,6 +98,9 @@ export function CompletarRegistroForm({
       logoFile,
       promoCode,
       referralCode: null,
+      // El esquema ya valido el celular: aqui siempre hay E.164.
+      telefono: aE164(paisTelefono, telefono)!,
+      pais: paisTelefono,
       mensajesPromo: {
         usado: t("auth.promoUsed"),
         expirado: t("auth.promoExpired"),
@@ -149,6 +158,21 @@ export function CompletarRegistroForm({
             autoComplete="name"
             required
           />
+
+          <label className="auth-field-label" htmlFor="completar-telefono">
+            {t("auth.phone")} *
+          </label>
+          <div className="auth-field-block">
+            <TelefonoInput
+              id="completar-telefono"
+              variante="auth"
+              pais={paisTelefono}
+              numero={telefono}
+              onPaisChange={setPaisTelefono}
+              onNumeroChange={setTelefono}
+              required
+            />
+          </div>
 
           <label className="auth-field-label" htmlFor="completar-negocio">
             {t("auth.businessName")} *

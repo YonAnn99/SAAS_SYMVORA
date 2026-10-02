@@ -17,6 +17,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
+import { CelularPerfil } from "./celular-perfil";
 import {
   Dialog,
   DialogContent,
@@ -274,6 +275,8 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
           </Button>
         </div>
       </form>
+
+      <CelularPerfil />
 
       <Separator className="my-2" />
 

@@ -1,5 +1,6 @@
 import { giroPorSlug } from "@/features/marketing/giros";
 import { UNIDADES } from "@/lib/unidades";
+import { aE164, paisPorCodigo } from "@/lib/telefono";
 import { z } from "zod";
 
 export const loginSchema = z.object({
@@ -15,6 +16,21 @@ const passwordValidation = z
   .regex(/[0-9]/, "Debe contener al menos 1 número")
   .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Debe contener al menos 1 carácter especial");
 
+/**
+ * Celular obligatorio del registro: pais de la lada + numero nacional. Se
+ * valida junto (la longitud depende del pais) con `celularValido`.
+ */
+const celularCampos = {
+  pais: z.string().refine((v) => paisPorCodigo(v).codigo === v, "Elige la lada de tu país"),
+  telefono: z.string().trim().min(1, "El número celular es requerido"),
+};
+
+const MENSAJE_CELULAR = "Ingresa un número celular válido (10 dígitos en México)";
+
+function celularValido(data: { pais: string; telefono: string }) {
+  return aE164(data.pais, data.telefono) !== null;
+}
+
 export const signupSchema = z
   .object({
     nombre: z.string().min(1, "El nombre es requerido"),
@@ -25,6 +41,7 @@ export const signupSchema = z
     // Slug de uno de los 20 giros de la landing (`GIROS`), no ya una de las 7
     // configuraciones: el formulario ofrece los 20.
     giro: z.string().refine((v) => giroPorSlug(v) !== undefined, "Elige el giro de tu negocio"),
+    ...celularCampos,
     email: z.string().email("Correo electrónico inválido"),
     password: passwordValidation,
     password_confirm: z.string(),
@@ -33,6 +50,7 @@ export const signupSchema = z
         "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
     }),
   })
+  .refine(celularValido, { message: MENSAJE_CELULAR, path: ["telefono"] })
   .refine((data) => data.password === data.password_confirm, {
     message: "Las contraseñas no coinciden",
     path: ["password_confirm"],
@@ -45,13 +63,14 @@ export const signupSchema = z
  */
 export const completarRegistroSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es requerido"),
+  ...celularCampos,
   nombre_establecimiento: z.string().trim().min(2, "El nombre del establecimiento es requerido"),
   giro: signupSchema.shape.giro,
   acceptTerms: z.literal(true, {
     message:
       "Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
   }),
-});
+}).refine(celularValido, { message: MENSAJE_CELULAR, path: ["telefono"] });
 
 export const tenantSchema = z.object({
   nombre_comercial: z

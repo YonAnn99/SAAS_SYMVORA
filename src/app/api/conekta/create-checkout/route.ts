@@ -309,6 +309,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Marca del intento de pago (tarjeta o efectivo) para el seguimiento de
+    // pago abandonado por WhatsApp (`lib/seguimiento-whatsapp.ts`). Un fallo
+    // aqui no frena el checkout.
+    const { error: errorMarcaCheckout } = await supabase
+      .from("subscriptions")
+      .update({ checkout_iniciado_en: new Date().toISOString() })
+      .eq("id", subscription.id);
+    if (errorMarcaCheckout) {
+      console.error("No se pudo marcar checkout_iniciado_en:", errorMarcaCheckout.message);
+    }
+
     // Registrar el intento como "pendiente" solo para efectivo: ahí sí existe
     // una referencia real y cobrable de inmediato aunque el cliente cierre la
     // pestaña. Para tarjeta, si nunca llega a pagar en la página de Conekta no

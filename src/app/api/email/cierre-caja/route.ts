@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { sendCierreCajaToSuperAdminEmail } from "@/lib/email";
+import { avisarUsuarioPorWhatsApp } from "@/lib/whatsapp-api";
+import { formatMXN } from "@/lib/money";
 import { debeAvisarCierreManual } from "@/features/cash-register/avisos-cierre";
 import { fetchSucursalParaAviso } from "@/features/cash-register/services/cash-register-server-service";
 
@@ -127,6 +129,21 @@ export async function POST(request: Request) {
   if (!resultado.ok) {
     await desmarcar();
     return NextResponse.json({ ok: false, error: resultado.error }, { status: 502 });
+  }
+
+  // Al dueño, tambien por WhatsApp (apagado sin llaves de Meta; nunca lanza).
+  if (owner?.user_id) {
+    const diferencia = Number(caja.diferencia);
+    await avisarUsuarioPorWhatsApp(supabase, owner.user_id, "corte_caja", {
+      negocio: tenant?.nombre_comercial || "tu negocio",
+      sucursal: sucursalNombre || "caja principal",
+      quien: `${
+        (quien.user?.user_metadata?.nombre as string | undefined) || userEmail.split("@")[0] || "Un usuario"
+      } cerró su caja`,
+      ventas: formatMXN(Number(caja.total_ventas)),
+      diferencia:
+        diferencia === 0 ? "cuadró exacto" : `${diferencia > 0 ? "sobran" : "faltan"} ${formatMXN(Math.abs(diferencia))}`,
+    });
   }
 
   return NextResponse.json({ ok: true, enviado: true });

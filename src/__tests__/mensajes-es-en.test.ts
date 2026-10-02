@@ -39,6 +39,8 @@ describe("«Completa tu registro» (entrada con Google)", () => {
     nombre: "Ana López",
     nombre_establecimiento: "Abarrotes Ana",
     giro: "papelerias",
+    pais: "MX",
+    telefono: "55 1234 5678",
     acceptTerms: true,
   };
 
@@ -52,6 +54,12 @@ describe("«Completa tu registro» (entrada con Google)", () => {
 
   it("rechaza un giro que no existe", () => {
     expect(completarRegistroSchema.safeParse({ ...valido, giro: "inventado" }).success).toBe(false);
+  });
+
+  it("pide el celular y lo valida con la lada del país", () => {
+    expect(completarRegistroSchema.safeParse({ ...valido, telefono: "" }).success).toBe(false);
+    expect(completarRegistroSchema.safeParse({ ...valido, telefono: "55123" }).success).toBe(false);
+    expect(completarRegistroSchema.safeParse({ ...valido, pais: "GT", telefono: "5123 4567" }).success).toBe(true);
   });
 
   it("un nombre de negocio de puros espacios no cuenta", () => {

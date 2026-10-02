@@ -91,6 +91,7 @@
     "middleNameOptional": "Segundo nombre (opcional)",
     "lastName": "Apellido paterno",
     "maternalLastName": "Apellido materno",
+    "phone": "Número celular",
     "businessName": "Nombre del establecimiento",
     "businessNamePlaceholder": "Mi Negocio",
     "confirmEmail": "Confirmar correo",
