@@ -125,7 +125,7 @@ export default async function LocalePage({
       <Setup />
       <FAQ />
       <CTA />
-      <Footer />
+      <Footer locale={locale} />
       <JsonLd id="ld-software" data={software} />
       <JsonLd id="ld-faq" data={faqSchema} />
     </AppFrame>

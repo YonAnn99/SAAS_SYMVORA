@@ -173,9 +173,13 @@
   html {
     @apply font-sans;
   }
+  /* `clip`, NO `hidden`: con `hidden` en html Y body, el body deja de pasarle
+     su scroll a la ventana y se vuelve un segundo contenedor de scroll (dos
+     barras, y la rueda se atora entre ellas, p.ej. en /es/terminos). `clip`
+     recorta igual a los lados sin crear contenedor de scroll. */
   html,
   body {
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 }
 
@@ -218,9 +222,13 @@
   html {
     @apply font-sans;
   }
+  /* `clip`, NO `hidden`: con `hidden` en html Y body, el body deja de pasarle
+     su scroll a la ventana y se vuelve un segundo contenedor de scroll (dos
+     barras, y la rueda se atora entre ellas, p.ej. en /es/terminos). `clip`
+     recorta igual a los lados sin crear contenedor de scroll. */
   html,
   body {
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 }
 

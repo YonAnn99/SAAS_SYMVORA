@@ -242,7 +242,9 @@
   align-items: stretch;
   height: auto;
   min-height: 100%;
-  justify-content: flex-start;
+  /* Centrado vertical cuando todo esta plegado y sobra espacio; `safe` lo
+     pega arriba en cuanto el contenido no cabe (no se corta el inicio). */
+  justify-content: safe center;
   overflow: visible;
 }
 
@@ -998,5 +1000,10 @@
   /* En celular el login no esta debajo y el form es transparente (tema). */
   .auth-form-scroll {
     background-color: transparent;
+  }
+
+  /* En celular el formulario fluye desde arriba, bajo el encabezado. */
+  .auth-sign-up form {
+    justify-content: flex-start;
   }
 }

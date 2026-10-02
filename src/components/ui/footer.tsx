@@ -2,7 +2,13 @@ import Link from "next/link";
 import { SALES_PHONE_DISPLAY, SALES_PHONE_E164 } from "@/lib/contact";
 import Image from "next/image";
 
-export default function Footer() {
+/**
+ * `locale`: prefijo de las paginas legales (`/es/aviso-privacidad`). Sin el,
+ * `/privacidad` (que ademas no existe) caia en el dominio de la app, pedia
+ * sesion y terminaba en un 404. Va por prop y no con `useLocale` para no
+ * volver dinamicas las paginas estaticas que lo usan.
+ */
+export default function Footer({ locale = "es" }: { locale?: string }) {
   return (
     <footer id="footer-contacto" className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-6 py-12 md:py-16 mt-20">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
@@ -52,8 +58,9 @@ export default function Footer() {
         <div className="flex flex-col gap-4">
           <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Legal</h3>
           <div className="flex flex-col gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-            <Link href="/privacidad" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Aviso de Privacidad</Link>
-            <Link href="/terminos" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos y Condiciones</Link>
+            <Link href={`/${locale}/aviso-privacidad`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Aviso de Privacidad</Link>
+            <Link href={`/${locale}/terminos`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos y Condiciones</Link>
+            <Link href={`/${locale}/politica-cookies`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Política de Cookies</Link>
           </div>
         </div>
 
