@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useCustomers, CreditPaymentDialog } from "@/features/customers";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 export default function CustomersPage() {
   const t = useTranslations();
@@ -44,12 +45,10 @@ export default function CustomersPage() {
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            {t("customers.title")}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("customers.subtitle")}
-          </p>
+          <EncabezadoModulo
+            titulo={t("customers.title")}
+            descripcion={t("customers.subtitle")}
+          />
         </div>
       </div>
 

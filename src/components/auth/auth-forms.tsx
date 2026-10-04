@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { CampoClaveInvitacion, LARGO_CLAVE } from "@/components/auth/campo-clave-invitacion";
+import type { CodeSlotsStatus } from "@/components/ui/code-slots";
 import {
   applyRememberChoice,
   loadRememberedEmail,
@@ -112,6 +114,9 @@ export function AuthForms({
   // Key login state
   const [keyEmail, setKeyEmail] = useState("");
   const [keyValue, setKeyValue] = useState("");
+  // Estado de las casillas de la clave: rojo y vaciado al fallar, palomita al
+  // entrar (Code Slots).
+  const [keyStatus, setKeyStatus] = useState<CodeSlotsStatus>("idle");
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyLoading, setKeyLoading] = useState(false);
   // Su propio "Recordarme": este formulario no comparte NADA con el de
@@ -278,6 +283,12 @@ export function AuthForms({
   const handleKeyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setKeyError(null);
+
+    if (keyValue.length < LARGO_CLAVE) {
+      setKeyError(`Escribe los ${LARGO_CLAVE} caracteres de tu clave`);
+      return;
+    }
+
     setKeyLoading(true);
 
     if (turnstileSiteKey && !keyCaptchaToken) {
@@ -297,6 +308,7 @@ export function AuthForms({
 
       if (!res.ok) {
         setKeyError(data.error || "Error al iniciar sesión");
+        setKeyStatus("error");
         setKeyLoading(false);
         return;
       }
@@ -312,6 +324,7 @@ export function AuthForms({
       if (authError) {
         console.error("[key-login] signInWithPassword error:", authError.message, authError.status);
         setKeyError(`Error al iniciar sesión: ${authError.message}`);
+        setKeyStatus("error");
         setKeyLoading(false);
         setKeyCaptchaToken(null);
         turnstileKeyRef.current?.reset();
@@ -320,6 +333,7 @@ export function AuthForms({
 
       setKeyCaptchaToken(null);
       turnstileKeyRef.current?.reset();
+      setKeyStatus("success");
       // Solo despues de que el servidor acepte la clave: recordar un correo con
       // el que no se pudo entrar no le sirve a nadie. Se guarda el CORREO, y el
       // ambito "clave" lo mantiene aparte del correo del dueno.
@@ -926,15 +940,16 @@ export function AuthForms({
               onChange={(e) => setKeyEmail(e.target.value)}
               required
             />
-            <input
-              type="text"
-              placeholder={t("auth.inviteKeyPlaceholder")}
+            <CampoClaveInvitacion
               value={keyValue}
-              onChange={(e) => setKeyValue(e.target.value.toUpperCase())}
-              maxLength={8}
-              autoComplete="off"
-              required
-              style={{ letterSpacing: "2px", textTransform: "uppercase" }}
+              onChange={(clave) => {
+                setKeyValue(clave);
+                // Tras un error, al volver a escribir las casillas regresan a
+                // su color. El vaciado del error emite "" y no cuenta.
+                if (clave && keyStatus === "error") setKeyStatus("idle");
+              }}
+              status={keyStatus}
+              etiqueta={t("auth.inviteKeyLabel")}
             />
 
             {/* Mismo marcado que el del login normal: un checkbox nativo oculto

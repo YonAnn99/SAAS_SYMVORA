@@ -41,6 +41,7 @@ import {
 import { SalesHistoryCard } from "@/features/sales/components/sales-history-card";
 import { ComprasPeriodoCard } from "@/features/inventory/components/compras-periodo-card";
 import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 interface ReportData {
   ventasPorPeriodo: { date: string; ventas: number }[];
@@ -562,12 +563,10 @@ export default function ReportsPage() {
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            Reportes y Analytics
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Análisis detallado de ventas, productos y clientes
-          </p>
+          <EncabezadoModulo
+            titulo="Reportes y Analytics"
+            descripcion="Análisis detallado de ventas, productos y clientes"
+          />
         </div>
         <div className="flex items-center gap-2">
           <SucursalSelector className="w-[170px] h-8" />

@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 interface ActivityLog {
   id: string;
@@ -225,12 +226,10 @@ export default function ActivityPage() {
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            {t("common.activityLog")}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("common.activityDescription")}
-          </p>
+          <EncabezadoModulo
+            titulo={t("common.activityLog")}
+            descripcion={t("common.activityDescription")}
+          />
         </div>
         <Select value={entityFilter} onValueChange={(v) => setEntityFilter(v || "all")}>
           <SelectTrigger className="w-full sm:w-[160px] h-8">

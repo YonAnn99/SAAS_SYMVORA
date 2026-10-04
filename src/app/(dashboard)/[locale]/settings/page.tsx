@@ -28,6 +28,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { convertToWebP } from "@/lib/image";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 const PESTANAS = ["general", "modules", "payments", "printer"];
 
@@ -243,12 +244,10 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
-        <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-          {t("settings.title")}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Configura los ajustes de tu organización
-        </p>
+        <EncabezadoModulo
+          titulo={t("settings.title")}
+          descripcion="Configura los ajustes de tu organización"
+        />
       </div>
 
       <Tabs

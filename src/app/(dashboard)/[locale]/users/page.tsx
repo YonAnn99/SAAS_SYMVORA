@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Shield, UserCog, Key, RefreshCw, SlidersHorizontal, Store } from "lucide-react";
+import { Users, Shield, UserCog, Key, RefreshCw, SlidersHorizontal, Store, Pencil } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PermissionsDialog } from "@/features/users/components/permissions-dialog";
@@ -45,19 +45,30 @@ import { SucursalesCheckboxes } from "@/features/users/components/sucursales-che
 import { useSucursal } from "@/contexts/sucursal-context";
 import type { UserRole } from "@/lib/types/database";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
-import { roleColors, type InviteKey, type Member } from "@/features/users/tipos-usuarios";
+import { useTenantContext } from "@/contexts/tenant-context";
+import {
+  nombreDeClave,
+  nombreVisible,
+  roleColors,
+  type InviteKey,
+  type Member,
+} from "@/features/users/tipos-usuarios";
+import { NombreYCorreo } from "@/features/users/components/nombre-y-correo";
+import { EditarNombreDialog } from "@/features/users/components/editar-nombre-dialog";
 import { MemberSwipeList } from "@/features/users/components/member-swipe-list";
 import { InviteKeySwipeList } from "@/features/users/components/invite-key-swipe-list";
 import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 export default function UsersPage() {
   const t = useTranslations();
   const locale = useLocale();
   const isDemo = useIsDemo();
   const { tenantId, role: myRole } = useCurrentTenant();
+  const { refetch: refetchTenant } = useTenantContext();
   const canManage = myRole === "SUPER_ADMIN";
 
   const [memberships, setMemberships] = useState<Member[]>([]);
@@ -66,11 +77,14 @@ export default function UsersPage() {
   const [permissionsFor, setPermissionsFor] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteNombre, setInviteNombre] = useState("");
+  const [inviteApellido, setInviteApellido] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("CAJERO");
   const [inviting, setInviting] = useState(false);
   const [confirmRoleChange, setConfirmRoleChange] = useState<{ member: Member; newRole: string } | null>(null);
   const [changingRole, setChangingRole] = useState(false);
+  const [nombreFor, setNombreFor] = useState<Member | null>(null);
 
   // SUCURSALES DE CADA USUARIO (migracion 085). Solo se enseña con 2 o mas
   // locales: en un negocio de uno solo la pregunta no tiene sentido.
@@ -137,7 +151,7 @@ export default function UsersPage() {
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase
       .from("user_invite_keys")
-      .select("*")
+      .select("id, email, key, role, created_at, nombre, apellido")
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false });
 
@@ -156,6 +170,12 @@ export default function UsersPage() {
   useAccionRapida("invitar-usuario", () => canManage && setShowInviteDialog(true), !loading);
 
   const handleInvite = async () => {
+    // Con el nombre el dueño ubica a cada persona en Usuarios y en las ventas,
+    // y el sistema la saluda; el apellido es opcional.
+    if (!inviteNombre.trim()) {
+      toast.error("Escribe el nombre del usuario");
+      return;
+    }
     if (!inviteEmail || !tenantId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) {
       toast.error("Por favor ingresa un email válido");
       return;
@@ -167,6 +187,8 @@ export default function UsersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nombre: inviteNombre.trim(),
+          apellido: inviteApellido.trim(),
           email: inviteEmail,
           role: inviteRole,
           tenantId,
@@ -182,8 +204,10 @@ export default function UsersPage() {
         throw new Error(result.error || "Error al enviar invitación");
       }
 
-      toast.success(`Invitación enviada a ${inviteEmail}`);
+      toast.success(`Invitación enviada a ${inviteNombre.trim()}`);
       setShowInviteDialog(false);
+      setInviteNombre("");
+      setInviteApellido("");
       setInviteEmail("");
       setInviteRole("CAJERO");
       setInviteSucursales([]);
@@ -283,12 +307,10 @@ export default function UsersPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            {t("users.title")}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona los usuarios y permisos de tu organización
-          </p>
+          <EncabezadoModulo
+            titulo={t("users.title")}
+            descripcion="Gestiona los usuarios y permisos de tu organización"
+          />
         </div>
         {canManage && (
           <SpecularActionButton
@@ -369,6 +391,7 @@ export default function UsersPage() {
                     newRole: m.role === "CAJERO" ? "ORG_ADMIN" : "CAJERO",
                   })
                 }
+                onEditarNombre={setNombreFor}
                 onEliminar={handleDeleteMember}
               />
             </div>
@@ -376,7 +399,7 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs uppercase tracking-wider">{t("common.email")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">Usuario</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">{t("users.role")}</TableHead>
                   {hayVarias && (
                     <TableHead className="text-xs uppercase tracking-wider">Sucursales</TableHead>
@@ -392,8 +415,8 @@ export default function UsersPage() {
               <TableBody>
                 {memberships.map((membership) => (
                   <TableRow key={membership.id}>
-                    <TableCell className="font-medium text-sm">
-                      {membership.user_email || "N/A"}
+                    <TableCell className="max-w-[280px]">
+                      <NombreYCorreo nombre={membership.user_nombre} email={membership.user_email} />
                     </TableCell>
                     <TableCell>
                       {canManage && membership.user_id !== undefined ? (
@@ -430,6 +453,16 @@ export default function UsersPage() {
                             SUPER_ADMIN: nadie se bloquea por error y nadie
                             recorta al dueño. El endpoint valida lo mismo en el
                             servidor — esto solo evita ofrecer lo imposible. */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          title="Editar nombre"
+                          aria-label={`Editar el nombre de ${nombreVisible(membership.user_nombre, membership.user_email)}`}
+                          onClick={() => setNombreFor(membership)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
                         {membership.user_id !== currentUserId &&
                           membership.role !== "SUPER_ADMIN" && (
                             <Button
@@ -448,14 +481,14 @@ export default function UsersPage() {
                             size="sm"
                             className="h-7 text-xs"
                             title="Sucursales"
-                            aria-label={`Sucursales de ${membership.user_email}`}
+                            aria-label={`Sucursales de ${nombreVisible(membership.user_nombre, membership.user_email)}`}
                             onClick={() => setSucursalesFor(membership)}
                           >
                             <Store className="h-3.5 w-3.5" />
                           </Button>
                         )}
                         <BotonEliminar
-                          nombre={membership.user_email ?? "este miembro"}
+                          nombre={nombreVisible(membership.user_nombre, membership.user_email)}
                           detalle="Pierde el acceso al negocio"
                           onEliminar={async () => {
                             await handleDeleteMember(membership);
@@ -499,7 +532,7 @@ export default function UsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs uppercase tracking-wider">{t("common.email")}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Usuario</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">{t("users.role")}</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Clave</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">{t("users.createdAt") || "Creada"}</TableHead>
@@ -511,7 +544,9 @@ export default function UsersPage() {
                 <TableBody>
                   {inviteKeys.map((key) => (
                     <TableRow key={key.id}>
-                      <TableCell className="font-medium text-sm">{key.email}</TableCell>
+                      <TableCell className="max-w-[280px]">
+                        <NombreYCorreo nombre={nombreDeClave(key)} email={key.email} />
+                      </TableCell>
                       <TableCell>
                         <Badge className={`${roleColors[key.role]} text-[10px] px-1.5 py-0`}>
                           {t(`users.roles.${key.role}`)}
@@ -527,7 +562,7 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <BotonEliminar
-                          nombre={`la clave de ${key.email}`}
+                          nombre={`la clave de ${nombreDeClave(key) ?? key.email}`}
                           detalle="Ya no servirá para entrar"
                           onEliminar={async () => {
                             await handleRevokeKey(key.id);
@@ -550,9 +585,26 @@ export default function UsersPage() {
           onOpenChange={(o) => !o && setSucursalesFor(null)}
           tenantId={tenantId}
           userId={sucursalesFor.user_id}
-          email={sucursalesFor.user_email}
+          email={nombreVisible(sucursalesFor.user_nombre, sucursalesFor.user_email)}
           asignadas={asignaciones[sucursalesFor.user_id] ?? []}
           onSaved={() => void fetchAsignaciones()}
+        />
+      )}
+
+      {nombreFor && tenantId && (
+        <EditarNombreDialog
+          key={nombreFor.user_id}
+          open
+          onOpenChange={(o) => !o && setNombreFor(null)}
+          tenantId={tenantId}
+          userId={nombreFor.user_id}
+          email={nombreFor.user_email}
+          nombreActual={nombreFor.user_nombre}
+          onSaved={() => {
+            void fetchMemberships();
+            // Si se renombro a si mismo, su saludo tambien cambia.
+            if (nombreFor.user_id === currentUserId) void refetchTenant();
+          }}
         />
       )}
 
@@ -566,6 +618,34 @@ export default function UsersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="invitar-nombre" className="text-xs">Nombre *</Label>
+                <Input
+                  id="invitar-nombre"
+                  placeholder="Nombre"
+                  value={inviteNombre}
+                  onChange={(e) => setInviteNombre(e.target.value)}
+                  maxLength={60}
+                  autoComplete="off"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invitar-apellido" className="text-xs">
+                  Apellido <span className="text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="invitar-apellido"
+                  placeholder="Apellido"
+                  value={inviteApellido}
+                  onChange={(e) => setInviteApellido(e.target.value)}
+                  maxLength={60}
+                  autoComplete="off"
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs">{t("common.email")}</Label>
               <Input
@@ -619,7 +699,9 @@ export default function UsersPage() {
             <DialogTitle className="text-base">{t("users.confirmRoleChange") || "Cambiar rol"}</DialogTitle>
             <DialogDescription className="text-xs">
               {t("users.confirmRoleChangeDesc", {
-                email: confirmRoleChange?.member?.user_email || "",
+                email: confirmRoleChange
+                  ? nombreVisible(confirmRoleChange.member.user_nombre, confirmRoleChange.member.user_email)
+                  : "",
                 role: confirmRoleChange?.newRole === "ORG_ADMIN" ? "Administrador" : "Cajero",
               })}
             </DialogDescription>
@@ -646,7 +728,7 @@ export default function UsersPage() {
           onOpenChange={(v) => !v && setPermissionsFor(null)}
           tenantId={tenantId}
           targetUserId={permissionsFor.user_id}
-          targetUserEmail={permissionsFor.user_email}
+          targetUserEmail={nombreVisible(permissionsFor.user_nombre, permissionsFor.user_email)}
           targetUserRole={permissionsFor.role as UserRole}
           onSaved={() => {
             setPermissionsFor(null);

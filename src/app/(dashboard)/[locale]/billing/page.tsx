@@ -46,6 +46,7 @@ import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 interface Subscription {
   id: string;
@@ -437,12 +438,10 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
-        <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-          {t("billing.title")}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t("billing.description")}
-        </p>
+        <EncabezadoModulo
+          titulo={t("billing.title")}
+          descripcion={t("billing.description")}
+        />
       </div>
 
       {/* Llego aqui desde una pantalla de escritura (POS, compras...) con la

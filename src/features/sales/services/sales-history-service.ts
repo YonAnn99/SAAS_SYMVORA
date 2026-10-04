@@ -21,6 +21,8 @@ export interface VentaEnHistorial {
   fecha_venta: string;
   usuario_id: string | null;
   cajero_email: string | null;
+  /** Nombre de quien cobro (migracion 101); `null` si no capturo ninguno. */
+  cajero_nombre: string | null;
   cliente_nombre: string | null;
   metodo_pago: string;
   estado: string;

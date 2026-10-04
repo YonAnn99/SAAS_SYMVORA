@@ -124,6 +124,14 @@
   - Archivos: `lib/sms-api.ts`, `lib/sms-texto.ts` (GSM-7, ≤160 caracteres) y `lib/avisos-celular.ts`
     (WhatsApp primero, SMS de respaldo).
   - APAGADO hasta tener `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_FROM`.
+- **Nombre de los usuarios** (migración 101, 2026-10-04):
+  - Fuente única: `nombreCompleto()` / `primerNombre()` en `lib/nombre-usuario.ts` y, en SQL,
+    `nombre_de_usuario(meta)`. Orden de lectura: `nombre_completo` → `nombre` → `full_name`.
+  - La invitación pide Nombre y Apellido (opcional), guardados en `user_invite_keys.nombre/apellido`.
+    `key-login` los copia a `user_metadata.nombre`.
+  - El dueño edita el nombre desde Usuarios con `PATCH /api/users/[userId]/nombre`.
+  - `get_tenant_members` devuelve `user_nombre`; `listar_ventas`/`detalle_venta` devuelven `cajero_nombre`.
+  - El saludo "¡Hola, {nombre}!" sale en el Dashboard y arriba del buscador del POS.
 - **Cartera de clientes interna:** vista `interno.cartera_clientes` (migración 100), no expuesta por la
   API. Consulta: `select * from interno.cartera_clientes;` en el SQL Editor de Supabase.
 
@@ -135,9 +143,9 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (850 tests al 2026-10-02) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (867 tests al 2026-10-04) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 100) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 101) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
@@ -159,6 +167,9 @@ Código listo y apagado hasta tener las variables (`src/lib/sms-api.ts`, `src/li
   - en Twilio (Monitor → Logs → Messaging) debe salir como 1 segmento;
   - el dueño cerrando su propia caja no genera aviso.
 - [ ] Upgrade de Twilio antes de usarlo con clientes reales.
+- [ ] Al activar WhatsApp o SMS, poner `NEXT_PUBLIC_AVISOS_CELULAR=1` en `.env.local` y en Vercel, y hacer
+      redeploy. Mientras falte, la interfaz pide el celular pero oculta las leyendas de avisos y el
+      interruptor "Recibir avisos" (`src/lib/avisos-celular-flag.ts`).
 
 ## WhatsApp (Cloud API de Meta)
 Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whatsapp-plantillas.ts`).

@@ -167,12 +167,24 @@ export function filterNavigation(
   role: UserRole | null,
   can: (permission: string) => boolean
 ): NavItem[] {
-  return NAVIGATION.filter((item) => {
-    if (item.hidden) return false;
-    const permission = permissionForPath(item.href);
-    if (permission) return can(permission);
-    return !item.minRole || hasRole(role, item.minRole);
-  });
+  return NAVIGATION.filter((item) => puedeVerRuta(item.href, role, can));
+}
+
+/**
+ * Si esta persona puede entrar a una ruta del menu. Es la regla de
+ * `filterNavigation` para una sola ruta; tambien la usa el tutorial para no
+ * llevar a nadie a un modulo sin acceso.
+ */
+export function puedeVerRuta(
+  href: string,
+  role: UserRole | null,
+  can: (permission: string) => boolean
+): boolean {
+  const item = NAVIGATION.find((i) => i.href === href);
+  if (item?.hidden) return false;
+  const permission = permissionForPath(href);
+  if (permission) return can(permission);
+  return !item?.minRole || hasRole(role, item.minRole);
 }
 
 /** Los 4 módulos fijos del dock de celular, en este orden (decisión del dueño). */

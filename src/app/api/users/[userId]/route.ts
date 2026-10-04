@@ -54,17 +54,28 @@ export async function PATCH(
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Update role in tenant_memberships
-    const { error: updateError } = await supabase
+    const { data: actualizadas, error: updateError } = await supabase
       .from("tenant_memberships")
       .update({ role })
       .eq("user_id", userId)
-      .eq("tenant_id", tenantId);
+      .eq("tenant_id", tenantId)
+      .select("id");
 
     if (updateError) {
       console.error("Failed to update role:", updateError);
       return NextResponse.json(
         { error: "Error al actualizar el rol" },
         { status: 500 }
+      );
+    }
+
+    // Sin membresia en este negocio no se toca nada mas: el metadata de abajo
+    // se escribe con `service_role`, y antes se escribia para CUALQUIER
+    // `userId` que llegara en la URL, fuera o no de este negocio.
+    if (!actualizadas || actualizadas.length === 0) {
+      return NextResponse.json(
+        { error: "Ese usuario no pertenece a tu negocio" },
+        { status: 404 }
       );
     }
 

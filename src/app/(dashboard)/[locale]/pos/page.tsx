@@ -29,6 +29,7 @@ import { esFraccionable } from "@/lib/unidades";
 import { cartLineKey } from "@/features/pos/stores/cart";
 import { CantidadDialog } from "@/features/pos/components/cantidad-dialog";
 import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
+import { primerNombre } from "@/lib/nombre-usuario";
 import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 
 import { completeSale } from "@/features/pos/services/pos-service";
@@ -76,7 +77,18 @@ import type {
 export default function POSPage() {
   const t = useTranslations();
   const router = useRouter();
-  const { tenantId, role, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, role, userName, loading: tenantLoading } = useCurrentTenant();
+  // "¡Hola, {nombre}!" solo para el cajero, que no entra al Dashboard; los
+  // administradores lo ven alla y aqui no se repite.
+  // Se arma aqui y no dentro del JSX: con el ternario de `t()` en el JSX, el
+  // React Compiler deja de optimizar el componente entero.
+  const nombreSaludo = primerNombre(userName);
+  const saludo =
+    role === "CAJERO"
+      ? nombreSaludo
+        ? t("common.greeting", { nombre: nombreSaludo })
+        : t("common.greetingNoName")
+      : null;
   const { activas, hayVarias, seleccionada, setSeleccionada } = useSucursal();
   const { can } = usePermissions();
   const { modulos } = useModulos();
@@ -647,6 +659,13 @@ export default function POSPage() {
           de herramientas y empujaba el carrito fuera de la pantalla en anchos
           de ~1280 px (laptops con la escala de Windows al 125 %). */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0 min-w-0">
+        {/* La columna es flex-col y la cuadricula ocupa lo que sobra: esta
+            linea solo le quita alto a la cuadricula, no al panel completo. */}
+        {saludo && (
+          <p className="shrink-0 text-base font-semibold tracking-tight">
+            {saludo}
+          </p>
+        )}
         <PosSearchBar
           search={search}
           onSearchChange={setSearch}

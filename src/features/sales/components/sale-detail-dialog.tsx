@@ -90,7 +90,9 @@ export function SaleDetailDialog({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-muted-foreground">Atendió</span>
-                  <p className="font-medium">{venta.cajero_email ?? "—"}</p>
+                  <p className="font-medium">
+                    {venta.cajero_nombre?.trim() || venta.cajero_email || "—"}
+                  </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Cliente</span>
@@ -212,7 +214,7 @@ export function SaleDetailDialog({
                   details: {
                     total: Number(venta.total),
                     fecha_venta: venta.fecha_venta,
-                    cobro_original: venta.cajero_email,
+                    cobro_original: venta.cajero_nombre?.trim() || venta.cajero_email,
                   },
                 });
               }}

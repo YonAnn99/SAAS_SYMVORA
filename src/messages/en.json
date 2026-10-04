@@ -1,5 +1,7 @@
 {
   "common": {
+    "greeting": "Hi, {nombre}!",
+    "greetingNoName": "Hi!",
     "appName": "SYMVORA",
     "save": "Save",
     "cancel": "Cancel",
@@ -164,6 +166,7 @@
     "keyLoginTitle": "Key Login",
     "keyLoginSubtitle": "Enter your email and the key you received by email",
     "inviteKeyPlaceholder": "Invite key (e.g. ABC123XY)",
+    "inviteKeyLabel": "Invite key",
     "enterWithKey": "Enter",
     "employeeLogin": "Are you an employee or collaborator? Enter your key",
     "or": "or",
@@ -237,7 +240,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "welcome": "Welcome",
     "salesToday": "Sales today",
     "salesWeek": "Sales this week",
     "salesMonth": "Sales this month",
@@ -616,7 +618,11 @@
       },
       "welcome": {
         "title": "Welcome to SYMVORA!",
-        "description": "This tutorial will guide you through setting up and using your point of sale system. Follow each step in order so everything works correctly."
+        "description": "This tutorial will guide you through setting up and using your point of sale system. Follow each step in order so everything works correctly.",
+        "equipo": {
+          "title": "Welcome to SYMVORA!",
+          "description": "This tutorial shows you what you need for your shift: open the register, sell, and close it at the end of the day."
+        }
       },
       "business": {
         "title": "Set up your business",
@@ -628,11 +634,19 @@
       },
       "suppliers": {
         "title": "Add your suppliers",
-        "description": "This step is required: you can't record purchases without a supplier. Add your main suppliers here before continuing."
+        "description": "This step is required: you can't record purchases without a supplier. Add your main suppliers here before continuing.",
+        "equipo": {
+          "title": "Record the purchases you receive",
+          "description": "Here you log the goods that arrive from your suppliers, so inventory updates when you receive them."
+        }
       },
       "products": {
         "title": "Build your product catalog",
-        "description": "This is the most important module. Here you define each product with its name, price, cost, unit of measure and barcode. Sales, purchases and inventory all depend on it."
+        "description": "This is the most important module. Here you define each product with its name, price, cost, unit of measure and barcode. Sales, purchases and inventory all depend on it.",
+        "equipo": {
+          "title": "Browse the catalog",
+          "description": "Here you see each product with its price, stock and barcode. Use it to answer customer questions."
+        }
       },
       "createProduct": {
         "title": "Create your first product",
@@ -672,7 +686,11 @@
       },
       "complete": {
         "title": "Tutorial complete!",
-        "description": "You now know SYMVORA's main modules. Remember the right order: Settings → Suppliers → Products → Open register → Sell. If you need help, click 'Need help?' in the top bar."
+        "description": "You now know SYMVORA's main modules. Remember the right order: Settings → Suppliers → Products → Open register → Sell. If you need help, click 'Need help?' in the top bar.",
+        "equipo": {
+          "title": "Tutorial complete!",
+          "description": "You now know what you need for your shift: Open register → Sell → Close register. To go over it again, click 'View tutorial' in the top bar."
+        }
       }
     }
   },

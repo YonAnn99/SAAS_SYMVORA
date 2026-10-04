@@ -13,6 +13,7 @@ import { SucursalesCard } from "@/features/sucursales/components/sucursales-card
 import { ResumenSucursales } from "@/features/sucursales/components/resumen-sucursales";
 import { ExistenciasSucursal } from "@/features/sucursales/components/existencias-sucursal";
 import { TraspasosSucursal } from "@/features/sucursales/components/traspasos-sucursal";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 /**
  * Modulo de Sucursales.
@@ -63,10 +64,10 @@ export default function BranchesPage() {
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">Sucursales</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Compara tus locales, revisa sus existencias y mueve mercancía entre ellos
-          </p>
+          <EncabezadoModulo
+            titulo="Sucursales"
+            descripcion="Compara tus locales, revisa sus existencias y mueve mercancía entre ellos"
+          />
         </div>
         {/* Con un solo local no hay nada que elegir. */}
         {hayVarias && <SucursalSelector />}

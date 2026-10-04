@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { useContactoUsuario, type ContactoUsuario } from "@/hooks/use-contacto-usuario";
 import { desdeE164 } from "@/lib/telefono";
+import { AVISOS_CELULAR_ACTIVOS } from "@/lib/avisos-celular-flag";
 
 type Guardar = ReturnType<typeof useContactoUsuario>["guardar"];
 
@@ -16,6 +17,9 @@ type Guardar = ReturnType<typeof useContactoUsuario>["guardar"];
  * Celular del usuario en Mi perfil: editarlo y encender o apagar los avisos
  * al celular (SMS o WhatsApp). Las cuentas creadas antes de que el registro lo pidiera lo ven
  * vacio, con la invitacion a agregarlo.
+ *
+ * El interruptor y las leyendas de avisos solo salen con el servicio dado de
+ * alta (`AVISOS_CELULAR_ACTIVOS`): antes no se promete lo que aun no llega.
  */
 export function CelularPerfil() {
   const { contacto, cargando, guardar, cambiarAvisos } = useContactoUsuario();
@@ -27,7 +31,7 @@ export function CelularPerfil() {
       {/* `key`: el formulario arranca con el numero guardado y se reinicia si cambia. */}
       <FormularioCelular key={contacto?.telefono ?? "nuevo"} contacto={contacto} guardar={guardar} />
 
-      {contacto ? (
+      {!AVISOS_CELULAR_ACTIVOS ? null : contacto ? (
         <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
           <span className="flex items-center gap-2 text-xs">
             <MessageCircle className="h-3.5 w-3.5 text-primary" />
@@ -65,10 +69,12 @@ export function AvisoCelularFaltante() {
         <MessageCircle className="h-5 w-5 shrink-0 text-primary mt-0.5" />
         <div className="space-y-0.5">
           <p className="text-sm font-semibold">Agrega tu celular</p>
-          <p className="text-xs text-muted-foreground">
-            Te enviaremos avisos de tu cuenta, como tus cortes de caja, por SMS o WhatsApp, y podremos
-            darte soporte directo. Puedes desactivarlo en Mi perfil.
-          </p>
+          {AVISOS_CELULAR_ACTIVOS && (
+            <p className="text-xs text-muted-foreground">
+              Te enviaremos avisos de tu cuenta, como tus cortes de caja, por SMS o WhatsApp, y podremos
+              darte soporte directo. Puedes desactivarlo en Mi perfil.
+            </p>
+          )}
         </div>
       </div>
       <FormularioCelular contacto={null} guardar={guardar} sinEtiqueta />

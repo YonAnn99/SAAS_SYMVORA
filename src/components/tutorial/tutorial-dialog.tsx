@@ -17,6 +17,8 @@ import {
 import { ArrowLeft, ArrowRight, X, Sparkles, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useEsEscritorio, useEsMovil } from "@/hooks/use-es-movil";
+import { buscarObjetivo } from "./objetivo-tutorial";
 
 export function TutorialDialog() {
   const t = useTranslations();
@@ -41,7 +43,12 @@ export function TutorialDialog() {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const isCentered = !step?.targetSelector || step.position === "center";
+  const esMovil = useEsMovil();
+  const esEscritorio = useEsEscritorio();
+  // En celular el diálogo es la hoja inferior (`HojaMovil`): siempre centrado.
+  // Posicionarla con `top/left` la estiraba y el `fixed` del contenido lo
+  // dejaba flotando sin fondo.
+  const isCentered = esMovil || !step?.targetSelector || step.position === "center";
   const needsNavigation = !!(step?.navigates && step?.route);
   const showWaiting = waitingForRoute && needsNavigation;
 
@@ -54,7 +61,9 @@ export function TutorialDialog() {
     if (isCentered) return;
 
     const measure = () => {
-      const el = step?.targetSelector ? document.querySelector(step.targetSelector) : null;
+      // Solo un elemento visible: el enlace del menú lateral oculto (debajo de
+      // `lg`) media 0×0 y mandaba el diálogo a la esquina.
+      const el = step ? buscarObjetivo(step.targetSelector, step.position, esEscritorio) : null;
       if (!el) {
         setPos(null);
         return;
@@ -117,7 +126,11 @@ export function TutorialDialog() {
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [step, currentStep, isCentered, showWaiting]);
+  }, [step, currentStep, isCentered, showWaiting, esEscritorio]);
+
+  // Anclado junto a su elemento solo si se encontró uno visible; si no, el
+  // diálogo se queda centrado con su estilo normal.
+  const anclado = !isCentered && pos !== null;
 
   const handleGoToModule = () => {
     if (needsNavigation) {
@@ -139,11 +152,12 @@ export function TutorialDialog() {
   return (
     <>
       {/* Arrow pointing to the target element */}
-      {!isCentered && (
+      {anclado && (
         <TutorialArrow
           selector={step.targetSelector}
           visible={isActive}
           position={step.position}
+          esEscritorio={esEscritorio}
         />
       )}
 
@@ -158,10 +172,10 @@ export function TutorialDialog() {
             "data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-2",
             "data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-1",
             "duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
-            !isCentered && "fixed z-[999]"
+            anclado && "fixed z-[999]"
           )}
           style={
-            !isCentered && pos
+            anclado && pos
               ? {
                   top: pos.top,
                   left: pos.left,

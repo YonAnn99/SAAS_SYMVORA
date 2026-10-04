@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { nombreCompleto } from "@/lib/nombre-usuario";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -104,6 +105,23 @@ export async function POST(request: Request) {
     const { p_tenant_id: tenantId, p_role: role } = keyData[0];
     console.log("[key-login] Key valid. tenant:", tenantId, "role:", role);
 
+    // La invitacion completa: nombre (migracion 101) y sucursales (migracion
+    // 085). Se lee una vez y la usan los pasos 2 y 3b.
+    const { data: invitacion } = await supabase
+      .from("user_invite_keys")
+      .select("nombre, apellido, sucursal_ids")
+      .eq("tenant_id", tenantId)
+      .eq("email", email.toLowerCase())
+      .eq("key", key.toUpperCase())
+      .maybeSingle();
+
+    // El nombre que capturo el dueño al invitar. Va en `nombre`, igual que en
+    // el registro con correo: lo leen el saludo, los correos y el historial.
+    const nombreInvitado = [invitacion?.nombre, invitacion?.apellido]
+      .map((parte) => (typeof parte === "string" ? parte.trim() : ""))
+      .filter(Boolean)
+      .join(" ");
+
     // Step 2: Find or create user in Supabase Auth
     let userId: string;
     let password: string;
@@ -122,6 +140,11 @@ export async function POST(request: Request) {
           ...existingUser.user_metadata,
           tenant_id: tenantId,
           role,
+          // Solo si aun no tiene nombre: no se pisa el que la persona haya
+          // puesto en Mi perfil. Esta ruta tambien sirve para volver a entrar.
+          ...(nombreInvitado && !nombreCompleto(existingUser.user_metadata)
+            ? { nombre: nombreInvitado }
+            : {}),
         },
       });
 
@@ -143,6 +166,7 @@ export async function POST(request: Request) {
         user_metadata: {
           tenant_id: tenantId,
           role,
+          ...(nombreInvitado ? { nombre: nombreInvitado } : {}),
         },
       });
 
@@ -189,14 +213,6 @@ export async function POST(request: Request) {
 
     // Step 3b: sucursales asignadas en la invitacion (migracion 085).
     if (!membershipError && !membresiaPrevia) {
-      const { data: invitacion } = await supabase
-        .from("user_invite_keys")
-        .select("sucursal_ids")
-        .eq("tenant_id", tenantId)
-        .eq("email", email.toLowerCase())
-        .eq("key", key.toUpperCase())
-        .maybeSingle();
-
       const pedidas = (invitacion?.sucursal_ids ?? []) as string[];
       // Solo las que siguen existiendo en este negocio. Si una se borro entre la
       // invitacion y la entrada, el INSERT entero fallaria y la persona quedaria

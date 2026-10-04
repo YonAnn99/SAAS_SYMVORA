@@ -3,11 +3,14 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types/database";
+import { nombreCompleto } from "@/lib/nombre-usuario";
 
 export interface TenantInfo {
   tenantId: string;
   /** Id del cajero. Lo firman las ventas que cobra. */
   userId: string;
+  /** Nombre de la persona (ver `nombreCompleto`); "" si no capturó ninguno. */
+  userName: string;
   tenantName: string;
   tenantLogo: string | null;
   /** Domicilio del negocio. Lo imprime el pie del ticket del POS. */
@@ -26,6 +29,7 @@ interface TenantContextValue extends TenantInfo {
 const EMPTY_STATE: TenantInfo = {
   tenantId: "",
   userId: "",
+  userName: "",
   tenantName: "",
   tenantLogo: null,
   tenantAddress: null,
@@ -85,6 +89,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const resuelto = {
         tenantId: membership.tenant_id,
         userId: user.id,
+        userName: nombreCompleto(user.user_metadata),
         tenantName: tenantData?.nombre_comercial || "Negocio",
         tenantLogo: tenantData?.logo_url || null,
         tenantAddress: tenantData?.direccion || null,

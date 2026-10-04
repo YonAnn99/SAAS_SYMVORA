@@ -19,6 +19,8 @@ import { useSucursal } from "@/contexts/sucursal-context";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { toast } from "sonner";
 import { calcularGanancia } from "@/lib/profit";
+import { primerNombre } from "@/lib/nombre-usuario";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 interface DashboardStats {
   ventasHoy: number;
@@ -39,7 +41,9 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const t = useTranslations();
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, userName, loading: tenantLoading } = useCurrentTenant();
+  // Saludo con el nombre capturado al crear la cuenta.
+  const nombre = primerNombre(userName);
   const { seleccionada: sucursalId } = useSucursal();
   const [stats, setStats] = useState<DashboardStats>({
     ventasHoy: 0,
@@ -239,12 +243,14 @@ export default function DashboardPage() {
     <div className="space-y-6 md:space-y-8 min-h-[calc(100vh-10rem)]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            {t("dashboard.title")}
-          </h2>
-          <p className="text-base text-muted-foreground mt-2">
-            {t("dashboard.welcome")}
-          </p>
+          <EncabezadoModulo
+            titulo={t("dashboard.title")}
+            descripcion={
+              nombre
+                ? t("common.greeting", { nombre })
+                : t("common.greetingNoName")
+            }
+          />
         </div>
         <div className="flex items-center gap-2 self-start">
           <SucursalSelector />

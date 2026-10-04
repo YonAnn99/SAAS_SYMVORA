@@ -36,6 +36,16 @@ export interface TutorialStep {
    * algunos pasos la tienen y los demás no se tocan.
    */
   image?: { src: string; alt: string };
+  /**
+   * Permiso extra, ademas del de la ruta (ver `pasosParaUsuario`). Ej.: el
+   * catalogo esta abierto a todos, pero crear productos pide `inventory.manage`.
+   */
+  permiso?: string;
+  /**
+   * Texto alterno para quien NO tiene ese permiso: el cajero ve "consulta el
+   * catalogo" en vez de "crea tu catalogo", y un cierre que habla de su turno.
+   */
+  textoSin?: { permiso: string; titleKey: string; descriptionKey: string };
 }
 
 export const tutorialSteps: TutorialStep[] = [
@@ -64,6 +74,11 @@ export const tutorialSteps: TutorialStep[] = [
     position: "center",
     navigates: false,
     moduleKey: "",
+    textoSin: {
+      permiso: "org.manage_settings",
+      titleKey: "tutorial.steps.welcome.equipo.title",
+      descriptionKey: "tutorial.steps.welcome.equipo.description",
+    },
   },
   {
     id: 3,
@@ -101,6 +116,11 @@ export const tutorialSteps: TutorialStep[] = [
     position: "right",
     navigates: true,
     moduleKey: "layout.purchases",
+    textoSin: {
+      permiso: "org.manage_settings",
+      titleKey: "tutorial.steps.suppliers.equipo.title",
+      descriptionKey: "tutorial.steps.suppliers.equipo.description",
+    },
   },
   {
     id: 6,
@@ -112,6 +132,11 @@ export const tutorialSteps: TutorialStep[] = [
     position: "right",
     navigates: true,
     moduleKey: "layout.products",
+    textoSin: {
+      permiso: "inventory.manage",
+      titleKey: "tutorial.steps.products.equipo.title",
+      descriptionKey: "tutorial.steps.products.equipo.description",
+    },
   },
   {
     id: 7,
@@ -123,6 +148,7 @@ export const tutorialSteps: TutorialStep[] = [
     position: "bottom",
     navigates: false,
     moduleKey: "",
+    permiso: "inventory.manage",
   },
   {
     id: 8,
@@ -222,5 +248,10 @@ export const tutorialSteps: TutorialStep[] = [
     position: "center",
     navigates: false,
     moduleKey: "",
+    textoSin: {
+      permiso: "org.manage_settings",
+      titleKey: "tutorial.steps.complete.equipo.title",
+      descriptionKey: "tutorial.steps.complete.equipo.description",
+    },
   },
 ];

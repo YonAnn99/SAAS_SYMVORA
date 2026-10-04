@@ -20,3 +20,22 @@ export function useEsMovil(): boolean {
     () => false
   );
 }
+
+/** Desde `lg` (1024 px): donde aparece el menú lateral (debajo, el dock). */
+const CONSULTA_ESCRITORIO = "(min-width: 1024px)";
+
+/**
+ * `true` en escritorio, con el menú lateral visible. En el servidor (y en el
+ * primer pintado) da `false`.
+ */
+export function useEsEscritorio(): boolean {
+  return useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(CONSULTA_ESCRITORIO);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(CONSULTA_ESCRITORIO).matches,
+    () => false
+  );
+}

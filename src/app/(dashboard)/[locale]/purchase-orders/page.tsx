@@ -16,6 +16,7 @@ import { ReceiveOrderDialog } from "@/features/inventory";
 import { PurchaseOrderDetailDialog } from "@/features/inventory";
 import { etiquetaVariante } from "@/features/inventory/purchase-order-items";
 import type { DetalleOrdenCompra } from "@/features/inventory";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 export default function PurchaseOrdersPage() {
   const { tenantId, tenantName, loading: tenantLoading } = useCurrentTenant();
@@ -71,12 +72,10 @@ export default function PurchaseOrdersPage() {
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            Órdenes de Compra
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona órdenes de compra con flujo de estados
-          </p>
+          <EncabezadoModulo
+            titulo="Órdenes de Compra"
+            descripcion="Gestiona órdenes de compra con flujo de estados"
+          />
         </div>
         <SpecularActionButton
           tone="add"

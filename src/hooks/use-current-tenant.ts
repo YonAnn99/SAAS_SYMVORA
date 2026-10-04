@@ -7,6 +7,8 @@ interface TenantInfo {
   tenantId: string;
   /** Id del cajero, necesario para encolar ventas sin conexion. */
   userId: string;
+  /** Nombre de la persona; "" si no capturó ninguno. */
+  userName: string;
   tenantName: string;
   tenantLogo: string | null;
   /** Domicilio del negocio. Lo imprime el pie del ticket del POS. */
@@ -22,6 +24,7 @@ export function useCurrentTenant(): TenantInfo {
   const {
     tenantId,
     userId,
+    userName,
     tenantName,
     tenantLogo,
     tenantAddress,
@@ -33,6 +36,7 @@ export function useCurrentTenant(): TenantInfo {
   return {
     tenantId,
     userId,
+    userName,
     tenantName,
     tenantLogo,
     tenantAddress,

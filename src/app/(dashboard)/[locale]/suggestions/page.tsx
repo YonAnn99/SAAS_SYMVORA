@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Lightbulb } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { SuggestionForm } from "@/features/suggestions";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 export default function SuggestionsPage() {
   const t = useTranslations();
@@ -20,13 +21,11 @@ export default function SuggestionsPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
-        <h2 className="text-xl md:text-2xl font-semibold tracking-tight flex items-center gap-2">
-          <Lightbulb className="h-5 w-5" />
-          {t("suggestions.title")}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t("suggestions.subtitle")}
-        </p>
+        <EncabezadoModulo
+          titulo={t("suggestions.title")}
+          descripcion={t("suggestions.subtitle")}
+          icono={<Lightbulb className="h-5 w-5" />}
+        />
       </div>
 
       <div className="animate-fade-in-up stagger-2 max-w-2xl">

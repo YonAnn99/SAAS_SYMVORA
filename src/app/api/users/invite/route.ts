@@ -13,6 +13,8 @@ export const maxDuration = 30;
 const INVITABLE_ROLES: UserRole[] = ["ORG_ADMIN", "CAJERO"];
 const INVITE_RATE_LIMIT_MAX = 20;
 const INVITE_RATE_LIMIT_WINDOW_SECONDS = 3600;
+/** Mismo tope que el CHECK de `user_invite_keys` (migracion 101). */
+const MAX_NOMBRE = 60;
 
 function generateKey(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -25,7 +27,15 @@ function generateKey(): string {
 
 export async function POST(request: Request) {
   try {
-    const { email, role, tenantId, locale: requestLocale, sucursalIds } = await request.json();
+    const {
+      email,
+      role,
+      tenantId,
+      locale: requestLocale,
+      sucursalIds,
+      nombre: nombreCrudo,
+      apellido: apellidoCrudo,
+    } = await request.json();
     const locale = typeof requestLocale === "string" && /^(es|en)$/.test(requestLocale)
       ? requestLocale
       : "es";
@@ -40,6 +50,24 @@ export async function POST(request: Request) {
     if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { error: "Email inválido" },
+        { status: 400 }
+      );
+    }
+
+    // Nombre obligatorio y apellido opcional: con ellos el dueño ubica a cada
+    // persona en Usuarios y en las ventas, y el sistema la saluda por su nombre.
+    // Se copian a `user_metadata.nombre` al entrar con la clave (key-login).
+    const nombre = typeof nombreCrudo === "string" ? nombreCrudo.trim() : "";
+    const apellido = typeof apellidoCrudo === "string" ? apellidoCrudo.trim() : "";
+    if (!nombre) {
+      return NextResponse.json(
+        { error: "El nombre es obligatorio" },
+        { status: 400 }
+      );
+    }
+    if (nombre.length > MAX_NOMBRE || apellido.length > MAX_NOMBRE) {
+      return NextResponse.json(
+        { error: `El nombre y el apellido admiten hasta ${MAX_NOMBRE} caracteres` },
         { status: 400 }
       );
     }
@@ -135,6 +163,8 @@ export async function POST(request: Request) {
         key: inviteKey,
         role: roleToAssign,
         sucursal_ids: sucursales,
+        nombre,
+        apellido: apellido || null,
       });
 
     if (insertError) {

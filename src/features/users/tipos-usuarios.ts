@@ -16,6 +16,8 @@ export interface Member {
   role: string;
   creado_en: string;
   user_email: string;
+  /** `nombre_de_usuario()` de la base (migracion 101); `null` si no tiene. */
+  user_nombre: string | null;
 }
 
 export interface InviteKey {
@@ -24,7 +26,18 @@ export interface InviteKey {
   key: string;
   role: string;
   created_at: string;
+  /** Capturados al invitar (migracion 101). Las claves viejas no los tienen. */
+  nombre: string | null;
+  apellido: string | null;
 }
+
+/** Nombre para mostrar; sin nombre, el correo (como antes de la migracion 101). */
+export const nombreVisible = (nombre: string | null | undefined, email: string | null | undefined) =>
+  nombre?.trim() || email || "N/A";
+
+/** Nombre completo capturado en una clave de invitacion, o `null`. */
+export const nombreDeClave = (clave: Pick<InviteKey, "nombre" | "apellido">) =>
+  [clave.nombre, clave.apellido].map((x) => x?.trim()).filter(Boolean).join(" ") || null;
 
 export const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });

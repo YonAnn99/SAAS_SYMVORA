@@ -1,12 +1,15 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { buscarObjetivo } from "./objetivo-tutorial";
 
 interface TutorialArrowProps {
   selector: string | null;
   visible: boolean;
   /** Where the dialog is positioned relative to target */
   position: "right" | "bottom" | "center";
+  /** Con el menú lateral visible (ver `buscarObjetivo`). */
+  esEscritorio: boolean;
 }
 
 interface ArrowStyle {
@@ -15,7 +18,7 @@ interface ArrowStyle {
   rotation: number;
 }
 
-export function TutorialArrow({ selector, visible, position }: TutorialArrowProps) {
+export function TutorialArrow({ selector, visible, position, esEscritorio }: TutorialArrowProps) {
   const arrowRef = useRef<HTMLDivElement>(null);
   const [arrowStyle, setArrowStyle] = useState<ArrowStyle | null>(null);
 
@@ -23,7 +26,7 @@ export function TutorialArrow({ selector, visible, position }: TutorialArrowProp
     if (!selector || !visible || position === "center") return;
 
     const measure = () => {
-      const el = document.querySelector(selector);
+      const el = buscarObjetivo(selector, position, esEscritorio);
       if (!el) {
         setArrowStyle(null);
         return;
@@ -74,7 +77,7 @@ export function TutorialArrow({ selector, visible, position }: TutorialArrowProp
       window.removeEventListener("resize", handleUpdate);
       window.removeEventListener("scroll", handleUpdate, true);
     };
-  }, [selector, visible, position]);
+  }, [selector, visible, position, esEscritorio]);
 
   if (!visible || !arrowStyle) return null;
 

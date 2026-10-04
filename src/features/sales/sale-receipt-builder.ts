@@ -39,6 +39,8 @@ export interface VentaGuardada {
   fecha_venta: string;
   usuario_id: string | null;
   cajero_email: string | null;
+  /** Migracion 101. Opcional: una respuesta anterior no lo trae. */
+  cajero_nombre?: string | null;
   cliente_nombre: string | null;
   cliente_telefono: string | null;
   metodo_pago: string;
@@ -120,7 +122,8 @@ export function construirReceiptDesdeVenta(venta: VentaGuardada): SaleReceipt {
     // La fecha de la VENTA, no la de hoy: es lo que distingue una reimpresion
     // fiel de un papel que miente sobre cuando se cobro.
     fecha: new Date(venta.fecha_venta),
-    cajero: venta.cajero_email ?? null,
+    // "Atendió:" con el nombre; sin nombre, el correo como antes.
+    cajero: venta.cajero_nombre?.trim() || venta.cajero_email || null,
     esReimpresion: true,
   };
 }

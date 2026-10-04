@@ -56,6 +56,7 @@ import {
   FORMAS_PAGO,
   USOS_CFDI,
 } from "@/features/facturacion/catalogs";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 interface FacturaLinea {
   producto_id: string;
@@ -347,12 +348,10 @@ export default function FacturasPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            {t("facturas.title")}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Facturación electrónica CFDI 4.0
-          </p>
+          <EncabezadoModulo
+            titulo={t("facturas.title")}
+            descripcion="Facturación electrónica CFDI 4.0"
+          />
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Button

@@ -193,6 +193,36 @@
   background-color: #e0e0e0;
 }
 
+/* Clave de invitacion con Code Slots (`campo-clave-invitacion.tsx`). Su
+   <input> es invisible y cubre las casillas para recibir el teclado: la regla
+   `.auth-container input` de arriba le pondria margen, relleno y fondo, y
+   moveria el area donde se toca. */
+.auth-container .campo-clave input,
+.auth-container .campo-clave input:focus {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.campo-clave {
+  margin: 6px 0 12px;
+}
+
+/* `.auth-container span` (gris #555, 12 px) le ganaba al color y al tamaño de
+   las letras de las casillas: aqui vuelven al blanco y al tamaño de Code Slots. */
+.auth-container .campo-clave span {
+  color: var(--cs-digit, #ffffff);
+  font-size: var(--cs-font, 20px);
+}
+
+.auth-container .campo-clave .campo-clave-etiqueta {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #333;
+}
+
 .auth-form-container {
   position: absolute;
   top: 0;

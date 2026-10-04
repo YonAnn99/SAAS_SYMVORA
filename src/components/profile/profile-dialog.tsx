@@ -9,6 +9,7 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { convertToWebP } from "@/lib/image";
+import { nombreCompleto } from "@/lib/nombre-usuario";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { refetch: refetchTenant } = useTenantContext();
   const { can } = usePermissions();
 
+  // Cajeros y administradores entran con su clave de invitacion, y `key-login`
+  // les pone una contraseña temporal nueva en cada entrada: cambiarla no les
+  // serviria. Solo editan su nombre y su celular. La contraseña es del dueño.
+  const entraConClave = role === "CAJERO" || role === "ORG_ADMIN";
+
   const canManageSettings =
     role === "SUPER_ADMIN" || role === "ORG_ADMIN" || can("org.manage_settings");
 
@@ -84,11 +90,8 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
 
       if (user && isMounted) {
         setEmail(user.email || "");
-        const metaName =
-          (user.user_metadata?.nombre_completo as string) ||
-          (user.user_metadata?.full_name as string) ||
-          "";
-        setFullName(metaName);
+        // Incluye el nombre capturado al crear la cuenta (`nombre`).
+        setFullName(nombreCompleto(user.user_metadata));
       }
     };
 
@@ -109,11 +112,16 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     setSavingName(true);
     try {
       const supabase = createSupabaseBrowserClient();
+      const nombre = fullName.trim();
+      // Las tres claves con el mismo valor: `nombre` es la que leen los
+      // correos de corte de caja y Conekta; las otras, versiones anteriores.
       const { error } = await supabase.auth.updateUser({
-        data: { nombre_completo: fullName.trim(), full_name: fullName.trim() },
+        data: { nombre, nombre_completo: nombre, full_name: nombre },
       });
 
       if (error) throw error;
+      // El saludo del Dashboard lee el nombre del contexto del negocio.
+      await refetchTenant();
       toast.success("Nombre actualizado correctamente");
     } catch (err) {
       toast.error(
@@ -278,52 +286,56 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
 
       <CelularPerfil />
 
-      <Separator className="my-2" />
+      {!entraConClave && (
+        <>
+          <Separator className="my-2" />
 
-      {/* Sección: Seguridad / Contraseña */}
-      <form onSubmit={handleUpdatePassword} className="space-y-3">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-          <KeyRound className="h-3.5 w-3.5 text-primary" />
-          Cambiar Contraseña
-        </div>
+          {/* Sección: Seguridad / Contraseña */}
+          <form onSubmit={handleUpdatePassword} className="space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <KeyRound className="h-3.5 w-3.5 text-primary" />
+              Cambiar Contraseña
+            </div>
 
-        <div className="space-y-2">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Nueva contraseña</Label>
-            <Input
-              type="password"
-              placeholder="Mínimo 6 caracteres"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="h-8 text-sm"
-              autoComplete="new-password"
-            />
-          </div>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Nueva contraseña</Label>
+                <Input
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-8 text-sm"
+                  autoComplete="new-password"
+                />
+              </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Confirmar nueva contraseña</Label>
-            <Input
-              type="password"
-              placeholder="Repite la contraseña"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-8 text-sm"
-              autoComplete="new-password"
-            />
-          </div>
-        </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Confirmar nueva contraseña</Label>
+                <Input
+                  type="password"
+                  placeholder="Repite la contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-8 text-sm"
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
 
-        <div className="flex justify-end pt-1">
-          <SpecularActionButton
-            type="submit"
-            tone="money"
-            disabled={savingPassword || !newPassword}
-            className="h-8 text-xs font-medium cursor-pointer"
-          >
-            {savingPassword ? "Actualizando..." : "Actualizar contraseña"}
-          </SpecularActionButton>
-        </div>
-      </form>
+            <div className="flex justify-end pt-1">
+              <SpecularActionButton
+                type="submit"
+                tone="money"
+                disabled={savingPassword || !newPassword}
+                className="h-8 text-xs font-medium cursor-pointer"
+              >
+                {savingPassword ? "Actualizando..." : "Actualizar contraseña"}
+              </SpecularActionButton>
+            </div>
+          </form>
+        </>
+      )}
     </div>
   );
 
@@ -362,7 +374,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             Mi Perfil
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Consulta los datos de tu cuenta y gestiona tus credenciales y configuración
+            {entraConClave
+              ? "Consulta los datos de tu cuenta y edita tu nombre y tu celular"
+              : "Consulta los datos de tu cuenta y gestiona tus credenciales y configuración"}
           </DialogDescription>
         </DialogHeader>
 

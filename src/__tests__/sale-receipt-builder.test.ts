@@ -67,6 +67,16 @@ describe("construirReceiptDesdeVenta", () => {
     );
   });
 
+  it("prefiere el nombre del cajero sobre su correo", () => {
+    expect(
+      construirReceiptDesdeVenta({ ...VENTA, cajero_nombre: "Ana Pérez" }).cajero
+    ).toBe("Ana Pérez");
+    // Un nombre vacío no tapa el correo.
+    expect(
+      construirReceiptDesdeVenta({ ...VENTA, cajero_nombre: "  " }).cajero
+    ).toBe("cajero@symvora.com.mx");
+  });
+
   it("convierte a número los importes que PostgREST entrega como texto", () => {
     // Las columnas son DECIMAL y llegan como "116.00". Sin convertir, el
     // `toFixed` del ticket revienta y las sumas concatenan texto.

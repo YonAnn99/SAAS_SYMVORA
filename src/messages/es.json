@@ -1,5 +1,7 @@
 {
   "common": {
+    "greeting": "¡Hola, {nombre}!",
+    "greetingNoName": "¡Hola!",
     "appName": "SYMVORA",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -164,6 +166,7 @@
     "keyLoginTitle": "Acceso con clave",
     "keyLoginSubtitle": "Ingresa tu correo y la clave que recibiste por correo",
     "inviteKeyPlaceholder": "Clave de invitación (ej. ABC123XY)",
+    "inviteKeyLabel": "Clave de invitación",
     "enterWithKey": "Ingresar",
     "employeeLogin": "¿Eres empleado o colaborador? Ingresa tu clave",
     "or": "o",
@@ -237,7 +240,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "welcome": "Bienvenido",
     "salesToday": "Ventas hoy",
     "salesWeek": "Ventas esta semana",
     "salesMonth": "Ventas este mes",
@@ -616,7 +618,11 @@
       },
       "welcome": {
         "title": "¡Bienvenido a SYMVORA!",
-        "description": "Este tutorial te guiará a través de los pasos para configurar y usar tu sistema de punto de venta. Sigue cada paso en orden para que todo funcione correctamente."
+        "description": "Este tutorial te guiará a través de los pasos para configurar y usar tu sistema de punto de venta. Sigue cada paso en orden para que todo funcione correctamente.",
+        "equipo": {
+          "title": "¡Bienvenido a SYMVORA!",
+          "description": "Este tutorial te muestra lo necesario para tu turno: abrir la caja, vender y cerrarla al final del día."
+        }
       },
       "business": {
         "title": "Configura tu negocio",
@@ -628,11 +634,19 @@
       },
       "suppliers": {
         "title": "Registra tus proveedores",
-        "description": "Este paso es obligatorio: no puedes registrar compras sin un proveedor. Dale de alta aquí a tus proveedores principales antes de continuar."
+        "description": "Este paso es obligatorio: no puedes registrar compras sin un proveedor. Dale de alta aquí a tus proveedores principales antes de continuar.",
+        "equipo": {
+          "title": "Registra las compras que recibes",
+          "description": "Aquí capturas la mercancía que llega de tus proveedores, para que el inventario se actualice al recibirla."
+        }
       },
       "products": {
         "title": "Crea tu catálogo de productos",
-        "description": "Este es el módulo más importante. Aquí defines cada producto con su nombre, precio, costo, unidad de medida y código de barras. De esto dependen las ventas, compras e inventario."
+        "description": "Este es el módulo más importante. Aquí defines cada producto con su nombre, precio, costo, unidad de medida y código de barras. De esto dependen las ventas, compras e inventario.",
+        "equipo": {
+          "title": "Consulta el catálogo",
+          "description": "Aquí ves cada producto con su precio, sus existencias y su código de barras. Úsalo para resolver dudas de los clientes."
+        }
       },
       "createProduct": {
         "title": "Crea tu primer producto",
@@ -672,7 +686,11 @@
       },
       "complete": {
         "title": "¡Tutorial completado!",
-        "description": "Ya conoces los módulos principales de SYMVORA. Recuerda el orden correcto: Configuración → Proveedores → Productos → Abrir caja → Vender. Si necesitas ayuda, haz clic en '¿Necesitas ayuda?' en la barra superior."
+        "description": "Ya conoces los módulos principales de SYMVORA. Recuerda el orden correcto: Configuración → Proveedores → Productos → Abrir caja → Vender. Si necesitas ayuda, haz clic en '¿Necesitas ayuda?' en la barra superior.",
+        "equipo": {
+          "title": "¡Tutorial completado!",
+          "description": "Ya conoces lo necesario para tu turno: Abrir caja → Vender → Cerrar caja. Si quieres repasarlo, haz clic en 'Ver tutorial' en la barra superior."
+        }
       }
     }
   },

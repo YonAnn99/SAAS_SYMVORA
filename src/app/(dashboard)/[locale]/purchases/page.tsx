@@ -12,6 +12,7 @@ import { NewSupplierDialog } from "@/features/inventory";
 import { PurchaseDetailDialog } from "@/features/inventory";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useAccionRapida } from "@/hooks/use-accion-rapida";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 export default function PurchasesPage() {
   const t = useTranslations();
@@ -63,12 +64,10 @@ export default function PurchasesPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
-        <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-          {t("purchases.title")}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Gestiona compras y proveedores
-        </p>
+        <EncabezadoModulo
+          titulo={t("purchases.title")}
+          descripcion="Gestiona compras y proveedores"
+        />
       </div>
 
       <Tabs

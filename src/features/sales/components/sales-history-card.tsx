@@ -57,7 +57,8 @@ interface SalesHistoryCardProps {
 
 interface Cajero {
   user_id: string;
-  user_email: string;
+  /** Nombre (migracion 101) o, si no tiene, el correo. */
+  etiqueta: string;
 }
 
 function horaCorta(iso: string): string {
@@ -111,9 +112,11 @@ export function SalesHistoryCard({
         p_tenant_id: tenantId,
       });
       setCajeros(
-        ((data ?? []) as Cajero[]).map((m) => ({
+        (
+          (data ?? []) as { user_id: string; user_email: string; user_nombre: string | null }[]
+        ).map((m) => ({
           user_id: m.user_id,
-          user_email: m.user_email,
+          etiqueta: m.user_nombre?.trim() || m.user_email,
         }))
       );
     }, 0);
@@ -178,7 +181,7 @@ export function SalesHistoryCard({
               </TableCell>
               {veTodas && (
                 <TableCell className="max-w-[160px] truncate text-xs">
-                  {v.cajero_email ?? "—"}
+                  {v.cajero_nombre?.trim() || v.cajero_email || "—"}
                 </TableCell>
               )}
               {verSucursal && (
@@ -227,7 +230,7 @@ export function SalesHistoryCard({
                   {(valor: unknown) =>
                     valor === TODOS_LOS_CAJEROS
                       ? "Todos los cajeros"
-                      : cajeros.find((c) => c.user_id === valor)?.user_email ??
+                      : cajeros.find((c) => c.user_id === valor)?.etiqueta ??
                         "Todos los cajeros"
                   }
                 </SelectValue>
@@ -238,7 +241,7 @@ export function SalesHistoryCard({
                 </SelectItem>
                 {cajeros.map((c) => (
                   <SelectItem key={c.user_id} value={c.user_id}>
-                    {c.user_email}
+                    {c.etiqueta}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -34,6 +34,7 @@ import { VariantDialog } from "@/features/inventory/components/variants/variant-
 import type { VarianteProducto } from "@/features/inventory/types/inventory.types";
 import type { Producto } from "@/features/inventory";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
+import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -192,12 +193,10 @@ export default function ProductsPage() {
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            {t("products.title")}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestiona tu catálogo de productos
-          </p>
+          <EncabezadoModulo
+            titulo={t("products.title")}
+            descripcion="Gestiona tu catálogo de productos"
+          />
         </div>
         {/* En celular, cuadricula de 2x2 con los cuatro del mismo tamaño:
             arriba sucursal y Agregar producto (lo del dia), abajo Importar y

@@ -4,17 +4,18 @@
  * Los miembros del negocio en celular: una pastilla deslizable por usuario
  * (ver `components/ui/fila-deslizable.tsx`).
  *
- *   a la mitad    -> Eliminar | Permisos
+ *   a la mitad    -> Eliminar | Permisos | Nombre
  *   completo      -> Eliminar (con confirmacion)
  *   tienda        -> Sucursales (a un costado, con varias sucursales)
  *   tocar el rol  -> cambiar de rol
  *
  * Mismas reglas que la tabla: solo el dueño administra, y ni Permisos ni
  * Eliminar se ofrecen sobre uno mismo ni sobre el dueño (el servidor lo
- * rechazaria; asi un deslizamiento accidental no termina en error).
+ * rechazaria; asi un deslizamiento accidental no termina en error). Nombre si
+ * se ofrece en todos: corregir como se llama alguien no le quita nada.
  */
 
-import { SlidersHorizontal, Store, Trash2 } from "lucide-react";
+import { Pencil, SlidersHorizontal, Store, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ import {
   usePistaDeslizar,
   type AccionFila,
 } from "@/components/ui/fila-deslizable";
-import { fechaCorta, roleColors, type Member } from "../tipos-usuarios";
+import { fechaCorta, nombreVisible, roleColors, type Member } from "../tipos-usuarios";
 
 interface MemberSwipeListProps {
   miembros: Member[];
@@ -38,6 +39,7 @@ interface MemberSwipeListProps {
   onPermisos: (member: Member) => void;
   onSucursales: (member: Member) => void;
   onCambiarRol: (member: Member) => void;
+  onEditarNombre: (member: Member) => void;
   /** `false` si no se pudo: la pastilla reaparece. */
   onEliminar: (member: Member) => Promise<boolean>;
 }
@@ -51,6 +53,7 @@ export function MemberSwipeList({
   onPermisos,
   onSucursales,
   onCambiarRol,
+  onEditarNombre,
   onEliminar,
 }: MemberSwipeListProps) {
   const t = useTranslations();
@@ -60,14 +63,23 @@ export function MemberSwipeList({
     <div className="space-y-2">
       {canManage && verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
-          Desliza a la izquierda para ver permisos o eliminar
+          Desliza a la izquierda para editar, ver permisos o eliminar
         </p>
       )}
 
       {miembros.map((member) => {
         const esDueno = member.role === "SUPER_ADMIN";
         const administrable = canManage && member.user_id !== currentUserId && !esDueno;
-        const correo = member.user_email || "N/A";
+        const correo = nombreVisible(member.user_nombre, member.user_email);
+        const nombreLimpio = member.user_nombre?.trim();
+
+        const accionNombre: AccionFila = {
+          id: "nombre",
+          etiqueta: "Nombre",
+          color: COLOR_EDITAR,
+          icono: <Pencil size={18} strokeWidth={2} />,
+          alElegir: () => onEditarNombre(member),
+        };
 
         const acciones: AccionFila[] = administrable
           ? [
@@ -89,8 +101,11 @@ export function MemberSwipeList({
                 icono: <SlidersHorizontal size={18} strokeWidth={2} />,
                 alElegir: () => onPermisos(member),
               },
+              accionNombre,
             ]
-          : [];
+          : canManage
+            ? [accionNombre]
+            : [];
 
         const etiquetaRol = (
           <Badge className={`${roleColors[member.role]} text-[10px] px-1.5 py-0`}>
@@ -107,6 +122,9 @@ export function MemberSwipeList({
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{correo}</p>
+              {nombreLimpio && member.user_email && (
+                <p className="truncate text-xs text-muted-foreground">{member.user_email}</p>
+              )}
               <div className="flex min-w-0 items-center gap-1.5 text-xs">
                 {canManage && !esDueno ? (
                   <span onPointerDown={noArrastrar} className="flex shrink-0">
