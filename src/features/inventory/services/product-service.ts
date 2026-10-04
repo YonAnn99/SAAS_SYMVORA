@@ -71,6 +71,9 @@ export async function fetchProducts(tenantId: string): Promise<Producto[]> {
     .from("productos")
     .select("*")
     .eq("tenant_id", tenantId)
+    // Los archivados (migracion 102) no son parte del catalogo; se ven en
+    // "Archivados" (`fetchArchivedProducts`).
+    .is("archivado_en", null)
     .order("nombre");
   return data ?? [];
 }
@@ -121,6 +124,66 @@ export async function deleteProduct(productId: string): Promise<void> {
   const supabase = createSupabaseBrowserClient();
   const { error } = await supabase.from("productos").delete().eq("id", productId);
   if (error) throw error;
+}
+
+/**
+ * El producto no se pudo borrar porque tiene historial: ventas, compras,
+ * ajustes, ordenes o traspasos lo referencian (llaves foraneas NO ACTION, a
+ * proposito: borrarlo romperia reportes y cortes). En ese caso se ofrece
+ * archivarlo.
+ */
+export function esErrorDeHistorial(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "23503"
+  );
+}
+
+/**
+ * Archiva un producto con historial: sale del catalogo, del POS y de los
+ * selectores, y sus ventas y reportes no cambian (migracion 102).
+ */
+export async function archiveProduct(productId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const ahora = new Date().toISOString();
+  const { error } = await supabase
+    .from("productos")
+    .update({ archivado_en: ahora, actualizado_en: ahora })
+    .eq("id", productId);
+  if (error) throw error;
+}
+
+/** Mensaje al restaurar un producto cuyo codigo ya usa otro activo. */
+export const CODIGO_OCUPADO_AL_RESTAURAR =
+  "Ya hay un producto activo con ese código de barras o SKU. Cámbiaselo a uno de los dos para restaurarlo.";
+
+export async function restoreProduct(productId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("productos")
+    .update({ archivado_en: null, actualizado_en: new Date().toISOString() })
+    .eq("id", productId);
+  if (error) {
+    // Al archivarlo, su codigo quedo libre (indices unicos solo sobre activos)
+    // y pudo darse de alta otro producto con el.
+    if ((error as { code?: string }).code === "23505") {
+      throw new Error(CODIGO_OCUPADO_AL_RESTAURAR);
+    }
+    throw error;
+  }
+}
+
+export async function fetchArchivedProducts(tenantId: string): Promise<Producto[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("productos")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .not("archivado_en", "is", null)
+    .order("archivado_en", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
 }
 /**
  * Convierte la imagen elegida y la sube, devolviendo su URL publica.

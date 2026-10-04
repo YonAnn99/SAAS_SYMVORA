@@ -54,6 +54,7 @@ export async function fetchVariantProducts(
     .from("productos")
     .select("id, nombre, permite_variantes, permite_lotes")
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     // Todos los productos fisicos, no solo los que ya tienen variantes: si no,
     // la PRIMERA variante de un producto nunca se podia crear (el selector
     // salia vacio). Mismo arreglo que `fetchLotProducts`.

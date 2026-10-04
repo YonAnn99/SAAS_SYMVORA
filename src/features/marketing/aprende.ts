@@ -180,6 +180,7 @@ export const GUIAS: Guia[] = [
         pasos: [
           { titulo: "Ajuste de inventario", texto: "Si al contar el anaquel no coincide con el sistema, registra un ajuste con el motivo. Queda guardado quién y cuándo lo hizo." },
           { titulo: "Mermas", texto: "Con el módulo de mermas registras lo que se echa a perder o se daña. Sale del inventario y la pérdida queda registrada." },
+          { titulo: "Archivar un producto que ya vendiste", texto: "Un producto con ventas o compras no se puede eliminar, para no alterar tus reportes. Al intentarlo, el sistema te ofrece archivarlo: deja de aparecer en el catálogo y en el punto de venta, y lo restauras cuando quieras desde «Archivados», abajo del catálogo." },
         ],
       },
     ],

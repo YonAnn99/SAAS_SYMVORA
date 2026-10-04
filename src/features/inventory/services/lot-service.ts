@@ -40,6 +40,7 @@ export async function fetchLotProducts(
     .from("productos")
     .select("id, nombre, permite_variantes, permite_lotes")
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     .eq("es_servicio", false)
     .order("nombre");
   return data ?? [];

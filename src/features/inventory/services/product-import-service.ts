@@ -18,6 +18,9 @@ export async function fetchExistingBarcodes(
     .from("productos")
     .select("id, nombre, codigo_barras")
     .eq("tenant_id", tenantId)
+    // Solo activos, igual que el indice unico (migracion 102): un archivado no
+    // reserva su codigo.
+    .is("archivado_en", null)
     .not("codigo_barras", "is", null);
 
   const map = new Map<string, ExistingProductInfo>();

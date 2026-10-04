@@ -135,6 +135,7 @@ export type Database = {
           no_identificacion: string | null;
           creado_en: string;
           actualizado_en: string;
+          archivado_en: string | null;
         };
         Insert: {
           id?: string;
@@ -159,6 +160,7 @@ export type Database = {
           no_identificacion?: string | null;
           creado_en?: string;
           actualizado_en?: string;
+          archivado_en?: string | null;
         };
         Update: {
           id?: string;
@@ -183,6 +185,7 @@ export type Database = {
           no_identificacion?: string | null;
           creado_en?: string;
           actualizado_en?: string;
+          archivado_en?: string | null;
         };
       };
       productos_favoritos: {

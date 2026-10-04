@@ -90,6 +90,12 @@
   órdenes de compra con PDF.
 - **Reportes:** historial de ventas con reimpresión (la regla de visibilidad vive en los RPC
   `listar_ventas`/`detalle_venta`), ganancia bruta.
+- **Productos archivados** (migración 102): un producto con historial no se puede borrar (FKs `NO ACTION`
+  desde ventas, compras, ajustes, órdenes y traspasos). Al intentarlo se ofrece **archivarlo**
+  (`productos.archivado_en`): sale del catálogo, del POS y de los selectores; se restaura desde
+  "Archivados" bajo el catálogo. Los índices únicos de código de barras y SKU solo cuentan activos.
+  **Toda consulta nueva de productos para operar debe filtrar `.is("archivado_en", null)`**; el
+  historial no se filtra.
 - **Producto:** foto con la cámara, quitar fondo con PhotoRoom (`PHOTOROOM_API_KEY`, permiso
   `inventory.manage`, rate limit por presupuesto).
 - **Cobro:**
@@ -148,9 +154,9 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (886 tests al 2026-10-04) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (888 tests al 2026-10-04) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 101) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 102) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

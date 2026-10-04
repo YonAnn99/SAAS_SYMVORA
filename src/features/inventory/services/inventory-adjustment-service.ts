@@ -42,6 +42,7 @@ export async function fetchAdjustmentProducts(
     .from("productos")
     .select("id, nombre")
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     .order("nombre");
   return data ?? [];
 }

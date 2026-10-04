@@ -77,7 +77,11 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
     try {
       const supabase = createSupabaseBrowserClient();
       const [prods, vars, filas] = await Promise.all([
-        supabase.from("productos").select("id, nombre, es_servicio").eq("tenant_id", tenantId),
+        supabase
+          .from("productos")
+          .select("id, nombre, es_servicio")
+          .eq("tenant_id", tenantId)
+          .is("archivado_en", null),
         supabase.from("variantes_producto").select("id, producto_id, talla, color").eq("tenant_id", tenantId),
         fetchStockSucursal(origen),
       ]);

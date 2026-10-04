@@ -35,6 +35,7 @@ import type { VarianteProducto } from "@/features/inventory/types/inventory.type
 import type { Producto } from "@/features/inventory";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { ProductosArchivados } from "@/features/inventory/components/products/productos-archivados";
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -402,6 +403,15 @@ export default function ProductsPage() {
         onInlineSaveVariante={variantes.handleInlineSaveVariante}
         guardandoVariantes={variantes.guardandoVariantes}
       />
+
+      {/* Los que tenian historial y se archivaron en vez de borrarse. */}
+      {canManageInventory && tenantId && (
+        <ProductosArchivados
+          tenantId={tenantId}
+          version={products.length}
+          onRestaurado={() => void refetch()}
+        />
+      )}
 
         </TabsContent>
 

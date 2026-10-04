@@ -5,12 +5,15 @@ import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Producto } from "../types/inventory.types";
 import {
+  archiveProduct,
   createProduct,
   deleteProduct,
+  esErrorDeHistorial,
   fetchProducts,
   updateProduct,
   type ProductInput,
 } from "../services/product-service";
+import { useConfirmar } from "@/components/ui/confirmar";
 import {
   EMPTY_FILTERS,
   applyProductFilters,
@@ -315,6 +318,8 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
     [tenantId, favoritos]
   );
 
+  const confirmar = useConfirmar();
+
   const handleDelete = useCallback(
     async (product: Producto) => {
       try {
@@ -329,14 +334,43 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
         setDeleteConfirm(null);
         void refetch();
         return true;
-      } catch {
-        toast.error("Error al eliminar el producto");
-        // La fila deslizable del celular se colapsa ANTES de borrar: con
-        // `false` sabe que tiene que reaparecer.
-        return false;
+      } catch (error) {
+        if (!esErrorDeHistorial(error)) {
+          toast.error(mensajeDeError(error));
+          // La fila deslizable del celular se colapsa ANTES de borrar: con
+          // `false` sabe que tiene que reaparecer.
+          return false;
+        }
+        // Tiene ventas, compras o movimientos: la base no deja borrarlo (asi
+        // los reportes no cambian). En vez del error, se ofrece archivarlo.
+        const archivar = await confirmar({
+          titulo: `«${product.nombre}» tiene historial`,
+          descripcion:
+            "Tiene ventas, compras o movimientos registrados. Para no alterar tus reportes no se puede eliminar, pero puedes archivarlo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar cuando quieras.",
+          accion: "Archivar",
+          tono: "aviso",
+        });
+        if (!archivar) return false;
+        try {
+          await archiveProduct(product.id);
+          await logActivity({
+            action: "UPDATE",
+            entity: "producto",
+            entityId: product.id,
+            entityName: product.nombre,
+            details: { archivado: true },
+          });
+          toast.success("Producto archivado");
+          setDeleteConfirm(null);
+          void refetch();
+          return true;
+        } catch (errorArchivo) {
+          toast.error(mensajeDeError(errorArchivo));
+          return false;
+        }
       }
     },
-    [refetch]
+    [refetch, confirmar]
   );
 
   // Búsqueda y filtros se aplican EN CADENA, no se sustituyen: buscar "coca"

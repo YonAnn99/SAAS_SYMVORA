@@ -65,6 +65,7 @@ export function ExistenciasSucursal({ tenantId }: { tenantId: string }) {
           .from("productos")
           .select("id, nombre, sku, es_servicio, stock_actual")
           .eq("tenant_id", tenantId)
+          .is("archivado_en", null)
           .order("nombre"),
         fetchStockSucursal(seleccionada),
       ]);

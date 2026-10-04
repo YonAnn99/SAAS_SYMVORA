@@ -98,6 +98,7 @@ export async function fetchOrderProducts(
     .from("productos")
     .select("id, nombre, costo_compra, categoria")
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     .order("nombre");
   return data ?? [];
 }

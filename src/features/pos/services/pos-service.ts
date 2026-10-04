@@ -145,6 +145,7 @@ export async function fetchPosProducts(
       .from("productos")
       .select("*")
       .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
       .order("nombre");
     if (error) throw error;
     return vendiblesEnLocal(conStockDeSucursal(data ?? [], stockLocal));
@@ -154,6 +155,8 @@ export async function fetchPosProducts(
     .from("productos")
     .select("*")
     .eq("tenant_id", tenantId)
+    // Un producto archivado (migracion 102) ya no se vende.
+    .is("archivado_en", null)
     // LOS SERVICIOS ENTRAN AUNQUE NO TENGAN EXISTENCIAS. Antes esto era un
     // `.gt("stock_actual", 0)` a secas, y como un servicio vive siempre en 0
     // (una asesoria, un envio a domicilio) nunca llegaba al mostrador: quedaba
@@ -182,8 +185,13 @@ export async function fetchPosVariants(
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from("variantes_producto")
-    .select("id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras, imagen_url")
+    // `productos!inner` solo para filtrar: las tallas de un producto archivado
+    // (migracion 102) tampoco se venden, ni escaneando su codigo.
+    .select(
+      "id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras, imagen_url, productos!inner(archivado_en)"
+    )
     .eq("tenant_id", tenantId)
+    .is("productos.archivado_en", null)
     .order("talla");
 
   if (error) throw error;
