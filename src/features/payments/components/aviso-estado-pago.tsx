@@ -4,6 +4,7 @@
  * Aviso fijo arriba del panel cuando la cuenta no tiene acceso completo
  * (migracion 096):
  *
+ *   prueba        ultimos dias de la prueba gratis: "termina en N dias"
  *   gracia        "No pudimos cobrar / tu mes vencio: te quedan N dias"
  *   solo_lectura  "Tu cuenta esta en solo lectura" + lo que tiene en juego
  *                 (productos y ventas guardados) + oferta de regreso
@@ -13,7 +14,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Lock } from "lucide-react";
+import { AlertTriangle, Clock, Lock } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
@@ -29,7 +30,7 @@ export function AvisoEstadoPago() {
   const { tenantId } = useCurrentTenant();
   const { can } = usePermissions();
   const pathname = usePathname();
-  const { loading, acceso, estado, diasGracia, limiteDatos, ofertaRegresoHasta } =
+  const { loading, acceso, estado, diasGracia, limiteDatos, ofertaRegresoHasta, prueba } =
     useAccesoCuenta();
   const [guardado, setGuardado] = useState<{ productos: number; ventas: number } | null>(null);
 
@@ -54,9 +55,46 @@ export function AvisoEstadoPago() {
   }, [soloLectura, tenantId]);
 
   // En /billing ya esta todo esto con mas detalle.
-  if (loading || acceso === "completo" || pathname.startsWith("/billing")) return null;
+  if (loading || pathname.startsWith("/billing")) return null;
 
   const puedePagar = can("subscription.manage");
+
+  // Prueba gratis en sus ultimos dias: recordatorio para quien entra a diario
+  // (los correos solo salen 2 dias antes y al vencer).
+  if (acceso === "completo") {
+    if (!prueba) return null;
+    const cuando = prueba.hoy
+      ? `hoy a las ${prueba.fin.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}`
+      : `en ${prueba.dias} ${prueba.dias === 1 ? "día" : "días"} (el ${fechaLarga(prueba.fin)})`;
+    return (
+      <div
+        role="status"
+        className="w-full border-b border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+      >
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2 text-sm">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              <strong className="font-medium">Tu prueba gratis termina {cuando}.</strong>{" "}
+              {puedePagar
+                ? "Elige tu plan para seguir vendiendo sin interrupciones."
+                : "Después la cuenta quedará en solo lectura hasta que se active un plan."}
+            </span>
+          </p>
+          {puedePagar ? (
+            <Link
+              href="/billing"
+              className="shrink-0 rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90"
+            >
+              Elegir plan
+            </Link>
+          ) : (
+            <span className="shrink-0 text-xs opacity-80">Avísale al dueño de la cuenta.</span>
+          )}
+        </div>
+      </div>
+    );
+  }
   const accion = puedePagar ? (
     <Link
       href="/billing"

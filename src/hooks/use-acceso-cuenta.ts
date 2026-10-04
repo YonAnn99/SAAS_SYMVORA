@@ -13,10 +13,12 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import {
+  avisoPrueba,
   calcularAcceso,
   diasDeGracia,
   limiteConservacion,
   type Acceso,
+  type AvisoPrueba,
   type DatosAcceso,
 } from "@/lib/acceso-suscripcion";
 
@@ -29,6 +31,8 @@ export interface AccesoCuenta {
   /** Hasta cuando puede descargar sus datos (y usar la oferta de regreso). */
   limiteDatos: Date | null;
   ofertaRegresoHasta: Date | null;
+  /** Prueba vigente en sus ultimos dias (ver `avisoPrueba`), o `null`. */
+  prueba: AvisoPrueba | null;
 }
 
 const INICIAL: AccesoCuenta = {
@@ -38,6 +42,7 @@ const INICIAL: AccesoCuenta = {
   diasGracia: 0,
   limiteDatos: null,
   ofertaRegresoHasta: null,
+  prueba: null,
 };
 
 export function useAccesoCuenta(): AccesoCuenta {
@@ -75,6 +80,7 @@ export function useAccesoCuenta(): AccesoCuenta {
         diasGracia: diasDeGracia(datos),
         limiteDatos: limiteConservacion(datos),
         ofertaRegresoHasta: oferta && oferta >= new Date() ? oferta : null,
+        prueba: avisoPrueba(datos),
       });
     })();
 

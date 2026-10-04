@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  avisoPrueba,
   calcularAcceso,
   diasDeGracia,
   inicioSoloLectura,
@@ -76,5 +77,39 @@ describe("dias de gracia y plazos", () => {
 
   it("con acceso completo no hay plazo", () => {
     expect(limiteConservacion({ ...base, estado: "active", current_period_end: en(9) }, AHORA)).toBeNull();
+  });
+});
+
+describe("avisoPrueba", () => {
+  const prueba = (trial_end: string | null): DatosAcceso => ({
+    estado: "trial",
+    trial_end,
+    current_period_end: null,
+    past_due_desde: null,
+  });
+
+  it("con más de 3 días no avisa", () => {
+    expect(avisoPrueba(prueba(en(4)), AHORA)).toBeNull();
+  });
+
+  it("en los últimos 3 días avisa con los días que faltan", () => {
+    expect(avisoPrueba(prueba(en(3)), AHORA)?.dias).toBe(3);
+    expect(avisoPrueba(prueba(en(1)), AHORA)?.dias).toBe(1);
+  });
+
+  it("marca 'hoy' si termina el mismo día", () => {
+    const hoy = new Date(AHORA.getTime() + 60 * 60 * 1000).toISOString();
+    const aviso = avisoPrueba(prueba(hoy), AHORA);
+    expect(aviso?.hoy).toBe(true);
+    expect(aviso?.dias).toBe(1);
+  });
+
+  it("vencida no avisa: ahí manda la solo lectura", () => {
+    expect(avisoPrueba(prueba(hace(1)), AHORA)).toBeNull();
+  });
+
+  it("una cuenta pagada o sin fecha de fin no avisa", () => {
+    expect(avisoPrueba({ ...prueba(en(1)), estado: "active" }, AHORA)).toBeNull();
+    expect(avisoPrueba(prueba(null), AHORA)).toBeNull();
   });
 });

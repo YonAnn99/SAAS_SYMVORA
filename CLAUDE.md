@@ -93,6 +93,11 @@
 - **Producto:** foto con la cámara, quitar fondo con PhotoRoom (`PHOTOROOM_API_KEY`, permiso
   `inventory.manage`, rate limit por presupuesto).
 - **Cobro:**
+  - **Fin de prueba / pago vencido** (migración 096, aplicada el 2026-10-04): acceso completo, gracia de 3
+    días o solo lectura (ve y exporta; no vende ni edita), calculado en vivo por `acceso_tenant()`.
+    Espejo en `lib/acceso-suscripcion.ts`.
+  - Avisos de la prueba: correo 2 días antes y al vencer (`trial-notices`). Además, un banner en el panel los
+    últimos 3 días (`avisoPrueba`, en `aviso-estado-pago.tsx`).
   - Trial de 14 días creado en el servidor (`complete_onboarding`).
   - Códigos promocionales (`codigos_promocionales`, generación manual por SQL).
   - Webhook de Conekta firmado (fail-closed, idempotente).
@@ -143,7 +148,7 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (867 tests al 2026-10-04) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (886 tests al 2026-10-04) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 101) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
@@ -187,7 +192,6 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] Reemplazar `[Domicilio del responsable]`, que sigue sin datos.
 
 ## Otros abiertos
-- [ ] Migración `096_acceso_por_estado_de_pago.sql`: estaba sin aplicar; verificar con `list_migrations`.
 - [ ] `public/aprende/primeros-pasos/crear-producto` (sin extensión, duplicado de `crear-producto.webp`).
 - [ ] Subir Supabase a Pro (techo de 4 conexiones en Free).
 - [ ] Fotos de producto reemplazadas quedan huérfanas en Storage.

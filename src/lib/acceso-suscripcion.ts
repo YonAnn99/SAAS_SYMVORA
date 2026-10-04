@@ -118,3 +118,31 @@ export function limiteConservacion(d: DatosAcceso, ahora: Date = new Date()): Da
   const desde = inicioSoloLectura(d, ahora);
   return desde ? masDias(desde, DIAS_CONSERVACION_DATOS) : null;
 }
+
+/** Desde cuantos dias antes del fin de la prueba sale el aviso en el panel. */
+export const DIAS_AVISO_PRUEBA = 3;
+
+export interface AvisoPrueba {
+  /** Dias que faltan, redondeados hacia arriba (1 = menos de 24 h). */
+  dias: number;
+  fin: Date;
+  /** Termina hoy (mismo dia del calendario local). */
+  hoy: boolean;
+}
+
+/**
+ * Si toca el aviso de "tu prueba termina pronto" en el panel, o `null`.
+ *
+ * Solo pruebas vigentes y en sus ultimos `DIAS_AVISO_PRUEBA` dias. Vencida no
+ * aplica: ahi la cuenta ya esta en solo lectura y manda ese aviso. Los correos
+ * siguen sus propias reglas (`trial-notices.ts`): este aviso complementa, para
+ * quien entra al sistema todos los dias.
+ */
+export function avisoPrueba(d: DatosAcceso, ahora: Date = new Date()): AvisoPrueba | null {
+  if (d.estado !== "trial") return null;
+  const fin = fecha(d.trial_end);
+  if (!fin || fin < ahora) return null;
+  const dias = Math.ceil((fin.getTime() - ahora.getTime()) / MS_POR_DIA);
+  if (dias > DIAS_AVISO_PRUEBA) return null;
+  return { dias, fin, hoy: fin.toDateString() === ahora.toDateString() };
+}

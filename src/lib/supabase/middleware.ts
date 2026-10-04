@@ -254,8 +254,14 @@ export async function updateSession(request: NextRequest) {
         }
       }
 
-      // Sin la migracion 096: bloqueo total como antes.
-      if (contexto && !isBillingRoute && !accesoPorEstado) {
+      // Sin la migracion 096 (o si el contexto no trae `acceso`): bloqueo total
+      // como antes, pero SOLO para quien puede pagar. Al cajero o al admin se
+      // les mandaba tambien a /billing, que no pueden abrir; el chequeo de rol
+      // los devolvia a su inicio, y de ahi otra vez a /billing: bucle infinito
+      // (ERR_TOO_MANY_REDIRECTS). Sin poder pagar, /billing no les sirve; se
+      // les deja pasar y los triggers de solo lectura (096) frenan escrituras.
+      const puedePagar = contexto?.permisos.includes("subscription.manage") ?? false;
+      if (contexto && !isBillingRoute && !accesoPorEstado && puedePagar) {
         const status = contexto.subscription_status;
 
         // Redirect to billing if expired or past_due
