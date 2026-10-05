@@ -25,7 +25,7 @@ import { sucursalDelPos } from "@/features/sucursales/seleccion";
 import { PosSucursalSelector } from "@/features/pos/components/pos-sucursal-selector";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { esFraccionable } from "@/lib/unidades";
+import { esFraccionable, unidadDeVenta } from "@/lib/unidades";
 import { cartLineKey } from "@/features/pos/stores/cart";
 import { CantidadDialog } from "@/features/pos/components/cantidad-dialog";
 import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
@@ -187,7 +187,8 @@ export default function POSPage() {
   // entraba 1 y no habia forma de cobrar 0.750 kg.
   const addResolved = useCallback(
     (product: Producto, variant: VarianteProducto | null, cantidad?: number) => {
-      if (cantidad === undefined && esFraccionable(product.unidad_medida)) {
+      // La unidad de la variante si tiene la suya (migracion 104).
+      if (cantidad === undefined && esFraccionable(unidadDeVenta(product, variant))) {
         setPidiendoCantidad({ product, variant });
         return;
       }
@@ -211,7 +212,7 @@ export default function POSPage() {
           product.id,
           variant?.id ?? null
         ),
-        unidad_medida: product.unidad_medida,
+        unidad_medida: unidadDeVenta(product, variant),
       });
     },
     [addItem, mapaLista]
@@ -306,7 +307,7 @@ export default function POSPage() {
         return { tipo: "error", mensaje: `${etiqueta}: sin stock` };
       }
       // Por medida (kg, l...) se pregunta la cantidad en su propia ventana.
-      if (esFraccionable(product.unidad_medida)) {
+      if (esFraccionable(unidadDeVenta(product, variant))) {
         addResolved(product, variant);
         return { tipo: "salir", mensaje: `Captura la cantidad de ${etiqueta}` };
       }
@@ -806,7 +807,11 @@ export default function POSPage() {
               (pidiendoCantidad.variant ? ` · ${variantLabel(pidiendoCantidad.variant)}` : "")
             : ""
         }
-        unidad={pidiendoCantidad?.product.unidad_medida ?? "KG"}
+        unidad={
+          pidiendoCantidad
+            ? unidadDeVenta(pidiendoCantidad.product, pidiendoCantidad.variant)
+            : "KG"
+        }
         precioUnitario={
           pidiendoCantidad ? precioDeLinea(pidiendoCantidad.product, pidiendoCantidad.variant) : 0
         }

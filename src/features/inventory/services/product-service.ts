@@ -101,6 +101,44 @@ export async function createProduct(
 }
 
 /**
+ * Crea el "producto general" de un producto con variantes: solo el nombre, su
+ * unidad (la que heredan las variantes que no elijan la suya, migracion 104) y
+ * su categoria. Precio, costo y stock en 0: lo que se vende son sus variantes,
+ * que se crean justo despues con este id. Sin codigo de barras (cada variante
+ * lleva el suyo); SKU automatico.
+ */
+export async function crearProductoConVariantes(
+  tenantId: string,
+  datos: {
+    nombre: string;
+    unidad_medida: Producto["unidad_medida"];
+    categoria: string | null;
+    /** Producto de servicio: sus variantes se venden sin descontar stock. */
+    es_servicio?: boolean;
+    /** Lotes y caducidad: se registran por producto en la pestaña Lotes. */
+    permite_lotes?: boolean;
+  }
+): Promise<string> {
+  const sku = await generateNextSku(tenantId).catch(() => null);
+  return createProduct(tenantId, {
+    nombre: datos.nombre,
+    descripcion: null,
+    codigo_barras: null,
+    sku,
+    unidad_medida: datos.unidad_medida,
+    precio_venta: 0,
+    costo_compra: 0,
+    stock_actual: 0,
+    stock_minimo: 0,
+    es_servicio: Boolean(datos.es_servicio),
+    categoria: datos.categoria,
+    permite_lotes: Boolean(datos.permite_lotes),
+    permite_variantes: true,
+    imagen_url: null,
+  });
+}
+
+/**
  * `Partial` a proposito: el dialogo manda el producto entero, la edicion
  * express de la tabla manda un solo campo. PostgREST acepta ambos.
  */

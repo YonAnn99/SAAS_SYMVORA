@@ -1,7 +1,7 @@
 "use client";
 
 import { useModulos } from "@/hooks/use-modulos";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -31,8 +31,10 @@ import { Button } from "@/components/ui/button";
 import { LotsSection, AdjustmentsSection } from "@/features/inventory";
 import { useVariants } from "@/features/inventory/hooks/use-variants";
 import { VariantDialog } from "@/features/inventory/components/variants/variant-dialog";
+import { CrearVariantesDialog } from "@/features/inventory/components/variants/crear-variantes-dialog";
 import type { VarianteProducto } from "@/features/inventory/types/inventory.types";
 import type { Producto } from "@/features/inventory";
+import { resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { ProductosArchivados } from "@/features/inventory/components/products/productos-archivados";
@@ -44,6 +46,28 @@ export default function ProductsPage() {
   const { can, loading: permsLoading } = usePermissions();
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Variantes: ya no tienen pestaña propia. Se despliegan bajo su producto en
+  // el catalogo (escritorio) o en una hoja (celular), y se crean desde
+  // "Agregar producto -> Producto variante". Al cambiarlas se refrescan los
+  // productos: el stock del padre puede cambiar.
+  //
+  // Van ANTES que `useProducts`: el estado de un producto con variantes (y por
+  // tanto los chips "Agotado / Stock bajo") sale de ellas. El refresco de
+  // productos llega por ref porque `useProducts` se declara despues.
+  const refetchProductosRef = useRef<() => Promise<void> | void>(() => {});
+  const avisarCambioVariantes = useCallback(() => void refetchProductosRef.current(), []);
+  const variantes = useVariants(tenantId, tenantLoading, avisarCambioVariantes);
+  const variantesPorProducto = useMemo(() => {
+    const mapa: Record<string, VarianteProducto[]> = {};
+    for (const v of variantes.variants) (mapa[v.producto_id] ??= []).push(v);
+    return mapa;
+  }, [variantes.variants]);
+  const estadoDe = useCallback(
+    (p: Producto) => resumenConVariantes(p, variantesPorProducto[p.id]).estado,
+    [variantesPorProducto]
+  );
+
   const {
     products,
     filteredProducts,
@@ -71,18 +95,10 @@ export default function ProductsPage() {
     sinMinimoCount,
     handleToggleFavorito,
     handleDelete,
-  } = useProducts(tenantId, tenantLoading);
-
-  // Variantes: ya no tienen pestaña propia. Se despliegan bajo su producto en
-  // el catalogo (escritorio) o en una hoja (celular), y se crean desde
-  // "Agregar producto -> Producto variante". Al cambiarlas se refrescan los
-  // productos: el stock del padre puede cambiar.
-  const variantes = useVariants(tenantId, tenantLoading, refetch);
-  const variantesPorProducto = useMemo(() => {
-    const mapa: Record<string, VarianteProducto[]> = {};
-    for (const v of variantes.variants) (mapa[v.producto_id] ??= []).push(v);
-    return mapa;
-  }, [variantes.variants]);
+  } = useProducts(tenantId, tenantLoading, estadoDe);
+  useEffect(() => {
+    refetchProductosRef.current = refetch;
+  }, [refetch]);
 
   // Por PERMISO EFECTIVO, no por rol. Esta página se quedó atrás cuando el
   // sidebar y el middleware pasaron a permisos (migración 055): conceder
@@ -402,6 +418,17 @@ export default function ProductsPage() {
         onToggleFavoritaVariante={variantes.toggleFavorita}
         onInlineSaveVariante={variantes.handleInlineSaveVariante}
         guardandoVariantes={variantes.guardandoVariantes}
+        onAgregarVariante={(p) =>
+          variantes.openCreateForProduct({
+            id: p.id,
+            nombre: p.nombre,
+            permite_variantes: p.permite_variantes,
+            permite_lotes: p.permite_lotes,
+            stock_minimo: p.stock_minimo,
+            unidad_medida: p.unidad_medida,
+            es_servicio: p.es_servicio,
+          })
+        }
       />
 
       {/* Los que tenian historial y se archivaron en vez de borrarse. */}
@@ -437,8 +464,18 @@ export default function ProductsPage() {
         )}
       </Tabs>
 
-      {/* Create/Edit Dialog */}
-      {/* Crear / editar variante (antes vivia en su pestaña). */}
+      {/* Crear variantes: producto general nuevo o agregar a uno existente. */}
+      <CrearVariantesDialog
+        open={variantes.showCrear}
+        onOpenChange={variantes.setShowCrear}
+        productoBase={variantes.productoBase}
+        products={variantes.products}
+        variantes={variantes.variants}
+        categorias={categories}
+        saving={variantes.saving}
+        onSaveMany={variantes.handleSaveMany}
+      />
+      {/* Editar una variante. */}
       <VariantDialog
         open={variantes.showDialog}
         onOpenChange={variantes.setShowDialog}
@@ -447,7 +484,6 @@ export default function ProductsPage() {
         variantes={variantes.variants}
         saving={variantes.saving}
         onSave={variantes.handleSave}
-        onSaveMany={variantes.handleSaveMany}
       />
 
       <ProductDialog

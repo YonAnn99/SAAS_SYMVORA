@@ -129,7 +129,7 @@ dice la frase, el texto en pantalla **no** la repite.
 | 7 | 1:45 | Se abre la app en su ventana, directo en el Dashboard; clic derecho al ícono de la barra de tareas → **Anclar** | *Ánclala a tu barra de tareas* | Listo: se abre directo en tu panel, en su propia ventana. <break time="0.3s" /> Ánclala a tu barra de tareas y la tienes a un clic. |
 | 8 | 2:05 | Celular Android con Chrome: ⋮ → **Instalar app** (o **Agregar a la pantalla principal**) | *En el celular, también* | En tu celular Android es igual: en Chrome, los tres puntos, <break time="0.3s" /> "Instalar app". |
 | 9 | 2:20 | — | **Errores comunes** | Dos detalles. <break time="0.3s" /> Instálala desde app punto symvora, no desde la página de inicio. <break time="0.3s" /> Y recuerda que necesita internet, igual que en el navegador. |
-| 10 | 2:40 | Pantalla final con el video 1 | *Prueba 14 días gratis* | Ya la tienes como app. <break time="0.3s" /> En el siguiente video, tus primeros pasos con Simvora. |
+| 10 | 2:40 | Pantalla final con el video 1 | *Prueba 14 días gratis* | Ya la tienes como app. <break time="0.3s" /> En el siguiente video, tus primeros pasos con Symvora. |
 
 **Capítulos**
 

@@ -29,6 +29,7 @@ export default function PurchasesPage() {
     setShowNewSupplierDialog,
     editingSupplier,
     openEditSupplier,
+    handleDeleteSupplier,
     handleCreatePurchase,
     handleUpdatePurchase,
     handleCreateSupplier,
@@ -103,6 +104,7 @@ export default function PurchasesPage() {
             suppliers={suppliers}
             onAdd={() => setShowNewSupplierDialog(true)}
             onEdit={openEditSupplier}
+            onDelete={handleDeleteSupplier}
           />
         </TabsContent>
       </Tabs>

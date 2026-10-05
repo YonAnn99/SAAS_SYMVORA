@@ -9,9 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/utils";
 import type { Producto, VarianteProducto } from "../../types/inventory.types";
 import { VariantSwipeList } from "../variants/variant-swipe-list";
+import { rangoDePrecio, resumenConVariantes } from "../../resumen-variantes";
 
 /**
  * Celular: las variantes de UN producto en la hoja que sube desde abajo (el
@@ -27,6 +30,8 @@ interface VariantesProductoHojaProps {
   onDelete: (variante: VarianteProducto) => Promise<boolean>;
   favoritas?: ReadonlySet<string>;
   onToggleFavorita?: (variante: VarianteProducto) => void;
+  /** "Agregar variante" (solo con permiso y el modulo encendido). */
+  onAgregar?: () => void;
 }
 
 export function VariantesProductoHoja({
@@ -37,14 +42,16 @@ export function VariantesProductoHoja({
   onDelete,
   favoritas,
   onToggleFavorita,
+  onAgregar,
 }: VariantesProductoHojaProps) {
   const t = useTranslations();
   const abierta = producto !== null;
+  const resumen = producto ? resumenConVariantes(producto, variantes) : null;
 
   return (
     <Dialog open={abierta} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-3">
-        {producto && (
+        {producto && resumen && (
           <>
             {/* El producto, anclado: queda fijo al desplazar las variantes. */}
             <DialogHeader className="sticky top-0 z-10 -mx-4 -mt-2 bg-popover px-4 pt-2 pb-3 border-b border-border">
@@ -65,8 +72,9 @@ export function VariantesProductoHoja({
                 <div className="min-w-0 flex-1">
                   <DialogTitle className="truncate text-base">{producto.nombre}</DialogTitle>
                   <DialogDescription className="mt-1 text-xs">
-                    {t(`products.units.${producto.unidad_medida}`)} · ${producto.precio_venta.toFixed(2)} ·{" "}
-                    {producto.stock_actual} en stock
+                    {/* Precio y stock del producto general: los de sus variantes. */}
+                    {t(`products.units.${producto.unidad_medida}`)} · {rangoDePrecio(resumen)} ·{" "}
+                    {resumen.stockTotal} en stock
                   </DialogDescription>
                 </div>
                 <span className="shrink-0 rounded-full bg-[#1e3a8a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
@@ -90,6 +98,12 @@ export function VariantesProductoHoja({
                 return ok;
               }}
             />
+            {onAgregar && (
+              <Button variant="outline" size="sm" className="h-9 w-full gap-1.5 text-xs" onClick={onAgregar}>
+                <Plus className="h-3.5 w-3.5" />
+                Agregar variante
+              </Button>
+            )}
           </>
         )}
       </DialogContent>

@@ -87,6 +87,41 @@ export function vendiblesEnLocal<
   );
 }
 
+/**
+ * Lo que el POS ofrece, contando las variantes: un producto con variantes puede
+ * ser solo un nombre ("Coca Cola", stock 0) y venderse por sus variantes. Entra
+ * si se vende en el local (`se_vende`, si viene) y tiene existencias propias,
+ * es servicio o ALGUNA variante tiene existencias. Sin variantes es la misma
+ * regla de `vendiblesEnLocal`.
+ */
+export function vendibleEnPos(
+  producto: { stock_actual: number; es_servicio?: boolean | null; se_vende?: boolean },
+  variantes: readonly { stock_actual: number }[] | undefined
+): boolean {
+  if (producto.se_vende === false) return false;
+  return (
+    Number(producto.stock_actual) > 0 ||
+    Boolean(producto.es_servicio) ||
+    (variantes ?? []).some((v) => Number(v.stock_actual) > 0)
+  );
+}
+
+/**
+ * Si el POS ofrece el PRODUCTO GENERAL (sin variante) como algo que se vende.
+ * Sin variantes, siempre (la regla de stock la aplica `vendibleEnPos`). Con
+ * variantes, el general solo encapsula ("Coca Cola" agrupa 600 ml, 2 L...): se
+ * ofrece unicamente si tiene stock propio Y precio, el caso heredado de ropa con
+ * stock sin clasificar. El que crea "Producto con variantes" (precio y stock 0)
+ * nunca.
+ */
+export function seVendeComoGeneral(
+  producto: { stock_actual: number; precio_venta: number },
+  variantes: readonly unknown[] | undefined
+): boolean {
+  if (!variantes || variantes.length === 0) return true;
+  return Number(producto.stock_actual) > 0 && Number(producto.precio_venta) > 0;
+}
+
 export type DestinoEdicionStock =
   /** Un solo local: el camino de siempre, sin preguntar nada. */
   | { tipo: "negocio" }

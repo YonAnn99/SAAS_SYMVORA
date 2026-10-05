@@ -29,6 +29,12 @@ export interface ProductOption {
 export interface ProductoOption extends ProductOption {
   permite_variantes: boolean;
   permite_lotes: boolean;
+  /** Con el que arranca una variante nueva (migracion 103). */
+  stock_minimo?: number | null;
+  /** La unidad que hereda la variante si no elige la suya (migracion 104). */
+  unidad_medida?: UnidadMedida;
+  /** Servicio: sus variantes no llevan stock. */
+  es_servicio?: boolean;
 }
 
 export interface VarianteOption {

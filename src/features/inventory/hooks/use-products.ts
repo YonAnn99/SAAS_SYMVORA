@@ -19,6 +19,7 @@ import {
   applyProductFilters,
   countActiveFilters,
   countByStatus,
+  type StockStatus,
   sinMinimoDefinido,
   type ProductFilters,
 } from "@/features/inventory/stock-status";
@@ -43,7 +44,12 @@ import {
   fetchStockSucursal,
 } from "@/features/sucursales/services/stock-sucursal-service";
 
-export function useProducts(tenantId: string | null, tenantLoading: boolean) {
+export function useProducts(
+  tenantId: string | null,
+  tenantLoading: boolean,
+  /** Estado por producto (ver `resumenConVariantes`); por defecto `stockStatus`. */
+  estadoDe?: (p: Producto) => StockStatus
+) {
   const [products, setProducts] = useState<Producto[]>([]);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
@@ -387,14 +393,14 @@ export function useProducts(tenantId: string | null, tenantLoading: boolean) {
   );
 
   const filteredProducts = useMemo(
-    () => applyProductFilters(searchedProducts, filters, favoritos),
-    [searchedProducts, filters, favoritos]
+    () => applyProductFilters(searchedProducts, filters, favoritos, estadoDe),
+    [searchedProducts, filters, favoritos, estadoDe]
   );
 
   // Los conteos de los chips salen del catálogo COMPLETO, no de lo ya
   // filtrado: si salieran de lo filtrado, marcar "stock bajo" pondría los
   // otros dos chips en cero y no se podría volver atrás con criterio.
-  const stockCounts = useMemo(() => countByStatus(products), [products]);
+  const stockCounts = useMemo(() => countByStatus(products, estadoDe), [products, estadoDe]);
 
   // Mismo criterio que `stockCounts`: sobre el catalogo completo.
   const sinMinimoCount = useMemo(

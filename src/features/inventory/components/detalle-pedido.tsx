@@ -46,7 +46,7 @@ export function DatoDetalle({
 
 export interface RenglonTabla {
   producto: { nombre: string; unidad_medida: string | null } | null;
-  variante: { talla: string | null; color: string | null } | null;
+  variante: { talla: string | null; color: string | null; unidad_medida?: string | null } | null;
   cantidad: number;
   /** Solo en ordenes: lo que ya llego. Sin el, no se pinta la columna. */
   recibido?: number;
@@ -75,7 +75,8 @@ export function TablaRenglones({ renglones }: { renglones: RenglonTabla[] }) {
         </thead>
         <tbody>
           {renglones.map((r, i) => {
-            const unidad = r.producto?.unidad_medida;
+            // La de la variante si tiene la suya (migracion 104).
+            const unidad = r.variante?.unidad_medida ?? r.producto?.unidad_medida;
             const completo =
               r.recibido !== undefined && r.recibido >= r.cantidad;
             return (

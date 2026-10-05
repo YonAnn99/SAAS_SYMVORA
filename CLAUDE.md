@@ -82,6 +82,21 @@
   - Atributos libres en `variantes_producto.atributos` jsonb (migración 097). `talla`/`color` se siguen
     llenando como resumen compatible.
   - Se gestionan dentro del Catálogo; `/variants` redirige. Cada variante puede tener foto propia.
+  - Descripción y stock mínimo propios (migración 103); el estado de stock de la variante usa su mínimo.
+  - Unidad de medida propia opcional (migración 104; NULL = la del producto). Resolver siempre con
+    `unidadDeVenta(producto, variante)` de `lib/unidades.ts`: el POS decide con ella si pide cantidad (granel).
+  - "Producto con variantes" se crea en `crear-variantes-dialog.tsx`: producto general
+    (precio/stock 0, `crearProductoConVariantes`) + una tarjeta desplegable por variante con todos sus datos
+    (lógica pura en `features/inventory/tarjetas-variante.ts`). La misma ventana agrega variantes a un producto
+    existente ("+ Agregar variante" en la tabla y en la hoja del celular). `variant-dialog.tsx` solo edita.
+    Afuera solo va el nombre general; la unidad y la categoría (compartida, es del producto) van en las tarjetas,
+    y la unidad del producto es la de la Variante 1. Cada tarjeta tiene secciones desplegables (Datos · Precio y
+    costo · Inventario · Códigos · Imagen) como "Producto único"; "Es servicio" y "Maneja lotes" van en Inventario
+    y son del producto (compartidos, sin migración).
+  - En el POS el producto general nunca se vende solo (`seVendeComoGeneral` en `features/sucursales/stock.ts`):
+    en Agrupado abre sus variantes; en Desglosado sale como encabezado sobre sus tarjetas de variante. La fila del padre muestra el resumen de
+    sus variantes (`resumenConVariantes`: rango de precio, stock total, estado) y el POS lo ofrece si alguna
+    variante tiene stock (`vendibleEnPos`).
 - **Caja / Finanzas:**
   - Apertura y cierre con saldo esperado contra real. Cierre automático de madrugada (cron
     `auto-close-registers`).
@@ -154,9 +169,9 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (888 tests al 2026-10-04) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (912 tests al 2026-10-04) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 102) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 104) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

@@ -140,6 +140,17 @@ export async function createSupplier(
   if (error) throw error;
 }
 
+/**
+ * Sus productos se quedan (`productos.proveedor_id` es ON DELETE SET NULL).
+ * Si tiene compras u ordenes, la base lo rechaza (FK NO ACTION, error 23503):
+ * su historial no se toca.
+ */
+export async function deleteSupplier(supplierId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.from("proveedores").delete().eq("id", supplierId);
+  if (error) throw error;
+}
+
 export async function updateSupplier(
   supplierId: string,
   input: SupplierInput
@@ -229,7 +240,7 @@ export interface RenglonDetalle {
   costo_unitario: number;
   subtotal: number;
   producto: { nombre: string; unidad_medida: string | null } | null;
-  variante: { talla: string | null; color: string | null } | null;
+  variante: { talla: string | null; color: string | null; unidad_medida?: string | null } | null;
 }
 
 export interface CompraDetalle {
@@ -268,7 +279,7 @@ export async function fetchPurchaseDetail(
       renglones:detalle_compras(
         cantidad, costo_unitario, subtotal,
         producto:productos!producto_id(nombre, unidad_medida),
-        variante:variantes_producto!variante_id(talla, color)
+        variante:variantes_producto!variante_id(talla, color, unidad_medida)
       )
     `)
     .eq("id", compraId)

@@ -24,6 +24,11 @@ import { ChevronRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Producto } from "../../types/inventory.types";
 import { FavoriteButton, StockBadge } from "./product-badges";
+import {
+  rangoDePrecio,
+  resumenConVariantes,
+  type VarianteResumible,
+} from "@/features/inventory/resumen-variantes";
 
 interface ProductSwipeListProps {
   productos: Producto[];
@@ -41,6 +46,8 @@ interface ProductSwipeListProps {
   conteoVariantes?: Record<string, number>;
   /** Tocar un producto con variantes abre su hoja de variantes. */
   onVerVariantes?: (product: Producto) => void;
+  /** Para resumir precio, stock y estado de un producto con variantes. */
+  variantesPorProducto?: Record<string, VarianteResumible[]>;
 }
 
 export function ProductSwipeList({
@@ -56,6 +63,7 @@ export function ProductSwipeList({
   onDelete,
   conteoVariantes = {},
   onVerVariantes,
+  variantesPorProducto,
 }: ProductSwipeListProps) {
   const t = useTranslations();
   const { verPista, alAbrir } = usePistaDeslizar();
@@ -81,6 +89,10 @@ export function ProductSwipeList({
 
       {productos.map((product) => {
         const nVariantes = conteoVariantes[product.id] ?? 0;
+        // Producto con variantes: precio, stock y estado salen de ellas.
+        const variantesDe = variantesPorProducto?.[product.id];
+        const resumen =
+          variantesDe && variantesDe.length > 0 ? resumenConVariantes(product, variantesDe) : null;
         return (
           <FilaDeslizable
             key={product.id}
@@ -122,18 +134,23 @@ export function ProductSwipeList({
                   {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
                 </span>
               )}
+              {product.descripcion?.trim() && (
+                <p className="truncate text-xs text-muted-foreground">{product.descripcion}</p>
+              )}
               <p className="truncate text-xs opacity-60">
                 {t(`products.units.${product.unidad_medida}`)}
                 {" · "}
-                {product.es_servicio ? "Servicio" : `${product.stock_actual} en stock`}
+                {product.es_servicio
+                  ? "Servicio"
+                  : `${resumen ? resumen.stockTotal : product.stock_actual} en stock`}
               </p>
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-1">
               <span className="font-mono text-sm tabular-nums">
-                ${product.precio_venta.toFixed(2)}
+                {resumen ? rangoDePrecio(resumen) : `$${product.precio_venta.toFixed(2)}`}
               </span>
-              <StockBadge product={product} />
+              <StockBadge product={product} estado={resumen?.estado} />
             </div>
 
             <span onPointerDown={noArrastrar} className="-mr-2 flex shrink-0 items-center">

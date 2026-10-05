@@ -4,7 +4,7 @@ import { Fragment, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
-import { ChevronRight, Package, Pencil } from "lucide-react";
+import { ChevronRight, Layers, Package, Pencil, Plus } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ import {
 } from "@/features/inventory/inline-edit";
 import { EditableSelectCell, EditableTextCell } from "./editable-cell";
 import { FavoriteButton, StockBadge } from "./product-badges";
+import { rangoDePrecio, resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import { ProductSwipeList } from "./product-swipe-list";
 
 interface ProductsTableProps {
@@ -84,6 +85,8 @@ interface ProductsTableProps {
   ) => void | Promise<void>;
   /** Ids de variantes con un guardado en vuelo. */
   guardandoVariantes?: ReadonlySet<string>;
+  /** Abre la ventana para crear variantes de este producto. */
+  onAgregarVariante?: (product: Producto) => void;
 }
 
 export function ProductsTable({
@@ -109,6 +112,7 @@ export function ProductsTable({
   onToggleFavoritaVariante,
   onInlineSaveVariante,
   guardandoVariantes = new Set<string>(),
+  onAgregarVariante,
 }: ProductsTableProps) {
   const t = useTranslations();
   const { modulos } = useModulos();
@@ -124,6 +128,13 @@ export function ProductsTable({
   // Celular: el producto cuya hoja de variantes esta abierta.
   const [hojaDe, setHojaDe] = useState<string | null>(null);
   const productoHoja = hojaDe ? products.find((p) => p.id === hojaDe) ?? null : null;
+  // "+ Agregar variante": con permiso y el modulo de variantes encendido. Un
+  // servicio solo si ya es "producto con variantes" (Corte chico / grande).
+  const puedeAgregarVariante = (p: Producto) =>
+    canEdit &&
+    Boolean(onAgregarVariante) &&
+    modulos.permite_variantes &&
+    (!p.es_servicio || p.permite_variantes);
   // Misma celda editable que los productos, para precio y stock de variante.
   const celdaVariante = (v: VarianteProducto, campo: "precio_venta" | "stock_actual") => ({
     canEdit: canEdit && Boolean(onInlineSaveVariante),
@@ -212,6 +223,7 @@ export function ProductsTable({
               onEdit={onEdit}
               onDelete={onDelete}
               conteoVariantes={conteoVariantes}
+              variantesPorProducto={variantesPorProducto}
               onVerVariantes={(p) => setHojaDe(p.id)}
             />
             <VariantesProductoHoja
@@ -220,6 +232,14 @@ export function ProductsTable({
               onOpenChange={(abierta) => !abierta && setHojaDe(null)}
               onEdit={(v) => onEditVariante?.(v)}
               onDelete={async (v) => (onDeleteVariante ? onDeleteVariante(v) : false)}
+              onAgregar={
+                productoHoja && puedeAgregarVariante(productoHoja)
+                  ? () => {
+                      setHojaDe(null);
+                      onAgregarVariante?.(productoHoja);
+                    }
+                  : undefined
+              }
               favoritas={variantesFavoritas}
               onToggleFavorita={onToggleFavoritaVariante}
             />
@@ -238,6 +258,9 @@ export function ProductsTable({
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
                     {t("products.name")}
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">
+                    {t("products.description")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
                     {t("products.barcode")}
@@ -275,6 +298,10 @@ export function ProductsTable({
                   });
 
                   const variantes = variantesPorProducto[product.id] ?? [];
+                  // Con variantes, la fila es el "producto general": precio,
+                  // stock y estado salen de sus variantes (ver resumen).
+                  const resumen =
+                    variantes.length > 0 ? resumenConVariantes(product, variantes) : null;
                   const abierto = abiertos.has(product.id);
                   const idPanel = `variantes-${product.id}`;
 
@@ -339,6 +366,17 @@ export function ProductsTable({
                         )}
                       </div>
                     </TableCell>
+                    {/* Descripcion: solo lectura (se cambia en Editar). Una
+                        linea; el texto completo sale al pasar el cursor. */}
+                    <TableCell className="max-w-[220px] text-sm text-muted-foreground">
+                      {product.descripcion?.trim() ? (
+                        <span className="block truncate" title={product.descripcion}>
+                          {product.descripcion}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
                     {/* Codigo de barras NO es editable desde aqui: identifica
                         al producto y un clic accidental lo dejaria sin
                         escanear. Se cambia desde el boton Editar. */}
@@ -363,19 +401,29 @@ export function ProductsTable({
                       </EditableSelectCell>
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      <EditableTextCell
-                        {...celda("precio_venta")}
-                        numerico
-                        className="text-right font-mono tabular-nums"
-                      >
-                        ${product.precio_venta.toFixed(2)}
-                      </EditableTextCell>
+                      {resumen ? (
+                        // El rango de sus variantes. No se edita aqui: el
+                        // precio del padre no se cobra (se elige variante).
+                        <span className="whitespace-nowrap tabular-nums">{rangoDePrecio(resumen)}</span>
+                      ) : (
+                        <EditableTextCell
+                          {...celda("precio_venta")}
+                          numerico
+                          className="text-right font-mono tabular-nums"
+                        >
+                          ${product.precio_venta.toFixed(2)}
+                        </EditableTextCell>
+                      )}
                     </TableCell>
                     {/* Margen y Estado no se editan porque NO SON COLUMNAS: se
                         calculan a partir del precio, el costo y el stock
                         minimo, y se recalculan solos al editar los de al lado. */}
                     <TableCell className="text-right text-sm font-mono">
-                      <ProductMarginCell product={product} />
+                      {resumen ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <ProductMarginCell product={product} />
+                      )}
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
                       {/* Un servicio no tiene existencias, así que no se muestra
@@ -383,6 +431,12 @@ export function ProductsTable({
                           nada, porque la venta ya no le descuenta stock. */}
                       {product.es_servicio ? (
                         <span className="text-muted-foreground">—</span>
+                      ) : resumen ? (
+                        // Total: el propio (si tiene) + sus variantes. Se
+                        // edita en cada variante.
+                        <span className="tabular-nums" title="Suma de sus variantes">
+                          {resumen.stockTotal}
+                        </span>
                       ) : (
                         <EditableTextCell
                           {...celda("stock_actual")}
@@ -394,7 +448,7 @@ export function ProductsTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      <StockBadge product={product} />
+                      <StockBadge product={product} estado={resumen?.estado} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -403,6 +457,21 @@ export function ProductsTable({
                           onToggle={() => onToggleFavorito(product)}
                           nombre={product.nombre}
                         />
+                        {/* Sin variantes todavia: convertirlo en producto con
+                            variantes. Con variantes, la fila "+ Agregar
+                            variante" va al final de las desplegadas. */}
+                        {variantes.length === 0 && puedeAgregarVariante(product) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={() => onAgregarVariante?.(product)}
+                            title="Agregar variantes"
+                            aria-label={`Agregar variantes a ${product.nombre}`}
+                          >
+                            <Layers className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -455,12 +524,25 @@ export function ProductsTable({
                           <AtributosVariante variant={v} vacio="Sin atributos" />
                         </div>
                       </CeldaPlegable>
+                      <CeldaPlegable abierta={abierto} className="max-w-[220px] text-[13px] text-muted-foreground">
+                        {v.descripcion?.trim() ? (
+                          <span className="block truncate" title={v.descripcion}>
+                            {v.descripcion}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/50">—</span>
+                        )}
+                      </CeldaPlegable>
                       <CeldaPlegable abierta={abierto} className="text-[13px] font-mono text-muted-foreground">
                         {v.codigo_barras || "-"}
                       </CeldaPlegable>
-                      {/* La unidad es del producto: se ve, pero se cambia en su fila. */}
-                      <CeldaPlegable abierta={abierto} className="text-[13px] text-muted-foreground">
-                        {t(`products.units.${product.unidad_medida}`)}
+                      {/* La suya si la tiene (migracion 104); si no, la del
+                          producto, en gris. Se cambia en "Editar" de la variante. */}
+                      <CeldaPlegable
+                        abierta={abierto}
+                        className={`text-[13px] ${v.unidad_medida ? "" : "text-muted-foreground"}`}
+                      >
+                        {t(`products.units.${v.unidad_medida ?? product.unidad_medida}`)}
                       </CeldaPlegable>
                       <CeldaPlegable abierta={abierto} className="text-right text-[13px] font-mono">
                         <EditableTextCell
@@ -487,7 +569,8 @@ export function ProductsTable({
                       </CeldaPlegable>
                       <CeldaPlegable abierta={abierto}>
                         <StockBadge
-                          product={{ stock_actual: v.stock_actual, stock_minimo: product.stock_minimo }}
+                          // Su propio minimo (migracion 103), no el del producto.
+                          product={{ stock_actual: v.stock_actual, stock_minimo: v.stock_minimo ?? 0 }}
                         />
                       </CeldaPlegable>
                       <CeldaPlegable abierta={abierto} className="text-right">
@@ -517,6 +600,28 @@ export function ProductsTable({
                       </CeldaPlegable>
                     </TableRow>
                   ))}
+                  {variantes.length > 0 && puedeAgregarVariante(product) && (
+                    <TableRow
+                      inert={!abierto || undefined}
+                      aria-hidden={!abierto || undefined}
+                      className={abierto ? "bg-muted/20 hover:bg-muted/20" : "border-0 hover:bg-transparent"}
+                    >
+                      <CeldaPlegable abierta={abierto} className="w-8" />
+                      <CeldaPlegable abierta={abierto} colSpan={9}>
+                        <div className="pl-[54px]">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1 text-xs text-[#1e3a8a] hover:text-[#1e3a8a] dark:text-blue-400 dark:hover:text-blue-300"
+                            onClick={() => onAgregarVariante?.(product)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Agregar variante
+                          </Button>
+                        </div>
+                      </CeldaPlegable>
+                    </TableRow>
+                  )}
                   </Fragment>
                   );
                 })}
@@ -545,14 +650,16 @@ export function ProductsTable({
 function CeldaPlegable({
   abierta,
   className,
+  colSpan,
   children,
 }: {
   abierta: boolean;
   className?: string;
+  colSpan?: number;
   children?: ReactNode;
 }) {
   return (
-    <TableCell className="p-0 align-middle">
+    <TableCell className="p-0 align-middle" colSpan={colSpan}>
       <div
         style={{
           display: "grid",

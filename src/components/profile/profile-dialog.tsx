@@ -10,6 +10,7 @@ import { useTenantContext } from "@/contexts/tenant-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { convertToWebP } from "@/lib/image";
 import { nombreCompleto } from "@/lib/nombre-usuario";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,8 @@ const roleBadges: Record<string, { label: string; className: string }> = {
   },
 };
 
+const MAX_NOMBRE_NEGOCIO = 100;
+
 interface ProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,6 +74,13 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const [savingPassword, setSavingPassword] = useState(false);
 
   const [logoUploading, setLogoUploading] = useState(false);
+
+  // Nombre del negocio (solo el dueño lo cambia desde aqui). `null` = sin
+  // editar: se muestra el del contexto, asi siempre arranca con el vigente.
+  const esDueno = role === "SUPER_ADMIN";
+  const [nombreNegocio, setNombreNegocio] = useState<string | null>(null);
+  const valorNegocio = nombreNegocio ?? tenantName;
+  const [savingNegocio, setSavingNegocio] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("account");
 
   useEffect(() => {
@@ -340,8 +350,74 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   );
 
   // Renderizador del contenido de gestión de logo
+  const handleUpdateNegocio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const nombre = valorNegocio.trim();
+    if (!nombre) {
+      toast.error("El nombre del negocio no puede estar vacío");
+      return;
+    }
+    if (nombre.length > MAX_NOMBRE_NEGOCIO) {
+      toast.error(`El nombre del negocio admite hasta ${MAX_NOMBRE_NEGOCIO} caracteres`);
+      return;
+    }
+    if (!tenantId) return;
+    setSavingNegocio(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase
+        .from("tenants")
+        .update({ nombre_comercial: nombre })
+        .eq("id", tenantId);
+      if (error) throw error;
+      void logActivity({
+        action: "UPDATE",
+        entity: "config",
+        entityId: tenantId,
+        entityName: nombre,
+        details: { nombre_comercial: nombre },
+      });
+      // El menu lateral, el dock y el resumen leen el nombre del contexto.
+      await refetchTenant();
+      setNombreNegocio(null);
+      toast.success("Nombre del negocio actualizado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al actualizar el nombre del negocio");
+    } finally {
+      setSavingNegocio(false);
+    }
+  };
+
   const renderLogoContent = () => (
     <div className="space-y-3 pt-1">
+      {esDueno && (
+        <>
+          <form onSubmit={handleUpdateNegocio} className="space-y-2">
+            <Label htmlFor="perfil-negocio" className="text-xs font-medium">Nombre del negocio</Label>
+            <div className="flex gap-2">
+              <Input
+                id="perfil-negocio"
+                type="text"
+                placeholder="Nombre de tu negocio"
+                value={valorNegocio}
+                onChange={(e) => setNombreNegocio(e.target.value)}
+                maxLength={MAX_NOMBRE_NEGOCIO}
+                className="h-8 text-sm"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                disabled={savingNegocio || valorNegocio.trim() === tenantName}
+                className="h-8 px-3 text-xs shrink-0 cursor-pointer"
+              >
+                {savingNegocio ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </form>
+          <Separator className="my-2" />
+        </>
+      )}
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">
           Sube o actualiza el logotipo oficial de tu negocio. Se reflejará automáticamente en tickets de venta, punto de venta y encabezado.
@@ -366,7 +442,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(abierto) => {
+        // Al cerrar se descarta lo que no se guardo.
+        if (!abierto) setNombreNegocio(null);
+        onOpenChange(abierto);
+      }}
+    >
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
@@ -425,7 +508,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
               </TabsTrigger>
               <TabsTrigger value="logo" className="text-xs flex items-center gap-1.5 cursor-pointer">
                 <ImageIcon className="h-3.5 w-3.5" />
-                Logo del Negocio
+                Negocio
               </TabsTrigger>
             </TabsList>
 

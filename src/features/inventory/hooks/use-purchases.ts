@@ -15,6 +15,7 @@ import {
   createPurchase,
   createSupplier,
   deletePurchase,
+  deleteSupplier,
   fetchPurchases,
   fetchSuppliers,
   type PurchaseInput,
@@ -23,6 +24,8 @@ import {
   updatePurchaseStatus,
   updateSupplier,
 } from "../services/purchase-service";
+import { esErrorDeHistorial } from "../services/product-service";
+import { mensajeDeError } from "@/features/inventory/error-message";
 // El selector de productos de la compra directa es el MISMO que el de las
 // ordenes, asi que se reusan sus consultas en vez de duplicarlas.
 import {
@@ -216,6 +219,32 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     [refetch]
   );
 
+  /** `false` si no se pudo: la fila deslizable del celular reaparece. */
+  const handleDeleteSupplier = useCallback(
+    async (supplier: Proveedor): Promise<boolean> => {
+      try {
+        await deleteSupplier(supplier.id);
+        await logActivity({
+          action: "DELETE",
+          entity: "proveedor",
+          entityId: supplier.id,
+          entityName: supplier.nombre,
+        });
+        toast.success("Proveedor eliminado");
+        void refetch();
+        return true;
+      } catch (error) {
+        toast.error(
+          esErrorDeHistorial(error)
+            ? `«${supplier.nombre}» tiene compras u órdenes registradas: no se puede eliminar para conservar tu historial.`
+            : mensajeDeError(error)
+        );
+        return false;
+      }
+    },
+    [refetch]
+  );
+
   const handleUpdatePurchaseStatus = useCallback(
     async (
       purchaseId: string,
@@ -334,6 +363,7 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     handleUpdatePurchase,
     handleCreateSupplier,
     handleUpdateSupplier,
+    handleDeleteSupplier,
     handleUpdatePurchaseStatus,
     handleDeletePurchase,
     handleCancelPurchase,

@@ -4,6 +4,7 @@ import type {
   VarianteProducto,
 } from "../types/inventory.types";
 import type { Atributo } from "../atributos-variante";
+import type { UnidadMedida } from "@/lib/unidades";
 
 export interface VarianteInput {
   producto_id: string;
@@ -14,6 +15,11 @@ export interface VarianteInput {
   precio_venta: number;
   costo_compra: number;
   stock_actual: number;
+  /** Migracion 103: descripcion y stock minimo propios de la variante. */
+  descripcion?: string | null;
+  stock_minimo?: number;
+  /** Migracion 104: unidad propia; `null` = la del producto. */
+  unidad_medida?: UnidadMedida | null;
   /**
    * Migracion 097. `talla`/`color` se mandan igual, como resumen compatible
    * (`resumenCompatible`), para todo lo que ya lee esas columnas.
@@ -52,13 +58,13 @@ export async function fetchVariantProducts(
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
     .from("productos")
-    .select("id, nombre, permite_variantes, permite_lotes")
+    .select("id, nombre, permite_variantes, permite_lotes, stock_minimo, unidad_medida, es_servicio")
     .eq("tenant_id", tenantId)
     .is("archivado_en", null)
-    // Todos los productos fisicos, no solo los que ya tienen variantes: si no,
+    // Todos los productos, no solo los que ya tienen variantes: si no,
     // la PRIMERA variante de un producto nunca se podia crear (el selector
-    // salia vacio). Mismo arreglo que `fetchLotProducts`.
-    .eq("es_servicio", false)
+    // salia vacio). Mismo arreglo que `fetchLotProducts`. Los servicios
+    // tambien: un servicio puede tener variantes (Corte chico / grande).
     .order("nombre");
   return data ?? [];
 }

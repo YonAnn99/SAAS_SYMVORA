@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import type { Proveedor } from "../../types/inventory.types";
 import { SupplierSwipeList } from "./supplier-swipe-list";
 
@@ -25,9 +26,11 @@ interface SuppliersTableProps {
   suppliers: Proveedor[];
   onAdd: () => void;
   onEdit: (supplier: Proveedor) => void;
+  /** `false` si no se pudo eliminar (p. ej. tiene compras u ordenes). */
+  onDelete: (supplier: Proveedor) => Promise<boolean>;
 }
 
-export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps) {
+export function SuppliersTable({ suppliers, onAdd, onEdit, onDelete }: SuppliersTableProps) {
   const t = useTranslations();
 
   return (
@@ -53,7 +56,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
           <>
           {/* Celular: una pastilla por proveedor; deslizar (o tocar) edita. */}
           <div className="md:hidden">
-            <SupplierSwipeList proveedores={suppliers} onEdit={onEdit} />
+            <SupplierSwipeList proveedores={suppliers} onEdit={onEdit} onDelete={onDelete} />
           </div>
           <div className="hidden overflow-x-auto md:block">
             <Table>
@@ -97,6 +100,13 @@ export function SuppliersTable({ suppliers, onAdd, onEdit }: SuppliersTableProps
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
+                      <BotonEliminar
+                        nombre={supplier.nombre}
+                        detalle="Sus productos se quedan, sin proveedor asignado"
+                        onEliminar={async () => {
+                          await onDelete(supplier);
+                        }}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

@@ -869,6 +869,9 @@ export type Database = {
           atributos?: { tipo: string; valor: string }[];
           creado_en: string;
           actualizado_en: string;
+          descripcion: string | null;
+          stock_minimo: number;
+          unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
         };
         Insert: {
           id?: string;
@@ -885,6 +888,9 @@ export type Database = {
           atributos?: { tipo: string; valor: string }[];
           creado_en?: string;
           actualizado_en?: string;
+          descripcion?: string | null;
+          stock_minimo?: number;
+          unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
         };
         Update: {
           id?: string;
@@ -901,6 +907,9 @@ export type Database = {
           atributos?: { tipo: string; valor: string }[];
           creado_en?: string;
           actualizado_en?: string;
+          descripcion?: string | null;
+          stock_minimo?: number;
+          unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
         };
       };
       stock_variantes: {

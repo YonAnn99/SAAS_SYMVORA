@@ -107,4 +107,8 @@ export interface VarianteProducto {
   codigo_barras?: string | null;
   /** Foto propia de la variante; sin ella se usa la del producto. */
   imagen_url?: string | null;
+  /** Unidad propia (migracion 104); sin ella, la del producto (`unidadDeVenta`). */
+  unidad_medida?: UnidadMedida | null;
+  /** Su minimo (migracion 103): para el estado del producto general en la tarjeta. */
+  stock_minimo?: number | null;
 }

@@ -30,7 +30,7 @@ export const TIPOS_ATRIBUTO: { tipo: string; sugerencias: string[] }[] = [
   { tipo: "Peso", sugerencias: ["100 g", "250 g", "500 g", "1 kg"] },
   { tipo: "Sabor", sugerencias: ["Natural", "Fresa", "Chocolate", "Vainilla", "Limón"] },
   { tipo: "Presentación", sugerencias: ["Pieza", "Paquete", "Caja", "Botella", "Lata"] },
-  { tipo: "Capacidad", sugerencias: ["250 ml", "500 ml", "600 ml", "1 L", "2 L"] },
+  { tipo: "Capacidad", sugerencias: ["250 ml", "500 ml", "600 ml", "1 L", "2 L", "2.5 L", "3 L"] },
   { tipo: "Medida", sugerencias: ['1/4"', '1/2"', '3/4"', '1"', "1 m", "2 m"] },
   { tipo: "Material", sugerencias: ["Algodón", "Piel", "Plástico", "Metal", "Madera"] },
   { tipo: "Voltaje", sugerencias: ["127 V", "220 V"] },

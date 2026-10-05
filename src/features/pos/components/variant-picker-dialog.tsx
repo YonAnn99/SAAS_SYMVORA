@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Producto } from "@/lib/types/database";
 import type { VarianteProducto } from "@/features/pos/types/pos.types";
+import { seVendeComoGeneral } from "@/features/sucursales/stock";
 
 interface VariantPickerDialogProps {
   product: Producto | null;
@@ -72,7 +73,9 @@ export function VariantPickerDialog({
         <div className="space-y-2">
           {variants.map((v) => {
             const stock = Number(v.stock_actual);
-            const agotado = stock <= 0;
+            // Variante de un servicio: no lleva stock.
+            const servicio = Boolean(product.es_servicio);
+            const agotado = !servicio && stock <= 0;
             return (
               <button
                 key={v.id}
@@ -104,7 +107,7 @@ export function VariantPickerDialog({
                   <span
                     className={`block text-xs ${agotado ? "text-red-500" : "text-muted-foreground"}`}
                   >
-                    {agotado ? "Agotado" : `${stock} disponibles`}
+                    {servicio ? "Servicio" : agotado ? "Agotado" : `${stock} disponibles`}
                   </span>
                 </span>
               </button>
@@ -112,8 +115,9 @@ export function VariantPickerDialog({
           })}
 
           {/* Venta "general": del stock sin clasificar. Se oculta si no queda,
-              para no ofrecer algo que el servidor va a rechazar. */}
-          {sinClasificar > 0 && (
+              para no ofrecer algo que el servidor va a rechazar, y en un
+              producto general que solo agrupa variantes (precio 0). */}
+          {sinClasificar > 0 && seVendeComoGeneral(product, variants) && (
             <button
               type="button"
               onClick={() => onSelect(null)}

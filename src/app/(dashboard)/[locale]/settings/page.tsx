@@ -120,6 +120,8 @@ export default function SettingsPage() {
       toast.error("Error al guardar: " + error.message);
     } else {
       toast.success("Cambios guardados");
+      // El menu lateral y el dock leen el nombre del contexto del negocio.
+      void refetchTenantContext();
     }
     setSaving(false);
   };

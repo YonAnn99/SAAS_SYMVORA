@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn, getInitials } from "@/lib/utils";
 import { stockStatus } from "@/features/inventory/stock-status";
+import { precioDeVariante, resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import type { Producto, VarianteProducto } from "../types/pos.types";
 import { variantLabel, variantPrice } from "./variant-picker-dialog";
 import type { PosViewMode } from "./pos-search-bar";
 import { variantesVisiblesEnFavoritos } from "../favoritos-pos";
+import { seVendeComoGeneral } from "@/features/sucursales/stock";
 
 /**
  * Las columnas se calculan sobre el ancho REAL del contenedor (`@container`),
@@ -62,6 +64,14 @@ type PosGridItem =
       kind: "product-general";
       key: string;
       product: Producto;
+      familyColor: ReturnType<typeof getProductFamilyColor>;
+    }
+  | {
+      /** Desglosado: el nombre del producto general sobre sus variantes. No se vende. */
+      kind: "family-header";
+      key: string;
+      product: Producto;
+      count: number;
       familyColor: ReturnType<typeof getProductFamilyColor>;
     };
 
@@ -130,7 +140,14 @@ export function ProductGrid({
         });
       } else {
         const familyColor = getProductFamilyColor(product.id);
-        // Cada variante individual
+        // Encabezado de la familia ("Coca Cola") y debajo cada variante.
+        items.push({
+          kind: "family-header" as const,
+          key: `fam-${product.id}`,
+          product,
+          count: variants.length,
+          familyColor,
+        });
         for (const variant of variants) {
           items.push({
             kind: "variant" as const,
@@ -141,8 +158,13 @@ export function ProductGrid({
           });
         }
         // Si el producto base tiene stock sin clasificar disponible (no en
-        // Favoritos por variante: ahi solo van las variantes marcadas).
-        if (!soloFavoritas && Number(product.stock_actual) > 0) {
+        // Favoritos por variante: ahi solo van las variantes marcadas). El
+        // general que solo agrupa variantes no se vende solo.
+        if (
+          !soloFavoritas &&
+          Number(product.stock_actual) > 0 &&
+          seVendeComoGeneral(product, todas)
+        ) {
           items.push({
             kind: "product-general" as const,
             key: `gen-${product.id}`,
@@ -189,9 +211,46 @@ export function ProductGrid({
       ) : (
         <div className={GRID_CLASSES}>
           {gridItems.map((item, index) => {
+            if (item.kind === "family-header") {
+              return (
+                <div
+                  key={item.key}
+                  className={cn(
+                    "col-span-full flex items-center gap-2 pt-2 first:pt-0",
+                    item.familyColor.text
+                  )}
+                >
+                  <span
+                    className={cn("h-2.5 w-2.5 shrink-0 rounded-full border-2", item.familyColor.badgeBorder, item.familyColor.bg)}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                    {item.product.nombre}
+                  </span>
+                  {item.product.categoria && (
+                    <span className="hidden shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground sm:inline">
+                      {item.product.categoria}
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                      item.familyColor.bg,
+                      item.familyColor.badgeBorder
+                    )}
+                  >
+                    {item.count === 1 ? "1 variante" : `${item.count} variantes`}
+                  </span>
+                  <span className="h-px flex-1 bg-border" aria-hidden="true" />
+                </div>
+              );
+            }
+
             if (item.kind === "variant") {
               const stock = Number(item.variant.stock_actual);
-              const agotado = stock <= 0;
+              // Variante de un servicio (Corte chico / grande): no lleva stock.
+              const servicio = Boolean(item.product.es_servicio);
+              const agotado = !servicio && stock <= 0;
               const precioEfectivo = precioDe
                 ? precioDe(item.product, item.variant)
                 : variantPrice(item.variant, item.product);
@@ -268,7 +327,11 @@ export function ProductGrid({
                       <span className="text-[13px] text-muted-foreground font-mono">
                         ${precioEfectivo.toFixed(2)}
                       </span>
-                      {agotado ? (
+                      {servicio ? (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          Servicio
+                        </Badge>
+                      ) : agotado ? (
                         <Badge
                           variant="destructive"
                           className="text-[10px] px-1.5 py-0"
@@ -370,6 +433,22 @@ export function ProductGrid({
             const precioEfectivo = precioDe
               ? precioDe(product, null)
               : product.precio_venta;
+            // Con variantes, la tarjeta es el producto general: "Desde" el
+            // precio mas bajo de sus variantes (con la lista aplicada) y el
+            // estado segun ellas, no segun el stock propio (puede ser 0).
+            const variantesDe = variantsByProduct?.[product.id] ?? [];
+            const precioDesde =
+              variantesDe.length > 0
+                ? Math.min(
+                    ...variantesDe.map((v) =>
+                      precioDe ? precioDe(product, v) : precioDeVariante(v, product)
+                    )
+                  )
+                : null;
+            const estadoTarjeta =
+              variantesDe.length > 0
+                ? resumenConVariantes(product, variantesDe).estado
+                : stockStatus(product);
 
             return (
               <button
@@ -416,22 +495,23 @@ export function ProductGrid({
                   </span>
                   <div className="flex items-center justify-between w-full mt-1">
                     <span className="text-[13px] text-muted-foreground font-mono">
-                      ${precioEfectivo.toFixed(2)}
+                      {precioDesde !== null
+                        ? `Desde $${precioDesde.toFixed(2)}`
+                        : `$${precioEfectivo.toFixed(2)}`}
                     </span>
                     {/* `stockStatus()` en vez de la regla a mano que habia
                         aqui (`stock_actual <= stock_minimo`): es la misma
                         divergencia que el modulo de stock dice haber eliminado
                         ya una vez, y la que hacia que un agotado se anunciara
-                        como "stock bajo". */}
-                    {stockStatus(product) === "servicio" ? (
+                        como "stock bajo". Con variantes, el de su resumen. */}
+                    {estadoTarjeta === "servicio" ? (
                       <Badge
                         variant="outline"
                         className="text-[10px] px-1.5 py-0"
                       >
                         Servicio
                       </Badge>
-                    ) : stockStatus(product) === "bajo" ||
-                      stockStatus(product) === "agotado" ? (
+                    ) : estadoTarjeta === "bajo" || estadoTarjeta === "agotado" ? (
                       <Badge
                         variant="destructive"
                         className="text-[10px] px-1.5 py-0"

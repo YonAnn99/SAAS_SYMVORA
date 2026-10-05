@@ -305,7 +305,7 @@ export interface RenglonOrdenDetalle {
   costo_unitario: number;
   subtotal: number;
   producto: { nombre: string; unidad_medida: string | null } | null;
-  variante: { talla: string | null; color: string | null } | null;
+  variante: { talla: string | null; color: string | null; unidad_medida?: string | null } | null;
 }
 
 export interface OrdenDetalle extends OrdenCompra {
@@ -341,7 +341,7 @@ export async function fetchOrderFullDetail(
           producto_id, variante_id, cantidad_solicitada, cantidad_recibida,
           costo_unitario, subtotal,
           producto:productos!producto_id(nombre, unidad_medida),
-          variante:variantes_producto!variante_id(talla, color)
+          variante:variantes_producto!variante_id(talla, color, unidad_medida)
         )
       `)
       .eq("id", ordenId)

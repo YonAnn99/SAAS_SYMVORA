@@ -56,6 +56,10 @@ export function useVariants(
   const [editingVariant, setEditingVariant] = useState<VarianteProducto | null>(
     null
   );
+  // Ventana para CREAR variantes (`CrearVariantesDialog`): con producto base
+  // agrega variantes a ese producto; sin el, crea el producto general nuevo.
+  const [showCrear, setShowCrear] = useState(false);
+  const [productoBase, setProductoBase] = useState<ProductoOption | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<VarianteProducto | null>(
     null
@@ -101,8 +105,13 @@ export function useVariants(
   }, [tenantLoading, refetch]);
 
   const openCreateDialog = useCallback(() => {
-    setEditingVariant(null);
-    setShowDialog(true);
+    setProductoBase(null);
+    setShowCrear(true);
+  }, []);
+
+  const openCreateForProduct = useCallback((producto: ProductoOption) => {
+    setProductoBase(producto);
+    setShowCrear(true);
   }, []);
 
   const openEditDialog = useCallback((variant: VarianteProducto) => {
@@ -209,10 +218,11 @@ export function useVariants(
   /**
    * Varias variantes a la vez (una por combinacion de atributos). Mismas reglas
    * de stock por sucursal que `handleSave`; se detiene en la primera que falle
-   * y dice cual, para no dejar a medias sin avisar.
+   * y dice cual, para no dejar a medias sin avisar. `onCreada(indice)` avisa
+   * cada una que si quedo, para que el reintento no la repita.
    */
   const handleSaveMany = useCallback(
-    async (inputs: VarianteInput[]) => {
+    async (inputs: VarianteInput[], onCreada?: (indice: number) => void) => {
       if (!tenantId || inputs.length === 0) return false;
       const hayStock = inputs.some((i) => Number(i.stock_actual ?? 0) > 0);
       let destinoStock: string | null = null;
@@ -229,7 +239,7 @@ export function useVariants(
       setSaving(true);
       let creadas = 0;
       try {
-        for (const input of inputs) {
+        for (const [indice, input] of inputs.entries()) {
           const stock = Number(input.stock_actual ?? 0);
           const datos: VarianteInput = hayVarias ? { ...input, stock_actual: 0 } : input;
           try {
@@ -248,6 +258,7 @@ export function useVariants(
               entityName: etiquetaAtributos(input) || "Variante",
             });
             creadas++;
+            onCreada?.(indice);
           } catch (error: unknown) {
             const nombre = etiquetaAtributos(input) || "la variante";
             const duplicada = error instanceof Error
@@ -259,7 +270,7 @@ export function useVariants(
                 : `No se pudo crear "${nombre}"${creadas ? ` (se crearon ${creadas} antes)` : ""}`
             );
             if (creadas) void refetch();
-        onCambio?.();
+            onCambio?.();
             return false;
           }
         }
@@ -407,11 +418,15 @@ export function useVariants(
     showDialog,
     setShowDialog,
     editingVariant,
+    showCrear,
+    setShowCrear,
+    productoBase,
     saving,
     deleteConfirm,
     setDeleteConfirm,
     refetch,
     openCreateDialog,
+    openCreateForProduct,
     openEditDialog,
     handleSave,
     handleSaveMany,

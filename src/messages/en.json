@@ -255,6 +255,7 @@
     "editProduct": "Edit product",
     "deleteProduct": "Delete product",
     "name": "Product name",
+    "description": "Description",
     "barcode": "Barcode",
     "sku": "SKU",
     "unit": "Unit of measure",

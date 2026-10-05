@@ -103,6 +103,9 @@ export function VariantSwipeList({
                   <p className="truncate font-mono text-xs opacity-60">{variant.sku || "Sin SKU"}</p>
                 </>
               )}
+              {variant.descripcion?.trim() && (
+                <p className="truncate text-xs text-muted-foreground">{variant.descripcion}</p>
+              )}
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-0.5">

@@ -8,7 +8,7 @@
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { stockStatus } from "@/features/inventory/stock-status";
+import { stockStatus, type StockStatus } from "@/features/inventory/stock-status";
 
 /**
  * Etiqueta de stock, en CUATRO estados.
@@ -23,10 +23,13 @@ import { stockStatus } from "@/features/inventory/stock-status";
  */
 export function StockBadge({
   product,
+  estado,
 }: {
   product: { stock_actual: number; stock_minimo: number; es_servicio?: boolean };
+  /** Para un producto con variantes: el de `resumenConVariantes`. */
+  estado?: StockStatus;
 }) {
-  const status = stockStatus(product);
+  const status = estado ?? stockStatus(product);
 
   if (status === "servicio") {
     return (

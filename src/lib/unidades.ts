@@ -102,6 +102,18 @@ export function normalizarCantidad(
 }
 
 /**
+ * La unidad con la que se vende algo: la de la variante si tiene la suya
+ * (migracion 104), si no la del producto. El POS decide con ella si pide la
+ * cantidad (granel) o suma piezas.
+ */
+export function unidadDeVenta<U extends string>(
+  producto: { unidad_medida: U },
+  variante?: { unidad_medida?: U | null } | null
+): U {
+  return variante?.unidad_medida ?? producto.unidad_medida;
+}
+
+/**
  * Cuantos ARTICULOS aporta una linea al conteo del carrito y del ticket.
  * Por medida es 1 (0.750 kg de jitomate es un articulo, no 0.75); de conteo,
  * la cantidad (3 refrescos son 3 articulos).

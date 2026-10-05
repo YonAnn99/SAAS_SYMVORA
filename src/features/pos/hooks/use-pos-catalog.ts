@@ -7,6 +7,7 @@ import type { VarianteProducto } from "../types/pos.types";
 import { fetchCustomers } from "@/features/customers/services/customer-service";
 import { fetchActiveRegister } from "@/features/cash-register/services/cash-register-service";
 import { fetchPosProducts, fetchPosVariants } from "../services/pos-service";
+import { vendibleEnPos } from "@/features/sucursales/stock";
 import { fetchStockSucursal } from "@/features/sucursales/services/stock-sucursal-service";
 import { CASH_REGISTER_CHANGED_EVENT } from "@/features/cash-register/hooks/use-open-register";
 import {
@@ -127,7 +128,16 @@ export function usePosCatalog(
       const activeCajaId = activeRegister?.id ?? null;
       if (id !== peticion.current) return;
 
-      setProducts(productsResult);
+      // Lo que el mostrador ofrece: con existencias propias, servicio, o con
+      // alguna variante con existencias (un producto con variantes puede ser
+      // solo el nombre general, con stock 0).
+      const variantesConStock = new Map<string, VarianteProducto[]>();
+      for (const v of variantsResult) {
+        const lista = variantesConStock.get(v.producto_id) ?? [];
+        lista.push(v);
+        variantesConStock.set(v.producto_id, lista);
+      }
+      setProducts(productsResult.filter((p) => vendibleEnPos(p, variantesConStock.get(p.id))));
       setVariants(variantsResult);
       setCustomers(customersResult);
       setPriceLists(priceListsResult);

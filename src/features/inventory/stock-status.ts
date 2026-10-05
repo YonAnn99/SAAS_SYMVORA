@@ -201,10 +201,15 @@ interface FilterableProduct extends SortableProduct {
 export function applyProductFilters<T extends FilterableProduct>(
   products: T[],
   filters: ProductFilters,
-  favoritos?: ReadonlySet<string>
+  favoritos?: ReadonlySet<string>,
+  /**
+   * Estado de cada producto. Por defecto `stockStatus`; el catalogo pasa el de
+   * `resumenConVariantes` para que un producto con variantes cuente segun ellas.
+   */
+  estadoDe: (p: T) => StockStatus = stockStatus
 ): T[] {
   const filtered = products.filter((p) => {
-    if (filters.stock.length > 0 && !filters.stock.includes(stockStatus(p))) {
+    if (filters.stock.length > 0 && !filters.stock.includes(estadoDe(p))) {
       return false;
     }
     if (filters.sinMinimo && !sinMinimoDefinido(p)) {
@@ -235,7 +240,8 @@ export function applyProductFilters<T extends FilterableProduct>(
 
 /** Conteo por grupo, para mostrarlo en cada chip. */
 export function countByStatus<T extends StockFields>(
-  products: T[]
+  products: T[],
+  estadoDe: (p: T) => StockStatus = stockStatus
 ): Record<StockStatus, number> {
   const counts: Record<StockStatus, number> = {
     servicio: 0,
@@ -243,6 +249,6 @@ export function countByStatus<T extends StockFields>(
     bajo: 0,
     ok: 0,
   };
-  for (const p of products) counts[stockStatus(p)]++;
+  for (const p of products) counts[estadoDe(p)]++;
   return counts;
 }
