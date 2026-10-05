@@ -29,13 +29,13 @@ async function texto(blob: Blob) {
 
 describe("generarPdfOrdenCompra", () => {
   it("produce un PDF", async () => {
-    const pdf = generarPdfOrdenCompra(datos);
+    const pdf = await generarPdfOrdenCompra(datos);
     expect(pdf.type).toBe("application/pdf");
     expect((await texto(pdf)).startsWith("%PDF-")).toBe(true);
   });
 
   it("lleva la orden, los renglones y el total guardado", async () => {
-    const t = await texto(generarPdfOrdenCompra(datos));
+    const t = await texto(await generarPdfOrdenCompra(datos));
     expect(t).toContain("Orden de compra OC-014");
     expect(t).toContain("Café molido");
     expect(t).toContain("Entregar por la mañana");
@@ -44,7 +44,7 @@ describe("generarPdfOrdenCompra", () => {
 
   it("dice 'Sin IVA' cuando la orden no lo lleva", async () => {
     const t = await texto(
-      generarPdfOrdenCompra({ ...datos, incluyeIva: false, impuesto: 0, total: 675 })
+      await generarPdfOrdenCompra({ ...datos, incluyeIva: false, impuesto: 0, total: 675 })
     );
     expect(t).toContain("Sin IVA");
     expect(t).not.toContain("IVA (16%)");

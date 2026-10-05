@@ -19,9 +19,23 @@ import type { FilaStockSucursal } from "@/features/sucursales/stock";
 export async function fetchStockSucursal(
   sucursalId: string | readonly string[]
 ): Promise<FilaStockSucursal[]> {
-  const supabase = createSupabaseBrowserClient();
   const ids = typeof sucursalId === "string" ? [sucursalId] : [...sucursalId];
   if (ids.length === 0) return [];
+  // Peticiones IGUALES que ya van en camino se comparten (Productos pide el
+  // mismo stock desde `useProducts` y `useVariants` a la vez). Solo mientras
+  // esta en vuelo: al llegar se olvida, asi que nunca se sirve un stock viejo.
+  const clave = [...ids].sort().join(",");
+  const enCamino = stockEnCamino.get(clave);
+  if (enCamino) return enCamino.then((filas) => [...filas]);
+  const promesa = pedirStockSucursal(ids).finally(() => stockEnCamino.delete(clave));
+  stockEnCamino.set(clave, promesa);
+  return promesa.then((filas) => [...filas]);
+}
+
+const stockEnCamino = new Map<string, Promise<FilaStockSucursal[]>>();
+
+async function pedirStockSucursal(ids: string[]): Promise<FilaStockSucursal[]> {
+  const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from("stock_sucursal")
     .select("producto_id, variante_id, cantidad, se_vende")

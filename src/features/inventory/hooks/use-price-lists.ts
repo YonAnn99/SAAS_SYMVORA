@@ -19,17 +19,22 @@ import {
   type PrecioActualizado,
   type RenglonNuevo,
 } from "../services/price-list-service";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 /** El índice: las tarjetas de todas las listas del negocio. */
 export function usePriceLists(tenantId: string | null, tenantLoading: boolean) {
-  const [listas, setListas] = useState<ListaConConteo[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Cache entre modulos (`lib/cache-datos.ts`).
+  const [enCache] = useState(() => leerCache<ListaConConteo[]>(["listas-precios", tenantId]));
+  const [listas, setListas] = useState<ListaConConteo[]>(() => enCache ?? []);
+  const [loading, setLoading] = useState(() => !enCache);
   const [saving, setSaving] = useState(false);
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
     try {
-      setListas(await fetchPriceLists(tenantId));
+      const datos = await fetchPriceLists(tenantId);
+      setListas(datos);
+      guardarCache(["listas-precios", tenantId], datos);
     } catch (error: unknown) {
       toast.error(mensajeDeError(error));
     } finally {

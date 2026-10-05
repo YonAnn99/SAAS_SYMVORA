@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+// Con idioma (`/es/...`): `next/link` con "/products" pasaba dos veces por el
+// middleware (verificacion completa + redireccion de next-intl).
+import { Link } from "@/i18n/navigation";
 import { BarChart3, Package, TrendingUp, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +28,7 @@ import {
   type StockResumen,
   type VentaResumen,
 } from "@/features/sucursales/resumen";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 /**
  * Comparativa de locales del mes en curso: ventas, existencias y caja.
@@ -34,16 +37,30 @@ import {
  * dashboard, Productos y Reportes), y los accesos de debajo llevan a esas
  * pantallas ya filtradas. Asi el modulo no duplica el dashboard: lo usa.
  */
+interface ResumenEnCache {
+  ventas: VentaResumen[];
+  stock: StockResumen[];
+  cajas: CajaResumen[];
+}
+
+const claveResumen = (tenantId: string) => {
+  const hoy = new Date();
+  return ["resumen-sucursales", tenantId, hoy.getFullYear(), hoy.getMonth()];
+};
+
 export function ResumenSucursales({ tenantId }: { tenantId: string }) {
   const { sucursales, seleccionada, setSeleccionada } = useSucursal();
-  const [ventas, setVentas] = useState<VentaResumen[]>([]);
-  const [stock, setStock] = useState<StockResumen[]>([]);
-  const [cajas, setCajas] = useState<CajaResumen[]>([]);
-  const [cargando, setCargando] = useState(true);
+  // Cache entre modulos (`lib/cache-datos.ts`), por negocio y mes: solo para
+  // mostrar; `cargar` lo reemplaza en cuanto llega.
+  const [enCache] = useState(() => leerCache<ResumenEnCache>(claveResumen(tenantId)));
+  const [ventas, setVentas] = useState<VentaResumen[]>(() => enCache?.ventas ?? []);
+  const [stock, setStock] = useState<StockResumen[]>(() => enCache?.stock ?? []);
+  const [cajas, setCajas] = useState<CajaResumen[]>(() => enCache?.cajas ?? []);
+  const [cargando, setCargando] = useState(() => !enCache);
 
   const cargar = useCallback(async () => {
     if (sucursales.length === 0) return;
-    setCargando(true);
+    if (!leerCache(claveResumen(tenantId))) setCargando(true);
     try {
       const supabase = createSupabaseBrowserClient();
       const hoy = new Date();
@@ -74,9 +91,15 @@ export function ResumenSucursales({ tenantId }: { tenantId: string }) {
       ]);
       for (const r of [v, st, cAbiertas, cMes]) if (r.error) throw r.error;
 
-      setVentas((v.data ?? []) as VentaResumen[]);
-      setStock((st.data ?? []) as StockResumen[]);
-      setCajas([...(cAbiertas.data ?? []), ...(cMes.data ?? [])] as CajaResumen[]);
+      const datos: ResumenEnCache = {
+        ventas: (v.data ?? []) as VentaResumen[],
+        stock: (st.data ?? []) as StockResumen[],
+        cajas: [...(cAbiertas.data ?? []), ...(cMes.data ?? [])] as CajaResumen[],
+      };
+      setVentas(datos.ventas);
+      setStock(datos.stock);
+      setCajas(datos.cajas);
+      guardarCache(claveResumen(tenantId), datos);
     } catch (error) {
       toast.error(mensajeDeError(error));
     } finally {

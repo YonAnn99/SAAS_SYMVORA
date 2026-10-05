@@ -1,5 +1,7 @@
-import Papa from "papaparse";
-import * as XLSX from "xlsx";
+/**
+ * papaparse y xlsx (~500 kB juntos) se descargan al elegir el archivo, no al
+ * abrir Productos: solo los usa quien importa un catalogo.
+ */
 
 export interface ParsedImportFile {
   headers: string[];
@@ -18,7 +20,8 @@ export async function parseImportFile(file: File): Promise<ParsedImportFile> {
   throw new Error("Formato no soportado. Usa un archivo .csv o .xlsx.");
 }
 
-function parseCsv(file: File): Promise<ParsedImportFile> {
+async function parseCsv(file: File): Promise<ParsedImportFile> {
+  const { default: Papa } = await import("papaparse");
   return new Promise((resolve, reject) => {
     Papa.parse<Record<string, unknown>>(file, {
       header: true,
@@ -33,6 +36,7 @@ function parseCsv(file: File): Promise<ParsedImportFile> {
 }
 
 async function parseExcel(file: File): Promise<ParsedImportFile> {
+  const XLSX = await import("xlsx");
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array" });
   const firstSheetName = workbook.SheetNames[0];

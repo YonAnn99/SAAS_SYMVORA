@@ -344,7 +344,13 @@ export async function logAutoCloseActivity(
 ): Promise<void> {
   const supabase = createSupabaseServiceRoleClient();
 
+  // Firma real de `log_activity` (migracion 106): con service role registra a
+  // nombre de `p_user_id`; el negocio lo deduce la funcion de su membresia.
+  // Antes se mandaba `p_tenant_id` (no existe) y faltaba `p_user_email`, asi
+  // que PostgREST no encontraba la funcion y ningun cierre automatico llegaba
+  // a la Bitacora.
   const { error } = await supabase.rpc("log_activity", {
+    p_user_email: "sistema",
     p_action: "AUTO_CLOSE",
     p_entity: "caja",
     p_entity_id: cajaId,
@@ -352,10 +358,10 @@ export async function logAutoCloseActivity(
       ...details,
       cerrado_por: "sistema",
       usuario_id: userId,
+      tenant_id: tenantId,
       diferencia: 0,
     },
     p_user_id: userId,
-    p_tenant_id: tenantId,
   });
 
   if (error) console.error("[auto-close] Error logging activity:", error.message);

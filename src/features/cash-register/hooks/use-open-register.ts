@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useTenantContext } from "@/contexts/tenant-context";
 
 /**
  * Solo responde a "¿tengo caja abierta?".
@@ -31,6 +32,10 @@ export function notifyCashRegisterChanged() {
 }
 
 export function useOpenRegister(tenantId: string | null): OpenRegisterState {
+  // El usuario ya resuelto por el contexto del tenant: sin el, cada instancia
+  // del hook (hay varias en pantalla) llamaba `auth.getUser()` —una ida a la
+  // red— al montar y CADA VEZ que la ventana recuperaba el foco.
+  const { userId: usuarioContexto } = useTenantContext();
   const [hasOpenRegister, setHasOpenRegister] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,10 +51,16 @@ export function useOpenRegister(tenantId: string | null): OpenRegisterState {
     // cerrarse: un `false` por fallo de red dejaria al cajero sin vender.
     try {
       const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      // Sin contexto todavia: la sesion local (sin red). La consulta de abajo
+      // la valida la base con el JWT y RLS de todos modos.
+      let userId = usuarioContexto;
+      if (!userId) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        userId = session?.user.id ?? "";
+      }
+      if (!userId) {
         setLoading(false);
         return;
       }
@@ -59,7 +70,7 @@ export function useOpenRegister(tenantId: string | null): OpenRegisterState {
         .from("cajas")
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", tenantId)
-        .eq("usuario_id", user.id)
+        .eq("usuario_id", userId)
         .eq("estado", "ABIERTA");
 
       if (error) {
@@ -77,7 +88,7 @@ export function useOpenRegister(tenantId: string | null): OpenRegisterState {
       console.error("[use-open-register] sin red:", error);
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, usuarioContexto]);
 
   useEffect(() => {
     // Diferido, convención del repo: sin tenant, `refetch` llama a `setLoading`

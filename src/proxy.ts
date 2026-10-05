@@ -43,6 +43,23 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next|_vercel|.*\\..*).*)",
+    // 1. Todo, MENOS las precargas de `next/link`. Cada enlace visible del menu
+    //    se precarga, y cada precarga corria el middleware completo (`getUser` +
+    //    RPC): decenas de verificaciones por carga del panel. Es seguro
+    //    saltarlas porque el layout del panel es `force-dynamic`: la precarga
+    //    solo trae el esqueleto (`loading.tsx`, sin datos) y la NAVEGACION REAL
+    //    es otra peticion que si pasa por aqui con todos los controles (sesion,
+    //    suscripcion, permisos por ruta). Si algun dia una ruta del panel se
+    //    vuelve estatica, revisar esto: su precarga traeria la pagina completa.
+    {
+      source: "/((?!api|_next|_vercel|.*\\..*).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+    // 2. Rutas SIN idioma, siempre (tambien en precarga): next-intl las redirige
+    //    a `/es/...`; sin esto, la precarga de un enlace sin idioma daria 404.
+    "/((?!api|_next|_vercel|es/|en/|es$|en$|.*\\..*).*)",
   ],
 };

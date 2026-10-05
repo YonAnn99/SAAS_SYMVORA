@@ -34,6 +34,7 @@ import {
   type ProveedorContacto,
 } from "../services/purchase-order-service";
 import { totalesOrdenCompra } from "../purchase-order-totals";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 export interface OrdenSaveInput {
   proveedor_id: string;
@@ -57,12 +58,22 @@ export function usePurchaseOrders(
   /** Para firmar el mensaje de WhatsApp con el nombre de la tienda. */
   nombreNegocio: string = "nuestro negocio"
 ) {
-  const [orders, setOrders] = useState<OrdenCompra[]>([]);
-  const [suppliers, setSuppliers] = useState<ProveedorContacto[]>([]);
-  const [products, setProducts] = useState<ProductoOpcion[]>([]);
-  const [variants, setVariants] = useState<VarianteDeCompra[]>([]);
+  // Cache entre modulos (`lib/cache-datos.ts`): se pinta lo ultimo cargado y
+  // `refetch` lo reemplaza en cuanto llega.
+  const [enCache] = useState(() =>
+    leerCache<{
+      ordenes: OrdenCompra[];
+      proveedores: ProveedorContacto[];
+      productos: ProductoOpcion[];
+      variantes: VarianteDeCompra[];
+    }>(["ordenes-compra", tenantId])
+  );
+  const [orders, setOrders] = useState<OrdenCompra[]>(() => enCache?.ordenes ?? []);
+  const [suppliers, setSuppliers] = useState<ProveedorContacto[]>(() => enCache?.proveedores ?? []);
+  const [products, setProducts] = useState<ProductoOpcion[]>(() => enCache?.productos ?? []);
+  const [variants, setVariants] = useState<VarianteDeCompra[]>(() => enCache?.variantes ?? []);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   const [showDialog, setShowDialog] = useState(false);
   const [editingOrder, setEditingOrder] = useState<OrdenCompra | null>(null);
   const [saving, setSaving] = useState(false);
@@ -82,6 +93,12 @@ export function usePurchaseOrders(
     setProducts(productsData);
     setVariants(variantsData);
     setLoading(false);
+    guardarCache(["ordenes-compra", tenantId], {
+      ordenes: ordersData,
+      proveedores: suppliersData,
+      productos: productsData,
+      variantes: variantsData,
+    });
   }, [tenantId]);
 
   useEffect(() => {
@@ -313,7 +330,7 @@ export function usePurchaseOrders(
           renglones: details.map((d) => ({ ...d, nombre: nombreRenglon(d) })),
         });
         const incluyeIva = datosPdf.incluyeIva;
-        const pdf = generarPdfOrdenCompra(datosPdf);
+        const pdf = await generarPdfOrdenCompra(datosPdf);
 
         const enlacePdf = await subirPdfOrden(tenantId, order.id, pdf);
 

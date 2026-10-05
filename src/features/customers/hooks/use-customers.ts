@@ -10,9 +10,16 @@ import {
   getCurrentUserId,
   registerCreditPayment,
 } from "../services/customer-service";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
+
+const claveClientes = (tenantId: string | null) => ["clientes", tenantId] as const;
 
 export function useCustomers(tenantId: string | null) {
-  const [customers, setCustomers] = useState<Cliente[]>([]);
+  // Cache entre modulos (`lib/cache-datos.ts`): al volver se pinta la lista
+  // anterior y `refresh` la reemplaza en cuanto llega.
+  const [customers, setCustomers] = useState<Cliente[]>(
+    () => leerCache<Cliente[]>(claveClientes(tenantId)) ?? []
+  );
   const [loading, setLoading] = useState(false);
   const [paymentDialogFor, setPaymentDialogFor] = useState<Cliente | null>(
     null
@@ -21,10 +28,12 @@ export function useCustomers(tenantId: string | null) {
 
   const refresh = useCallback(async () => {
     if (!tenantId) return;
-    setLoading(true);
+    // Con lista en cache no se muestra el "cargando": se actualiza por detras.
+    if (!leerCache(claveClientes(tenantId))) setLoading(true);
     try {
       const data = await fetchCustomers(tenantId);
       setCustomers(data);
+      guardarCache(claveClientes(tenantId), data);
     } catch {
       setCustomers([]);
     } finally {

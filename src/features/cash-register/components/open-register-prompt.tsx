@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useTutorialContext } from "@/components/tutorial/tutorial-provider";
 import { debeEmpujarAFinanzas, marcarAvisado, yaAvisadoHoy } from "../daily-prompt";
 import { useOpenRegister } from "../hooks/use-open-register";
@@ -20,7 +19,7 @@ import { useOpenRegister } from "../hooks/use-open-register";
  * primera pantalla del dia.
  */
 export function OpenRegisterPrompt() {
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, userId, loading: tenantLoading } = useCurrentTenant();
   const { hasOpenRegister, loading } = useOpenRegister(tenantId);
   // Sin `cash.manage` (p. ej. cuenta en solo lectura) Finanzas esta cerrada:
   // empujar ahi solo produciria otra redireccion.
@@ -56,31 +55,19 @@ export function OpenRegisterPrompt() {
       return;
     }
 
-    let cancelado = false;
-    void (async () => {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (cancelado || !user) return;
-      // El tutorial pudo arrancar mientras se resolvia el usuario.
-      if (tutorialVisto.current) return;
-      if (yaAvisadoHoy(user.id)) return;
+    // El usuario del contexto del tenant (antes `auth.getUser()`, una ida a
+    // la red en cada carga del panel).
+    if (!userId || yaAvisadoHoy(userId)) return;
 
-      // Se marca ANTES de navegar. Si se marcara despues y la navegacion
-      // fallara, el aviso volveria a dispararse en cada carga.
-      marcarAvisado(user.id);
-      yaRedirigido.current = true;
-      // Sin query string: el router de next-intl espera un PATHNAME. Con
-      // "/finances?abrir_caja=1" lo toma entero como ruta, no la reconoce y
-      // navega en relativo — daba /es/pos/finances y un 404.
-      router.push("/finances");
-    })();
-
-    return () => {
-      cancelado = true;
-    };
-  }, [permsLoading, can, tenantLoading, loading, hasOpenRegister, pathname, router, isActive, minimized]);
+    // Se marca ANTES de navegar. Si se marcara despues y la navegacion
+    // fallara, el aviso volveria a dispararse en cada carga.
+    marcarAvisado(userId);
+    yaRedirigido.current = true;
+    // Sin query string: el router de next-intl espera un PATHNAME. Con
+    // "/finances?abrir_caja=1" lo toma entero como ruta, no la reconoce y
+    // navega en relativo — daba /es/pos/finances y un 404.
+    router.push("/finances");
+  }, [permsLoading, can, tenantLoading, loading, hasOpenRegister, pathname, router, isActive, minimized, userId]);
 
   return null;
 }

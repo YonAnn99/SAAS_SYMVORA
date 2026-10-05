@@ -42,6 +42,7 @@ import { SalesHistoryCard } from "@/features/sales/components/sales-history-card
 import { ComprasPeriodoCard } from "@/features/inventory/components/compras-periodo-card";
 import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface ReportData {
   ventasPorPeriodo: { date: string; ventas: number }[];
@@ -189,11 +190,29 @@ function groupSalesByPeriod(
   }));
 }
 
+/** Clave de cache de un reporte: todo lo que cambia sus cifras. */
+function claveReporte(
+  tenantId: string | null,
+  sucursalId: string | null,
+  periodo: string,
+  fecha: Date | null
+) {
+  return ["reportes", tenantId, sucursalId, periodo, fecha?.toDateString() ?? null, new Date().toDateString()];
+}
+
 export default function ReportsPage() {
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { seleccionada: sucursalId } = useSucursal();
-  const [reportData, setReportData] = useState<ReportData>({
+  // Cache entre modulos (`lib/cache-datos.ts`), por negocio, sucursal, periodo,
+  // fecha elegida y DIA de hoy (el "mes" de hoy no es el de mañana). La vista
+  // inicial es "mes" sin fecha: es la que se pinta al instante al volver.
+  const [enCache] = useState(() =>
+    leerCache<{ datos: ReportData; truncado: boolean }>(
+      claveReporte(tenantId, sucursalId, "mes", null)
+    )
+  );
+  const [reportData, setReportData] = useState<ReportData>(() => enCache?.datos ?? {
     ventasPorPeriodo: [],
     topProductos: [],
     topCategorias: [],
@@ -215,11 +234,11 @@ export default function ReportsPage() {
       topPorGanancia: [],
     },
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   // Se avisa cuando el periodo tenia mas ventas que el tope: un reporte
   // truncado en silencio se lee como si fueran las cifras completas del
   // negocio, que es peor que no mostrarlo.
-  const [reporteTruncado, setReporteTruncado] = useState(false);
+  const [reporteTruncado, setReporteTruncado] = useState(() => enCache?.truncado ?? false);
   const [periodo, setPeriodo] = useState<Periodo>("mes");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -229,7 +248,15 @@ export default function ReportsPage() {
 
   const fetchReportData = useCallback(async () => {
     if (!tenantId) return;
-    setLoading(true);
+    const clave = claveReporte(tenantId, sucursalId, periodo, selectedDate);
+    const previo = leerCache<{ datos: ReportData; truncado: boolean }>(clave);
+    // Periodo ya visto: se pinta lo guardado y se actualiza por detras.
+    if (previo) {
+      setReportData(previo.datos);
+      setReporteTruncado(previo.truncado);
+    } else {
+      setLoading(true);
+    }
     const supabase = createSupabaseBrowserClient();
 
     // El rango lo decide `rangoDePeriodo`, compartido con el historial de
@@ -281,7 +308,8 @@ export default function ReportsPage() {
         .eq("tenant_id", tenantId),
     ]);
 
-    setReporteTruncado((ventas?.length ?? 0) >= MAX_VENTAS_REPORTE);
+    const truncado = (ventas?.length ?? 0) >= MAX_VENTAS_REPORTE;
+    setReporteTruncado(truncado);
 
     const ventaIds = (ventas ?? []).map((v) => v.id);
 
@@ -451,7 +479,7 @@ export default function ReportsPage() {
         0
       );
 
-      setReportData({
+      const nuevos: ReportData = {
         ventasPorPeriodo,
         topProductos,
         topCategorias,
@@ -478,7 +506,9 @@ export default function ReportsPage() {
             ingresos: r.ingresos,
           })),
         },
-      });
+      };
+      setReportData(nuevos);
+      guardarCache(clave, { datos: nuevos, truncado });
     }
 
     setLoading(false);
@@ -487,7 +517,10 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!tenantLoading && tenantId) {
       if (periodo === "dia" && !selectedDate) return;
-      fetchReportData();
+      // Diferido, convencion del repo: `fetchReportData` hace setState de
+      // inmediato y llamarlo dentro del efecto encadena renders.
+      const t = window.setTimeout(() => void fetchReportData(), 0);
+      return () => window.clearTimeout(t);
     }
   }, [tenantLoading, tenantId, fetchReportData, periodo, selectedDate]);
 

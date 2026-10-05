@@ -52,9 +52,12 @@ export function useIsDemo(): boolean {
     (async () => {
       try {
         const supabase = createSupabaseBrowserClient();
+        // Sesion local, sin ida a la red: solo decide QUE se muestra. Lo que la
+        // demo no puede hacer lo frena el servidor (`demo-guard`).
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         if (cancelled) return;
         if (!user) {
           setIsDemo(false);

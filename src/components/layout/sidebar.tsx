@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -39,8 +38,9 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    // Solo para mostrar el correo: sesion local, sin ida a la red.
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
     });
   }, []);
 

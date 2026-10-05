@@ -34,13 +34,26 @@ import {
   type VarianteDeCompra,
 } from "../services/purchase-order-service";
 import type { ProductoOpcion } from "../purchase-order-items";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
+
+/** Cache entre modulos (`lib/cache-datos.ts`). */
+interface ComprasEnCache {
+  compras: PurchaseWithRelations[];
+  proveedores: Proveedor[];
+  productos: ProductoOpcion[];
+  variantes: VarianteDeCompra[];
+}
+
+const claveCompras = (tenantId: string) => ["compras", tenantId] as const;
 
 export function usePurchases(tenantId: string, tenantLoading: boolean) {
-  const [purchases, setPurchases] = useState<PurchaseWithRelations[]>([]);
-  const [suppliers, setSuppliers] = useState<Proveedor[]>([]);
-  const [products, setProducts] = useState<ProductoOpcion[]>([]);
-  const [variants, setVariants] = useState<VarianteDeCompra[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Lo ultimo cargado en esta pestaña: se pinta ya y `refetch` lo reemplaza.
+  const [enCache] = useState(() => leerCache<ComprasEnCache>(claveCompras(tenantId)));
+  const [purchases, setPurchases] = useState<PurchaseWithRelations[]>(() => enCache?.compras ?? []);
+  const [suppliers, setSuppliers] = useState<Proveedor[]>(() => enCache?.proveedores ?? []);
+  const [products, setProducts] = useState<ProductoOpcion[]>(() => enCache?.productos ?? []);
+  const [variants, setVariants] = useState<VarianteDeCompra[]>(() => enCache?.variantes ?? []);
+  const [loading, setLoading] = useState(() => !enCache);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
   const [editingPurchase, setEditingPurchase] =
@@ -52,7 +65,8 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Con datos en cache no se muestra el "cargando": se actualiza por detras.
+    if (!leerCache(claveCompras(tenantId))) setLoading(true);
     const [purchasesData, suppliersData, productsData, variantsData] =
       await Promise.all([
         fetchPurchases(tenantId),
@@ -65,6 +79,12 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     setProducts(productsData);
     setVariants(variantsData);
     setLoading(false);
+    guardarCache<ComprasEnCache>(claveCompras(tenantId), {
+      compras: purchasesData,
+      proveedores: suppliersData,
+      productos: productsData,
+      variantes: variantsData,
+    });
   }, [tenantId]);
 
   useEffect(() => {

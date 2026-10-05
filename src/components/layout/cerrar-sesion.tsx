@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { vaciarCache } from "@/lib/cache-datos";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,6 +37,7 @@ export function useCerrarSesion() {
   const cerrarSesion = async () => {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
+    vaciarCache();
     router.push("/login");
     router.refresh();
   };

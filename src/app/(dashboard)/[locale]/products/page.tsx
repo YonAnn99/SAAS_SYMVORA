@@ -19,21 +19,55 @@ import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAccionRapida } from "@/hooks/use-accion-rapida";
-import { useProducts } from "@/features/inventory";
-import { ProductDialog } from "@/features/inventory";
-import { ProductsTable } from "@/features/inventory";
-import { QuickFilters } from "@/features/inventory";
-import { ImportProductsDialog } from "@/features/inventory";
+import dynamic from "next/dynamic";
+// Rutas directas y no el indice `@/features/inventory`: el indice reexporta
+// TODO el modulo (compras, ordenes, lotes...) y lo arrastraba a esta pagina.
+import { useProducts } from "@/features/inventory/hooks/use-products";
+import { ProductsTable } from "@/features/inventory/components/products/products-table";
+import { QuickFilters } from "@/features/inventory/components/products/quick-filters";
 import { ProductsFilterDialog } from "@/features/inventory/components/products/products-filter-dialog";
 import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { BarraProductosMovil } from "@/features/inventory/components/products/barra-productos-movil";
 import { Button } from "@/components/ui/button";
-import { LotsSection, AdjustmentsSection } from "@/features/inventory";
+
 import { useVariants } from "@/features/inventory/hooks/use-variants";
-import { VariantDialog } from "@/features/inventory/components/variants/variant-dialog";
-import { CrearVariantesDialog } from "@/features/inventory/components/variants/crear-variantes-dialog";
-import type { VarianteProducto } from "@/features/inventory/types/inventory.types";
-import type { Producto } from "@/features/inventory";
+
+import type { ProductoOption, VarianteProducto } from "@/features/inventory/types/inventory.types";
+import type { Producto } from "@/features/inventory/types/inventory.types";
+
+// Ventanas y pestañas que no se ven al entrar: cada una en su propio archivo
+// JS, que el navegador baja despues de pintar el catalogo (plan de rendimiento,
+// fase 1). Siguen montadas como antes; solo cambia cuando se descarga su codigo.
+const ProductDialog = dynamic(
+  () => import("@/features/inventory/components/products/product-dialog").then((m) => m.ProductDialog),
+  { ssr: false }
+);
+const ImportProductsDialog = dynamic(
+  () =>
+    import("@/features/inventory/components/products/import/import-products-dialog").then(
+      (m) => m.ImportProductsDialog
+    ),
+  { ssr: false }
+);
+const VariantDialog = dynamic(
+  () => import("@/features/inventory/components/variants/variant-dialog").then((m) => m.VariantDialog),
+  { ssr: false }
+);
+const CrearVariantesDialog = dynamic(
+  () =>
+    import("@/features/inventory/components/variants/crear-variantes-dialog").then(
+      (m) => m.CrearVariantesDialog
+    ),
+  { ssr: false }
+);
+const LotsSection = dynamic(
+  () => import("@/features/inventory/components/inventory-tabs").then((m) => m.LotsSection),
+  { ssr: false }
+);
+const AdjustmentsSection = dynamic(
+  () => import("@/features/inventory/components/inventory-tabs").then((m) => m.AdjustmentsSection),
+  { ssr: false }
+);
 import { resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
@@ -57,7 +91,9 @@ export default function ProductsPage() {
   // productos llega por ref porque `useProducts` se declara despues.
   const refetchProductosRef = useRef<() => Promise<void> | void>(() => {});
   const avisarCambioVariantes = useCallback(() => void refetchProductosRef.current(), []);
-  const variantes = useVariants(tenantId, tenantLoading, avisarCambioVariantes);
+  const variantes = useVariants(tenantId, tenantLoading, avisarCambioVariantes, {
+    cargarProductos: false,
+  });
   const variantesPorProducto = useMemo(() => {
     const mapa: Record<string, VarianteProducto[]> = {};
     for (const v of variantes.variants) (mapa[v.producto_id] ??= []).push(v);
@@ -96,6 +132,21 @@ export default function ProductsPage() {
     handleToggleFavorito,
     handleDelete,
   } = useProducts(tenantId, tenantLoading, estadoDe);
+  // Lista para las ventanas de variantes, armada de los productos ya cargados
+  // (antes `useVariants` los volvia a consultar).
+  const productosOpcion = useMemo<ProductoOption[]>(
+    () =>
+      products.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        permite_variantes: p.permite_variantes,
+        permite_lotes: p.permite_lotes,
+        stock_minimo: p.stock_minimo,
+        unidad_medida: p.unidad_medida,
+        es_servicio: p.es_servicio,
+      })),
+    [products]
+  );
   useEffect(() => {
     refetchProductosRef.current = refetch;
   }, [refetch]);
@@ -469,7 +520,7 @@ export default function ProductsPage() {
         open={variantes.showCrear}
         onOpenChange={variantes.setShowCrear}
         productoBase={variantes.productoBase}
-        products={variantes.products}
+        products={productosOpcion}
         variantes={variantes.variants}
         categorias={categories}
         saving={variantes.saving}
@@ -480,7 +531,7 @@ export default function ProductsPage() {
         open={variantes.showDialog}
         onOpenChange={variantes.setShowDialog}
         editingVariant={variantes.editingVariant}
-        products={variantes.products}
+        products={productosOpcion}
         variantes={variantes.variants}
         saving={variantes.saving}
         onSave={variantes.handleSave}

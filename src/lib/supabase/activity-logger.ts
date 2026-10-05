@@ -30,9 +30,13 @@ export async function logActivity({
   try {
     const supabase = createSupabaseBrowserClient();
 
+    // Sesion local, sin ida a la red: desde la migracion 106 la base exige que
+    // `p_user_id` sea el de la sesion (`auth.uid()`) y toma el correo de
+    // `auth.users`, asi que no hace falta verificarlo aqui con `getUser()`.
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user;
 
     if (!user) return;
 

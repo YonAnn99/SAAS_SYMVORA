@@ -62,20 +62,26 @@ import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 export default function UsersPage() {
   const t = useTranslations();
   const locale = useLocale();
   const isDemo = useIsDemo();
-  const { tenantId, role: myRole } = useCurrentTenant();
+  const { tenantId, userId, role: myRole } = useCurrentTenant();
   const { refetch: refetchTenant } = useTenantContext();
   const canManage = myRole === "SUPER_ADMIN";
 
-  const [memberships, setMemberships] = useState<Member[]>([]);
-  const [inviteKeys, setInviteKeys] = useState<InviteKey[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  // Cache entre modulos (`lib/cache-datos.ts`): se pinta lo ultimo cargado y
+  // las consultas de abajo lo reemplazan.
+  const [miembrosCache] = useState(() => leerCache<Member[]>(["usuarios-miembros", tenantId]));
+  const [llavesCache] = useState(() => leerCache<InviteKey[]>(["usuarios-llaves", tenantId]));
+  const [memberships, setMemberships] = useState<Member[]>(() => miembrosCache ?? []);
+  const [inviteKeys, setInviteKeys] = useState<InviteKey[]>(() => llavesCache ?? []);
+  // El usuario del contexto del tenant (antes otra llamada a `auth.getUser()`).
+  const currentUserId = userId || null;
   const [permissionsFor, setPermissionsFor] = useState<Member | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !miembrosCache);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteNombre, setInviteNombre] = useState("");
   const [inviteApellido, setInviteApellido] = useState("");
@@ -131,20 +137,10 @@ export default function UsersPage() {
 
     if (data) {
       setMemberships(data as Member[]);
+      guardarCache(["usuarios-miembros", tenantId], data as Member[]);
     }
     setLoading(false);
   }, [tenantId]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void (async () => {
-        const supabase = createSupabaseBrowserClient();
-        const { data } = await supabase.auth.getUser();
-        setCurrentUserId(data.user?.id ?? null);
-      })();
-    }, 0);
-    return () => window.clearTimeout(timeout);
-  }, []);
 
   const fetchInviteKeys = useCallback(async () => {
     if (!tenantId) return;
@@ -157,12 +153,17 @@ export default function UsersPage() {
 
     if (data) {
       setInviteKeys(data as InviteKey[]);
+      guardarCache(["usuarios-llaves", tenantId], data as InviteKey[]);
     }
   }, [tenantId]);
 
   useEffect(() => {
-    fetchMemberships();
-    fetchInviteKeys();
+    // Diferido, convencion del repo (react-hooks/set-state-in-effect).
+    const t = window.setTimeout(() => {
+      void fetchMemberships();
+      void fetchInviteKeys();
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [fetchMemberships, fetchInviteKeys]);
 
   // Desde la busqueda rapida (Ctrl/Cmd+K). Invitar es solo del dueño, igual

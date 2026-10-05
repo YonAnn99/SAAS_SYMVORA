@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { LogOut, Plus, User as UserIcon } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
-import { usePathname } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useRubberBordes, type Borde } from "@/components/ui/rubber-bordes";
 import { ProfileDialog } from "@/components/profile/profile-dialog";
@@ -46,9 +45,10 @@ export function DockMovil() {
   const { salir, avisoCajaAbierta } = useCerrarSesion();
 
   useEffect(() => {
+    // Solo para mostrar el correo: sesion local, sin ida a la red.
     createSupabaseBrowserClient()
-      .auth.getUser()
-      .then(({ data }) => setUser(data.user));
+      .auth.getSession()
+      .then(({ data }) => setUser(data.session?.user ?? null));
   }, []);
 
   const cargando = tenantLoading || permsLoading;

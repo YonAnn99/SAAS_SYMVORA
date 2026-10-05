@@ -107,6 +107,16 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // RUTA SIN IDIOMA (`/products`): ninguna pagina se sirve sin prefijo
+  // (`localePrefix: "always"`), asi que `proxy.ts` la va a redirigir a
+  // `/es/products` con next-intl, y ESA peticion pasa por aqui con todos los
+  // controles. Verificar sesion y permisos tambien en esta era hacerlo dos
+  // veces por clic (un `getUser` + el RPC de mas). `/pedido/*.pdf` y `/api`
+  // ni siquiera pasan por el proxy.
+  if (!/^\/(es|en)(\/|$)/.test(request.nextUrl.pathname) && request.nextUrl.pathname !== "/") {
+    return supabaseResponse;
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Sparkles, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { vaciarCache } from "@/lib/cache-datos";
 
 export function DemoBanner() {
   const t = useTranslations();
@@ -41,6 +42,7 @@ export function DemoBanner() {
     try {
       const supabase = createSupabaseBrowserClient();
       await supabase.auth.signOut();
+      vaciarCache();
     } catch {
       // ignore: even if signOut fails, redirect away
     }

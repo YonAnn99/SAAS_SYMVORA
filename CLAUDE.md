@@ -58,6 +58,33 @@
   | `lib/http/timeout.ts` | timeouts de todo proveedor externo |
   | `lib/periodo.ts` | rangos de fecha de reportes |
 
+- **Rendimiento** (plan en `docs/plan-rendimiento-escalabilidad.md`; fase 1 hecha el 2026-10-04):
+  - El POS carga todo en paralelo y usa el `userId` del contexto (sin `auth.getUser()`). Tras cobrar llama
+    `refetchStock()` (solo existencias), no `refetch()`; alta de cliente → `refetchCustomers()`.
+  - `fetchStockSucursal` comparte las peticiones iguales EN VUELO (nunca sirve stock viejo).
+  - Productos: `useVariants(..., { cargarProductos: false })`; la lista sale de `useProducts`.
+  - jsPDF, xlsx y papaparse se cargan con `import()` al usarse (`generarPdfOrdenCompra` y `exportToPDF` son async).
+  - Speed Insights (`@vercel/speed-insights`) en el layout raíz: activarlo en Vercel para ver datos.
+  - **Caché entre módulos** (fase 2, `lib/cache-datos.ts`): en memoria de la pestaña, por usuario+negocio
+    (`fijarAlcanceCache` en el contexto del tenant; `vaciarCache` al cerrar sesión). POS, Productos, Variantes,
+    Clientes y Compras pintan lo último cargado y SIEMPRE vuelven a consultar. La caja/acceso/permisos no se
+    cachean; en el POS no se cobra ni se agrega al carrito hasta tener el catálogo fresco (`loadingProducts`).
+    Un hook nuevo que use la caché debe incluir en la clave todo lo que cambie el dato (ej. la sucursal).
+    También en Dashboard (clave con el día), Reportes (por periodo), Órdenes de compra, Usuarios, Listas de
+    precios, Lotes, Ajustes y el resumen de Sucursales. Finanzas NO (es la caja). Productos carga sus ventanas y
+    pestañas con `next/dynamic` y ya no importa del índice `@/features/inventory`.
+  - **Navegación** (fase 4, sin signing keys): enlaces internos con `Link`/`useRouter` de `@/i18n/navigation`,
+    NUNCA `next/link` con rutas sin idioma (cada clic pasaba dos veces por el middleware). El `matcher` de
+    `src/proxy.ts` salta las precargas de `next/link`; es seguro porque el panel es `force-dynamic` (si una ruta del
+    panel se vuelve estática, revisarlo). Rutas sin `/es|/en` no se verifican en el middleware: next-intl las
+    redirige y la verificación ocurre en la ruta con idioma. En el navegador, `getSession()` (local) cuando solo se
+    necesita id/correo; `getUser()` queda en el contexto del tenant, el middleware y las rutas API.
+  - **Ventas simultáneas** (fase 3.2, migración 107): `_crear_venta_desde_items` bloquea productos/variantes del
+    carrito ORDENADOS POR ID antes del bucle y mueve el stock en ese mismo orden (sin deadlocks entre cajas).
+    `completeSale` reintenta hasta 2 veces ante 40P01/40001 (`esChoqueDeConcurrencia`): la transacción se revierte
+    entera, así que es seguro. Una función nueva que bloquee varios productos debe seguir el mismo orden.
+  - Migración 105 (fase 3.1, aplicada el 2026-10-04): índices para las 19 llaves foráneas sin índice. Los
+    nuevos salen como "unused" en el linter hasta que haya tráfico; no borrarlos por eso.
 - **Otras reglas:**
   - Sin Server Actions: las mutaciones van por el cliente de Supabase o por rutas API.
   - Rate limit durable en Postgres (`consumirRateLimit`); nunca un `Map` en memoria.
@@ -172,9 +199,9 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (915 tests al 2026-10-04) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (922 tests al 2026-10-04) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 104) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 107) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
@@ -214,6 +241,14 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] Al hacer deploy, la versión v1.3-2026-10-02 (SMS/Twilio) vuelve a mostrar el aviso de cambios.
       El aviso promete 15 días de anticipación para cambios.
 - [ ] Reemplazar `[Domicilio del responsable]`, que sigue sin datos.
+
+## Seguridad
+- [x] `log_activity` ya no confía en el cliente (migración 106, 2026-10-04): con sesión exige
+      `p_user_id = auth.uid()` y toma el correo de `auth.users`; sin sesión solo `service_role`. De paso se arregló
+      el registro del cierre automático de caja, que nunca llegaba a la Bitácora (firma equivocada).
+- [ ] Higiene (no explotable hoy): el linter marca funciones `SECURITY DEFINER` ejecutables por `anon`
+      (`cancelar_compra` exige `auth.uid()`; las `_...` son de triggers). Revocar `EXECUTE` a `anon` en una migración.
+- [ ] Activar "Leaked password protection" en Supabase Auth.
 
 ## Otros abiertos
 - [ ] `public/aprende/primeros-pasos/crear-producto` (sin extensión, duplicado de `crear-producto.webp`).

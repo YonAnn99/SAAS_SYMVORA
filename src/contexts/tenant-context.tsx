@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { fijarAlcanceCache, vaciarCache } from "@/lib/cache-datos";
 import type { UserRole } from "@/lib/types/database";
 import { nombreCompleto } from "@/lib/nombre-usuario";
 
@@ -52,6 +53,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const user = userData?.user ?? null;
 
       if (!user) {
+        vaciarCache();
         setState({
           ...EMPTY_STATE,
           loading: false,
@@ -97,6 +99,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         role: membership.role as UserRole,
       };
 
+      // La caché entre módulos va ligada a este usuario y negocio: si cambian,
+      // se vacía (ver `lib/cache-datos.ts`).
+      fijarAlcanceCache(resuelto.userId, resuelto.tenantId);
       setState({ ...resuelto, loading: false, error: null });
     } catch {
       setState({
@@ -113,6 +118,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     };
     load();
   }, [fetchTenant]);
+
+  // Sesión cerrada (aquí, en otra pestaña o por expirar): fuera la caché.
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((evento) => {
+      if (evento === "SIGNED_OUT") vaciarCache();
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <TenantContext.Provider value={{ ...state, refetch: fetchTenant }}>

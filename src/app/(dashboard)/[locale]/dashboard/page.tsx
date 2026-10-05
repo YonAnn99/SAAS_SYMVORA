@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+// Con idioma (`/es/...`): `next/link` con "/products" pasaba dos veces por el
+// middleware (verificacion completa + redireccion de next-intl).
+import { Link } from "@/i18n/navigation";
 import {
   Card,
   CardContent,
@@ -21,6 +23,7 @@ import { toast } from "sonner";
 import { calcularGanancia } from "@/lib/profit";
 import { primerNombre } from "@/lib/nombre-usuario";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface DashboardStats {
   ventasHoy: number;
@@ -45,7 +48,12 @@ export default function DashboardPage() {
   // Saludo con el nombre capturado al crear la cuenta.
   const nombre = primerNombre(userName);
   const { seleccionada: sucursalId } = useSucursal();
-  const [stats, setStats] = useState<DashboardStats>({
+  // Cache entre modulos (`lib/cache-datos.ts`): por negocio, sucursal y DIA
+  // (las "ventas de hoy" no deben pasar a mañana). Se pinta ya y
+  // `fetchDashboardData` lo reemplaza.
+  const claveCache = ["dashboard", tenantId, sucursalId, new Date().toDateString()] as const;
+  const [enCache] = useState(() => leerCache<DashboardStats>(claveCache));
+  const [stats, setStats] = useState<DashboardStats>(() => enCache ?? {
     ventasHoy: 0,
     ventasMes: 0,
     gananciaMes: 0,
@@ -61,11 +69,13 @@ export default function DashboardPage() {
     metodosPago: [],
     ventasPorCategoria: [],
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
+    const clave = ["dashboard", tenantId, sucursalId, new Date().toDateString()];
+    // Con datos en cache no se muestra el "cargando": se actualiza por detras.
+    if (!leerCache(clave)) setLoading(true);
     setError(null);
     const supabase = createSupabaseBrowserClient();
 
@@ -186,7 +196,7 @@ export default function DashboardPage() {
         value,
       }));
 
-      setStats({
+      const nuevas: DashboardStats = {
         ventasHoy,
         ventasMes,
         gananciaMes: resumenGanancia.ganancia,
@@ -201,7 +211,9 @@ export default function DashboardPage() {
         topProductos: [],
         metodosPago,
         ventasPorCategoria: [],
-      });
+      };
+      setStats(nuevas);
+      guardarCache(clave, nuevas);
     }
 
     setLoading(false);

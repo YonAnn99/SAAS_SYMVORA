@@ -38,20 +38,47 @@ import {
   establecerStockSucursal,
   fetchStockSucursal,
 } from "@/features/sucursales/services/stock-sucursal-service";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
+
+/** Cache entre modulos (`lib/cache-datos.ts`): variantes, sus favoritas y productos. */
+interface VariantesEnCache {
+  variantes: VarianteProducto[];
+  favoritas: string[];
+  productos: ProductoOption[];
+}
 
 /**
  * `onCambio`: se llama tras crear, editar o borrar. El catalogo lo usa para
  * refrescar los productos (el stock del padre puede cambiar con sus variantes).
+ *
+ * `cargarProductos: false`: no consulta la lista de productos (`products` queda
+ * vacia). La pagina de Productos ya los tiene cargados y arma esa lista de
+ * ellos; pedirlos aqui otra vez era una consulta duplicada en cada visita.
  */
 export function useVariants(
   tenantId: string | null,
   tenantLoading: boolean,
-  onCambio?: () => void
+  onCambio?: () => void,
+  { cargarProductos = true }: { cargarProductos?: boolean } = {}
 ) {
-  const [variants, setVariants] = useState<VarianteProducto[]>([]);
-  const [products, setProducts] = useState<ProductoOption[]>([]);
+  // Mismo criterio que la pestaña de productos: con un local elegido, cada
+  // talla muestra lo que hay EN ESE local.
+  const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
+  const claveCache = [
+    "variantes",
+    tenantId,
+    seleccionada,
+    restringido,
+    permitidas,
+    cargarProductos,
+  ] as const;
+  // Lo ultimo cargado en esta pestaña: se pinta ya y la carga normal lo
+  // reemplaza en cuanto llega.
+  const [enCache] = useState(() => leerCache<VariantesEnCache>(claveCache));
+  const [variants, setVariants] = useState<VarianteProducto[]>(() => enCache?.variantes ?? []);
+  const [products, setProducts] = useState<ProductoOption[]>(() => enCache?.productos ?? []);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   const [showDialog, setShowDialog] = useState(false);
   const [editingVariant, setEditingVariant] = useState<VarianteProducto | null>(
     null
@@ -67,18 +94,14 @@ export function useVariants(
   // Celdas de variante con un guardado en vuelo (edicion en la celda).
   const [guardandoVariantes, setGuardandoVariantes] = useState<Set<string>>(() => new Set());
   // Corazones por variante (migracion 098), del usuario actual.
-  const [favoritas, setFavoritas] = useState<Set<string>>(() => new Set());
-
-  // Mismo criterio que la pestaña de productos: con un local elegido, cada
-  // talla muestra lo que hay EN ESE local.
-  const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
+  const [favoritas, setFavoritas] = useState<Set<string>>(() => new Set(enCache?.favoritas));
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
     const sumarSuyas = !seleccionada && restringido;
     const [variantsData, productsData, stockLocal, favoritasData] = await Promise.all([
       fetchVariants(tenantId),
-      fetchVariantProducts(tenantId),
+      cargarProductos ? fetchVariantProducts(tenantId) : Promise.resolve([] as ProductoOption[]),
       seleccionada
         ? fetchStockSucursal(seleccionada)
         : sumarSuyas
@@ -86,17 +109,20 @@ export function useVariants(
           : Promise.resolve(null),
       fetchVariantesFavoritas(tenantId),
     ]);
+    const variantes = !stockLocal
+      ? variantsData
+      : sumarSuyas
+        ? conStockSumadoVariantes(variantsData, stockLocal)
+        : conStockDeSucursalVariantes(variantsData, stockLocal);
     setFavoritas(favoritasData);
-    setVariants(
-      !stockLocal
-        ? variantsData
-        : sumarSuyas
-          ? conStockSumadoVariantes(variantsData, stockLocal)
-          : conStockDeSucursalVariantes(variantsData, stockLocal)
-    );
+    setVariants(variantes);
     setProducts(productsData);
     setLoading(false);
-  }, [tenantId, seleccionada, restringido, permitidas]);
+    guardarCache<VariantesEnCache>(
+      ["variantes", tenantId, seleccionada, restringido, permitidas, cargarProductos],
+      { variantes, favoritas: [...favoritasData], productos: productsData }
+    );
+  }, [tenantId, seleccionada, restringido, permitidas, cargarProductos]);
 
   useEffect(() => {
     if (tenantLoading) return;

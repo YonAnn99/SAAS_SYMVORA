@@ -15,12 +15,17 @@ import {
   updateLot,
   type LoteInput,
 } from "../services/lot-service";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 export function useLots(tenantId: string | null, tenantLoading: boolean) {
-  const [lots, setLots] = useState<Lote[]>([]);
-  const [products, setProducts] = useState<ProductoOption[]>([]);
+  // Cache entre modulos (`lib/cache-datos.ts`).
+  const [enCache] = useState(() =>
+    leerCache<{ lotes: Lote[]; productos: ProductoOption[] }>(["lotes", tenantId])
+  );
+  const [lots, setLots] = useState<Lote[]>(() => enCache?.lotes ?? []);
+  const [products, setProducts] = useState<ProductoOption[]>(() => enCache?.productos ?? []);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   const [showDialog, setShowDialog] = useState(false);
   const [editingLot, setEditingLot] = useState<Lote | null>(null);
   const [saving, setSaving] = useState(false);
@@ -35,6 +40,7 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
     setLots(lotsData);
     setProducts(productsData);
     setLoading(false);
+    guardarCache(["lotes", tenantId], { lotes: lotsData, productos: productsData });
   }, [tenantId]);
 
   useEffect(() => {

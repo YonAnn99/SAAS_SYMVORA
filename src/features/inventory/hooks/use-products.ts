@@ -43,6 +43,13 @@ import {
   establecerStockSucursal,
   fetchStockSucursal,
 } from "@/features/sucursales/services/stock-sucursal-service";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
+
+/** Cache entre modulos (`lib/cache-datos.ts`): productos y favoritos. */
+interface ProductosEnCache {
+  productos: Producto[];
+  favoritos: string[];
+}
 
 export function useProducts(
   tenantId: string | null,
@@ -50,10 +57,19 @@ export function useProducts(
   /** Estado por producto (ver `resumenConVariantes`); por defecto `stockStatus`. */
   estadoDe?: (p: Producto) => StockStatus
 ) {
-  const [products, setProducts] = useState<Producto[]>([]);
+  // Con una sucursal elegida, la columna de existencias es la DE ESE LOCAL, no
+  // el total del negocio. Todo lo que ya se deriva de `stock_actual` (stock
+  // bajo, agotado, orden, filtros) pasa a hablar del local sin tocarlo.
+  const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
+  // La cache depende del local: el stock de Norte no es el de Principal.
+  const claveCache = ["productos", tenantId, seleccionada, restringido, permitidas] as const;
+  // Lo ultimo cargado en esta pestaña: se pinta ya y la carga normal lo
+  // reemplaza en cuanto llega.
+  const [enCache] = useState(() => leerCache<ProductosEnCache>(claveCache));
+  const [products, setProducts] = useState<Producto[]>(() => enCache?.productos ?? []);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Producto | null>(null);
   const [saving, setSaving] = useState(false);
@@ -62,12 +78,7 @@ export function useProducts(
   // Ids marcados con el corazon por el usuario ACTUAL. Viven aparte de
   // `products` porque son de otra tabla y de otro dueño: dos usuarios ven el
   // mismo catalogo con distintos favoritos.
-  const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set());
-
-  // Con una sucursal elegida, la columna de existencias es la DE ESE LOCAL, no
-  // el total del negocio. Todo lo que ya se deriva de `stock_actual` (stock
-  // bajo, agotado, orden, filtros) pasa a hablar del local sin tocarlo.
-  const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
+  const [favoritos, setFavoritos] = useState<Set<string>>(() => new Set(enCache?.favoritos));
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
@@ -85,11 +96,18 @@ export function useProducts(
           ? fetchStockSucursal(permitidas)
           : Promise.resolve(null),
     ]);
-    setProducts(
-      !stockLocal ? data : sumarSuyas ? conStockSumado(data, stockLocal) : conStockDeSucursal(data, stockLocal)
-    );
+    const productos = !stockLocal
+      ? data
+      : sumarSuyas
+        ? conStockSumado(data, stockLocal)
+        : conStockDeSucursal(data, stockLocal);
+    setProducts(productos);
     setFavoritos(favs);
     setLoading(false);
+    guardarCache<ProductosEnCache>(["productos", tenantId, seleccionada, restringido, permitidas], {
+      productos,
+      favoritos: [...favs],
+    });
   }, [tenantId, seleccionada, restringido, permitidas]);
 
   useEffect(() => {

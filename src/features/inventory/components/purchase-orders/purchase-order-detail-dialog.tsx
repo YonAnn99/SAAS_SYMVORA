@@ -83,9 +83,9 @@ export function PurchaseOrderDetailDialog({
     };
   }, [ordenId, tenantId]);
 
-  const descargar = () => {
+  const descargar = async () => {
     if (!orden) return;
-    const pdf = generarPdfOrdenCompra(
+    const pdf = await generarPdfOrdenCompra(
       datosPdfDeOrden({
         negocio: nombreNegocio,
         proveedor: orden.proveedor?.nombre ?? "",
@@ -226,7 +226,7 @@ export function PurchaseOrderDetailDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cerrar
           </Button>
-          <Button variant="outline" disabled={!orden} onClick={descargar}>
+          <Button variant="outline" disabled={!orden} onClick={() => void descargar()}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Descargar PDF
           </Button>

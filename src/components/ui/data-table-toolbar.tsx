@@ -42,12 +42,12 @@ export function DataTableToolbar<T>({
   seleccion,
   nombreFilas = "registros",
 }: DataTableToolbarProps<T>) {
-  const exportar = (formato: Formato, filas: T[], soloSeleccion: boolean) => {
+  const exportar = async (formato: Formato, filas: T[], soloSeleccion: boolean) => {
     const archivo = soloSeleccion ? `${filename}-seleccionados` : filename;
     const etiqueta = formato === "csv" ? "CSV" : "PDF";
     try {
       if (formato === "csv") exportToCSV(filas, columns, archivo);
-      else exportToPDF(filas, columns, title, archivo);
+      else await exportToPDF(filas, columns, title, archivo);
       toast.success(`${etiqueta} exportado: ${filas.length} ${nombreFilas}`);
     } catch {
       toast.error(`Error al exportar ${etiqueta}`);
@@ -64,7 +64,7 @@ export function DataTableToolbar<T>({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportar(formato, data, false)}
+          onClick={() => void exportar(formato, data, false)}
           className="h-8 gap-1.5"
         >
           <Icono className="h-3.5 w-3.5" />
@@ -85,14 +85,14 @@ export function DataTableToolbar<T>({
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuItem
             className="cursor-pointer"
-            onClick={() => exportar(formato, data, false)}
+            onClick={() => void exportar(formato, data, false)}
           >
             Toda la lista ({data.length})
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
             disabled={seleccion.length === 0}
-            onClick={() => exportar(formato, seleccion, true)}
+            onClick={() => void exportar(formato, seleccion, true)}
           >
             Solo seleccionados ({seleccion.length})
           </DropdownMenuItem>

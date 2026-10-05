@@ -86,7 +86,7 @@ export async function completeSale(params: CompleteSaleParams) {
     listaPrecioId,
   } = params;
 
-  const { data: venta, error } = await supabase.rpc("complete_sale", {
+  const llamar = () => supabase.rpc("complete_sale", {
     p_tenant_id: tenantId,
     p_usuario_id: userId,
     p_cliente_id: clienteId,
@@ -115,10 +115,28 @@ export async function completeSale(params: CompleteSaleParams) {
     p_lista_precio_id: listaPrecioId ?? null,
   });
 
+  // Dos cobros (o un cobro y una compra) que tocan los mismos productos en el
+  // mismo instante pueden chocar: Postgres cancela uno con "deadlock" (40P01)
+  // o "serialization failure" (40001). En ambos casos la transaccion se
+  // REVIERTE ENTERA —no queda venta a medias—, asi que reintentar es seguro
+  // aunque no haya clave de idempotencia. La 107 ya evita el choque entre
+  // ventas; esto cubre el caso raro que queda.
+  let { data: venta, error } = await llamar();
+  for (let intento = 1; error && esChoqueDeConcurrencia(error) && intento <= 2; intento++) {
+    await new Promise((r) => setTimeout(r, 100 * intento + Math.random() * 150));
+    ({ data: venta, error } = await llamar());
+  }
+
   if (error) throw error;
   if (!venta) throw new Error("Error al procesar la venta");
 
   return venta;
+}
+
+/** Errores de concurrencia de Postgres que revierten la transaccion completa. */
+export function esChoqueDeConcurrencia(error: unknown): boolean {
+  const codigo = (error as { code?: unknown } | null)?.code;
+  return codigo === "40P01" || codigo === "40001";
 }
 
 /**

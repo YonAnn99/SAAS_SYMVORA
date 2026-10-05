@@ -16,17 +16,26 @@ import {
   fetchProductVariants,
   type AjusteInput,
 } from "../services/inventory-adjustment-service";
+import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 export function useInventoryAdjustments(
   tenantId: string | null,
   tenantLoading: boolean
 ) {
-  const [adjustments, setAdjustments] = useState<AjusteInventario[]>([]);
-  const [products, setProducts] = useState<ProductOption[]>([]);
+  // Cache entre modulos (`lib/cache-datos.ts`). Las variantes y lotes del
+  // producto elegido no: se piden al elegirlo, como siempre.
+  const [enCache] = useState(() =>
+    leerCache<{ ajustes: AjusteInventario[]; productos: ProductOption[] }>([
+      "ajustes",
+      tenantId,
+    ])
+  );
+  const [adjustments, setAdjustments] = useState<AjusteInventario[]>(() => enCache?.ajustes ?? []);
+  const [products, setProducts] = useState<ProductOption[]>(() => enCache?.productos ?? []);
   const [variants, setVariants] = useState<VarianteOption[]>([]);
   const [lots, setLots] = useState<LoteOption[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !enCache);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -40,6 +49,7 @@ export function useInventoryAdjustments(
     setAdjustments(adjustmentsData);
     setProducts(productsData);
     setLoading(false);
+    guardarCache(["ajustes", tenantId], { ajustes: adjustmentsData, productos: productsData });
   }, [tenantId]);
 
   useEffect(() => {

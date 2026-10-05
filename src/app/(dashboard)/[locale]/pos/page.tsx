@@ -77,7 +77,7 @@ import type {
 export default function POSPage() {
   const t = useTranslations();
   const router = useRouter();
-  const { tenantId, role, userName, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, userId: usuarioContexto, role, userName, loading: tenantLoading } = useCurrentTenant();
   // "¡Hola, {nombre}!" solo para el cajero, que no entra al Dashboard; los
   // administradores lo ven alla y aqui no se repite.
   // Se arma aqui y no dentro del JSX: con el ternario de `t()` en el JSX, el
@@ -118,8 +118,9 @@ export default function POSPage() {
     loadingProducts,
     cajaId,
     cajaSucursalId,
-    refetch,
-  } = usePosCatalog(tenantId, tenantLoading, sucursalPos);
+    refetchStock,
+    refetchCustomers,
+  } = usePosCatalog(tenantId, tenantLoading, sucursalPos, usuarioContexto || null);
   // El local que se esta atendiendo: el elegido o, en "Todas", el de su caja.
   const sucursalMostrador = sucursalPos ?? cajaSucursalId;
   // El middleware ya redirige si no hay caja, pero no corre en la navegacion
@@ -187,6 +188,14 @@ export default function POSPage() {
   // entraba 1 y no habia forma de cobrar 0.750 kg.
   const addResolved = useCallback(
     (product: Producto, variant: VarianteProducto | null, cantidad?: number) => {
+      // Al volver al POS se pinta el catalogo de la cache mientras llegan los
+      // precios frescos (menos de un segundo). En ese rato no se agrega nada:
+      // la linea guardaria el precio viejo y el ticket no cuadraria con lo
+      // que cobra el servidor.
+      if (loadingProducts) {
+        toast.info("Actualizando precios, intenta de nuevo en un momento");
+        return;
+      }
       // La unidad de la variante si tiene la suya (migracion 104).
       if (cantidad === undefined && esFraccionable(unidadDeVenta(product, variant))) {
         setPidiendoCantidad({ product, variant });
@@ -215,7 +224,7 @@ export default function POSPage() {
         unidad_medida: unidadDeVenta(product, variant),
       });
     },
-    [addItem, mapaLista]
+    [addItem, mapaLista, loadingProducts]
   );
 
   // Conteo para el distintivo de la cuadrícula. Se deriva de la MISMA fuente
@@ -287,6 +296,11 @@ export default function POSPage() {
   // si sonar bien, sonar mal o cerrarse para dejar paso a otra ventana.
   const agregarPorCodigo = useCallback(
     (codigo: string): ResultadoEscaneo => {
+      // Mismo candado que `addResolved`: con el catalogo de la cache aun sin
+      // confirmar no se agrega (el aviso sale en el escaner, no un toast).
+      if (loadingProducts) {
+        return { tipo: "error", mensaje: "Actualizando precios, escanea de nuevo" };
+      }
       const encontrado = resolverCodigo(codigo, products, variantsByProduct);
       if (!encontrado) {
         return { tipo: "error", mensaje: `Código ${codigo.trim()} no encontrado` };
@@ -314,7 +328,7 @@ export default function POSPage() {
       addResolved(product, variant);
       return { tipo: "ok", mensaje: `${etiqueta} agregado` };
     },
-    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved]
+    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts]
   );
 
   // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,
@@ -355,8 +369,10 @@ export default function POSPage() {
     setSelectedPriceList(SIN_LISTA);
     setShowConfirmDialog(false);
     setMobileCartOpen(false);
-    void refetch();
-  }, [clearCart, refetch]);
+    // Cobrar solo cambia existencias: no se recargan clientes, listas ni
+    // favoritos (ver `refetchStock`).
+    void refetchStock();
+  }, [clearCart, refetchStock]);
 
   const {
     mpReady,
@@ -598,7 +614,8 @@ export default function POSPage() {
       setMontoRecibido("");
       setShowConfirmDialog(false);
       setMobileCartOpen(false);
-      void refetch();
+      // Cobrar solo cambia existencias (ver `refetchStock`).
+      void refetchStock();
     }, 900);
   };
 
@@ -610,13 +627,17 @@ export default function POSPage() {
       motivoBloqueoCobro({
         items: items.length,
         metodoPago: selectedPayment,
-        procesando: processingSale,
+        // Mientras el catalogo se confirma con el servidor (al volver al POS se
+        // pinta el de la cache) no se cobra: la caja y los precios tienen que
+        // venir frescos.
+        procesando: processingSale || loadingProducts,
         montoInsuficiente: montoRecibidoInsuficiente,
       }),
     [
       items.length,
       selectedPayment,
       processingSale,
+      loadingProducts,
       montoRecibidoInsuficiente,
     ]
   );
@@ -694,7 +715,9 @@ export default function POSPage() {
 
         <ProductGrid
           products={filteredProducts}
-          loading={loadingProducts}
+          // Con catalogo en cache se muestra ya; el "cargando" solo sin nada que
+          // enseñar.
+          loading={loadingProducts && products.length === 0}
           hasSearch={Boolean(search)}
           viewMode={viewMode}
           isFavoritesFilter={selectedCategory === "favorites"}
@@ -900,7 +923,7 @@ export default function POSPage() {
         tenantId={tenantId}
         onCreated={(customer) => {
           setSelectedCustomer(customer.id);
-          void refetch();
+          void refetchCustomers();
         }}
       />
 

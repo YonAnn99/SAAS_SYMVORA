@@ -1,5 +1,3 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { etiquetaVariante } from "./purchase-order-items";
 import { ordenLlevaIva } from "./purchase-order-totals";
 
@@ -113,7 +111,20 @@ const cantidad = (n: number) => String(Number(n));
 const IZQ = 14;
 const DER = 202;
 
-export function generarPdfOrdenCompra(datos: DatosPdfOrden): Blob {
+/**
+ * jsPDF y su plugin de tablas pesan ~350 kB: se descargan al generar el primer
+ * PDF, no al abrir la pantalla.
+ */
+async function cargarJsPdf() {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+  return { jsPDF, autoTable };
+}
+
+export async function generarPdfOrdenCompra(datos: DatosPdfOrden): Promise<Blob> {
+  const { jsPDF, autoTable } = await cargarJsPdf();
   const doc = new jsPDF({ unit: "mm", format: "letter" });
 
   // Encabezado: quien pide a la izquierda, que documento es a la derecha.
