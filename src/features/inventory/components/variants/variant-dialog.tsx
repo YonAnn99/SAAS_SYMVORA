@@ -25,7 +25,7 @@ import { useTranslations } from "next-intl";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useModulos } from "@/hooks/use-modulos";
 import { unidadesOfrecidas } from "@/lib/modulos";
-import type { UnidadMedida } from "@/lib/unidades";
+import { enUnidad, esFraccionable, porUnidad, type UnidadMedida } from "@/lib/unidades";
 import type { ProductoOption, VarianteProducto } from "../../types/inventory.types";
 import type { VarianteInput } from "../../services/variant-service";
 import {
@@ -155,6 +155,8 @@ export function VariantDialog({
   const etiquetaDelProducto = producto?.unidad_medida
     ? `Igual que el producto (${t(`products.units.${producto.unidad_medida}`)})`
     : "Igual que el producto";
+  // La unidad con la que se vende: la suya o la del producto (para "por kg").
+  const unidadEfectiva = unidad === UNIDAD_DEL_PRODUCTO ? producto?.unidad_medida : unidad;
   const tipos = useMemo(() => {
     const v = variantes.find((x) => x.producto_id === productoId && atributosDeVariante(x).length > 0);
     return tiposSugeridos(tenantGiro, v ? atributosDeVariante(v).map((a) => a.tipo) : []);
@@ -408,7 +410,7 @@ export function VariantDialog({
           {/* Precio, costo, stock y minimo */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Precio de venta *</Label>
+              <Label className="text-xs">Precio de venta{porUnidad(unidadEfectiva)} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -420,7 +422,7 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Costo de compra</Label>
+              <Label className="text-xs">Costo de compra{porUnidad(unidadEfectiva)}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -432,9 +434,10 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Stock actual</Label>
+              <Label className="text-xs">Stock actual{enUnidad(unidadEfectiva)}</Label>
               <Input
                 type="number"
+                step={esFraccionable(unidadEfectiva) ? "any" : undefined}
                 min="0"
                 placeholder="0"
                 value={stock}
@@ -443,9 +446,10 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Stock mínimo</Label>
+              <Label className="text-xs">Stock mínimo{enUnidad(unidadEfectiva)}</Label>
               <Input
                 type="number"
+                step={esFraccionable(unidadEfectiva) ? "any" : undefined}
                 min="0"
                 placeholder="0"
                 value={stockMinimo}

@@ -20,12 +20,11 @@ import {
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Layers } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Producto } from "../../types/inventory.types";
 import { FavoriteButton, StockBadge } from "./product-badges";
 import {
-  rangoDePrecio,
   resumenConVariantes,
   type VarianteResumible,
 } from "@/features/inventory/resumen-variantes";
@@ -125,33 +124,54 @@ export function ProductSwipeList({
               </div>
             )}
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{product.nombre}</p>
-              {/* El distintivo va en el segundo renglon: junto al nombre, en
-                  pantallas angostas se encimaba con el precio. */}
-              {nVariantes > 0 && (
-                <span className="mt-0.5 inline-block rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
-                  {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
-                </span>
-              )}
-              {product.descripcion?.trim() && (
-                <p className="truncate text-xs text-muted-foreground">{product.descripcion}</p>
-              )}
-              <p className="truncate text-xs opacity-60">
-                {t(`products.units.${product.unidad_medida}`)}
-                {" · "}
-                {product.es_servicio
-                  ? "Servicio"
-                  : `${resumen ? resumen.stockTotal : product.stock_actual} en stock`}
-              </p>
-            </div>
+            {/* Producto con variantes: solo nombre, variantes y stock total. El
+                rango de precio aplastaba el nombre hasta desaparecerlo; el
+                precio de cada variante se ve en su hoja (tocar la fila). */}
+            {resumen ? (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{product.nombre}</p>
+                <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
+                    <Layers className="h-3 w-3" aria-hidden="true" />
+                    {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
+                  </span>
+                  <span
+                    className={`truncate ${
+                      product.es_servicio
+                        ? "text-muted-foreground"
+                        : resumen.estado === "agotado"
+                          ? "font-medium text-red-600 dark:text-red-400"
+                          : resumen.estado === "bajo"
+                            ? "font-medium text-amber-600 dark:text-amber-400"
+                            : "text-muted-foreground"
+                    }`}
+                  >
+                    {product.es_servicio ? "Servicio" : `${resumen.stockTotal} en stock`}
+                  </span>
+                </div>
+              </div>
+            ) : (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{product.nombre}</p>
+                {product.descripcion?.trim() && (
+                  <p className="truncate text-xs text-muted-foreground">{product.descripcion}</p>
+                )}
+                <p className="truncate text-xs opacity-60">
+                  {t(`products.units.${product.unidad_medida}`)}
+                  {" · "}
+                  {product.es_servicio ? "Servicio" : `${product.stock_actual} en stock`}
+                </p>
+              </div>
 
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="font-mono text-sm tabular-nums">
-                {resumen ? rangoDePrecio(resumen) : `$${product.precio_venta.toFixed(2)}`}
-              </span>
-              <StockBadge product={product} estado={resumen?.estado} />
-            </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="font-mono text-sm tabular-nums">
+                  ${product.precio_venta.toFixed(2)}
+                </span>
+                <StockBadge product={product} />
+              </div>
+            </>
+            )}
 
             <span onPointerDown={noArrastrar} className="-mr-2 flex shrink-0 items-center">
               <FavoriteButton

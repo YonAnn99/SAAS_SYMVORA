@@ -75,6 +75,9 @@
   - Carrito Zustand con descuento manual (con tope) e IVA opcional.
   - Venta por variante: la variante es parte de la identidad de la línea.
   - Servicios sin stock; ticket HTML y ESC/POS (impresora USB/Bluetooth) con descuento.
+  - **Granel** (kg, g, l, ml, m): el precio se captura POR UNIDAD (los formularios dicen "por kg" vía
+    `porUnidad`/`enUnidad` de `lib/unidades.ts`). En el POS, «¿Cuánto?» vende por cantidad o por importe
+    (`cantidadPorImporte`: $50 a $180/kg = 0.278 kg); siempre se manda la cantidad, el servidor cobra cantidad × precio.
   - **Escáner con la cámara del celular**: `components/escaner/`, `lib/escaner/`, `barcode-detector` +
     `public/zxing/*.wasm`.
   - Favoritos por producto y por variante.
@@ -169,7 +172,7 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (912 tests al 2026-10-04) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (915 tests al 2026-10-04) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 104) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.

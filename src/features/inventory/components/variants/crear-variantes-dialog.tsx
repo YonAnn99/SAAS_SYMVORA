@@ -25,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useModulos } from "@/hooks/use-modulos";
 import { unidadesOfrecidas } from "@/lib/modulos";
-import type { UnidadMedida } from "@/lib/unidades";
+import { enUnidad, porUnidad, type UnidadMedida } from "@/lib/unidades";
 import { crearProductoConVariantes, subirImagenProducto } from "../../services/product-service";
 import { SelectorCategoria } from "../products/selector-categoria";
 import type { VarianteInput } from "../../services/variant-service";
@@ -489,6 +489,9 @@ function FormularioTarjeta({
     onCambio({ atributos: [...tarjeta.atributos, { tipo: libre, nombre: "", valor: "" }] });
   };
 
+  // Granel: el precio es POR UNIDAD ($180 = el kilo) y el POS cobra la
+  // fraccion. Un servicio no tiene unidad (no lleva "por kg").
+  const unidadTarjeta = servicio || tarjeta.unidad === UNIDAD_DEL_PRODUCTO ? null : tarjeta.unidad;
   const campoNumero = (campo: "precio" | "costo" | "stock" | "stockMinimo", etiqueta: string, paso: string, ejemplo: string) => (
     <div className="space-y-1.5">
       <Label className="text-xs">{etiqueta}</Label>
@@ -659,8 +662,8 @@ function FormularioTarjeta({
 
         <AccordionItem title="Precio y costo" index={SECCION.precio} resumen={resumenPrecio(tarjeta)}>
           <div className="grid grid-cols-2 gap-3 pt-1">
-            {campoNumero("precio", "Precio de venta *", "0.01", "0.00")}
-            {campoNumero("costo", "Costo de compra", "0.01", "0.00")}
+            {campoNumero("precio", `Precio de venta${porUnidad(unidadTarjeta)} *`, "0.01", "0.00")}
+            {campoNumero("costo", `Costo de compra${porUnidad(unidadTarjeta)}`, "0.01", "0.00")}
           </div>
         </AccordionItem>
 
@@ -669,8 +672,8 @@ function FormularioTarjeta({
             {/* En un servicio el stock DESAPARECE: su venta no descuenta existencias. */}
             {!servicio && (
               <div className="grid grid-cols-2 gap-3">
-                {campoNumero("stock", "Stock actual", "any", "0")}
-                {campoNumero("stockMinimo", "Stock mínimo", "any", "0")}
+                {campoNumero("stock", `Stock actual${enUnidad(unidadTarjeta)}`, "any", "0")}
+                {campoNumero("stockMinimo", `Stock mínimo${enUnidad(unidadTarjeta)}`, "any", "0")}
               </div>
             )}
             {servicio && !interruptores && (

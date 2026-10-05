@@ -11,7 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { abreviatura, formatearCantidad, normalizarCantidad } from "@/lib/unidades";
+import {
+  abreviatura,
+  cantidadPorImporte,
+  formatearCantidad,
+  normalizarCantidad,
+} from "@/lib/unidades";
 
 /**
  * "¿Cuánto?" para productos que se venden por medida (kg, g, l, ml, m).
@@ -19,7 +24,16 @@ import { abreviatura, formatearCantidad, normalizarCantidad } from "@/lib/unidad
  * Antes el POS solo sumaba de 1 en 1: no habia forma de cobrar 0.750 kg de
  * jitomate ni 3.5 m de cable, aunque la base guarda 3 decimales. Se abre al
  * agregar un producto fraccionable; muestra el importe mientras se escribe.
+ *
+ * Tambien por IMPORTE: "$50 de jamon" -> 0.278 kg. Se agrega la cantidad
+ * calculada (con 3 decimales, como guarda la base), asi que el carrito y el
+ * servidor no cambian; el importe real puede variar unos centavos.
  */
+
+type Modo = "cantidad" | "importe";
+
+/** Atajos del modo importe, en pesos. */
+const ATAJOS_IMPORTE = [20, 50, 100, 200];
 
 /** Atajos segun la unidad: fracciones para kilo/litro/metro, cantidades redondas para g/ml. */
 function atajos(unidad: string): number[] {
@@ -51,6 +65,7 @@ export function CantidadDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [valor, setValor] = useState("");
+  const [modo, setModo] = useState<Modo>("cantidad");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Cada apertura empieza vacia y con el foco en el campo (el cajero teclea
@@ -60,14 +75,24 @@ export function CantidadDialog({
     if (!open) return;
     const t = window.setTimeout(() => {
       setValor("");
+      setModo("cantidad");
       inputRef.current?.focus();
     }, 0);
     return () => window.clearTimeout(t);
   }, [open]);
 
-  const cantidad = normalizarCantidad(valor, unidad);
+  const porImporte = modo === "importe";
+  const cantidadDe = (texto: string | number) =>
+    porImporte ? cantidadPorImporte(texto, precioUnitario, unidad) : normalizarCantidad(texto, unidad);
+  const cantidad = cantidadDe(valor);
   const excede = cantidad !== null && disponible !== null && cantidad > disponible;
   const valida = cantidad !== null && !excede;
+
+  const cambiarModo = (siguiente: Modo) => {
+    setModo(siguiente);
+    setValor("");
+    inputRef.current?.focus();
+  };
 
   const confirmar = (n: number | null = cantidad) => {
     if (n === null) return;
@@ -85,6 +110,24 @@ export function CantidadDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Cantidad (lo que marca la bascula) o importe ("$50 de jamon"). */}
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Vender por">
+          {(["cantidad", "importe"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={modo === m}
+              onClick={() => cambiarModo(m)}
+              className={`h-7 rounded-md text-xs font-medium transition-colors ${
+                modo === m ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m === "cantidad" ? `Cantidad (${abreviatura(unidad, 1)})` : "Importe ($)"}
+            </button>
+          ))}
+        </div>
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -93,37 +136,59 @@ export function CantidadDialog({
           className="space-y-3"
         >
           <div className="flex items-center gap-2">
+            {porImporte && <span className="w-4 text-lg font-medium text-muted-foreground">$</span>}
             <Input
               ref={inputRef}
               inputMode="decimal"
-              placeholder="0.000"
+              placeholder={porImporte ? "0.00" : "0.000"}
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              aria-label={`Cantidad en ${abreviatura(unidad)}`}
+              aria-label={porImporte ? "Importe en pesos" : `Cantidad en ${abreviatura(unidad)}`}
               className="h-11 text-lg font-mono"
             />
-            <span className="text-sm font-medium text-muted-foreground w-10">{abreviatura(unidad)}</span>
+            {!porImporte && (
+              <span className="text-sm font-medium text-muted-foreground w-10">{abreviatura(unidad)}</span>
+            )}
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            {atajos(unidad).map((n) => (
-              <Button
-                key={n}
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={disponible !== null && n > disponible}
-                onClick={() => confirmar(n)}
-              >
-                {etiquetaAtajo(n)} {abreviatura(unidad, n)}
-              </Button>
-            ))}
+            {porImporte
+              ? ATAJOS_IMPORTE.map((monto) => {
+                  const n = cantidadDe(monto);
+                  return (
+                    <Button
+                      key={monto}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={n === null || (disponible !== null && n > disponible)}
+                      onClick={() => confirmar(n)}
+                    >
+                      ${monto}
+                    </Button>
+                  );
+                })
+              : atajos(unidad).map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={disponible !== null && n > disponible}
+                    onClick={() => confirmar(n)}
+                  >
+                    {etiquetaAtajo(n)} {abreviatura(unidad, n)}
+                  </Button>
+                ))}
           </div>
 
+          {/* En importe se muestra la cantidad que entra y lo que de verdad se
+              cobra (la cantidad va con 3 decimales: puede variar centavos). */}
           <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Importe</span>
+            <span className="text-muted-foreground">{porImporte ? "Se agrega" : "Importe"}</span>
             <span className="font-mono font-semibold">
-              ${((cantidad ?? 0) * precioUnitario).toFixed(2)}
+              {porImporte && cantidad !== null && `${formatearCantidad(cantidad, unidad)} · `}$
+              {((cantidad ?? 0) * precioUnitario).toFixed(2)}
             </span>
           </div>
 

@@ -102,6 +102,35 @@ export function normalizarCantidad(
 }
 
 /**
+ * Sufijo para etiquetas de precio y costo: " por kg" en las de medida (el
+ * precio se captura POR UNIDAD: $180 = $180 el kilo), "" en las de conteo.
+ */
+export function porUnidad(unidad: string | null | undefined): string {
+  return esFraccionable(unidad) ? ` por ${abreviatura(unidad, 1)}` : "";
+}
+
+/** Sufijo para etiquetas de stock: " (kg)" en las de medida, "" en las demas. */
+export function enUnidad(unidad: string | null | undefined): string {
+  return esFraccionable(unidad) ? ` (${abreviatura(unidad, 1)})` : "";
+}
+
+/**
+ * Venta por importe ("$50 de jamon"): la cantidad que corresponde a ese monto
+ * al precio por unidad, redondeada a 3 decimales como guarda la base. Por eso
+ * el importe real puede variar unos centavos ($50 a $180/kg = 0.278 kg =
+ * $50.04). `null` si el importe o el precio no son mayores a 0.
+ */
+export function cantidadPorImporte(
+  importe: string | number,
+  precioUnitario: number,
+  unidad: string | null | undefined
+): number | null {
+  const monto = typeof importe === "number" ? importe : Number(importe.trim().replace(",", "."));
+  if (!Number.isFinite(monto) || monto <= 0 || !(precioUnitario > 0)) return null;
+  return normalizarCantidad(Math.round((monto / precioUnitario) * 1000) / 1000, unidad);
+}
+
+/**
  * La unidad con la que se vende algo: la de la variante si tiene la suya
  * (migracion 104), si no la del producto. El POS decide con ella si pide la
  * cantidad (granel) o suma piezas.

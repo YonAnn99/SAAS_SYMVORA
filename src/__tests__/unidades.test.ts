@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest";
 import {
   UNIDADES,
   articulosDeLinea,
+  cantidadPorImporte,
+  enUnidad,
   esFraccionable,
   formatearCantidad,
   normalizarCantidad,
+  porUnidad,
 } from "@/lib/unidades";
 import { parseUnidadMedida } from "@/features/inventory/components/products/import/import-row-processor";
 
@@ -86,5 +89,28 @@ describe("importar desde Excel reconoce las unidades", () => {
     ["algo raro", "PIEZA"],
   ])("%s → %s", (entrada, esperado) => {
     expect(parseUnidadMedida(entrada)).toBe(esperado);
+  });
+});
+
+describe("granel: etiquetas y venta por importe", () => {
+  it("las etiquetas dicen por qué unidad es el precio y el stock", () => {
+    expect(porUnidad("KG")).toBe(" por kg");
+    expect(porUnidad("LITRO")).toBe(" por l");
+    expect(porUnidad("PIEZA")).toBe("");
+    expect(enUnidad("METRO")).toBe(" (m)");
+    expect(enUnidad("CAJA")).toBe("");
+  });
+
+  it("convierte un importe en la cantidad, con 3 decimales", () => {
+    expect(cantidadPorImporte(50, 180, "KG")).toBe(0.278);
+    expect(cantidadPorImporte("90", 180, "KG")).toBe(0.5);
+    expect(cantidadPorImporte("12,5", 25, "LITRO")).toBe(0.5);
+  });
+
+  it("sin importe o sin precio no hay cantidad", () => {
+    expect(cantidadPorImporte(0, 180, "KG")).toBeNull();
+    expect(cantidadPorImporte("abc", 180, "KG")).toBeNull();
+    expect(cantidadPorImporte(50, 0, "KG")).toBeNull();
+    expect(cantidadPorImporte(0.0001, 180, "KG")).toBeNull();
   });
 });

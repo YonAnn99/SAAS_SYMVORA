@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { UNIDADES } from "@/lib/unidades";
+import { UNIDADES, enUnidad, esFraccionable, porUnidad } from "@/lib/unidades";
 import { unidadesOfrecidas } from "@/lib/modulos";
 import { useModulos } from "@/hooks/use-modulos";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -499,7 +499,7 @@ export function ProductDialog({
             <div className="space-y-4 pt-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Precio de venta *</Label>
+              <Label className="text-xs">Precio de venta{porUnidad(formData.unidad_medida)} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -511,7 +511,7 @@ export function ProductDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Costo de compra *</Label>
+              <Label className="text-xs">Costo de compra{porUnidad(formData.unidad_medida)} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -560,9 +560,10 @@ export function ProductDialog({
           {!formData.es_servicio && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Stock actual</Label>
+                <Label className="text-xs">Stock actual{enUnidad(formData.unidad_medida)}</Label>
                 <Input
                   type="number"
+                  step={esFraccionable(formData.unidad_medida) ? "any" : undefined}
                   min="0"
                   placeholder="0"
                   value={formData.stock_actual}
@@ -575,9 +576,10 @@ export function ProductDialog({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Stock mínimo</Label>
+                <Label className="text-xs">Stock mínimo{enUnidad(formData.unidad_medida)}</Label>
                 <Input
                   type="number"
+                  step={esFraccionable(formData.unidad_medida) ? "any" : undefined}
                   min="0"
                   placeholder="0"
                   value={formData.stock_minimo}
