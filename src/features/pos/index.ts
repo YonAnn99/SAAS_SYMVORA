@@ -1,4 +1,3 @@
-export * from "./components/confirm-sale-dialog";
 export * from "./components/payment-method-picker";
 export * from "./components/pos-cart";
 export * from "./components/pos-search-bar";

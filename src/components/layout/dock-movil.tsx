@@ -34,6 +34,16 @@ import { filterNavigation, navegacionDock, stripLocale } from "@/lib/navigation"
  * ⚠️ Su alto (64 px + safe area) está descontado en el relleno inferior de
  * <main> (`dashboard-shell.tsx`) y en `alto-panel.ts`.
  */
+/**
+ * En el dock caben ~70 px por módulo: "Punto de Venta" y "Órdenes de Compra"
+ * se encimaban. Aquí van cortos; el menú lateral y el título conservan el
+ * nombre completo.
+ */
+const ETIQUETA_CORTA: Record<string, string> = {
+  "/pos": "layout.posCorto",
+  "/purchase-orders": "layout.purchaseOrdersCorto",
+};
+
 export function DockMovil() {
   const t = useTranslations();
   const pathname = usePathname();
@@ -259,7 +269,7 @@ export function DockMovil() {
                     className={cn(ranura, activo ? "text-foreground" : "text-white/70 active:text-white")}
                   >
                     <Icon className="h-5 w-5" />
-                    <span className="max-w-full truncate px-1">{t(item.name)}</span>
+                    <span className="max-w-full truncate px-1">{t(ETIQUETA_CORTA[item.href] ?? item.name)}</span>
                   </Link>
                 );
               })}

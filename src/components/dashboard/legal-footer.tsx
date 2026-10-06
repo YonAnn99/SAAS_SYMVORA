@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
+import { usePathname } from "next/navigation";
 
 /**
  * Pie legal del panel.
@@ -17,6 +18,13 @@ import { useLocale } from "next-intl";
  */
 export function LegalFooter() {
   const locale = useLocale();
+  // En el Punto de Venta, por debajo de `lg` (celular y tablet, con dock), el
+  // pie se quita: cada pixel es para productos y la barra del carrito. Los
+  // enlaces siguen en cualquier otra pantalla del panel. Ver `ALTO_PANEL_POS`.
+  // `next/navigation` (con el idioma: `/es/pos`), no el de next-intl: este pie
+  // no usa nada de `@/i18n/navigation` a proposito (ver sus enlaces).
+  const pathname = usePathname() ?? "";
+  const enPos = /^\/(es|en)\/pos(\/|$)/.test(pathname);
 
   const MARKETING = "https://www.symvora.com.mx";
 
@@ -29,7 +37,7 @@ export function LegalFooter() {
   return (
     // Colores por token del tema, nunca fijos: con `bg-neutral-50` el pie salia
     // como una franja BLANCA sobre el panel en modo oscuro.
-    <footer className="mt-6 bg-muted/30 px-4 py-2 md:px-6 md:py-3">
+    <footer className={`mt-6 bg-muted/30 px-4 py-2 md:px-6 md:py-3${enPos ? " hidden lg:block" : ""}`}>
       {/* `leading-4` fijo: con `text-[11px]` el interlineado heredado era
           16.5 px y el alto del pie no era exacto. `alto-panel.ts` cuenta con
           una linea de 16 px. */}

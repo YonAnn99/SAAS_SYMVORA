@@ -9,14 +9,22 @@ import {
   PackageX,
   ShoppingCart,
   SlidersHorizontal,
+  Trash2,
   TriangleAlert,
   Wallet,
+  X,
   type LucideIcon,
 } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  COLOR_ELIMINAR,
+  FilaDeslizable,
+  usePistaDeslizar,
+} from "@/components/ui/fila-deslizable";
 import { cn } from "@/lib/utils";
+import { useEsEscritorio } from "@/hooks/use-es-movil";
 import { etiquetaGlobo, haceCuanto, type Notificacion, type TipoNotificacion } from "@/lib/notificaciones";
 import { useNotificaciones } from "@/features/notificaciones/hooks/use-notificaciones";
 
@@ -31,13 +39,43 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
   traspaso: { icono: ArrowLeftRight, clase: "bg-teal-500/15 text-teal-600 dark:text-teal-400" },
 };
 
+/** Icono del tipo, con el punto de "nueva" en su esquina. */
+function IconoNotificacion({ n, nueva }: { n: Notificacion; nueva: boolean }) {
+  const estilo = ESTILO[n.tipo] ?? ESTILO.producto;
+  const Icono = estilo.icono;
+  return (
+    <span
+      className={cn(
+        "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+        estilo.clase
+      )}
+    >
+      <Icono className="h-4 w-4" />
+      {nueva && (
+        <span
+          className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-popover"
+          aria-label="Nueva"
+        />
+      )}
+    </span>
+  );
+}
+
 /**
  * Campana del header. Al abrirla se marcan todas como leídas, pero las que
  * eran nuevas conservan su punto mientras el panel siga abierto (se compara
  * contra el corte de ANTES de abrir).
+ *
+ * Descartar (solo para este usuario, migración 109):
+ * - escritorio: la X que aparece al pasar el mouse;
+ * - celular y tablet: deslizar a la izquierda, la misma pastilla de Productos
+ *   (`FilaDeslizable`), sin confirmación: quitar un aviso no borra nada.
  */
 export function CampanaNotificaciones() {
-  const { lista, leidoHasta, noLeidas, cargando, marcarLeidas } = useNotificaciones();
+  const { lista, leidoHasta, noLeidas, cargando, marcarLeidas, ocultar } = useNotificaciones();
+  const esEscritorio = useEsEscritorio();
+  const router = useRouter();
+  const { verPista, alAbrir } = usePistaDeslizar();
   const [abierta, setAbierta] = useState(false);
   const [corteAlAbrir, setCorteAlAbrir] = useState<string | null>(null);
 
@@ -53,6 +91,12 @@ export function CampanaNotificaciones() {
 
   const esNueva = (n: Notificacion) =>
     !corteAlAbrir || new Date(n.creado_en).getTime() > new Date(corteAlAbrir).getTime();
+
+  const abrirEnlace = (n: Notificacion) => {
+    if (!n.enlace) return;
+    setAbierta(false);
+    router.push(n.enlace);
+  };
 
   return (
     <Popover open={abierta} onOpenChange={alCambiar}>
@@ -74,10 +118,17 @@ export function CampanaNotificaciones() {
         )}
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} className="w-[22rem] max-w-[calc(100vw-2rem)] p-0">
-        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-          <p className="text-sm font-semibold">Notificaciones</p>
-          {lista.length > 0 && (
-            <span className="text-xs text-muted-foreground">Últimas {lista.length}</span>
+        <div className="border-b border-border/60 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Notificaciones</p>
+            {lista.length > 0 && (
+              <span className="text-xs text-muted-foreground">Últimas {lista.length}</span>
+            )}
+          </div>
+          {!esEscritorio && verPista && lista.length > 0 && (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Desliza a la izquierda para eliminar
+            </p>
           )}
         </div>
 
@@ -92,20 +143,13 @@ export function CampanaNotificaciones() {
                 Aquí verás el stock que se acaba y lo que hace tu equipo.
               </p>
             </div>
-          ) : (
+          ) : esEscritorio ? (
             <ul className="divide-y divide-border/50">
               {lista.map((n) => {
-                const estilo = ESTILO[n.tipo] ?? ESTILO.producto;
-                const Icono = estilo.icono;
                 const contenido = (
-                  <div className="flex gap-3 px-4 py-3">
-                    <span
-                      className={cn(
-                        "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                        estilo.clase
-                      )}
-                    >
-                      <Icono className="h-4 w-4" />
+                  <div className="flex gap-3 py-3 pl-4 pr-10">
+                    <span className="mt-0.5">
+                      <IconoNotificacion n={n} nueva={esNueva(n)} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium leading-snug text-foreground">{n.titulo}</p>
@@ -114,13 +158,10 @@ export function CampanaNotificaciones() {
                       )}
                       <p className="mt-1 text-[11px] text-muted-foreground/80">{haceCuanto(n.creado_en)}</p>
                     </div>
-                    {esNueva(n) && (
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="Nueva" />
-                    )}
                   </div>
                 );
                 return (
-                  <li key={n.id}>
+                  <li key={n.id} className="group relative">
                     {n.enlace ? (
                       <Link
                         href={n.enlace}
@@ -132,10 +173,49 @@ export function CampanaNotificaciones() {
                     ) : (
                       contenido
                     )}
+                    {/* Fuera del enlace: cerrar no navega. Visible al pasar el
+                        mouse, con el teclado, o siempre en pantallas sin hover. */}
+                    <button
+                      type="button"
+                      onClick={() => void ocultar(n.id)}
+                      aria-label="Descartar notificación"
+                      title="Descartar"
+                      className="absolute right-2 top-2.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </li>
                 );
               })}
             </ul>
+          ) : (
+            <div className="space-y-2 p-2">
+              {lista.map((n) => (
+                <FilaDeslizable
+                  key={n.id}
+                  label={n.titulo}
+                  alto={72}
+                  onOpenChange={alAbrir}
+                  onTap={n.enlace ? () => abrirEnlace(n) : undefined}
+                  acciones={[
+                    {
+                      id: "eliminar",
+                      etiqueta: "Eliminar",
+                      color: COLOR_ELIMINAR,
+                      icono: <Trash2 size={18} strokeWidth={2} />,
+                      alElegir: () => ocultar(n.id),
+                    },
+                  ]}
+                >
+                  <IconoNotificacion n={n} nueva={esNueva(n)} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{n.titulo}</p>
+                    {n.mensaje && <p className="truncate text-xs text-muted-foreground">{n.mensaje}</p>}
+                    <p className="text-[11px] opacity-60">{haceCuanto(n.creado_en)}</p>
+                  </div>
+                </FilaDeslizable>
+              ))}
+            </div>
           )}
         </div>
       </PopoverContent>

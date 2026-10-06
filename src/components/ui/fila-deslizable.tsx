@@ -61,6 +61,8 @@ interface FilaDeslizableProps {
   /** Al cambiar (y no ser 0), la fila se asoma hacia `accionInicio` para avisar que se habilito. */
   avisoInicio?: number;
   onOpenChange?: (abierta: boolean) => void;
+  /** Alto de la pastilla en px (72 por defecto, el de las tablas). */
+  alto?: number;
   children: ReactNode;
 }
 
@@ -73,6 +75,7 @@ export function FilaDeslizable({
   onEliminar,
   onTap,
   onOpenChange,
+  alto = 72,
   children,
 }: FilaDeslizableProps) {
   const { resolvedTheme } = useTheme();
@@ -133,7 +136,7 @@ export function FilaDeslizable({
       drawerColor={colorFila}
       rowColor={colorFila}
       textColor={oscuro ? "#f5f5f5" : "#18181b"}
-      height={72}
+      height={alto}
       radius={14}
       actionWidth={76}
       onOpenChange={onOpenChange}

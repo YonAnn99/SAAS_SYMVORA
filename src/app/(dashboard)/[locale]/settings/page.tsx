@@ -52,7 +52,7 @@ export default function SettingsPage() {
   };
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const { setModulo } = useModulos();
+  const { setModulo, setTerminalExterna } = useModulos();
   const { refetch: refetchTenantContext } = useTenantContext();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [settings, setSettings] = useState<TenantSettingsJSON | null>(null);
@@ -224,6 +224,31 @@ export default function SettingsPage() {
     if (error) {
       setModulo(module, !value);
       toast.error("Error al actualizar módulo: " + error.message);
+    }
+  };
+
+  // Terminal de tarjeta NO integrada (banco, Clip...). Mismo escritor que los
+  // modulos (`settings` + un solo update del jsonb) para no pisarse entre si.
+  const handleToggleTerminalExterna = async (value: boolean) => {
+    if (!tenant || !settings) return;
+    setTerminalExterna(value);
+
+    const newSettings: TenantSettingsJSON = {
+      ...settings,
+      pos_config: { ...(settings.pos_config ?? {}), terminal_externa: value },
+    };
+    setSettings(newSettings);
+
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase
+      .from("tenant_settings")
+      .update({ configuracion_json: newSettings })
+      .eq("tenant_id", tenant.id);
+
+    if (error) {
+      setTerminalExterna(!value);
+      setSettings(settings);
+      toast.error("Error al guardar la terminal: " + error.message);
     }
   };
 
@@ -399,7 +424,24 @@ export default function SettingsPage() {
 
         {/* Se monta solo al abrir la pestaña: asi la configuracion de Mercado
             Pago se consulta nada mas cuando hace falta. */}
-        <TabsContent value="payments">
+        <TabsContent value="payments" className="space-y-6">
+          <Card>
+            <CardContent className="flex items-center justify-between gap-4 py-4">
+              <div className="space-y-0.5">
+                <Label className="text-xs">Tengo una terminal de tarjeta externa</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Banco, Clip, Getnet… Cobras en tu terminal y registras la venta con «Tarjeta».
+                  Sin terminal externa ni Mercado Pago Point, «Tarjeta» queda bloqueado en el
+                  punto de venta.
+                </p>
+              </div>
+              <Switch
+                checked={settings?.pos_config?.terminal_externa === true}
+                disabled={!settings}
+                onCheckedChange={(checked) => void handleToggleTerminalExterna(checked)}
+              />
+            </CardContent>
+          </Card>
           {pestana === "payments" && <MercadoPagoPointSettings />}
         </TabsContent>
 

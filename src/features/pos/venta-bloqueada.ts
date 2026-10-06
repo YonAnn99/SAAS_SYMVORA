@@ -18,7 +18,8 @@ export type MotivoBloqueo =
   | "sin-productos"
   | "sin-metodo"
   | "procesando"
-  | "monto-insuficiente";
+  | "monto-insuficiente"
+  | "sin-terminal";
 
 export interface EstadoCobro {
   /** Cuantas lineas hay en el carrito. */
@@ -28,6 +29,11 @@ export interface EstadoCobro {
   procesando: boolean;
   /** Solo aplica a efectivo: lo recibido no cubre el total. */
   montoInsuficiente: boolean;
+  /**
+   * Solo aplica a «Tarjeta»: hay una terminal con que cobrar
+   * (`tarjetaManualDisponible`). Opcional: si no se pasa, no bloquea.
+   */
+  tarjetaDisponible?: boolean;
 }
 
 /** Devuelve el motivo por el que NO se puede cobrar, o `null` si se puede. */
@@ -36,5 +42,8 @@ export function motivoBloqueoCobro(estado: EstadoCobro): MotivoBloqueo | null {
   if (!estado.metodoPago) return "sin-metodo";
   if (estado.procesando) return "procesando";
   if (estado.montoInsuficiente) return "monto-insuficiente";
+  // Defensa: el boton ya sale bloqueado, pero pudo quedar elegido antes de que
+  // el dueño apagara su terminal externa.
+  if (estado.metodoPago === "TARJETA" && estado.tarjetaDisponible === false) return "sin-terminal";
   return null;
 }

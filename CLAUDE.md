@@ -108,6 +108,23 @@
   - **Escáner con la cámara del celular**: `components/escaner/`, `lib/escaner/`, `barcode-detector` +
     `public/zxing/*.wasm`.
   - Favoritos por producto y por variante.
+  - **POS en celular** (rediseño del 2026-10-06):
+    - Por debajo de `sm`: una fila con buscar/escanear y el botón Ajustes (`pos-ajustes-hoja.tsx`: sucursal, lista
+      de precios y vista) y las categorías como chips. Desde `sm` la barra sigue como antes (`sm:contents`).
+    - Cuadrícula de 2 columnas bajo `@md` con «×N» de lo que ya va en el carrito (`enCarrito`).
+    - `MobileCartBar` azul con conteo y total.
+    - Hoja del carrito con líneas deslizables (`FilaDeslizable`), métodos de pago de 48 px, montos rápidos
+      (`montosRapidos`).
+    - **Se cobra deslizando en el carrito** (`DeslizarParaConfirmar` en `checkout-panel.tsx`), sin ventana de
+      confirmación: el resumen ya está a la vista. Bloqueado, el deslizador dice por qué (`motivoBloqueo`). Tras la
+      venta, `ventasCobradas` lo reinicia (`key`). Con «Tarjeta (terminal)» va un botón, porque la confirma la
+      terminal.
+    - El pie legal se oculta en `/pos` por debajo de `lg`; el POS mide `ALTO_PANEL_POS`.
+    - El dock usa etiquetas cortas («Vender», «Órdenes»).
+  - **«Tarjeta» (manual) bloqueado sin terminal** (`tarjetaManualDisponible` en `features/pos/tarjeta-disponible.ts`):
+    se habilita con Mercado Pago Point lista (`mpReady`) o con una terminal externa declarada en Configuración →
+    Métodos de pago (`configuracion_json.pos_config.terminal_externa`, leída en el store de `use-modulos.ts`).
+    En el demo siempre está activo. `motivoBloqueoCobro` devuelve `"sin-terminal"` como defensa.
 - **Variantes:**
   - Atributos libres en `variantes_producto.atributos` jsonb (migración 097). `talla`/`color` se siguen
     llenando como resumen compatible.
@@ -163,7 +180,7 @@
   - Las aceptaciones se registran en `legal_acceptances`, con banner de actualización.
   - Versiones en `lib/legal/versions.ts`; privacidad en `v1.3-2026-10-02`.
 
-## Notificaciones (migración 108, 2026-10-05)
+## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
   foco. Al abrir el panel se llama `marcar_notificaciones_leidas` (`notificaciones_lectura.leido_hasta`). La lógica
@@ -187,6 +204,10 @@
     una venta, un cierre o una compra. Un evento nuevo se agrega con un trigger que llame `_notif_accion` y un tipo
     nuevo en el CHECK de `notificaciones.tipo`.
   - El negocio demo no genera avisos (`_notif_tenant_activo`).
+- **Descartar** (migración 109): es POR USUARIO, nunca borra la fila compartida. `ocultar_notificacion(id)` guarda
+  en `notificaciones_ocultas` y la RLS de `notificaciones` esconde las que tengan `oculta_en >= creado_en`. Así una
+  agrupada que se actualiza después reaparece con el conteo nuevo. En escritorio (`useEsEscritorio`) es la X al
+  pasar el mouse; en celular y tablet, deslizar a la izquierda con `FilaDeslizable` (una sola acción, sin confirmar).
 - **Correo inmediato de stock** al SUPER_ADMIN y los ORG_ADMIN:
   - La campana lo pide a `POST /api/notificaciones/correo-stock` cuando ve un aviso de stock con
     `correo_enviado_en` NULL.
@@ -232,9 +253,9 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (933 tests al 2026-10-05) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (943 tests al 2026-10-06) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 108) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 109) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

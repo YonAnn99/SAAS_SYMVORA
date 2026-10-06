@@ -1,14 +1,30 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
+import { DeslizarParaConfirmar } from "@/components/ui/deslizar-para-confirmar";
 import { CustomerSelector } from "@/features/customers/components/customer-selector";
 import { PaymentMethodPicker, type PaymentMethodOption } from "./payment-method-picker";
 import { PosCart } from "./pos-cart";
 import { cn } from "@/lib/utils";
 import type { Cliente } from "@/lib/types/database";
 import type { CartItem, SaleTotals } from "../types/pos.types";
+import { montosRapidos } from "../montos-rapidos";
+import type { MotivoBloqueo } from "../venta-bloqueada";
+import { precargarSonidoVenta } from "../celebracion-venta";
+
+/** Lo que dice el deslizador mientras no se puede cobrar. */
+const ETIQUETA_BLOQUEO: Record<MotivoBloqueo, string> = {
+  "sin-productos": "Agrega productos",
+  "sin-metodo": "Elige un método de pago",
+  "monto-insuficiente": "Captura el monto recibido",
+  "sin-terminal": "Tarjeta sin terminal",
+  // Solo cuando NO es el propio cobro: mientras se registra la venta el
+  // deslizador muestra su giro, y bloquearlo a mitad cortaria la animacion.
+  procesando: "Actualizando precios…",
+};
 
 interface CheckoutPanelProps {
   customers: Cliente[];
@@ -28,16 +44,25 @@ interface CheckoutPanelProps {
   selectedPayment: string;
   onSelectPayment: (key: string) => void;
   mpReady: boolean | null;
+  tarjetaLista: boolean | null;
 
   isEfectivo: boolean;
   montoRecibido: string;
   onMontoRecibidoChange: (value: string) => void;
   cambio: number | null;
 
-  /** Por que no se puede cobrar ahora mismo, o `null` si si se puede. */
   processingSale: boolean;
-  disabledComplete: boolean;
-  onCompleteSale: () => void;
+  /** Por que no se puede cobrar ahora mismo, o `null` si si se puede. */
+  motivoBloqueo: MotivoBloqueo | null;
+  /**
+   * Registra la venta: se resuelve si quedo y se rechaza si no (el deslizador
+   * muestra "Venta completada" o la sacudida de error segun eso).
+   */
+  onCobrar: () => Promise<void>;
+  /** Tras la animacion de exito, con la posicion del control (origen del destello). */
+  onVentaConfirmada: (origen: DOMRect | null) => void;
+  /** Sube con cada venta cobrada: reinicia el deslizador para la siguiente. */
+  ventasCobradas: number;
   onClearCart: () => void;
 
   className?: string;
@@ -59,17 +84,29 @@ export function CheckoutPanel({
   selectedPayment,
   onSelectPayment,
   mpReady,
+  tarjetaLista,
   isEfectivo,
   montoRecibido,
   onMontoRecibidoChange,
   cambio,
   processingSale,
-  disabledComplete,
-  onCompleteSale,
+  motivoBloqueo,
+  onCobrar,
+  onVentaConfirmada,
+  ventasCobradas,
   onClearCart,
   className,
 }: CheckoutPanelProps) {
   const t = useTranslations();
+  const hayArticulos = items.length > 0;
+  // El sonido de venta se precarga en cuanto hay algo que cobrar: antes lo
+  // hacia la ventana de "Confirmar venta", que ya no existe.
+  useEffect(() => {
+    if (hayArticulos) precargarSonidoVenta();
+  }, [hayArticulos]);
+  const total = `$${totals.total.toFixed(2)}`;
+  const bloqueoDeslizador =
+    motivoBloqueo === "procesando" && processingSale ? null : motivoBloqueo;
 
   return (
     <div className={cn("min-h-0 flex flex-col", className)}>
@@ -95,6 +132,7 @@ export function CheckoutPanel({
         selectedPayment={selectedPayment}
         onSelect={onSelectPayment}
         mpReady={mpReady}
+        tarjetaLista={tarjetaLista}
       />
 
       {isEfectivo && (
@@ -102,6 +140,33 @@ export function CheckoutPanel({
           <label className="text-xs text-muted-foreground">
             {t("pos.amountReceived")}
           </label>
+          {/* Montos rapidos: un toque en vez de teclear el billete. */}
+          {totals.total > 0 && (
+            <div className="flex gap-1.5">
+              {[
+                { etiqueta: "Exacto", monto: totals.total },
+                ...montosRapidos(totals.total).map((m) => ({ etiqueta: `$${m}`, monto: m })),
+              ].map(({ etiqueta, monto }) => {
+                const elegido = Number(montoRecibido) === Number(monto.toFixed(2));
+                return (
+                  <button
+                    key={etiqueta}
+                    type="button"
+                    onClick={() => onMontoRecibidoChange(monto.toFixed(2))}
+                    aria-pressed={elegido}
+                    className={cn(
+                      "h-8 flex-1 rounded-md border font-mono text-xs font-semibold transition-colors max-lg:h-11 max-lg:rounded-xl max-lg:text-sm",
+                      elegido
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-input bg-transparent text-foreground hover:bg-muted"
+                    )}
+                  >
+                    {etiqueta}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <input
             type="number"
             inputMode="decimal"
@@ -110,7 +175,7 @@ export function CheckoutPanel({
             placeholder="$0.00"
             value={montoRecibido}
             onChange={(e) => onMontoRecibidoChange(e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm max-lg:h-11 max-lg:rounded-xl max-lg:text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           {cambio != null && (
             <div className="flex justify-between text-xs font-medium">
@@ -123,17 +188,38 @@ export function CheckoutPanel({
         </div>
       )}
 
-      {/* En escritorio el panel se desplaza cuando la pantalla es baja: el
-          boton de cobrar queda pegado abajo para no tener que buscarlo. */}
-      <div className="lg:sticky lg:bottom-0 lg:z-10 lg:bg-background lg:pb-1">
-        <SpecularActionButton
-          tone="money"
-          className="mt-3 w-full h-9 active:scale-[0.98] transition-transform"
-          disabled={disabledComplete}
-          onClick={onCompleteSale}
-        >
-          {processingSale ? t("common.loading") : t("pos.completeSale")}
-        </SpecularActionButton>
+      {/* Pegado abajo: en escritorio el panel se desplaza cuando la pantalla es
+          baja, y en la hoja del celular queda a la mano del pulgar. */}
+      <div className="sticky bottom-0 z-10 bg-popover pb-1 lg:bg-background">
+        {/* Se cobra deslizando aqui mismo: el resumen que mostraba la ventana de
+            "Confirmar venta" ya esta a la vista en el carrito, y deslizar hasta
+            el final es la confirmacion. Con la terminal de Mercado Pago, en
+            cambio, un boton: iniciar el cobro no es la venta terminada (la
+            confirma la terminal en su propia ventana). */}
+        <div className="mt-3">
+          {selectedPayment === "TARJETA_TERMINAL" ? (
+            <SpecularActionButton
+              tone="money"
+              className="w-full h-11 active:scale-[0.98] transition-transform max-lg:h-14 max-lg:rounded-2xl max-lg:text-base"
+              disabled={motivoBloqueo !== null}
+              onClick={() => void onCobrar().catch(() => {})}
+            >
+              {processingSale ? t("common.loading") : `Cobrar en terminal ${total}`}
+            </SpecularActionButton>
+          ) : (
+            <DeslizarParaConfirmar
+              key={ventasCobradas}
+              label={
+                bloqueoDeslizador ? ETIQUETA_BLOQUEO[bloqueoDeslizador] : `Desliza para cobrar ${total}`
+              }
+              doneLabel="Venta completada"
+              successColor="#22c55e"
+              disabled={bloqueoDeslizador !== null}
+              onConfirm={onCobrar}
+              onDone={onVentaConfirmada}
+            />
+          )}
+        </div>
 
         <Button
           variant="ghost"

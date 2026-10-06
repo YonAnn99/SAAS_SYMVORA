@@ -28,9 +28,11 @@ import { cn } from "@/lib/utils";
 import { esFraccionable, unidadDeVenta } from "@/lib/unidades";
 import { cartLineKey } from "@/features/pos/stores/cart";
 import { CantidadDialog } from "@/features/pos/components/cantidad-dialog";
-import { ALTO_PANEL_COMPLETO } from "@/components/dashboard/alto-panel";
+import { ALTO_PANEL_POS } from "@/components/dashboard/alto-panel";
 import { primerNombre } from "@/lib/nombre-usuario";
 import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
+import { tarjetaManualDisponible } from "@/features/pos/tarjeta-disponible";
+import { useIsDemo } from "@/hooks/use-is-demo";
 
 import { completeSale } from "@/features/pos/services/pos-service";
 import { numeroOperacion } from "@/features/pos/ticket-format";
@@ -42,7 +44,6 @@ import { useCashDrawer } from "@/features/pos/hooks/use-cash-drawer";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
 import { usePosCatalog } from "@/features/pos/hooks/use-pos-catalog";
 import { CheckoutPanel } from "@/features/pos/components/checkout-panel";
-import { ConfirmSaleDialog } from "@/features/pos/components/confirm-sale-dialog";
 import { MobileCartBar } from "@/features/pos/components/mobile-cart-bar";
 import {
   PosSearchBar,
@@ -91,7 +92,8 @@ export default function POSPage() {
       : null;
   const { activas, hayVarias, seleccionada, setSeleccionada } = useSucursal();
   const { can } = usePermissions();
-  const { modulos } = useModulos();
+  const { modulos, terminalExterna } = useModulos();
+  const esDemo = useIsDemo();
   // A donde se sale del POS si no se abre caja. El dashboard solo para quien lo
   // ve: al cajero (migracion 088) el middleware lo devolveria aqui, al mismo
   // aviso, y cancelar no haria nada. El catalogo esta abierto a todos.
@@ -155,7 +157,9 @@ export default function POSPage() {
   const [selectedPayment, setSelectedPayment] = useState<string>("");
   const [montoRecibido, setMontoRecibido] = useState<string>("");
   const [processingSale, setProcessingSale] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // Sube con cada venta cobrada: reinicia el deslizador "Desliza para cobrar"
+  // (tras "Venta completada" se queda en ese estado).
+  const [ventasCobradas, setVentasCobradas] = useState(0);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -367,7 +371,6 @@ export default function POSPage() {
     // haria que el SIGUIENTE cliente, uno normal, se llevara el precio de
     // mayoreo sin que nadie se diera cuenta.
     setSelectedPriceList(SIN_LISTA);
-    setShowConfirmDialog(false);
     setMobileCartOpen(false);
     // Cobrar solo cambia existencias: no se recargan clientes, listas ni
     // favoritos (ver `refetchStock`).
@@ -390,8 +393,27 @@ export default function POSPage() {
       celebrarVenta(null);
       finalizeSale();
     },
-    onTerminalStarted: () => setShowConfirmDialog(false),
+    // Ya no hay ventana de confirmar: al iniciar el cobro en la terminal se
+    // cierra la hoja del carrito (celular) y queda la ventana de la terminal.
+    onTerminalStarted: () => setMobileCartOpen(false),
   });
+
+  // «Tarjeta» (manual) solo con una terminal con que cobrar: Mercado Pago Point
+  // lista o una terminal externa declarada en Configuración → Métodos de pago.
+  const tarjetaLista = tarjetaManualDisponible({ mpReady, terminalExterna, esDemo });
+
+  // Lo que ya va en el carrito, para marcarlo sobre cada tarjeta ("×2").
+  const enCarrito = useMemo(() => {
+    const porProducto: Record<string, number> = {};
+    const porVariante: Record<string, number> = {};
+    for (const item of items) {
+      porProducto[item.productId] = (porProducto[item.productId] ?? 0) + item.cantidad;
+      if (item.varianteId) {
+        porVariante[item.varianteId] = (porVariante[item.varianteId] ?? 0) + item.cantidad;
+      }
+    }
+    return { porProducto, porVariante };
+  }, [items]);
 
   const filteredProducts = useMemo(
     () =>
@@ -490,7 +512,7 @@ export default function POSPage() {
     }
 
     if (selectedPayment === "TARJETA_TERMINAL") {
-      // El dialogo se cierra al iniciar el cobro (`onTerminalStarted`); la
+      // La hoja del carrito se cierra al iniciar el cobro (`onTerminalStarted`); la
       // celebracion suena cuando la terminal confirma el pago.
       await startTerminalSale(
         selectedCustomer === "none" ? null : selectedCustomer,
@@ -612,8 +634,8 @@ export default function POSPage() {
       setSelectedPayment("");
       setSelectedPriceList(SIN_LISTA);
       setMontoRecibido("");
-      setShowConfirmDialog(false);
       setMobileCartOpen(false);
+      setVentasCobradas((n) => n + 1);
       // Cobrar solo cambia existencias (ver `refetchStock`).
       void refetchStock();
     }, 900);
@@ -632,6 +654,7 @@ export default function POSPage() {
         // venir frescos.
         procesando: processingSale || loadingProducts,
         montoInsuficiente: montoRecibidoInsuficiente,
+        tarjetaDisponible: tarjetaLista === true,
       }),
     [
       items.length,
@@ -639,6 +662,7 @@ export default function POSPage() {
       processingSale,
       loadingProducts,
       montoRecibidoInsuficiente,
+      tarjetaLista,
     ]
   );
 
@@ -672,7 +696,7 @@ export default function POSPage() {
           // El alto exacto entre el encabezado y el pie: sin esto la pagina se
           // desplazaba y el pie quedaba fuera de la pantalla.
           "flex flex-col lg:flex-row gap-3 lg:gap-5 transition-all duration-200",
-          ALTO_PANEL_COMPLETO,
+          ALTO_PANEL_POS,
           showRegisterBlocked && "filter blur-sm pointer-events-none select-none opacity-40"
         )}
       >
@@ -702,6 +726,9 @@ export default function POSPage() {
           priceLists={priceLists}
           selectedPriceList={selectedPriceList}
           onPriceListChange={setSelectedPriceList}
+          sucursalNombre={
+            modoDueno ? activas.find((s) => s.id === sucursalMostrador)?.nombre ?? null : null
+          }
           sucursalSlot={
             modoDueno ? (
               <PosSucursalSelector
@@ -735,6 +762,7 @@ export default function POSPage() {
           }}
           variantsByProduct={variantsByProduct}
           variantCountByProduct={variantCountByProduct}
+          enCarrito={enCarrito}
           precioDe={(p, v) => {
             const precioBase = v ? variantPrice(v, p) : p.precio_venta;
             return precioConLista(precioBase, mapaLista, p.id, v?.id ?? null);
@@ -773,13 +801,16 @@ export default function POSPage() {
             if (key !== "EFECTIVO") setMontoRecibido("");
           }}
           mpReady={mpReady}
+          tarjetaLista={tarjetaLista}
           isEfectivo={isEfectivo}
           montoRecibido={montoRecibido}
           onMontoRecibidoChange={setMontoRecibido}
           cambio={cambio}
           processingSale={processingSale}
-          disabledComplete={motivoBloqueo !== null}
-          onCompleteSale={() => setShowConfirmDialog(true)}
+          motivoBloqueo={motivoBloqueo}
+          onCobrar={handleCompleteSale}
+          onVentaConfirmada={handleVentaConfirmada}
+          ventasCobradas={ventasCobradas}
           onClearCart={clearCart}
         />
       </div>
@@ -787,7 +818,14 @@ export default function POSPage() {
       <Sheet open={mobileCartOpen} onOpenChange={setMobileCartOpen}>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0 lg:hidden">
           <SheetHeader className="pb-0 sticky top-0 z-10 bg-popover">
-            <SheetTitle>{t("pos.cart")}</SheetTitle>
+            <SheetTitle>
+              {t("pos.cart")}
+              {itemCount > 0 && (
+                <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                  · {itemCount} artículo{itemCount === 1 ? "" : "s"}
+                </span>
+              )}
+            </SheetTitle>
           </SheetHeader>
           <div className="px-4 pb-4">
             <CheckoutPanel
@@ -809,13 +847,16 @@ export default function POSPage() {
                 if (key !== "EFECTIVO") setMontoRecibido("");
               }}
               mpReady={mpReady}
+              tarjetaLista={tarjetaLista}
               isEfectivo={isEfectivo}
               montoRecibido={montoRecibido}
               onMontoRecibidoChange={setMontoRecibido}
               cambio={cambio}
                   processingSale={processingSale}
-              disabledComplete={motivoBloqueo !== null}
-              onCompleteSale={() => setShowConfirmDialog(true)}
+              motivoBloqueo={motivoBloqueo}
+              onCobrar={handleCompleteSale}
+              onVentaConfirmada={handleVentaConfirmada}
+              ventasCobradas={ventasCobradas}
               onClearCart={clearCart}
             />
           </div>
@@ -892,21 +933,6 @@ export default function POSPage() {
           addResolved(variantPickerFor, variant);
           setVariantPickerFor(null);
         }}
-      />
-
-      <ConfirmSaleDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        items={items}
-        totals={totals}
-        selectedPayment={selectedPayment}
-        customerName={customerName}
-        processing={processingSale}
-        includeIva={includeIva}
-        montoRecibido={isEfectivo ? montoRecibidoNum : null}
-        cambio={isEfectivo ? cambio : null}
-        onConfirm={handleCompleteSale}
-        onVentaConfirmada={handleVentaConfirmada}
       />
 
       <TerminalPaymentDialog

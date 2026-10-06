@@ -65,4 +65,18 @@ describe("motivoBloqueoCobro", () => {
       motivoBloqueoCobro({ ...BASE, items: 0, metodoPago: "" })
     ).toBe("sin-productos");
   });
+
+  it("«Tarjeta» sin terminal no se cobra; los demás métodos no se afectan", () => {
+    expect(
+      motivoBloqueoCobro({ ...BASE, metodoPago: "TARJETA", tarjetaDisponible: false })
+    ).toBe("sin-terminal");
+    expect(
+      motivoBloqueoCobro({ ...BASE, metodoPago: "TARJETA", tarjetaDisponible: true })
+    ).toBeNull();
+    expect(
+      motivoBloqueoCobro({ ...BASE, metodoPago: "EFECTIVO", tarjetaDisponible: false })
+    ).toBeNull();
+    // Sin el dato (otros llamadores), no bloquea.
+    expect(motivoBloqueoCobro({ ...BASE, metodoPago: "TARJETA" })).toBeNull();
+  });
 });

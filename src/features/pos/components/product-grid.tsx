@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Heart, Package, Palette, ShoppingCart } from "lucide-react";
+import { Heart, Package, Palette, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn, getInitials } from "@/lib/utils";
@@ -19,9 +19,12 @@ import { seVendeComoGeneral } from "@/features/sucursales/stock";
  * Las columnas se calculan sobre el ancho REAL del contenedor (`@container`),
  * no sobre el del viewport.
  */
+// Celular (contenedor de menos de 28rem): 2 columnas fijas. Con
+// `minmax(150px,1fr)` en ~330 px no cabian dos y caia a UNA columna con foto
+// enorme: un producto por pantalla (rediseño del 2026-10-06).
 const GRID_CLASSES = [
-  "grid gap-2",
-  "grid-cols-[repeat(auto-fill,minmax(150px,1fr))]",
+  "grid gap-3 grid-cols-2",
+  "@md:gap-2 @md:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]",
   "@3xl:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]",
   "@5xl:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]",
 ].join(" ");
@@ -89,6 +92,41 @@ interface ProductGridProps {
   /** Con el filtro Favoritos en Desglosado: solo las variantes favoritas. */
   favoritos?: ReadonlySet<string>;
   variantesFavoritas?: ReadonlySet<string>;
+  /** Cuánto lleva ya el carrito: por producto (todas sus líneas) y por variante. */
+  enCarrito?: { porProducto: Record<string, number>; porVariante: Record<string, number> };
+}
+
+/** "×2", "×0.75": lo que ya va en el carrito, sobre la foto. */
+function MarcaEnCarrito({
+  cantidad,
+  lado = "izquierda",
+}: {
+  cantidad: number | undefined;
+  lado?: "izquierda" | "derecha";
+}) {
+  if (!cantidad || cantidad <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "absolute top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground shadow-sm",
+        lado === "izquierda" ? "left-1.5" : "right-1.5"
+      )}
+    >
+      <span className="sr-only">En el carrito: </span>×{Number(cantidad.toFixed(3))}
+    </span>
+  );
+}
+
+/** El "+" de la tarjeta en celular. Decorativo: toda la tarjeta es el botón. */
+function MasCelular() {
+  return (
+    <span
+      className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background @md:hidden"
+      aria-hidden="true"
+    >
+      <Plus className="h-5 w-5" strokeWidth={2.4} />
+    </span>
+  );
 }
 
 export function ProductGrid({
@@ -104,6 +142,7 @@ export function ProductGrid({
   precioDe,
   favoritos,
   variantesFavoritas,
+  enCarrito,
 }: ProductGridProps) {
   const t = useTranslations();
 
@@ -178,7 +217,9 @@ export function ProductGrid({
   }, [products, variantsByProduct, variantCountByProduct, viewMode, isFavoritesFilter, favoritos, variantesFavoritas]);
 
   return (
-    <div className="@container flex-1 rounded-lg border border-border bg-card p-4 overflow-y-auto animate-fade-in-up stagger-2">
+    // En celular sin marco: las tarjetas van directo sobre el fondo y ganan el
+    // ancho que se comian el borde y el relleno.
+    <div className="@container flex-1 overflow-y-auto animate-fade-in-up stagger-2 sm:rounded-lg sm:border sm:border-border sm:bg-card sm:p-4">
       {loading ? (
         <div className="flex items-center justify-center h-full">
           <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
@@ -272,7 +313,7 @@ export function ProductGrid({
                     }
                   }}
                   className={cn(
-                    "flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up border-l-4",
+                    "relative flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up border-l-4 @max-md:rounded-2xl",
                     item.familyColor.border
                   )}
                   style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
@@ -305,6 +346,7 @@ export function ProductGrid({
                       <Palette className="h-3 w-3" aria-hidden="true" />
                       {variantLabel(item.variant)}
                     </span>
+                    <MarcaEnCarrito cantidad={enCarrito?.porVariante[item.variant.id]} lado="derecha" />
                   </div>
                   <div className="flex flex-col items-start w-full p-2">
                     {item.product.categoria && (
@@ -454,7 +496,7 @@ export function ProductGrid({
               <button
                 key={product.id}
                 onClick={() => onAddProduct(product)}
-                className="flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up"
+                className="relative flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up @max-md:rounded-2xl"
                 style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
               >
                 <div className="relative w-full aspect-[4/3] shrink-0">
@@ -483,18 +525,19 @@ export function ProductGrid({
                       </span>
                     </span>
                   )}
+                  <MarcaEnCarrito cantidad={enCarrito?.porProducto[product.id]} />
                 </div>
-                <div className="flex flex-col items-start w-full p-2">
+                <div className="flex flex-col items-start w-full p-2 @max-md:p-3 @max-md:pr-12">
                   {product.categoria && (
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground truncate w-full">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground truncate w-full @max-md:hidden">
                       {product.categoria}
                     </span>
                   )}
-                  <span className="text-sm font-medium truncate w-full mt-0.5">
+                  <span className="text-sm font-medium truncate w-full mt-0.5 @max-md:mt-0 @max-md:whitespace-normal @max-md:line-clamp-2 @max-md:min-h-10 @max-md:leading-5">
                     {product.nombre}
                   </span>
-                  <div className="flex items-center justify-between w-full mt-1">
-                    <span className="text-[13px] text-muted-foreground font-mono">
+                  <div className="flex items-center justify-between w-full mt-1 @max-md:flex-col @max-md:items-start @max-md:gap-1">
+                    <span className="text-[13px] text-muted-foreground font-mono @max-md:text-[15px] @max-md:font-bold @max-md:text-foreground">
                       {precioDesde !== null
                         ? `Desde $${precioDesde.toFixed(2)}`
                         : `$${precioEfectivo.toFixed(2)}`}
@@ -528,6 +571,7 @@ export function ProductGrid({
                     )}
                   </div>
                 </div>
+                <MasCelular />
               </button>
             );
           })}

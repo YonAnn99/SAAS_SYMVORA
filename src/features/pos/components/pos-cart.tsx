@@ -16,6 +16,13 @@ import type { CartItem, SaleTotals } from "../types/pos.types";
 import { cartLineKey } from "@/features/pos/stores/cart";
 import { DescuentoTicketControl } from "./descuento-ticket-control";
 import { esFraccionable, formatearCantidad, normalizarCantidad } from "@/lib/unidades";
+import {
+  COLOR_ELIMINAR,
+  FilaDeslizable,
+  noArrastrar,
+  usePistaDeslizar,
+} from "@/components/ui/fila-deslizable";
+import { useEsEscritorio } from "@/hooks/use-es-movil";
 
 /**
  * Cantidad de una linea: se toca para escribirla. Sirve para 0.750 kg y
@@ -52,7 +59,7 @@ function CantidadEditable({
           if (e.key === "Escape") setEditando(null);
         }}
         aria-label={`Cantidad de ${item.nombre}`}
-        className={`${fraccionable ? "w-16" : "w-10"} h-6 rounded border border-input bg-background px-1 text-center text-xs font-mono`}
+        className={`${fraccionable ? "w-16" : "w-10"} h-6 max-lg:h-10 rounded border border-input bg-background px-1 text-center text-xs max-lg:text-base font-mono`}
       />
     );
   }
@@ -62,7 +69,7 @@ function CantidadEditable({
       type="button"
       onClick={() => setEditando(String(item.cantidad))}
       title="Toca para escribir la cantidad"
-      className={`${fraccionable ? "min-w-16 px-1" : "w-6"} h-6 rounded text-center text-xs font-mono hover:bg-muted`}
+      className={`${fraccionable ? "min-w-16 px-1" : "w-6 max-lg:w-8"} h-6 max-lg:h-10 rounded text-center text-xs max-lg:text-[15px] max-lg:font-bold font-mono hover:bg-muted`}
     >
       {fraccionable ? formatearCantidad(item.cantidad, item.unidad_medida) : item.cantidad}
     </button>
@@ -91,6 +98,10 @@ export function PosCart({
   onToggleIva,
 }: PosCartProps) {
   const t = useTranslations();
+  // Celular y tablet (la hoja del carrito): cada linea es una pastilla que se
+  // desliza a la izquierda para quitarla, el mismo gesto de Productos.
+  const esEscritorio = useEsEscritorio();
+  const { verPista, alAbrir } = usePistaDeslizar();
 
   return (
     // `overflow-visible` (la Card trae `overflow-hidden`): con overflow oculto
@@ -116,11 +127,10 @@ export function PosCart({
           </div>
         ) : (
           <div className="flex-1 min-h-32 overflow-y-auto space-y-3">
-            {items.map((item) => (
-              <div
-                key={cartLineKey(item.productId, item.varianteId)}
-                className="flex items-center justify-between gap-2 py-1 animate-fade-in-up"
-              >
+            {items.map((item) => {
+              const clave = cartLineKey(item.productId, item.varianteId);
+              const fila = (
+                <>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
                     {item.nombre}
@@ -134,19 +144,19 @@ export function PosCart({
                     ${item.precioUnitario.toFixed(2)} x {formatearCantidad(item.cantidad, item.unidad_medida)}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 max-lg:gap-0.5 max-lg:rounded-xl max-lg:bg-background max-lg:p-0.5" onPointerDown={noArrastrar}>
                   {/* Por medida (kg, m…) no hay ±1: 0.750 kg + 1 no es lo que
                       se quiere. Se toca la cantidad y se escribe. */}
                   {!esFraccionable(item.unidad_medida) && (
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground max-lg:h-10 max-lg:w-10 max-lg:rounded-lg max-lg:bg-muted max-lg:text-foreground"
                       onClick={() =>
                         onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad - 1)
                       }
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-3 w-3 max-lg:h-4 max-lg:w-4" />
                     </Button>
                   )}
                   <CantidadEditable
@@ -157,25 +167,57 @@ export function PosCart({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground max-lg:h-10 max-lg:w-10 max-lg:rounded-lg max-lg:bg-muted max-lg:text-foreground"
                       onClick={() =>
                         onUpdateQuantity(cartLineKey(item.productId, item.varianteId), item.cantidad + 1)
                       }
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-3 w-3 max-lg:h-4 max-lg:w-4" />
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive max-lg:hidden"
                     onClick={() => onRemove(cartLineKey(item.productId, item.varianteId))}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-            ))}
+                </>
+              );
+              if (!esEscritorio) {
+                return (
+                  <FilaDeslizable
+                    key={clave}
+                    label={item.nombre}
+                    alto={68}
+                    onOpenChange={alAbrir}
+                    acciones={[
+                      {
+                        id: "quitar",
+                        etiqueta: "Quitar",
+                        color: COLOR_ELIMINAR,
+                        icono: <Trash2 size={18} strokeWidth={2} />,
+                        alElegir: () => onRemove(clave),
+                      },
+                    ]}
+                  >
+                    {fila}
+                  </FilaDeslizable>
+                );
+              }
+              return (
+                <div key={clave} className="flex items-center justify-between gap-2 py-1 animate-fade-in-up">
+                  {fila}
+                </div>
+              );
+            })}
+            {!esEscritorio && verPista && (
+              <p className="text-center text-xs text-muted-foreground">
+                Desliza una línea a la izquierda para quitarla
+              </p>
+            )}
           </div>
         )}
 

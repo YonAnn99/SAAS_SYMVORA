@@ -145,12 +145,27 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
   });
 
   it.each([
-    "src/app/(dashboard)/[locale]/pos/page.tsx",
-    "src/app/(dashboard)/[locale]/pos/loading.tsx",
     "src/features/cash-register/components/register-required-notice.tsx",
   ])("%s usa ALTO_PANEL_COMPLETO y no un calc escrito a mano", (ruta) => {
     const fuente = leer(ruta);
     expect(fuente).toContain("ALTO_PANEL_COMPLETO");
     expect(fuente).not.toMatch(/h-\[calc\(100vh/);
+  });
+
+  // El POS, por debajo de `lg`, no lleva pie (rediseño móvil del 2026-10-06):
+  // su alto suma esos 56/64 px. Si el pie vuelve a verse ahí, el POS desplaza.
+  it.each([
+    "src/app/(dashboard)/[locale]/pos/page.tsx",
+    "src/app/(dashboard)/[locale]/pos/loading.tsx",
+  ])("%s usa ALTO_PANEL_POS y no un calc escrito a mano", (ruta) => {
+    const fuente = leer(ruta);
+    expect(fuente).toContain("ALTO_PANEL_POS");
+    expect(fuente).not.toMatch(/h-\[calc\(100vh/);
+  });
+
+  it("el pie se oculta en el POS por debajo de lg, y ALTO_PANEL_POS lo descuenta", () => {
+    expect(footer).toContain("hidden lg:block");
+    expect(alto).toContain("h-[calc(100vh-144px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("md:h-[calc(100vh-152px-env(safe-area-inset-bottom))]");
   });
 });

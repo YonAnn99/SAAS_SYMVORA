@@ -30,3 +30,15 @@
  */
 export const ALTO_PANEL_COMPLETO =
   "h-[calc(100vh-200px-env(safe-area-inset-bottom))] md:h-[calc(100vh-216px-env(safe-area-inset-bottom))] lg:h-[calc(100vh-152px)]";
+
+/**
+ * El mismo cálculo para el Punto de Venta, que por debajo de `lg` NO lleva el
+ * pie legal (`legal-footer.tsx` lo oculta en `/pos`): se le suman sus 56 px en
+ * celular y 64 px en md.
+ *
+ *   celular: 100vh − 200 + 56 = 100vh − 144 px − safe area
+ *   md:      100vh − 216 + 64 = 100vh − 152 px − safe area
+ *   lg:      igual que `ALTO_PANEL_COMPLETO` (el pie sí se ve)
+ */
+export const ALTO_PANEL_POS =
+  "h-[calc(100vh-144px-env(safe-area-inset-bottom))] md:h-[calc(100vh-152px-env(safe-area-inset-bottom))] lg:h-[calc(100vh-152px)]";

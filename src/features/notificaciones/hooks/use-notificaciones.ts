@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useTenantContext } from "@/contexts/tenant-context";
+import { toast } from "sonner";
 import {
   contarNoLeidas,
   fusionarNotificacion,
@@ -25,6 +26,8 @@ const PAUSA_FOCO_MS = 30_000;
  * - Se entera al instante por Realtime (INSERT y UPDATE: las agrupadas llegan
  *   como UPDATE con el mismo id) y vuelve a consultar al recuperar el foco, por
  *   si el socket se cayó.
+ * - `ocultar(id)` la descarta SOLO para este usuario (migración 109): la X en
+ *   escritorio y el deslizamiento en el celular.
  * - Si ve un aviso de stock con el correo pendiente, pide el envío
  *   (`/api/notificaciones/correo-stock`). La base decide si toca y evita
  *   duplicados; si responde "esperar", se reintenta pasado ese tiempo.
@@ -170,7 +173,26 @@ export function useNotificaciones() {
     }
   }, [tenantId]);
 
+  // Optimista: desaparece al instante; si la base la rechaza, regresa.
+  const ocultar = useCallback(
+    async (id: string) => {
+      const quitada = lista.find((n) => n.id === id);
+      if (!quitada) return;
+      setLista((actual) => actual.filter((n) => n.id !== id));
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { error } = await supabase.rpc("ocultar_notificacion", { p_id: id });
+        if (error) throw new Error(error.message);
+      } catch (err) {
+        console.error("[notificaciones] no se pudo descartar:", err);
+        setLista((actual) => fusionarNotificacion(actual, quitada, LIMITE));
+        toast.error("No se pudo quitar la notificación. Intenta de nuevo.");
+      }
+    },
+    [lista]
+  );
+
   const noLeidas = useMemo(() => contarNoLeidas(lista, leidoHasta), [lista, leidoHasta]);
 
-  return { lista, leidoHasta, noLeidas, cargando, marcarLeidas, recargar: cargar };
+  return { lista, leidoHasta, noLeidas, cargando, marcarLeidas, ocultar, recargar: cargar };
 }

@@ -1482,6 +1482,12 @@ export interface POSConfig {
   teclado_rapido: boolean;
   lector_barras: boolean;
   impresion_automatica: boolean;
+  /**
+   * El negocio cobra con una terminal NO integrada (banco, Clip, Getnet...).
+   * Sin esto ni Mercado Pago Point, "Tarjeta" queda bloqueado en el POS
+   * (`tarjetaManualDisponible`). Si falta cuenta como `false`.
+   */
+  terminal_externa?: boolean;
 }
 
 export interface MercadoPagoPointSettings {
