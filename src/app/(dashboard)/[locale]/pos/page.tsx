@@ -160,6 +160,11 @@ export default function POSPage() {
   // Sube con cada venta cobrada: reinicia el deslizador "Desliza para cobrar"
   // (tras "Venta completada" se queda en ese estado).
   const [ventasCobradas, setVentasCobradas] = useState(0);
+  // Donde cae el foco al abrir la hoja del carrito en el celular. Sin esto, Base
+  // UI enfocaba el buscador de clientes y se abria el teclado: la hoja se abre
+  // desde codigo (la barra del carrito), no con un `Sheet.Trigger`, y no sabe
+  // que fue con el dedo. Casi todo se vende a "Cliente general".
+  const tituloCarritoRef = useRef<HTMLHeadingElement>(null);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -816,9 +821,13 @@ export default function POSPage() {
       </div>
 
       <Sheet open={mobileCartOpen} onOpenChange={setMobileCartOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0 lg:hidden">
+        <SheetContent
+          side="bottom"
+          className="max-h-[85vh] overflow-y-auto p-0 lg:hidden"
+          initialFocus={tituloCarritoRef}
+        >
           <SheetHeader className="pb-0 sticky top-0 z-10 bg-popover">
-            <SheetTitle>
+            <SheetTitle ref={tituloCarritoRef} tabIndex={-1} className="outline-none">
               {t("pos.cart")}
               {itemCount > 0 && (
                 <span className="ml-1.5 text-sm font-normal text-muted-foreground">
