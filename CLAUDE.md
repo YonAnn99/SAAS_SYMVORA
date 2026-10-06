@@ -163,6 +163,39 @@
   - Las aceptaciones se registran en `legal_acceptances`, con banner de actualización.
   - Versiones en `lib/legal/versions.ts`; privacidad en `v1.3-2026-10-02`.
 
+## Notificaciones (migración 108, 2026-10-05)
+- **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
+  por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
+  foco. Al abrir el panel se llama `marcar_notificaciones_leidas` (`notificaciones_lectura.leido_hasta`). La lógica
+  pura está en `lib/notificaciones.ts`.
+- **Las generan triggers en las tablas de origen**, no la Bitácora:
+  - **Stock:** `productos`/`variantes_producto`, cuando el estado EMPEORA (misma regla que `stockStatus`). Se saltan
+    los servicios, los archivados y el producto general con variantes. No repite el mismo aviso en 12 h. Lo ve todo
+    el equipo (`permiso` NULL).
+  - **Acciones de un colaborador** (actor ≠ SUPER_ADMIN), cada una con su permiso:
+
+    | Acción | Permiso |
+    |---|---|
+    | Cierre de caja | `finances.manage` |
+    | Productos y variantes | `inventory.manage` |
+    | Compras y órdenes | `purchases.manage` |
+    | Ajustes y traspasos | `inventory.manage` |
+
+    La RLS además exige `activity.view`: el cajero trae `purchases.manage` de fábrica y sin esto vería las compras de
+    sus compañeros. El mismo actor y la misma acción dentro de 10 min se agrupan («Ana creó 12 productos»).
+  - **REGLA:** todo trigger de notificación atrapa sus errores (`EXCEPTION WHEN OTHERS`); un aviso nunca puede tumbar
+    una venta, un cierre o una compra. Un evento nuevo se agrega con un trigger que llame `_notif_accion` y un tipo
+    nuevo en el CHECK de `notificaciones.tipo`.
+  - El negocio demo no genera avisos (`_notif_tenant_activo`).
+- **Correo inmediato de stock** al SUPER_ADMIN y los ORG_ADMIN:
+  - La campana lo pide a `POST /api/notificaciones/correo-stock` cuando ve un aviso de stock con
+    `correo_enviado_en` NULL.
+  - `reclamar_avisos_stock` (solo `service_role`) marca los avisos de forma atómica, con un candado por negocio.
+    Máximo un correo cada 15 min; si toca esperar, devuelve `esperar` y la campana reintenta.
+  - Si Resend falla, `liberar_avisos_stock` los deja pendientes otra vez.
+  - Cron de respaldo `/api/cron/avisos-stock` (8:00 CDMX): manda lo que haya quedado pendiente y borra
+    notificaciones de más de 30 días.
+
 ## Celular del cliente y avisos (2026-10-01/02)
 - **Captura del celular:**
   - Obligatorio en el signup, con lada (MX +52 por defecto): `lib/telefono.ts`,
@@ -199,9 +232,9 @@
 - **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (922 tests al 2026-10-04) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (933 tests al 2026-10-05) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 107) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 108) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

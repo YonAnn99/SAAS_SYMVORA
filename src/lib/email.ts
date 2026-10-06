@@ -5,6 +5,7 @@ import { TIMEOUTS, withTimeout } from "@/lib/http/timeout";
 import { DIAS_PRUEBA } from "@/lib/trial";
 import { PRECIO_PROMO_MXN, precioListaMXN } from "@/features/payments/promocion";
 import type { AvisoCobro } from "@/lib/avisos-cobro";
+import { formatearCantidad } from "@/lib/unidades";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -1325,6 +1326,103 @@ export async function sendCierreCajaToSuperAdminEmail(
     return { ok: true };
   } catch (err) {
     console.error("[email] Falló el aviso de cierre de caja al super admin:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export interface AvisoStockCorreo {
+  tipo: "stock_bajo" | "stock_agotado";
+  nombre: string;
+  stock: number;
+  minimo: number;
+  unidad: string | null;
+}
+
+/**
+ * Arma el correo inmediato de stock (asunto y HTML) sin enviarlo. Un solo
+ * correo junta todo lo que se acabó desde el anterior (máximo uno cada 15 min
+ * por negocio; ver `reclamar_avisos_stock`, migración 108). Agotados primero.
+ */
+export function construirCorreoAvisoStock(params: {
+  businessName: string;
+  avisos: AvisoStockCorreo[];
+}): { subject: string; html: string } {
+  const avisos = [...params.avisos].sort(
+    (a, b) => Number(b.tipo === "stock_agotado") - Number(a.tipo === "stock_agotado")
+  );
+  const agotados = avisos.filter((a) => a.tipo === "stock_agotado").length;
+  const total = avisos.length;
+  const negocio = params.businessName;
+
+  const subject =
+    total === 1
+      ? `${avisos[0].tipo === "stock_agotado" ? "Se agotó" : "Stock bajo"}: ${avisos[0].nombre} — ${negocio}`
+      : `${total} productos se están acabando en ${negocio}`;
+
+  const filas = avisos
+    .map((a) => {
+      const agotado = a.tipo === "stock_agotado";
+      const color = agotado ? "#dc2626" : "#d97706";
+      const etiqueta = agotado ? "Agotado" : "Stock bajo";
+      const minimo = a.minimo > 0 ? formatearCantidad(a.minimo, a.unidad) : "—";
+      return `<tr>
+        <td style="font-size:14px;color:${BRAND.ink};padding:8px 0;border-bottom:1px solid ${BRAND.border};">${esc(a.nombre)}</td>
+        <td style="font-size:14px;color:${BRAND.body};padding:8px 8px;border-bottom:1px solid ${BRAND.border};text-align:right;white-space:nowrap;">${formatearCantidad(a.stock, a.unidad)}</td>
+        <td style="font-size:13px;color:${BRAND.muted};padding:8px 8px;border-bottom:1px solid ${BRAND.border};text-align:right;white-space:nowrap;">${minimo}</td>
+        <td style="font-size:12px;font-weight:700;color:${color};padding:8px 0;border-bottom:1px solid ${BRAND.border};text-align:right;white-space:nowrap;">${etiqueta}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const html = buildNoticeHtml({
+    preheader:
+      agotados > 0
+        ? `${agotados} ${agotados === 1 ? "producto agotado" : "productos agotados"} en ${esc(negocio)}`
+        : `${total} ${total === 1 ? "producto" : "productos"} con stock bajo en ${esc(negocio)}`,
+    heading: total === 1 ? "Un producto se está acabando" : `${total} productos se están acabando`,
+    intro:
+      `En <strong>${esc(negocio)}</strong> ${total === 1 ? "este producto llegó" : "estos productos llegaron"} ` +
+      `a su stock mínimo o se ${total === 1 ? "agotó" : "agotaron"}. Conviene resurtir antes de perder ventas.`,
+    highlight: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:11px;color:${BRAND.muted};text-transform:uppercase;padding:0 0 4px;">Producto</td>
+          <td style="font-size:11px;color:${BRAND.muted};text-transform:uppercase;padding:0 8px 4px;text-align:right;">Quedan</td>
+          <td style="font-size:11px;color:${BRAND.muted};text-transform:uppercase;padding:0 8px 4px;text-align:right;">Mínimo</td>
+          <td style="font-size:11px;color:${BRAND.muted};text-transform:uppercase;padding:0 0 4px;text-align:right;">Estado</td>
+        </tr>
+        ${filas}
+      </table>`,
+    ctaLabel: "Ver productos",
+    ctaHref: `${BRAND.appUrl}/es/products`,
+    mostrarBeneficios: false,
+  });
+
+  return { subject, html };
+}
+
+/** Envía el aviso de stock al dueño y a los administradores (en un solo correo). */
+export async function sendAvisoStockEmail(params: {
+  to: string[];
+  businessName: string;
+  avisos: AvisoStockCorreo[];
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite aviso de stock");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+  if (params.to.length === 0 || params.avisos.length === 0) {
+    return { ok: false, error: "Sin destinatarios o sin avisos" };
+  }
+
+  const { subject, html } = construirCorreoAvisoStock(params);
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await deliver(resend, { from: getFromAddress(), to: params.to, subject, html });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el aviso de stock:", err);
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
