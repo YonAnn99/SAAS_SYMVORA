@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function TerminosPage() {
   return (
-    <LegalShell title="Términos y Condiciones" updatedAt="29 de septiembre de 2026">
+    <LegalShell title="Términos y Condiciones" updatedAt="6 de octubre de 2026">
       <p>
         Estos Términos y Condiciones regulan el uso de la Plataforma SYMVORA y de los
         servicios que en ella se ofrecen. Al crear una cuenta, el usuario acepta los
@@ -29,6 +29,16 @@ export default function TerminosPage() {
 
       <h2>2. Registro y cuenta</h2>
       <ul>
+        <li>
+          Para crear una cuenta, el usuario debe ser mayor de 18 años y tener capacidad
+          legal para contratar. Al registrarse, declara cumplir con ambos requisitos. Si
+          registra la cuenta a nombre de una empresa o negocio, declara además contar con
+          las facultades necesarias para obligarla en los términos aquí descritos.
+        </li>
+        <li>
+          SYMVORA no está dirigida a menores de edad. Si se detecta que una cuenta fue
+          creada por una persona menor de 18 años, SYMVORA podrá suspenderla o cancelarla.
+        </li>
         <li>El usuario deberá proporcionar información veraz al momento de su registro.</li>
         <li>
           La cuenta es personal e intransferible. El usuario es responsable de mantener
@@ -36,7 +46,10 @@ export default function TerminosPage() {
         </li>
         <li>
           El usuario podrá invitar a otros miembros de su organización y asignarles
-          roles conforme a sus permisos dentro de la cuenta.
+          roles conforme a sus permisos dentro de la cuenta. El titular de la cuenta es
+          responsable de las personas que invita y del uso que hagan de la Plataforma,
+          así como de cumplir la legislación aplicable respecto de ellas, incluida la
+          laboral cuando se trate de sus trabajadores.
         </li>
       </ul>
 

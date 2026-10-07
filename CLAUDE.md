@@ -193,7 +193,9 @@
 - **Legal (LFPDPPP):**
   - Documentos: aviso de privacidad, términos, cookies.
   - Las aceptaciones se registran en `legal_acceptances`, con banner de actualización.
-  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.3-2026-10-02`.
+  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.3-2026-10-02`; términos en `v1.3-2026-10-06`
+    (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
+    Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba.
 
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
@@ -309,7 +311,7 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] Con plan Pro de Vercel: cambiar el cron `/api/cron/seguimiento-whatsapp` a cada hora (`"0 * * * *"`).
 
 ## Aviso de Privacidad
-- [ ] Al hacer deploy, la versión v1.3-2026-10-02 (SMS/Twilio) vuelve a mostrar el aviso de cambios.
+- [ ] Al hacer deploy, privacidad v1.3-2026-10-02 (SMS/Twilio) y términos v1.3-2026-10-06 (mayoría de edad) vuelven a mostrar el aviso de cambios.
       El aviso promete 15 días de anticipación para cambios.
 - [ ] Reemplazar `[Domicilio del responsable]`, que sigue sin datos.
 
