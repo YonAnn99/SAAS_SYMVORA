@@ -159,7 +159,8 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
       `dvh`, nunca `vh`: en Chrome de Android `100vh` desplazaba la página y escondía "Ver carrito" detrás
       del dock. Además restan `--alto-avisos`: el shell mide los avisos de arriba (franja de la demo, fin de
       prueba, pago vencido) y publica su alto; sin eso, con un aviso visible pasaba lo mismo (y el aviso se iba
-      con el scroll). Su envoltorio es `sticky top-0`: siempre a la vista. La cuadrícula lleva `overscroll-y-contain`.
+      con el scroll). Su envoltorio es `sticky top-0`: siempre a la vista. El menú lateral de escritorio no desplaza:
+      sus opciones se encogen de 40 a 32 px según el alto (`CLASE_OPCION` en `sidebar.tsx`), sin barra de scroll. La cuadrícula lleva `overscroll-y-contain`.
     - **El carrito se conserva al recargar** (sessionStorage `symvora-carrito`, `persist` con
       `skipHydration`; `usePosCart` lo restaura al montar). Tiene dueño `userId:tenantId`: si cambia, se vacía.
       Se borra al cobrar y al cerrar sesión (`vaciarCarritoGuardado`). No se agrega nada hasta `restaurado`.

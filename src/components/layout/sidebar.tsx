@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, ChevronRight, LogOut, User as UserIcon } from "lucide-react";
 import { motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useRubberBordes, type Borde } from "@/components/ui/rubber-bordes";
@@ -19,6 +18,18 @@ import { useCerrarSesion } from "@/components/layout/cerrar-sesion";
 
 /** Radio de la pestaña activa: la mitad del alto de una opción (40 px). */
 const RADIO_PESTANA = 20;
+
+/**
+ * El menú NO desplaza: cada opción mide 40 px si hay espacio y se encoge pareja
+ * hasta 32 px cuando no (con el aviso de fin de prueba o de la demo arriba, el
+ * panel mide la pantalla menos el aviso). Sin `py`: el alto lo reparte el flex.
+ * La capa del texto activo usa estas MISMAS clases para que las alturas
+ * coincidan con la pestaña.
+ */
+const CLASE_OPCION = "flex min-h-8 max-h-10 flex-1 basis-0 items-center gap-2.5 rounded-l-full px-4";
+
+/** Piso del nav: opciones al minimo (2rem) + `gap-1` + `py-5`. Debajo, desplaza sin barra. */
+const pisoNav = (n: number) => `calc(${n} * 2rem + ${Math.max(0, n - 1)} * 0.25rem + 2.5rem)`;
 
 interface SidebarProps {
   collapsed: boolean;
@@ -151,8 +162,10 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
 
       {/* Navigation */}
       {/* Sin relleno a la derecha: la pestaña activa toca el borde y se funde
-          con el panel. El `py-5` deja sitio a sus curvas. */}
-      <ScrollArea className="flex-1">
+          con el panel. El `py-5` deja sitio a sus curvas. Sin barra de scroll:
+          las opciones se encogen (`CLASE_OPCION`); solo en una pantalla
+          extremadamente baja desplaza, y sin barra visible. */}
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hide">
         {cargando ? (
           <div className="flex flex-col gap-1.5 py-5 pl-3 pr-3">
             {Array.from({ length: 8 }).map((_, idx) => (
@@ -163,7 +176,8 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
           <>
             <nav
               ref={navRef}
-              className="relative flex flex-col gap-1 py-5 pl-3"
+              className="relative flex h-full flex-col gap-1 py-5 pl-3"
+              style={{ minHeight: pisoNav(visibleNav.length) }}
               key={String(collapsed)}
             >
               <motion.span
@@ -182,7 +196,8 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
                     className={cn(
                       // El color de la activa lo pinta la capa de texto activo
                       // por encima; aquí solo va el inactivo.
-                      "group relative z-10 flex items-center gap-2.5 rounded-l-full px-4 py-2.5 text-sm font-medium text-white/70 transition-colors duration-200 animate-sidebar-item-in",
+                      CLASE_OPCION,
+                      "group relative z-10 text-sm font-medium text-white/70 transition-colors duration-200 animate-sidebar-item-in",
                       !active && "hover:bg-white/10 hover:text-white"
                     )}
                     style={{ animationDelay: `${idx * 28}ms` }}
@@ -209,7 +224,7 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
                   return (
                     <div
                       key={item.href}
-                      className="flex items-center gap-2.5 rounded-l-full px-4 py-2.5 text-sm font-medium animate-sidebar-item-in"
+                      className={cn(CLASE_OPCION, "text-sm font-medium animate-sidebar-item-in")}
                       style={{ animationDelay: `${idx * 28}ms` }}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -226,7 +241,7 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
             </nav>
           </>
         )}
-      </ScrollArea>
+      </div>
 
       <PieNegocio
         collapsed={collapsed}
