@@ -133,15 +133,22 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
     expect(etiquetaMain).toContain("md:pt-6");
   });
 
+  it("el panel mide el alto VISIBLE (dvh), no el de la barra del navegador escondida", () => {
+    // EL DEFECTO (2026-10-06): con `h-screen`/`100vh`, en Chrome de Android la
+    // pagina se desplazaba y "Ver carrito" quedaba detras del dock.
+    expect(shell).toMatch(/<div className="flex h-dvh overflow-hidden/);
+    expect(alto).not.toMatch(/100vh/);
+  });
+
   it("las medidas que asume alto-panel.ts siguen siendo esas", () => {
     expect(header).toMatch(/<header className="[^"]*\bh-16\b/);
     expect(footer).toContain("mt-6");
     expect(footer).toContain("py-2");
     expect(footer).toContain("md:py-3");
     expect(footer).toContain("leading-4");
-    expect(alto).toContain("h-[calc(100vh-200px-env(safe-area-inset-bottom))]");
-    expect(alto).toContain("md:h-[calc(100vh-216px-env(safe-area-inset-bottom))]");
-    expect(alto).toContain("lg:h-[calc(100vh-152px)]");
+    expect(alto).toContain("h-[calc(100dvh-200px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("md:h-[calc(100dvh-216px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("lg:h-[calc(100dvh-152px)]");
   });
 
   it.each([
@@ -149,7 +156,7 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
   ])("%s usa ALTO_PANEL_COMPLETO y no un calc escrito a mano", (ruta) => {
     const fuente = leer(ruta);
     expect(fuente).toContain("ALTO_PANEL_COMPLETO");
-    expect(fuente).not.toMatch(/h-\[calc\(100vh/);
+    expect(fuente).not.toMatch(/h-\[calc\(100d?vh/);
   });
 
   // El POS, por debajo de `lg`, no lleva pie (rediseño móvil del 2026-10-06):
@@ -160,12 +167,12 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
   ])("%s usa ALTO_PANEL_POS y no un calc escrito a mano", (ruta) => {
     const fuente = leer(ruta);
     expect(fuente).toContain("ALTO_PANEL_POS");
-    expect(fuente).not.toMatch(/h-\[calc\(100vh/);
+    expect(fuente).not.toMatch(/h-\[calc\(100d?vh/);
   });
 
   it("el pie se oculta en el POS por debajo de lg, y ALTO_PANEL_POS lo descuenta", () => {
     expect(footer).toContain("hidden lg:block");
-    expect(alto).toContain("h-[calc(100vh-144px-env(safe-area-inset-bottom))]");
-    expect(alto).toContain("md:h-[calc(100vh-152px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("h-[calc(100dvh-144px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("md:h-[calc(100dvh-152px-env(safe-area-inset-bottom))]");
   });
 });

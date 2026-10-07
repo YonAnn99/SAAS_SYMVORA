@@ -106,8 +106,8 @@ export default function POSPage() {
     seleccionada,
     activas,
   });
-  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart, descuentoTicket } =
-    usePosCart(tenantId);
+  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart, descuentoTicket, restaurado: carritoRestaurado } =
+    usePosCart(tenantId, usuarioContexto || null);
   const {
     products,
     variantsByProduct,
@@ -200,8 +200,9 @@ export default function POSPage() {
       // Al volver al POS se pinta el catalogo de la cache mientras llegan los
       // precios frescos (menos de un segundo). En ese rato no se agrega nada:
       // la linea guardaria el precio viejo y el ticket no cuadraria con lo
-      // que cobra el servidor.
-      if (loadingProducts) {
+      // que cobra el servidor. Tampoco antes de restaurar el carrito guardado
+      // de la pestaña: la restauracion reemplazaria lo agregado.
+      if (loadingProducts || !carritoRestaurado) {
         toast.info("Actualizando precios, intenta de nuevo en un momento");
         return;
       }
@@ -233,7 +234,7 @@ export default function POSPage() {
         unidad_medida: unidadDeVenta(product, variant),
       });
     },
-    [addItem, mapaLista, loadingProducts]
+    [addItem, mapaLista, loadingProducts, carritoRestaurado]
   );
 
   // Conteo para el distintivo de la cuadrícula. Se deriva de la MISMA fuente
@@ -307,7 +308,7 @@ export default function POSPage() {
     (codigo: string): ResultadoEscaneo => {
       // Mismo candado que `addResolved`: con el catalogo de la cache aun sin
       // confirmar no se agrega (el aviso sale en el escaner, no un toast).
-      if (loadingProducts) {
+      if (loadingProducts || !carritoRestaurado) {
         return { tipo: "error", mensaje: "Actualizando precios, escanea de nuevo" };
       }
       const encontrado = resolverCodigo(codigo, products, variantsByProduct);
@@ -337,7 +338,7 @@ export default function POSPage() {
       addResolved(product, variant);
       return { tipo: "ok", mensaje: `${etiqueta} agregado` };
     },
-    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts]
+    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado]
   );
 
   // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,

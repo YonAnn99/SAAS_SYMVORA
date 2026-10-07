@@ -119,7 +119,12 @@
       confirmación: el resumen ya está a la vista. Bloqueado, el deslizador dice por qué (`motivoBloqueo`). Tras la
       venta, `ventasCobradas` lo reinicia (`key`). Con «Tarjeta (terminal)» va un botón, porque la confirma la
       terminal.
-    - El pie legal se oculta en `/pos` por debajo de `lg`; el POS mide `ALTO_PANEL_POS`.
+    - El pie legal se oculta en `/pos` por debajo de `lg`; el POS mide `ALTO_PANEL_POS`. Las alturas usan
+      `dvh` (y el shell `h-dvh`), nunca `vh`: en Chrome de Android `100vh` desplazaba la página y escondía
+      "Ver carrito" detrás del dock. La cuadrícula lleva `overscroll-y-contain`.
+    - **El carrito se conserva al recargar** (sessionStorage `symvora-carrito`, `persist` con
+      `skipHydration`; `usePosCart` lo restaura al montar). Tiene dueño `userId:tenantId`: si cambia, se vacía.
+      Se borra al cobrar y al cerrar sesión (`vaciarCarritoGuardado`). No se agrega nada hasta `restaurado`.
     - El dock usa etiquetas cortas («Vender», «Órdenes»).
   - **«Tarjeta» (manual) bloqueado sin terminal** (`tarjetaManualDisponible` en `features/pos/tarjeta-disponible.ts`):
     se habilita con Mercado Pago Point lista (`mpReady`) o con una terminal externa declarada en Configuración →

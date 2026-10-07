@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { CartItem } from "../types/pos.types";
 import { articulosDeLinea } from "@/lib/unidades";
 import type { DescuentoTicket } from "../descuento-ticket";
@@ -17,8 +18,17 @@ export function cartLineKey(productId: string, varianteId: string | null): strin
   return `${productId}::${varianteId ?? "general"}`;
 }
 
+/** Llave en sessionStorage del carrito en curso. */
+export const CLAVE_CARRITO = "symvora-carrito";
+
 interface CartStore {
   items: CartItem[];
+  /**
+   * De quien es el carrito guardado: `"<userId>:<tenantId>"`. Si entra otro
+   * usuario u otro negocio en la misma pestaña, `usePosCart` lo vacia.
+   */
+  duenio: string | null;
+  setDuenio: (duenio: string) => void;
   includeIva: boolean;
   /**
    * Descuento manual a toda la compra, como intencion ("10 %" o "$50"). Se
@@ -38,10 +48,24 @@ interface CartStore {
   getItemCount: () => number;
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
+/**
+ * El carrito se guarda en sessionStorage (2026-10-06): si la pagina se recarga
+ * (p. ej. deslizando hacia abajo en el celular), la venta en curso sigue ahi y
+ * lo que se ve es lo que hay. Solo en esa pestaña; se vacia al cobrar, al
+ * cerrar sesion (`vaciarCarritoGuardado`) o si cambia el dueño.
+ *
+ * `skipHydration`: el servidor no tiene sessionStorage y el primer render debe
+ * coincidir con el suyo. `usePosCart` lo restaura al montar.
+ */
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
   items: [],
+  duenio: null,
   includeIva: false,
   descuentoTicket: null,
+
+  setDuenio: (duenio) => set({ duenio }),
 
   setDescuentoTicket: (descuento) => set({ descuentoTicket: descuento }),
 
@@ -131,4 +155,25 @@ export const useCartStore = create<CartStore>((set, get) => ({
     // Por medida cuenta 1 (ver `articulosDeLinea`): si no, "3.75 articulos".
     return get().items.reduce((sum, item) => sum + articulosDeLinea(item.cantidad, item.unidad_medida), 0);
   },
-}));
+    }),
+    {
+      name: CLAVE_CARRITO,
+      version: 1,
+      storage: createJSONStorage(() => sessionStorage),
+      skipHydration: true,
+      partialize: (state) => ({
+        items: state.items,
+        duenio: state.duenio,
+        includeIva: state.includeIva,
+        descuentoTicket: state.descuentoTicket,
+      }),
+    }
+  )
+);
+
+/** Al cerrar sesion: no debe quedar la venta del usuario anterior en la pestaña. */
+export function vaciarCarritoGuardado(): void {
+  useCartStore.getState().clearCart();
+  useCartStore.getState().setDuenio("");
+  useCartStore.persist.clearStorage();
+}

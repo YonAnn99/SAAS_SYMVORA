@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { fijarAlcanceCache, vaciarCache } from "@/lib/cache-datos";
+import { vaciarCarritoGuardado } from "@/features/pos/stores/cart";
 import type { UserRole } from "@/lib/types/database";
 import { nombreCompleto } from "@/lib/nombre-usuario";
 
@@ -119,13 +120,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     load();
   }, [fetchTenant]);
 
-  // Sesión cerrada (aquí, en otra pestaña o por expirar): fuera la caché.
+  // Sesión cerrada (aquí, en otra pestaña o por expirar): fuera la caché y la
+  // venta en curso guardada en la pestaña.
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((evento) => {
-      if (evento === "SIGNED_OUT") vaciarCache();
+      if (evento === "SIGNED_OUT") {
+        vaciarCache();
+        vaciarCarritoGuardado();
+      }
     });
     return () => subscription.unsubscribe();
   }, []);

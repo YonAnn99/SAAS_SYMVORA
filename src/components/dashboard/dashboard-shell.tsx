@@ -37,7 +37,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             columna de contenido lo tapa con la esquina izquierda redondeada:
             el panel se ve "desbordado" sobre el menú y la pestaña activa del
             menú se funde con él (ver `.nav-pestana` en globals.css). */}
-        <div className="flex h-screen overflow-hidden lg:bg-[var(--nav-bg)]">
+        <div className="flex h-dvh overflow-hidden lg:bg-[var(--nav-bg)]">
           <Sidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
           <div className="flex flex-1 flex-col overflow-hidden bg-background lg:rounded-l-[28px]">
             <Header onSearchOpen={() => setSearchOpen(true)} />

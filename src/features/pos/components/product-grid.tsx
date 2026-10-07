@@ -218,8 +218,10 @@ export function ProductGrid({
 
   return (
     // En celular sin marco: las tarjetas van directo sobre el fondo y ganan el
-    // ancho que se comian el borde y el relleno.
-    <div className="@container flex-1 overflow-y-auto animate-fade-in-up stagger-2 sm:rounded-lg sm:border sm:border-border sm:bg-card sm:p-4">
+    // ancho que se comian el borde y el relleno. `overscroll-y-contain`: al
+    // llegar al borde de la lista no arrastra la pagina ni dispara el
+    // "deslizar para recargar" del celular.
+    <div className="@container flex-1 overflow-y-auto overscroll-y-contain animate-fade-in-up stagger-2 sm:rounded-lg sm:border sm:border-border sm:bg-card sm:p-4">
       {loading ? (
         <div className="flex items-center justify-center h-full">
           <p className="text-sm text-muted-foreground">{t("common.loading")}</p>

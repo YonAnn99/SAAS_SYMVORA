@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { vaciarCache } from "@/lib/cache-datos";
+import { vaciarCarritoGuardado } from "@/features/pos/stores/cart";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +39,7 @@ export function useCerrarSesion() {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
     vaciarCache();
+    vaciarCarritoGuardado();
     router.push("/login");
     router.refresh();
   };
