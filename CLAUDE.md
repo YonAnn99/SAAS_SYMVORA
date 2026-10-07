@@ -257,8 +257,9 @@
   - El dueño edita el nombre desde Usuarios con `PATCH /api/users/[userId]/nombre`.
   - `get_tenant_members` devuelve `user_nombre`; `listar_ventas`/`detalle_venta` devuelven `cajero_nombre`.
   - El saludo "¡Hola, {nombre}!" sale en el Dashboard y arriba del buscador del POS.
-- **Cartera de clientes interna:** vista `interno.cartera_clientes` (migración 100), no expuesta por la
-  API. Consulta: `select * from interno.cartera_clientes;` en el SQL Editor de Supabase.
+- **Cartera de clientes interna:** vista `interno.cartera_clientes` (migraciones 100 y 111), no expuesta por la
+  API. Consulta: `select * from interno.cartera_clientes;` en el SQL Editor, o Table Editor → esquema `interno`.
+  La 111 agrega al final `productos`, `variantes` (activos), `primer_producto`, `ventas` y `ultima_venta`.
 
 ## Cómo trabajar en este repo
 - **Commits y servidor:**
@@ -271,7 +272,7 @@
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (943 tests al 2026-10-06) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 110) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 111) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
