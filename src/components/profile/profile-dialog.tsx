@@ -8,7 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
 import { usePermissions } from "@/hooks/use-permissions";
-import { convertToWebP } from "@/lib/image";
+import { subirLogoNegocio } from "@/lib/logo-negocio";
 import { nombreCompleto } from "@/lib/nombre-usuario";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { Button } from "@/components/ui/button";
@@ -205,28 +205,19 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     }
 
     try {
-      const webpFile = await convertToWebP(file);
-      const filePath = `${user.id}/logo.webp`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("logos")
-        .upload(filePath, webpFile, {
-          contentType: "image/webp",
-          upsert: true,
-        });
-
-      if (uploadError) {
-        toast.error("Error al subir el logo: " + uploadError.message);
+      let logoUrl: string;
+      try {
+        logoUrl = await subirLogoNegocio(supabase, user.id, file);
+      } catch (err) {
+        toast.error(
+          "Error al subir el logo: " + (err instanceof Error ? err.message : "inténtalo de nuevo")
+        );
         return;
       }
 
-      const { data: urlData } = supabase.storage
-        .from("logos")
-        .getPublicUrl(filePath);
-
       const { error: updateError } = await supabase
         .from("tenants")
-        .update({ logo_url: urlData.publicUrl })
+        .update({ logo_url: logoUrl })
         .eq("id", tenantId);
 
       if (updateError) {

@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { LEGAL_DOCUMENT_VERSIONS } from "@/lib/legal/versions";
-import { convertToWebP } from "@/lib/image";
+import { subirLogoNegocio } from "@/lib/logo-negocio";
 import { modulosParaGiro } from "@/lib/modulos";
 import { GIRO_POR_DEFECTO, giroDeRegistro } from "@/features/marketing/giros";
 
@@ -80,21 +80,15 @@ export async function crearNegocio(datos: DatosNegocio): Promise<ResultadoCrearN
   // Upload logo if provided
   let logoUrl: string | null = null;
   if (datos.logoFile) {
-    const webpFile = await convertToWebP(datos.logoFile);
-    const filePath = `${datos.userId}/logo.webp`;
-    const { error: uploadError } = await supabase.storage
-      .from("logos")
-      .upload(filePath, webpFile, { contentType: "image/webp" });
-
-    if (uploadError) {
+    try {
+      logoUrl = await subirLogoNegocio(supabase, datos.userId, datos.logoFile);
+    } catch (uploadError) {
       console.error("Logo upload failed:", uploadError);
       toast.warning(
         "No se pudo subir el logo. Podrás agregarlo después desde Configuración."
       );
-    } else {
-      const { data: urlData } = supabase.storage.from("logos").getPublicUrl(filePath);
-      logoUrl = urlData.publicUrl;
-
+    }
+    if (logoUrl) {
       await supabase.auth.updateUser({
         data: { logo_url: logoUrl },
       });

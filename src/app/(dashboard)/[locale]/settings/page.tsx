@@ -26,7 +26,7 @@ import { useTenantContext } from "@/contexts/tenant-context";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
 import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
-import { convertToWebP } from "@/lib/image";
+import { subirLogoNegocio } from "@/lib/logo-negocio";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
@@ -142,28 +142,19 @@ export default function SettingsPage() {
     }
 
     try {
-      const webpFile = await convertToWebP(file);
-      const filePath = `${user.id}/logo.webp`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("logos")
-        .upload(filePath, webpFile, {
-          contentType: "image/webp",
-          upsert: true,
-        });
-
-      if (uploadError) {
-        toast.error("Error al subir el logo: " + uploadError.message);
+      let logoUrl: string;
+      try {
+        logoUrl = await subirLogoNegocio(supabase, user.id, file);
+      } catch (err) {
+        toast.error(
+          "Error al subir el logo: " + (err instanceof Error ? err.message : "inténtalo de nuevo")
+        );
         return;
       }
 
-      const { data: urlData } = supabase.storage
-        .from("logos")
-        .getPublicUrl(filePath);
-
       const { error: updateError } = await supabase
         .from("tenants")
-        .update({ logo_url: urlData.publicUrl })
+        .update({ logo_url: logoUrl })
         .eq("id", tenant.id);
 
       if (updateError) {
@@ -171,7 +162,7 @@ export default function SettingsPage() {
         return;
       }
 
-      setTenant({ ...tenant, logo_url: urlData.publicUrl });
+      setTenant({ ...tenant, logo_url: logoUrl });
       void refetchTenantContext();
       toast.success("Logo actualizado");
     } finally {
