@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +27,14 @@ export function ImportMappingStep({
   onChange,
 }: ImportMappingStepProps) {
   const t = useTranslations();
+  // Sin `items`, el Select de Base UI pinta el valor crudo ("__none__").
+  const items = useMemo(
+    () => ({
+      [NONE_VALUE]: t("products.import.noColumn"),
+      ...Object.fromEntries(headers.map((header) => [header, header])),
+    }),
+    [headers, t]
+  );
 
   const updateField = (field: ImportTargetField, column: string) => {
     onChange({
@@ -46,6 +55,7 @@ export function ImportMappingStep({
               {t(labelKey)} {required && <span className="text-destructive">*</span>}
             </Label>
             <Select
+              items={items}
               value={mapping[field] || NONE_VALUE}
               onValueChange={(value) => value && updateField(field, value)}
             >

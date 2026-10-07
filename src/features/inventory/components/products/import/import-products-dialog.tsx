@@ -97,6 +97,7 @@ export function ImportProductsDialog({
         mapping,
         existingBarcodes,
         supplierMap,
+        rowNumbers: parsed.rowNumbers,
       });
       setRows(builtRows);
       setStep("preview");

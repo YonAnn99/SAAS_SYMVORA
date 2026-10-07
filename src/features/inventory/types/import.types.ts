@@ -10,9 +10,7 @@ export type ImportTargetField =
   | "stock_actual"
   | "stock_minimo"
   | "categoria"
-  | "proveedor"
-  | "clave_prod_serv"
-  | "clave_unidad";
+  | "proveedor";
 
 export type ImportFieldMapping = Partial<Record<ImportTargetField, string | null>>;
 

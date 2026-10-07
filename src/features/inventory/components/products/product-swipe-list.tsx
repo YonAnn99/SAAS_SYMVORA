@@ -5,7 +5,7 @@
  * React Bits, `components/ui/swipe-row.tsx`) en lugar de la tabla de 9
  * columnas, que obligaba a desplazarse de lado para ver casi todo.
  *
- *   deslizar a la mitad  -> Eliminar | Editar (abre el dialogo de siempre)
+ *   deslizar a la mitad  -> Eliminar | Archivar | Editar (abre el dialogo de siempre)
  *   deslizar completo    -> Eliminar
  *
  * Desde `md` se sigue usando la tabla (con su edicion en linea).
@@ -14,13 +14,16 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
+  COLOR_EDITAR,
+  COLOR_ELIMINAR,
   FilaDeslizable,
   TEXTO_PISTA_DESLIZAR,
+  type AccionFila,
   noArrastrar,
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronRight, Layers } from "lucide-react";
+import { Archive, ChevronRight, Layers, Pencil, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Producto } from "../../types/inventory.types";
 import { FavoriteButton, StockBadge } from "./product-badges";
@@ -28,6 +31,8 @@ import {
   resumenConVariantes,
   type VarianteResumible,
 } from "@/features/inventory/resumen-variantes";
+
+const COLOR_ARCHIVAR = "#d97706";
 
 interface ProductSwipeListProps {
   productos: Producto[];
@@ -41,6 +46,8 @@ interface ProductSwipeListProps {
   onEdit: (product: Producto) => void;
   /** `false` si no se pudo borrar: la fila reaparece. */
   onDelete: (product: Producto) => void | Promise<boolean | void>;
+  /** Sin ella no se ofrece "Archivar" (rol sin `inventory.manage`). */
+  onArchive?: (product: Producto) => Promise<boolean>;
   /** Cuantas variantes tiene cada producto (los que no aparecen, ninguna). */
   conteoVariantes?: Record<string, number>;
   /** Tocar un producto con variantes abre su hoja de variantes. */
@@ -60,6 +67,7 @@ export function ProductSwipeList({
   onToggleFavorito,
   onEdit,
   onDelete,
+  onArchive,
   conteoVariantes = {},
   onVerVariantes,
   variantesPorProducto,
@@ -92,12 +100,40 @@ export function ProductSwipeList({
         const variantesDe = variantesPorProducto?.[product.id];
         const resumen =
           variantesDe && variantesDe.length > 0 ? resumenConVariantes(product, variantesDe) : null;
+        // Las mismas dos de siempre (Eliminar principal, Editar) con Archivar en medio.
+        const acciones: AccionFila[] = [
+          {
+            id: "eliminar",
+            etiqueta: "Eliminar",
+            color: COLOR_ELIMINAR,
+            icono: <Trash2 size={18} strokeWidth={2} />,
+            alElegir: () => onDelete(product),
+            confirmar: { titulo: `¿Eliminar ${product.nombre}?` },
+          },
+          ...(onArchive
+            ? [
+                {
+                  id: "archivar",
+                  etiqueta: "Archivar",
+                  color: COLOR_ARCHIVAR,
+                  icono: <Archive size={18} strokeWidth={2} />,
+                  alElegir: () => onArchive(product),
+                },
+              ]
+            : []),
+          {
+            id: "editar",
+            etiqueta: "Editar",
+            color: COLOR_EDITAR,
+            icono: <Pencil size={18} strokeWidth={2} />,
+            alElegir: () => onEdit(product),
+          },
+        ];
         return (
           <FilaDeslizable
             key={product.id}
             label={product.nombre}
-            onEditar={() => onEdit(product)}
-            onEliminar={() => onDelete(product)}
+            acciones={acciones}
             onOpenChange={alAbrir}
             onTap={nVariantes > 0 && onVerVariantes ? () => onVerVariantes(product) : undefined}
           >

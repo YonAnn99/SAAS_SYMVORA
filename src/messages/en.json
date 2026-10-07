@@ -310,9 +310,7 @@
         "stock_actual": "Current stock",
         "stock_minimo": "Minimum stock",
         "categoria": "Category",
-        "proveedor": "Supplier",
-        "clave_prod_serv": "SAT product/service code",
-        "clave_unidad": "SAT unit code"
+        "proveedor": "Supplier"
       },
       "mapNameRequired": "You must map the product name column",
       "status": "Status",

@@ -16,48 +16,66 @@ export const IMPORT_TARGET_FIELDS: {
   { field: "stock_minimo", required: false, labelKey: "products.import.fields.stock_minimo" },
   { field: "categoria", required: false, labelKey: "products.import.fields.categoria" },
   { field: "proveedor", required: false, labelKey: "products.import.fields.proveedor" },
-  { field: "clave_prod_serv", required: false, labelKey: "products.import.fields.clave_prod_serv" },
-  { field: "clave_unidad", required: false, labelKey: "products.import.fields.clave_unidad" },
 ];
 
+// Ya normalizados (ver `normalize`): minusculas, sin acentos ni signos.
 const FIELD_ALIASES: Record<ImportTargetField, string[]> = {
-  nombre: ["nombre", "name", "producto", "product", "articulo"],
-  codigo_barras: ["codigo_barras", "codigo de barras", "barcode", "ean", "upc", "codigobarras"],
-  sku: ["sku", "clave"],
+  nombre: ["nombre", "name", "producto", "product", "articulo", "nombre del producto", "product name"],
+  codigo_barras: ["codigo barras", "codigo de barras", "barcode", "ean", "upc", "gtin", "codigobarras"],
+  sku: ["sku", "clave", "codigo interno"],
   descripcion: ["descripcion", "description", "detalle"],
-  unidad_medida: ["unidad_medida", "unidad", "unit", "uom"],
-  precio_venta: ["precio_venta", "precio", "price", "precio de venta", "sale price"],
-  costo_compra: ["costo_compra", "costo", "cost", "purchase cost"],
-  stock_actual: ["stock_actual", "stock", "existencia", "cantidad", "quantity", "qty"],
-  stock_minimo: ["stock_minimo", "stock minimo", "minimum stock", "min stock"],
-  categoria: ["categoria", "category"],
-  proveedor: ["proveedor", "supplier", "vendor"],
-  clave_prod_serv: ["clave_prod_serv", "clave prod serv", "clave sat", "sat product code"],
-  clave_unidad: ["clave_unidad", "clave unidad", "clave unidad sat", "sat unit code"],
+  unidad_medida: ["unidad medida", "unidad de medida", "unidad", "unit", "uom"],
+  precio_venta: ["precio venta", "precio de venta", "precio", "price", "sale price", "precio publico"],
+  costo_compra: ["costo compra", "costo de compra", "costo", "cost", "purchase cost", "precio de compra", "precio compra", "costo unitario"],
+  stock_actual: ["stock actual", "stock", "existencia", "existencias", "cantidad", "quantity", "qty", "inventario"],
+  stock_minimo: ["stock minimo", "minimum stock", "min stock", "minimo", "alerta stock minimo"],
+  categoria: ["categoria", "categorias", "category", "categories", "departamento"],
+  proveedor: ["proveedor", "proveedores", "supplier", "vendor"],
 };
 
 function normalize(text: string): string {
   return text
-    .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Puntaje de que `header` sea la columna de un campo: coincidencia exacta con
+ * un alias gana; si no, el alias contenido como palabras completas, y entre
+ * esos el mas largo ("Alerta para stock minimo" es stock_minimo por
+ * "stock minimo", no stock_actual por "stock"). 0 = no coincide.
+ */
+function puntaje(header: string, aliases: string[]): number {
+  let mejor = 0;
+  for (const alias of aliases) {
+    if (header === alias) return 1000 + alias.length;
+    if (` ${header} `.includes(` ${alias} `)) mejor = Math.max(mejor, alias.length);
+  }
+  return mejor;
 }
 
 export function guessFieldMapping(headers: string[]): ImportFieldMapping {
-  const normalizedHeaders = headers.map((header) => ({
-    original: header,
-    normalized: normalize(header),
-  }));
-  const mapping: ImportFieldMapping = {};
-
-  for (const { field } of IMPORT_TARGET_FIELDS) {
-    const aliases = FIELD_ALIASES[field];
-    const match = normalizedHeaders.find((header) => aliases.includes(header.normalized));
-    if (match) {
-      mapping[field] = match.original;
+  const candidatos: { field: ImportTargetField; header: number; score: number }[] = [];
+  headers.forEach((original, header) => {
+    const normalized = normalize(original);
+    if (!normalized) return;
+    for (const { field } of IMPORT_TARGET_FIELDS) {
+      const score = puntaje(normalized, FIELD_ALIASES[field]);
+      if (score > 0) candidatos.push({ field, header, score });
     }
-  }
+  });
+  candidatos.sort((a, b) => b.score - a.score || a.header - b.header);
 
+  // Cada campo y cada columna se usan una sola vez, empezando por lo mas seguro.
+  const mapping: ImportFieldMapping = {};
+  const columnasUsadas = new Set<number>();
+  for (const { field, header } of candidatos) {
+    if (mapping[field] || columnasUsadas.has(header)) continue;
+    mapping[field] = headers[header];
+    columnasUsadas.add(header);
+  }
   return mapping;
 }

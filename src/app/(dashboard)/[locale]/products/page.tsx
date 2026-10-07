@@ -7,7 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, Palette, Calendar, Wrench, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, Package, Palette, Calendar, Wrench, Archive, SlidersHorizontal, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +64,13 @@ const LotsSection = dynamic(
   () => import("@/features/inventory/components/inventory-tabs").then((m) => m.LotsSection),
   { ssr: false }
 );
+const ProductosArchivadosSeccion = dynamic(
+  () =>
+    import("@/features/inventory/components/products/productos-archivados").then(
+      (m) => m.ProductosArchivadosSeccion
+    ),
+  { ssr: false }
+);
 const AdjustmentsSection = dynamic(
   () => import("@/features/inventory/components/inventory-tabs").then((m) => m.AdjustmentsSection),
   { ssr: false }
@@ -71,7 +78,6 @@ const AdjustmentsSection = dynamic(
 import { resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
-import { ProductosArchivados } from "@/features/inventory/components/products/productos-archivados";
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -131,6 +137,8 @@ export default function ProductsPage() {
     sinMinimoCount,
     handleToggleFavorito,
     handleDelete,
+    handleArchive,
+    archivadosVersion,
   } = useProducts(tenantId, tenantLoading, estadoDe);
   // Lista para las ventanas de variantes, armada de los productos ya cargados
   // (antes `useVariants` los volvia a consultar).
@@ -194,7 +202,7 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(
-    requestedTab && ["lots", "adjustments"].includes(requestedTab)
+    requestedTab && ["lots", "adjustments", "archived"].includes(requestedTab)
       ? requestedTab
       : "catalog"
   );
@@ -353,18 +361,22 @@ export default function ProductsPage() {
         {showInventoryTabs && (
           <TabsList className="mb-4">
             <TabsTrigger value="catalog" className="gap-1.5 text-xs">
-              <Package className="h-3.5 w-3.5" />
+              <Package className="h-3.5 w-3.5 max-sm:hidden" />
               Catálogo
             </TabsTrigger>
             {modulos.permite_lotes_caducidad && (
               <TabsTrigger value="lots" className="gap-1.5 text-xs">
-                <Calendar className="h-3.5 w-3.5" />
+                <Calendar className="h-3.5 w-3.5 max-sm:hidden" />
                 Lotes
               </TabsTrigger>
             )}
             <TabsTrigger value="adjustments" className="gap-1.5 text-xs">
-              <Wrench className="h-3.5 w-3.5" />
+              <Wrench className="h-3.5 w-3.5 max-sm:hidden" />
               Ajustes
+            </TabsTrigger>
+            <TabsTrigger value="archived" className="gap-1.5 text-xs">
+              <Archive className="h-3.5 w-3.5 max-sm:hidden" />
+              Archivados
             </TabsTrigger>
           </TabsList>
         )}
@@ -451,6 +463,7 @@ export default function ProductsPage() {
         loading={loading}
         onEdit={openEditDialog}
         onDelete={handleDelete}
+        onArchive={handleArchive}
         onAdd={openCreateDialog}
         onInlineSave={handleInlineSave}
         canEdit={canManageInventory}
@@ -482,15 +495,6 @@ export default function ProductsPage() {
         }
       />
 
-      {/* Los que tenian historial y se archivaron en vez de borrarse. */}
-      {canManageInventory && tenantId && (
-        <ProductosArchivados
-          tenantId={tenantId}
-          version={products.length}
-          onRestaurado={() => void refetch()}
-        />
-      )}
-
         </TabsContent>
 
         {showInventoryTabs && (
@@ -510,6 +514,15 @@ export default function ProductsPage() {
                 abrirCrear={pedidoCrear === "adjustments"}
                 onAbrirCrearAtendido={pedidoAtendido}
               />
+            </TabsContent>
+            <TabsContent value="archived">
+              {tenantId && (
+                <ProductosArchivadosSeccion
+                  tenantId={tenantId}
+                  version={archivadosVersion}
+                  onRestaurado={() => void refetch()}
+                />
+              )}
             </TabsContent>
           </>
         )}

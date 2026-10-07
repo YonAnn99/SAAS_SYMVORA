@@ -3,6 +3,7 @@ import { productImportRowSchema } from "@/lib/validations/schemas";
 import { chunkRows } from "@/features/inventory/services/product-import-service";
 import { guessFieldMapping } from "@/features/inventory/components/products/import/import-field-config";
 import { buildImportRows } from "@/features/inventory/components/products/import/import-row-processor";
+import { tablaDesdeMatriz } from "@/features/inventory/components/products/import/import-file-parser";
 import type { ImportFieldMapping } from "@/features/inventory/types/import.types";
 
 describe("Product Import Row Schema", () => {
@@ -52,6 +53,100 @@ describe("guessFieldMapping", () => {
   it("leaves unrecognized columns unmapped", () => {
     const mapping = guessFieldMapping(["Columna rara", "Otra cosa"]);
     expect(mapping.nombre).toBeUndefined();
+  });
+
+  it("matches descriptive headers from other systems' templates", () => {
+    const mapping = guessFieldMapping(PLANTILLA_ENCABEZADOS);
+    expect(mapping).toEqual({
+      nombre: "Nombre del producto",
+      precio_venta: "Precio de venta",
+      unidad_medida: "Unidad de medida",
+      costo_compra: "Costo",
+      sku: "Código del producto (SKU)",
+      stock_actual: "Stock",
+      stock_minimo: "Alerta para stock mínimo",
+      categoria: "Categorías",
+      codigo_barras: "EAN / GTIN",
+    });
+  });
+
+  it("prefers the longest alias and uses each column once", () => {
+    const mapping = guessFieldMapping(["Alerta para stock mínimo", "Stock", "Precio de compra", "Precio"]);
+    expect(mapping.stock_minimo).toBe("Alerta para stock mínimo");
+    expect(mapping.stock_actual).toBe("Stock");
+    expect(mapping.costo_compra).toBe("Precio de compra");
+    expect(mapping.precio_venta).toBe("Precio");
+  });
+});
+
+// Encabezados de la plantilla "Agregar productos" (columna B a K).
+const PLANTILLA_ENCABEZADOS = [
+  "Nombre del producto",
+  "Precio de venta",
+  "Unidad de medida",
+  "Costo",
+  "Código del producto (SKU)",
+  "Stock",
+  "Alerta para stock mínimo",
+  "Categorías",
+  "EAN / GTIN",
+  "Verificación de errores",
+];
+
+describe("tablaDesdeMatriz", () => {
+  // Replica esa plantilla: instrucciones arriba, encabezado en la fila 3
+  // desde la columna B, una fila de ayuda, una vacia y luego los datos.
+  const matriz: unknown[][] = [
+    ["", "Instrucciones para completar la planilla:\n- Agrega nuevos productos en las filas en blanco de la planilla."],
+    ["", " (Obligatorio)", "", "(Opcional)"],
+    ["", ...PLANTILLA_ENCABEZADOS],
+    ["", "Máximo de 60 caracteres.", "Sin el símbolo $. ", "Elija la unidad", "Sin el símbolo $. ", "Indique un código SKU único por producto.", "", "Indica que la cantidad de su producto está baja en stock."],
+    [],
+    ["", "Producto A", 100, "unidad", 60, "SKU001", 50, 10, "Electrónica", 1234567890123],
+    ["", "Producto B", 200, "kg", 120, "SKU002", 30, 5, "Alimentos", 9876543210987],
+  ];
+
+  it("finds the header row below the instructions", () => {
+    const tabla = tablaDesdeMatriz(matriz, 1);
+    expect(tabla.headers).toEqual(PLANTILLA_ENCABEZADOS);
+    expect(tabla.rowNumbers).toEqual([4, 6, 7]);
+    expect(tabla.rows[1]["Nombre del producto"]).toBe("Producto A");
+    expect(tabla.rows[1]["Precio de venta"]).toBe(100);
+  });
+
+  it("imports the products and rejects the help row", () => {
+    const tabla = tablaDesdeMatriz(matriz, 1);
+    const rows = buildImportRows({
+      rawRows: tabla.rows,
+      rowNumbers: tabla.rowNumbers,
+      mapping: guessFieldMapping(tabla.headers),
+      existingBarcodes: new Map(),
+      supplierMap: new Map(),
+    });
+    expect(rows.map((row) => [row.index, row.status])).toEqual([
+      [4, "invalid"],
+      [6, "new"],
+      [7, "new"],
+    ]);
+    expect(rows[2].data).toMatchObject({
+      nombre: "Producto B",
+      unidad_medida: "KG",
+      precio_venta: 200,
+      costo_compra: 120,
+      stock_actual: 30,
+      stock_minimo: 5,
+      sku: "SKU002",
+      categoria: "Alimentos",
+      codigo_barras: "9876543210987",
+      clave_prod_serv: null,
+    });
+  });
+
+  it("falls back to the first non-empty row and numbers repeated headers", () => {
+    const tabla = tablaDesdeMatriz([[], ["A", "A", ""], ["x", "y", "z"]], 1);
+    expect(tabla.headers).toEqual(["A", "A (2)"]);
+    expect(tabla.rows).toEqual([{ A: "x", "A (2)": "y" }]);
+    expect(tabla.rowNumbers).toEqual([3]);
   });
 });
 
@@ -204,6 +299,29 @@ describe("buildImportRows", () => {
 
     expect(rows[0].data?.proveedor_id).toBe("550e8400-e29b-41d4-a716-446655440099");
     expect(rows[0].supplierWarning).toBeNull();
+  });
+});
+
+describe("buildImportRows numbers", () => {
+  const mapping: ImportFieldMapping = { nombre: "nombre", precio_venta: "precio" };
+  const construir = (precio: unknown) =>
+    buildImportRows({
+      rawRows: [{ nombre: "Producto", precio }],
+      mapping,
+      existingBarcodes: new Map(),
+      supplierMap: new Map(),
+    })[0];
+
+  it("accepts currency symbols, thousands separators and MXN", () => {
+    expect(construir("$1,234.50").data?.precio_venta).toBe(1234.5);
+    expect(construir("18 MXN").data?.precio_venta).toBe(18);
+    expect(construir("").data?.precio_venta).toBe(0);
+  });
+
+  it("marks a non-numeric price as invalid instead of importing it as 0", () => {
+    const row = construir("Sin el símbolo $.");
+    expect(row.status).toBe("invalid");
+    expect(row.errorMessage).toContain("Precio de venta");
   });
 });
 

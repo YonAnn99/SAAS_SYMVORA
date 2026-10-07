@@ -344,6 +344,51 @@ export function useProducts(
 
   const confirmar = useConfirmar();
 
+  // Sube al archivar: la pestaña "Archivados" vuelve a consultar.
+  const [archivadosVersion, setArchivadosVersion] = useState(0);
+
+  /** Sale del catalogo y del POS; su historial no cambia (migracion 102). */
+  const archivar = useCallback(
+    async (product: Producto): Promise<boolean> => {
+      try {
+        await archiveProduct(product.id);
+        await logActivity({
+          action: "UPDATE",
+          entity: "producto",
+          entityId: product.id,
+          entityName: product.nombre,
+          details: { archivado: true },
+        });
+        toast.success(`«${product.nombre}» se archivó`, {
+          description: "Lo encuentras en la pestaña Archivados.",
+        });
+        setDeleteConfirm(null);
+        setArchivadosVersion((n) => n + 1);
+        void refetch();
+        return true;
+      } catch (error) {
+        toast.error(mensajeDeError(error));
+        return false;
+      }
+    },
+    [refetch]
+  );
+
+  const handleArchive = useCallback(
+    async (product: Producto) => {
+      const ok = await confirmar({
+        titulo: `¿Archivar «${product.nombre}»?`,
+        descripcion:
+          "Deja de aparecer en el catálogo y en el punto de venta. Sus ventas y reportes se conservan, y lo puedes restaurar desde la pestaña Archivados.",
+        accion: "Archivar",
+        tono: "aviso",
+      });
+      if (!ok) return false;
+      return archivar(product);
+    },
+    [archivar, confirmar]
+  );
+
   const handleDelete = useCallback(
     async (product: Producto) => {
       try {
@@ -367,34 +412,18 @@ export function useProducts(
         }
         // Tiene ventas, compras o movimientos: la base no deja borrarlo (asi
         // los reportes no cambian). En vez del error, se ofrece archivarlo.
-        const archivar = await confirmar({
+        const quiereArchivar = await confirmar({
           titulo: `«${product.nombre}» tiene historial`,
           descripcion:
             "Tiene ventas, compras o movimientos registrados. Para no alterar tus reportes no se puede eliminar, pero puedes archivarlo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar cuando quieras.",
           accion: "Archivar",
           tono: "aviso",
         });
-        if (!archivar) return false;
-        try {
-          await archiveProduct(product.id);
-          await logActivity({
-            action: "UPDATE",
-            entity: "producto",
-            entityId: product.id,
-            entityName: product.nombre,
-            details: { archivado: true },
-          });
-          toast.success("Producto archivado");
-          setDeleteConfirm(null);
-          void refetch();
-          return true;
-        } catch (errorArchivo) {
-          toast.error(mensajeDeError(errorArchivo));
-          return false;
-        }
+        if (!quiereArchivar) return false;
+        return archivar(product);
       }
     },
-    [refetch, confirmar]
+    [refetch, confirmar, archivar]
   );
 
   // Búsqueda y filtros se aplican EN CADENA, no se sustituyen: buscar "coca"
@@ -478,5 +507,7 @@ export function useProducts(
     sinMinimoCount,
     handleToggleFavorito,
     handleDelete,
+    handleArchive,
+    archivadosVersion,
   };
 }

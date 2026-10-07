@@ -4,7 +4,7 @@ import { Fragment, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
-import { ChevronRight, Layers, Package, Pencil, Plus } from "lucide-react";
+import { Archive, ChevronRight, Layers, Package, Pencil, Plus } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,8 @@ interface ProductsTableProps {
   onEdit: (product: Producto) => void;
   /** `false` si no se pudo borrar (la fila deslizable del celular reaparece). */
   onDelete: (product: Producto) => void | Promise<boolean | void>;
+  /** Archivar a mano (sale del catalogo y del POS). `false` si no se archivo. */
+  onArchive?: (product: Producto) => Promise<boolean>;
   onAdd: () => void;
   /** Guardado de una sola celda. */
   onInlineSave: (
@@ -95,6 +97,7 @@ export function ProductsTable({
   loading,
   onEdit,
   onDelete,
+  onArchive,
   onAdd,
   onInlineSave,
   canEdit,
@@ -222,6 +225,7 @@ export function ProductsTable({
               onToggleFavorito={onToggleFavorito}
               onEdit={onEdit}
               onDelete={onDelete}
+              onArchive={canEdit ? onArchive : undefined}
               conteoVariantes={conteoVariantes}
               variantesPorProducto={variantesPorProducto}
               onVerVariantes={(p) => setHojaDe(p.id)}
@@ -481,6 +485,18 @@ export function ProductsTable({
                           <Pencil className="h-3 w-3 mr-1" />
                           {t("common.edit")}
                         </Button>
+                        {canEdit && onArchive && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={() => void onArchive(product)}
+                            title="Archivar"
+                            aria-label={`Archivar ${product.nombre}`}
+                          >
+                            <Archive className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         {/* Mantener presionado = confirmar: ya no abre el
                             dialogo "¿Seguro?" (ver `BotonEliminar`). */}
                         <BotonEliminar

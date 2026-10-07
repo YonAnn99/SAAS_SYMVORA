@@ -154,8 +154,9 @@
   `listar_ventas`/`detalle_venta`), ganancia bruta.
 - **Productos archivados** (migración 102): un producto con historial no se puede borrar (FKs `NO ACTION`
   desde ventas, compras, ajustes, órdenes y traspasos). Al intentarlo se ofrece **archivarlo**
-  (`productos.archivado_en`): sale del catálogo, del POS y de los selectores; se restaura desde
-  "Archivados" bajo el catálogo. Los índices únicos de código de barras y SKU solo cuentan activos.
+  (`productos.archivado_en`): sale del catálogo, del POS y de los selectores. También se archiva a mano
+  (botón en la fila y al deslizar en celular, `handleArchive` de `use-products.ts`). Se restaura desde la
+  pestaña **Archivados** de Productos (`productos-archivados.tsx`, solo `inventory.manage`). Los índices únicos de código de barras y SKU solo cuentan activos.
   **Toda consulta nueva de productos para operar debe filtrar `.is("archivado_en", null)`**; el
   historial no se filtra.
 - **Producto:** foto con la cámara, quitar fondo con PhotoRoom (`PHOTOROOM_API_KEY`, permiso

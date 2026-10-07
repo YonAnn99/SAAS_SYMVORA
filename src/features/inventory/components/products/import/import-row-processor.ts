@@ -37,12 +37,20 @@ function readField(
   return String(value).trim();
 }
 
-function parseNumber(value: string): number {
-  if (!value) return 0;
-  const cleaned = value.replace(/[^0-9.-]/g, "");
-  const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? 0 : parsed;
+/** Vacio = 0; `null` si no es un numero (p. ej. una fila de ayuda: "Sin el símbolo $."). */
+function parseNumber(value: string): number | null {
+  const cleaned = value.replace(/mxn/gi, "").replace(/[\s$,]/g, "");
+  if (!cleaned) return 0;
+  if (!/^-?(\d+\.?\d*|\.\d+)$/.test(cleaned)) return null;
+  return Number(cleaned);
 }
+
+const CAMPOS_NUMERICOS = [
+  ["precio_venta", "Precio de venta"],
+  ["costo_compra", "Costo de compra"],
+  ["stock_actual", "Stock actual"],
+  ["stock_minimo", "Stock mínimo"],
+] as const satisfies readonly (readonly [ImportTargetField, string])[];
 
 export function parseUnidadMedida(value: string): UnidadMedida {
   const upper = value
@@ -60,9 +68,11 @@ export interface BuildImportRowsParams {
   mapping: ImportFieldMapping;
   existingBarcodes: Map<string, ExistingProductInfo>;
   supplierMap: Map<string, string>;
+  /** Fila real de la hoja de cada `rawRows[i]` (el encabezado no siempre es la fila 1). */
+  rowNumbers?: number[];
 }
 
-/** Row 1 is the header, so the first data row is row 2. */
+/** Sin `rowNumbers`: la fila 1 es el encabezado, asi que el primer dato es la fila 2. */
 const HEADER_ROW_OFFSET = 2;
 
 export function buildImportRows({
@@ -70,25 +80,36 @@ export function buildImportRows({
   mapping,
   existingBarcodes,
   supplierMap,
+  rowNumbers,
 }: BuildImportRowsParams): ImportRow[] {
   const seenInFile = new Map<string, number>();
 
   return rawRows.map((raw, idx) => {
-    const rowIndex = idx + HEADER_ROW_OFFSET;
+    const rowIndex = rowNumbers?.[idx] ?? idx + HEADER_ROW_OFFSET;
 
     const nombre = readField(raw, mapping, "nombre");
     const codigoBarras = readField(raw, mapping, "codigo_barras");
     const sku = readField(raw, mapping, "sku");
     const descripcion = readField(raw, mapping, "descripcion");
     const unidadMedida = parseUnidadMedida(readField(raw, mapping, "unidad_medida"));
-    const precioVenta = parseNumber(readField(raw, mapping, "precio_venta"));
-    const costoCompra = parseNumber(readField(raw, mapping, "costo_compra"));
-    const stockActual = parseNumber(readField(raw, mapping, "stock_actual"));
-    const stockMinimo = parseNumber(readField(raw, mapping, "stock_minimo"));
     const categoria = readField(raw, mapping, "categoria");
     const proveedorNombre = readField(raw, mapping, "proveedor");
-    const claveProdServ = readField(raw, mapping, "clave_prod_serv");
-    const claveUnidad = readField(raw, mapping, "clave_unidad");
+
+    const numeros: Partial<Record<(typeof CAMPOS_NUMERICOS)[number][0], number>> = {};
+    for (const [field, etiqueta] of CAMPOS_NUMERICOS) {
+      const texto = readField(raw, mapping, field);
+      const numero = parseNumber(texto);
+      if (numero === null) {
+        return {
+          index: rowIndex,
+          raw,
+          status: "invalid",
+          errorMessage: `${etiqueta} no es un número ("${texto}")`,
+          data: null,
+        } satisfies ImportRow;
+      }
+      numeros[field] = numero;
+    }
 
     let supplierWarning: string | null = null;
     let proveedorId: string | null = null;
@@ -107,15 +128,16 @@ export function buildImportRows({
       sku: sku || undefined,
       descripcion: descripcion || undefined,
       unidad_medida: unidadMedida,
-      precio_venta: precioVenta,
-      costo_compra: costoCompra,
-      stock_actual: stockActual,
-      stock_minimo: stockMinimo,
+      precio_venta: numeros.precio_venta,
+      costo_compra: numeros.costo_compra,
+      stock_actual: numeros.stock_actual,
+      stock_minimo: numeros.stock_minimo,
       es_servicio: false,
       categoria: categoria || undefined,
       proveedor_id: proveedorId || undefined,
-      clave_prod_serv: claveProdServ || undefined,
-      clave_unidad: claveUnidad || getDefaultClaveUnidad(unidadMedida),
+      // Las claves SAT no se importan (CFDI oculto); la de unidad se deriva
+      // para que el producto quede listo si se reactiva la facturacion.
+      clave_unidad: getDefaultClaveUnidad(unidadMedida),
     });
 
     if (!parsed.success) {

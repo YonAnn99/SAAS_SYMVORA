@@ -310,9 +310,7 @@
         "stock_actual": "Stock actual",
         "stock_minimo": "Stock mínimo",
         "categoria": "Categoría",
-        "proveedor": "Proveedor",
-        "clave_prod_serv": "Clave SAT de producto/servicio",
-        "clave_unidad": "Clave SAT de unidad"
+        "proveedor": "Proveedor"
       },
       "mapNameRequired": "Debes mapear la columna del nombre del producto",
       "status": "Estado",
