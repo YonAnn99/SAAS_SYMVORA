@@ -160,10 +160,19 @@
 - **Productos archivados** (migración 102): un producto con historial no se puede borrar (FKs `NO ACTION`
   desde ventas, compras, ajustes, órdenes y traspasos). Al intentarlo se ofrece **archivarlo**
   (`productos.archivado_en`): sale del catálogo, del POS y de los selectores. También se archiva a mano
-  (botón en la fila y al deslizar en celular, `handleArchive` de `use-products.ts`). Se restaura desde la
+  (botón en la fila; en celular, **deslizando a la DERECHA** —`accionInicio` de `FilaDeslizable`—, el cajón
+  izquierdo queda en Eliminar | Editar; `handleArchive` de `use-products.ts`). Se restaura desde la
   pestaña **Archivados** de Productos (`productos-archivados.tsx`, solo `inventory.manage`). Los índices únicos de código de barras y SKU solo cuentan activos.
-  **Toda consulta nueva de productos para operar debe filtrar `.is("archivado_en", null)`**; el
-  historial no se filtra.
+  - **Variantes archivadas** (migración 110, `variantes_producto.archivado_en`): mismo gesto en la hoja de
+    variantes y botón en la fila de escritorio (`handleArchive` de `use-variants.ts`); eliminar una con
+    historial ofrece archivarla. Archivar la **última variante activa archiva el producto completo**
+    (`features/inventory/archivar-variante.ts`): un padre sin variantes activas se vendería como general a $0.
+    Se restauran en la misma pestaña (tarjeta "Variantes archivadas").
+  - Archivar el **producto padre** NO marca sus variantes: se ocultan con él (toda consulta operativa filtra el
+    producto) y al restaurarlo vuelven juntas; las archivadas una por una siguen archivadas. La confirmación y la
+    pestaña Archivados muestran cuántas variantes van con él (`contarVariantesDeArchivados`).
+  **Toda consulta nueva de productos o variantes para operar debe filtrar `.is("archivado_en", null)`**
+  (en variantes también `productos.archivado_en` si se une al producto); el historial no se filtra.
 - **Producto:** foto con la cámara, quitar fondo con PhotoRoom (`PHOTOROOM_API_KEY`, permiso
   `inventory.manage`, rate limit por presupuesto).
 - **Cobro:**
@@ -256,12 +265,13 @@
   - **No hacer commit sin que el usuario lo pida.**
   - El usuario corre su propio `next dev` en `localhost:3000`: no levantar otro.
   - Probar en `localhost`, no en `127.0.0.1`.
-- **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"**; las credenciales están en CONTEXT.md.
+- **Datos de prueba:** usar el tenant **"Pruebas SYMVORA"** (en la base, `tenants.nombre_comercial` =
+  "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (943 tests al 2026-10-06) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 109) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 110) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

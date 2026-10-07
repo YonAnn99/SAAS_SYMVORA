@@ -203,11 +203,13 @@ export async function fetchPosVariants(
   const { data, error } = await supabase
     .from("variantes_producto")
     // `productos!inner` solo para filtrar: las tallas de un producto archivado
-    // (migracion 102) tampoco se venden, ni escaneando su codigo.
+    // (migracion 102) tampoco se venden, ni escaneando su codigo. Ni las
+    // variantes archivadas (migracion 110).
     .select(
       "id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras, imagen_url, unidad_medida, stock_minimo, productos!inner(archivado_en)"
     )
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     .is("productos.archivado_en", null)
     .order("talla");
 

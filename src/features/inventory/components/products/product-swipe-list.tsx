@@ -5,8 +5,9 @@
  * React Bits, `components/ui/swipe-row.tsx`) en lugar de la tabla de 9
  * columnas, que obligaba a desplazarse de lado para ver casi todo.
  *
- *   deslizar a la mitad  -> Eliminar | Archivar | Editar (abre el dialogo de siempre)
+ *   deslizar a la mitad  -> Eliminar | Editar (abre el dialogo de siempre)
  *   deslizar completo    -> Eliminar
+ *   deslizar a la DERECHA -> Archivar (con confirmacion; sin `onArchive`, nada)
  *
  * Desde `md` se sigue usando la tabla (con su edicion en linea).
  */
@@ -14,16 +15,15 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
-  COLOR_EDITAR,
-  COLOR_ELIMINAR,
+  COLOR_ARCHIVAR,
   FilaDeslizable,
   TEXTO_PISTA_DESLIZAR,
-  type AccionFila,
+  TEXTO_PISTA_DESLIZAR_ARCHIVAR,
   noArrastrar,
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Archive, ChevronRight, Layers, Pencil, Trash2 } from "lucide-react";
+import { Archive, ChevronRight, Layers } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Producto } from "../../types/inventory.types";
 import { FavoriteButton, StockBadge } from "./product-badges";
@@ -31,8 +31,6 @@ import {
   resumenConVariantes,
   type VarianteResumible,
 } from "@/features/inventory/resumen-variantes";
-
-const COLOR_ARCHIVAR = "#d97706";
 
 interface ProductSwipeListProps {
   productos: Producto[];
@@ -89,7 +87,7 @@ export function ProductSwipeList({
         </label>
         {verPista && (
           <span className="text-[11px] text-muted-foreground">
-            {TEXTO_PISTA_DESLIZAR}
+            {onArchive ? TEXTO_PISTA_DESLIZAR_ARCHIVAR : TEXTO_PISTA_DESLIZAR}
           </span>
         )}
       </div>
@@ -100,40 +98,24 @@ export function ProductSwipeList({
         const variantesDe = variantesPorProducto?.[product.id];
         const resumen =
           variantesDe && variantesDe.length > 0 ? resumenConVariantes(product, variantesDe) : null;
-        // Las mismas dos de siempre (Eliminar principal, Editar) con Archivar en medio.
-        const acciones: AccionFila[] = [
-          {
-            id: "eliminar",
-            etiqueta: "Eliminar",
-            color: COLOR_ELIMINAR,
-            icono: <Trash2 size={18} strokeWidth={2} />,
-            alElegir: () => onDelete(product),
-            confirmar: { titulo: `¿Eliminar ${product.nombre}?` },
-          },
-          ...(onArchive
-            ? [
-                {
-                  id: "archivar",
-                  etiqueta: "Archivar",
-                  color: COLOR_ARCHIVAR,
-                  icono: <Archive size={18} strokeWidth={2} />,
-                  alElegir: () => onArchive(product),
-                },
-              ]
-            : []),
-          {
-            id: "editar",
-            etiqueta: "Editar",
-            color: COLOR_EDITAR,
-            icono: <Pencil size={18} strokeWidth={2} />,
-            alElegir: () => onEdit(product),
-          },
-        ];
         return (
           <FilaDeslizable
             key={product.id}
             label={product.nombre}
-            acciones={acciones}
+            onEditar={() => onEdit(product)}
+            onEliminar={() => onDelete(product)}
+            accionInicio={
+              onArchive
+                ? {
+                    id: "archivar",
+                    etiqueta: "Archivar",
+                    color: COLOR_ARCHIVAR,
+                    icono: <Archive size={18} strokeWidth={2} />,
+                    // Pide confirmacion (`handleArchive`); la fila regresa sola.
+                    alElegir: () => onArchive(product),
+                  }
+                : undefined
+            }
             onOpenChange={alAbrir}
             onTap={nVariantes > 0 && onVerVariantes ? () => onVerVariantes(product) : undefined}
           >

@@ -39,6 +39,7 @@ export async function fetchVariantsForPricing(
     .from("variantes_producto")
     .select("id, producto_id, talla, color, precio_venta")
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     .order("talla");
   return data ?? [];
 }

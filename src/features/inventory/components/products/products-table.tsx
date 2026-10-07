@@ -76,6 +76,8 @@ interface ProductsTableProps {
   onEditVariante?: (variante: VarianteProducto) => void;
   /** `true` si se borro. */
   onDeleteVariante?: (variante: VarianteProducto) => Promise<boolean>;
+  /** Archivar una variante (pide confirmacion); `true` si se archivo. */
+  onArchiveVariante?: (variante: VarianteProducto) => Promise<boolean>;
   /** Corazones por variante del usuario actual. */
   variantesFavoritas?: ReadonlySet<string>;
   onToggleFavoritaVariante?: (variante: VarianteProducto) => void;
@@ -111,6 +113,7 @@ export function ProductsTable({
   variantesPorProducto = {},
   onEditVariante,
   onDeleteVariante,
+  onArchiveVariante,
   variantesFavoritas = new Set<string>(),
   onToggleFavoritaVariante,
   onInlineSaveVariante,
@@ -236,6 +239,7 @@ export function ProductsTable({
               onOpenChange={(abierta) => !abierta && setHojaDe(null)}
               onEdit={(v) => onEditVariante?.(v)}
               onDelete={async (v) => (onDeleteVariante ? onDeleteVariante(v) : false)}
+              onArchive={canEdit ? onArchiveVariante : undefined}
               onAgregar={
                 productoHoja && puedeAgregarVariante(productoHoja)
                   ? () => {
@@ -605,6 +609,18 @@ export function ProductsTable({
                             <Pencil className="h-3 w-3 mr-1" />
                             {t("common.edit")}
                           </Button>
+                          {canEdit && onArchiveVariante && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground"
+                              onClick={() => void onArchiveVariante(v)}
+                              title="Archivar"
+                              aria-label={`Archivar ${product.nombre} ${etiquetaAtributos(v)}`.trim()}
+                            >
+                              <Archive className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           <BotonEliminar
                             nombre={`la variante ${etiquetaAtributos(v) || product.nombre}`}
                             detalle="No se puede deshacer"

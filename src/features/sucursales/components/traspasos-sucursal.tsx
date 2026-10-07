@@ -82,7 +82,11 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
           .select("id, nombre, es_servicio")
           .eq("tenant_id", tenantId)
           .is("archivado_en", null),
-        supabase.from("variantes_producto").select("id, producto_id, talla, color").eq("tenant_id", tenantId),
+        supabase
+          .from("variantes_producto")
+          .select("id, producto_id, talla, color")
+          .eq("tenant_id", tenantId)
+          .is("archivado_en", null),
         fetchStockSucursal(origen),
       ]);
       if (prods.error) throw prods.error;

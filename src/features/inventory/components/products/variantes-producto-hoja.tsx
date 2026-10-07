@@ -20,7 +20,8 @@ import { rangoDePrecio, resumenConVariantes } from "../../resumen-variantes";
  * Celular: las variantes de UN producto en la hoja que sube desde abajo (el
  * `Dialog` ya es hoja en pantallas chicas). Arriba, anclado mientras se
  * desplaza la lista, el producto al que pertenecen; abajo, cada variante
- * deslizable para editarla o eliminarla, igual que en la pestaña que existia.
+ * deslizable para editarla o eliminarla (a la izquierda) o archivarla (a la
+ * derecha).
  */
 interface VariantesProductoHojaProps {
   producto: Producto | null;
@@ -28,6 +29,8 @@ interface VariantesProductoHojaProps {
   onOpenChange: (abierta: boolean) => void;
   onEdit: (variante: VarianteProducto) => void;
   onDelete: (variante: VarianteProducto) => Promise<boolean>;
+  /** Deslizar a la derecha (sin ella no se ofrece). Pide confirmacion. */
+  onArchive?: (variante: VarianteProducto) => Promise<boolean>;
   favoritas?: ReadonlySet<string>;
   onToggleFavorita?: (variante: VarianteProducto) => void;
   /** "Agregar variante" (solo con permiso y el modulo encendido). */
@@ -40,6 +43,7 @@ export function VariantesProductoHoja({
   onOpenChange,
   onEdit,
   onDelete,
+  onArchive,
   favoritas,
   onToggleFavorita,
   onAgregar,
@@ -97,6 +101,16 @@ export function VariantesProductoHoja({
                 if (ok && variantes.length <= 1) onOpenChange(false);
                 return ok;
               }}
+              onArchive={
+                onArchive
+                  ? async (v) => {
+                      const ok = await onArchive(v);
+                      // La ultima archiva el producto completo: la hoja se cierra.
+                      if (ok && variantes.length <= 1) onOpenChange(false);
+                      return ok;
+                    }
+                  : undefined
+              }
             />
             {onAgregar && (
               <Button variant="outline" size="sm" className="h-9 w-full gap-1.5 text-xs" onClick={onAgregar}>

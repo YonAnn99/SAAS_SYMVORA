@@ -9,11 +9,15 @@ import Image from "next/image";
  *
  *   deslizar a la mitad  -> Eliminar | Editar (abre el dialogo de siempre)
  *   deslizar completo    -> Eliminar
+ *   deslizar a la DERECHA -> Archivar (con confirmacion; sin `onArchive`, nada)
  */
 
+import { Archive } from "lucide-react";
 import {
+  COLOR_ARCHIVAR,
   FilaDeslizable,
   TEXTO_PISTA_DESLIZAR,
+  TEXTO_PISTA_DESLIZAR_ARCHIVAR,
   noArrastrar,
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
@@ -28,6 +32,8 @@ interface VariantSwipeListProps {
   onEdit: (variant: VarianteProducto) => void;
   /** `false` si no se pudo borrar: la fila reaparece. */
   onDelete: (variant: VarianteProducto) => void | Promise<boolean | void>;
+  /** Deslizar a la derecha: archivar (pide confirmacion quien la pasa). */
+  onArchive?: (variant: VarianteProducto) => Promise<boolean>;
   /**
    * `false` dentro de la hoja de un producto: el producto ya esta anclado
    * arriba, asi que cada fila se titula con sus atributos.
@@ -45,6 +51,7 @@ export function VariantSwipeList({
   getProductName,
   onEdit,
   onDelete,
+  onArchive,
   conProducto = true,
   tocarParaEditar = false,
   favoritas,
@@ -55,7 +62,9 @@ export function VariantSwipeList({
   return (
     <div className="space-y-2">
       {verPista && (
-        <p className="px-1 pb-1 text-[11px] text-muted-foreground">{TEXTO_PISTA_DESLIZAR}</p>
+        <p className="px-1 pb-1 text-[11px] text-muted-foreground">
+          {onArchive ? TEXTO_PISTA_DESLIZAR_ARCHIVAR : TEXTO_PISTA_DESLIZAR}
+        </p>
       )}
 
       {variantes.map((variant) => {
@@ -68,6 +77,17 @@ export function VariantSwipeList({
             label={`${producto} ${nombre}`}
             onEditar={() => onEdit(variant)}
             onEliminar={() => onDelete(variant)}
+            accionInicio={
+              onArchive
+                ? {
+                    id: "archivar",
+                    etiqueta: "Archivar",
+                    color: COLOR_ARCHIVAR,
+                    icono: <Archive size={18} strokeWidth={2} />,
+                    alElegir: () => onArchive(variant),
+                  }
+                : undefined
+            }
             onOpenChange={alAbrir}
             onTap={tocarParaEditar ? () => onEdit(variant) : undefined}
           >

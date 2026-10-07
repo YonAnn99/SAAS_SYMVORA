@@ -138,8 +138,20 @@ export default function ProductsPage() {
     handleToggleFavorito,
     handleDelete,
     handleArchive,
+    archivar: archivarProducto,
     archivadosVersion,
   } = useProducts(tenantId, tenantLoading, estadoDe);
+  // Archivar la ULTIMA variante activa archiva su producto completo
+  // (`features/inventory/archivar-variante.ts`).
+  const productoDeLaVariante = useCallback(
+    (v: VarianteProducto) => {
+      const producto = products.find((p) => p.id === v.producto_id);
+      return producto
+        ? { nombre: producto.nombre, archivar: () => archivarProducto(producto) }
+        : undefined;
+    },
+    [products, archivarProducto]
+  );
   // Lista para las ventanas de variantes, armada de los productos ya cargados
   // (antes `useVariants` los volvia a consultar).
   const productosOpcion = useMemo<ProductoOption[]>(
@@ -462,8 +474,8 @@ export default function ProductsPage() {
         filteredProducts={filteredProducts}
         loading={loading}
         onEdit={openEditDialog}
-        onDelete={handleDelete}
-        onArchive={handleArchive}
+        onDelete={(p) => handleDelete(p, variantesPorProducto[p.id]?.length ?? 0)}
+        onArchive={(p) => handleArchive(p, variantesPorProducto[p.id]?.length ?? 0)}
         onAdd={openCreateDialog}
         onInlineSave={handleInlineSave}
         canEdit={canManageInventory}
@@ -477,7 +489,8 @@ export default function ProductsPage() {
         onLimpiarSeleccion={() => setSeleccionados(new Set())}
         variantesPorProducto={variantesPorProducto}
         onEditVariante={variantes.openEditDialog}
-        onDeleteVariante={variantes.handleDelete}
+        onDeleteVariante={(v) => variantes.handleDelete(v, productoDeLaVariante(v))}
+        onArchiveVariante={(v) => variantes.handleArchive(v, productoDeLaVariante(v))}
         variantesFavoritas={variantes.favoritas}
         onToggleFavoritaVariante={variantes.toggleFavorita}
         onInlineSaveVariante={variantes.handleInlineSaveVariante}
@@ -519,8 +532,11 @@ export default function ProductsPage() {
               {tenantId && (
                 <ProductosArchivadosSeccion
                   tenantId={tenantId}
-                  version={archivadosVersion}
-                  onRestaurado={() => void refetch()}
+                  version={archivadosVersion + variantes.archivadosVersion}
+                  onRestaurado={() => {
+                    void refetch();
+                    void variantes.refetch();
+                  }}
                 />
               )}
             </TabsContent>

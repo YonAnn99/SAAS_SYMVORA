@@ -8,6 +8,7 @@ import type {
   VarianteProducto,
 } from "../types/inventory.types";
 import {
+  archiveVariant,
   createVariant,
   deleteVariant,
   fetchVariantProducts,
@@ -17,6 +18,9 @@ import {
   type VarianteInput,
 } from "../services/variant-service";
 import { etiquetaAtributos } from "../atributos-variante";
+import { esUltimaVarianteActiva, type ProductoDeLaVariante } from "../archivar-variante";
+import { esErrorDeHistorial } from "../services/product-service";
+import { useConfirmar } from "@/components/ui/confirmar";
 import {
   fetchVariantesFavoritas,
   toggleVarianteFavorita,
@@ -311,8 +315,85 @@ export function useVariants(
     [tenantId, hayVarias, seleccionada, activas, refetch, onCambio]
   );
 
+  const confirmar = useConfirmar();
+
+  // Sube al archivar: la pestaña "Archivados" vuelve a consultar.
+  const [archivadosVersion, setArchivadosVersion] = useState(0);
+
+  /** Sale del catalogo y del POS; su historial no cambia (migracion 110). */
+  const archivar = useCallback(
+    async (variant: VarianteProducto): Promise<boolean> => {
+      const nombre = etiquetaAtributos(variant) || "Variante";
+      try {
+        await archiveVariant(variant.id);
+        await logActivity({
+          action: "UPDATE",
+          entity: "producto",
+          entityId: variant.id,
+          entityName: nombre,
+          details: { archivado: true },
+        });
+        toast.success(`«${nombre}» se archivó`, {
+          description: "La encuentras en la pestaña Archivados.",
+        });
+        setDeleteConfirm(null);
+        setArchivadosVersion((n) => n + 1);
+        void refetch();
+        onCambio?.();
+        return true;
+      } catch (error) {
+        toast.error(mensajeDeError(error));
+        return false;
+      }
+    },
+    [refetch, onCambio]
+  );
+
+  /**
+   * Pide confirmacion y archiva. Si es la ultima variante activa de su
+   * producto, archiva el producto completo (`archivar-variante.ts`).
+   * `conHistorial`: se llego aqui porque no se pudo eliminar.
+   */
+  const confirmarYArchivar = useCallback(
+    async (
+      variant: VarianteProducto,
+      producto: ProductoDeLaVariante | undefined,
+      conHistorial: boolean
+    ): Promise<boolean> => {
+      const nombre = etiquetaAtributos(variant) || "Variante";
+      const ultima = producto !== undefined && esUltimaVarianteActiva(variant, variants);
+      const porHistorial = conHistorial
+        ? "Tiene ventas, compras o movimientos registrados: para no alterar tus reportes no se puede eliminar. "
+        : "";
+      const ok = await confirmar(
+        ultima
+          ? {
+              titulo: conHistorial ? `«${nombre}» tiene historial` : `¿Archivar «${producto.nombre}»?`,
+              descripcion: `${porHistorial}Es la única variante de «${producto.nombre}», así que se archiva el producto completo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar desde la pestaña Archivados.`,
+              accion: "Archivar producto",
+              tono: "aviso",
+            }
+          : {
+              titulo: conHistorial ? `«${nombre}» tiene historial` : `¿Archivar «${nombre}»?`,
+              descripcion: `${porHistorial}${conHistorial ? "Puedes archivarla: d" : "D"}eja de aparecer en el catálogo y en el punto de venta. Sus ventas y reportes se conservan, y la puedes restaurar desde la pestaña Archivados.`,
+              accion: "Archivar",
+              tono: "aviso",
+            }
+      );
+      if (!ok) return false;
+      return ultima ? producto.archivar() : archivar(variant);
+    },
+    [variants, confirmar, archivar]
+  );
+
+  const handleArchive = useCallback(
+    (variant: VarianteProducto, producto?: ProductoDeLaVariante) =>
+      confirmarYArchivar(variant, producto, false),
+    [confirmarYArchivar]
+  );
+
   const handleDelete = useCallback(
-    async (variant: VarianteProducto) => {
+    async (variant: VarianteProducto, producto?: ProductoDeLaVariante) => {
       try {
         await deleteVariant(variant.id);
         await logActivity({
@@ -326,14 +407,18 @@ export function useVariants(
         void refetch();
         onCambio?.();
         return true;
-      } catch {
-        toast.error("Error al eliminar la variante");
-        // La fila deslizable del celular se colapsa ANTES de borrar: con
-        // `false` sabe que tiene que reaparecer.
-        return false;
+      } catch (error) {
+        if (!esErrorDeHistorial(error)) {
+          toast.error("Error al eliminar la variante");
+          // La fila deslizable del celular se colapsa ANTES de borrar: con
+          // `false` sabe que tiene que reaparecer.
+          return false;
+        }
+        // Con ventas o compras la base no deja borrarla: se ofrece archivarla.
+        return confirmarYArchivar(variant, producto, true);
       }
     },
-    [refetch, onCambio]
+    [refetch, onCambio, confirmarYArchivar]
   );
 
   /**
@@ -457,6 +542,8 @@ export function useVariants(
     handleSave,
     handleSaveMany,
     handleDelete,
+    handleArchive,
+    archivadosVersion,
     favoritas,
     toggleFavorita,
     handleInlineSaveVariante,

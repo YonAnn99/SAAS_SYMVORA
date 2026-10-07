@@ -48,6 +48,9 @@ export async function fetchVariants(tenantId: string): Promise<VarianteProducto[
     .from("variantes_producto")
     .select("*")
     .eq("tenant_id", tenantId)
+    // Las archivadas (migracion 110) solo se ven en la pestaña "Archivados"
+    // (`fetchArchivedVariants`).
+    .is("archivado_en", null)
     .order("creado_en", { ascending: false });
   return data ?? [];
 }
@@ -139,4 +142,66 @@ export async function deleteVariant(variantId: string): Promise<void> {
     .delete()
     .eq("id", variantId);
   if (error) throw error;
+}
+/**
+ * Archivar (migracion 110): como los productos, una variante con ventas o
+ * compras no se puede borrar. Archivada sale del catalogo, del POS y de los
+ * selectores; su historial se conserva y se restaura desde "Archivados".
+ */
+export async function archiveVariant(variantId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const ahora = new Date().toISOString();
+  const { error } = await supabase
+    .from("variantes_producto")
+    .update({ archivado_en: ahora, actualizado_en: ahora })
+    .eq("id", variantId);
+  if (error) throw error;
+}
+
+export async function restoreVariant(variantId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("variantes_producto")
+    .update({ archivado_en: null, actualizado_en: new Date().toISOString() })
+    .eq("id", variantId);
+  if (error) throw error;
+}
+
+/** Una variante archivada con el nombre de su producto (y si este tambien lo esta). */
+export type VarianteArchivada = VarianteProducto & {
+  productos: { nombre: string; archivado_en: string | null } | null;
+};
+
+export async function fetchArchivedVariants(tenantId: string): Promise<VarianteArchivada[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("variantes_producto")
+    .select("*, productos(nombre, archivado_en)")
+    .eq("tenant_id", tenantId)
+    .not("archivado_en", "is", null)
+    .order("archivado_en", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as VarianteArchivada[];
+}
+
+/**
+ * Variantes que volverian con cada producto archivado al restaurarlo: las que
+ * no se archivaron por su cuenta. `{ productoId: n }`.
+ */
+export async function contarVariantesDeArchivados(
+  tenantId: string,
+  productoIds: string[]
+): Promise<Record<string, number>> {
+  if (productoIds.length === 0) return {};
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("variantes_producto")
+    .select("producto_id")
+    .eq("tenant_id", tenantId)
+    .in("producto_id", productoIds)
+    .is("archivado_en", null);
+  if (error) throw error;
+  const conteo: Record<string, number> = {};
+  for (const { producto_id } of data ?? []) conteo[producto_id] = (conteo[producto_id] ?? 0) + 1;
+  return conteo;
 }

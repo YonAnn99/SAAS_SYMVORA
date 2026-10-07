@@ -85,6 +85,7 @@ export async function fetchOrderVariants(
     .from("variantes_producto")
     .select("id, producto_id, talla, color, costo_compra")
     .eq("tenant_id", tenantId)
+    .is("archivado_en", null)
     .order("talla");
   return data ?? [];
 }

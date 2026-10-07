@@ -20,6 +20,8 @@ import { useConfirmar, type OpcionesConfirmar } from "@/components/ui/confirmar"
 
 export const COLOR_ELIMINAR = "#e5484d";
 export const COLOR_EDITAR = "#2563EB";
+/** Archivar (deslizar a la derecha en productos y variantes). */
+export const COLOR_ARCHIVAR = "#d97706";
 
 export interface AccionFila {
   id: string;
@@ -205,3 +207,5 @@ export function usePistaDeslizar() {
 }
 
 export const TEXTO_PISTA_DESLIZAR = "Desliza a la izquierda para editar o eliminar";
+/** Para las listas que ademas archivan al deslizar a la derecha. */
+export const TEXTO_PISTA_DESLIZAR_ARCHIVAR = "Desliza ← para editar o eliminar, → para archivar";

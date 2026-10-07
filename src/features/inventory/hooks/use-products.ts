@@ -374,12 +374,16 @@ export function useProducts(
     [refetch]
   );
 
+  /**
+   * `nVariantes`: las activas del producto. No se marcan como archivadas: se
+   * ocultan con el (todas las consultas filtran el producto) y al restaurarlo
+   * vuelven juntas. La confirmacion lo dice para que nadie las busque aparte.
+   */
   const handleArchive = useCallback(
-    async (product: Producto) => {
+    async (product: Producto, nVariantes = 0) => {
       const ok = await confirmar({
         titulo: `¿Archivar «${product.nombre}»?`,
-        descripcion:
-          "Deja de aparecer en el catálogo y en el punto de venta. Sus ventas y reportes se conservan, y lo puedes restaurar desde la pestaña Archivados.",
+        descripcion: `Deja de aparecer en el catálogo y en el punto de venta.${avisoVariantes(nVariantes)} Sus ventas y reportes se conservan, y lo puedes restaurar desde la pestaña Archivados.`,
         accion: "Archivar",
         tono: "aviso",
       });
@@ -390,7 +394,7 @@ export function useProducts(
   );
 
   const handleDelete = useCallback(
-    async (product: Producto) => {
+    async (product: Producto, nVariantes = 0) => {
       try {
         await deleteProduct(product.id);
         await logActivity({
@@ -414,8 +418,7 @@ export function useProducts(
         // los reportes no cambian). En vez del error, se ofrece archivarlo.
         const quiereArchivar = await confirmar({
           titulo: `«${product.nombre}» tiene historial`,
-          descripcion:
-            "Tiene ventas, compras o movimientos registrados. Para no alterar tus reportes no se puede eliminar, pero puedes archivarlo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar cuando quieras.",
+          descripcion: `Tiene ventas, compras o movimientos registrados. Para no alterar tus reportes no se puede eliminar, pero puedes archivarlo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar cuando quieras.${avisoVariantes(nVariantes)}`,
           accion: "Archivar",
           tono: "aviso",
         });
@@ -508,6 +511,16 @@ export function useProducts(
     handleToggleFavorito,
     handleDelete,
     handleArchive,
+    /** Sin confirmacion: la ultima variante de un producto ya la pidio. */
+    archivar,
     archivadosVersion,
   };
+}
+
+/** " Sus 3 variantes también…" (vacio sin variantes). */
+function avisoVariantes(n: number): string {
+  if (n <= 0) return "";
+  return n === 1
+    ? " Su variante también deja de aparecer y vuelve con él al restaurarlo."
+    : ` Sus ${n} variantes también dejan de aparecer y vuelven con él al restaurarlo.`;
 }

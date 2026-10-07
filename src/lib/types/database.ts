@@ -872,6 +872,8 @@ export type Database = {
           descripcion: string | null;
           stock_minimo: number;
           unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
+          /** Migracion 110: NULL = activa. Opcional: las consultas con columnas elegidas no la traen. */
+          archivado_en?: string | null;
         };
         Insert: {
           id?: string;
@@ -891,6 +893,7 @@ export type Database = {
           descripcion?: string | null;
           stock_minimo?: number;
           unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
+          archivado_en?: string | null;
         };
         Update: {
           id?: string;
@@ -910,6 +913,7 @@ export type Database = {
           descripcion?: string | null;
           stock_minimo?: number;
           unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
+          archivado_en?: string | null;
         };
       };
       stock_variantes: {
