@@ -10,6 +10,7 @@ import {
   ofertaRegresoVigente,
   precioCobroCents,
 } from "@/features/payments/promocion";
+import { METODOS_POR_TIPO, metodoPendiente } from "@/features/payments/metodo-pago-conekta";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -218,13 +219,9 @@ export async function POST(request: Request) {
       "google",
     ];
 
-    const METHOD_MAP: Record<string, string[]> = {
-      card: ["card", "apple", "google"],
-      cash: ["cash"],
-      bank_transfer: ["bank_transfer", "pay_by_bank"],
-    };
-
-    const allowedMethods = METHOD_MAP[type] ?? ALL_METHODS;
+    // "unico" ("Otros metodos de pago"): efectivo, SPEI, BBVA y Aplazo en el
+    // mismo checkout (`features/payments/metodo-pago-conekta.ts`).
+    const allowedMethods = METODOS_POR_TIPO[type] ?? ALL_METHODS;
 
     // Monto en centavos: mensual $399 MXN, anual $3,588 MXN cobrados de una vez
     // ($299/mes, 25% de ahorro vs pagar mes a mes). Sale de la misma constante
@@ -250,7 +247,8 @@ export async function POST(request: Request) {
     // Tarjeta = cobro recurrente real (Conekta solo soporta suscripciones con
     // tarjeta): en vez de una orden de una sola exhibición, se crea el checkout
     // con un plan — Conekta guarda la tarjeta y cobra sola cada periodo.
-    // Efectivo no puede ser recurrente, así que sigue siendo una orden única.
+    // Los demas metodos (efectivo, SPEI, BBVA, Aplazo) no pueden ser recurrentes:
+    // son una orden de una sola exhibicion ("Otros metodos de pago").
     const isCardSubscription = type === "card";
 
     let order;
@@ -272,7 +270,7 @@ export async function POST(request: Request) {
           customerId: customerId!,
           amount,
           description,
-          successUrl: `${APP_URL}/${locale}/billing/success?type=${encodeURIComponent(type || "cash")}`,
+          successUrl: `${APP_URL}/${locale}/billing/success?type=${encodeURIComponent(type || "unico")}`,
           cancelUrl: `${APP_URL}/${locale}/billing`,
           failureUrl: `${APP_URL}/${locale}/billing`,
           allowedPaymentMethods: allowedMethods,
@@ -320,9 +318,9 @@ export async function POST(request: Request) {
       console.error("No se pudo marcar checkout_iniciado_en:", errorMarcaCheckout.message);
     }
 
-    // Registrar el intento como "pendiente" solo para efectivo: ahí sí existe
-    // una referencia real y cobrable de inmediato aunque el cliente cierre la
-    // pestaña. Para tarjeta, si nunca llega a pagar en la página de Conekta no
+    // Registrar el intento como "pendiente" solo para el pago único: ahí la
+    // orden (referencia de efectivo o SPEI) es cobrable aunque el cliente cierre
+    // la pestaña; si no se paga, `order.expired` la marca como vencida. Para tarjeta, si nunca llega a pagar en la página de Conekta no
     // hay nada procesándose — el webhook de suscripción inserta el registro
     // cuando el cobro realmente se confirma.
     if (!isCardSubscription) {
@@ -330,7 +328,9 @@ export async function POST(request: Request) {
         subscription_id: subscription.id,
         amount: amount / 100,
         currency: "MXN",
-        payment_method: type || "cash",
+        // `type` ("unico") no es del enum: un metodo valido provisional; el
+        // webhook `order.paid` lo cambia por el real.
+        payment_method: metodoPendiente(type),
         status: "pending",
         conekta_order_id: (orderData.id as string) || null,
       });

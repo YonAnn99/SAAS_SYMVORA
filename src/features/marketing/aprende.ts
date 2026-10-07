@@ -455,7 +455,7 @@ export const GUIAS: Guia[] = [
         pasos: [
           { titulo: "Mensual o anual", texto: "Elige el plan mensual o el anual, que sale más barato por mes." },
           { titulo: "Con tarjeta", texto: "«Pagar con tarjeta» activa el cobro automático: tu tarjeta se carga sola cada periodo." },
-          { titulo: "En efectivo", texto: "«Pagar en efectivo en tienda» genera un pago único; no se renueva solo y tendrás que volver a pagar cada periodo." },
+          { titulo: "Otros métodos", texto: "«Otros métodos de pago» genera un pago único con efectivo en tienda, transferencia SPEI, Pago Directo BBVA o a plazos con Aplazo; no se renueva solo y tendrás que volver a pagar cada periodo." },
         ],
       },
       {

@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Sparkles, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { vaciarCache } from "@/lib/cache-datos";
+import { vaciarCarritoGuardado } from "@/features/pos/stores/cart";
 
 export function DemoBanner() {
   const t = useTranslations();
@@ -39,13 +40,22 @@ export function DemoBanner() {
     } catch {
       // ignore
     }
+    // Primero se borra la demo de ESTE visitante (negocio y usuario, migracion
+    // 112), con la sesion aun viva para que el servidor sepa de quien es. Si
+    // falla, igual se sale: la demo vence sola y la limpieza la borra.
+    try {
+      await fetch("/api/demo/salir", { method: "POST" });
+    } catch {
+      // ignore
+    }
     try {
       const supabase = createSupabaseBrowserClient();
       await supabase.auth.signOut();
-      vaciarCache();
     } catch {
       // ignore: even if signOut fails, redirect away
     }
+    vaciarCache();
+    vaciarCarritoGuardado();
     router.push("/");
     router.refresh();
   };

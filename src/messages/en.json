@@ -501,14 +501,14 @@
     "addCard": "Pay with card",
     "addCardRedirect": "Redirecting to Conekta...",
     "addCardNote": "Enables automatic billing — your card is charged on its own every period.",
-    "payCash": "Pay with cash in-store",
-    "payCashNote": "One-time payment — it doesn't renew on its own, you'll need to pay again each period.",
+    "payCash": "Other payment methods",
+    "payCashNote": "One-time payment with cash in-store, SPEI bank transfer, BBVA direct payment or in installments with Aplazo. It doesn't renew on its own: you'll need to pay again each period.",
     "referenceGenerated": "Reference generated",
     "referenceCopied": "Reference copied",
     "paymentSuccess": "Payment successful",
     "paymentSuccessDescription": "Your payment was processed successfully. Your subscription is active.",
     "paymentPending": "Payment reference generated",
-    "paymentPendingDescription": "We received your cash payment request. Your subscription will activate automatically once the store payment is confirmed (this can take up to 48 hours). We also emailed you the reference.",
+    "paymentPendingDescription": "We received your payment request. Your subscription will activate automatically once Conekta confirms the payment: in-store payments can take up to 48 hours and bank transfers are usually almost instant. We also emailed you the reference.",
     "paymentPendingCard": "Payment processing",
     "paymentPendingCardDescription": "Your payment is being processed by Conekta. Your subscription will activate automatically once it's confirmed — this usually takes just a few minutes.",
     "redirectingIn": "Redirecting in {seconds} seconds...",
@@ -965,7 +965,7 @@
     },
     "demo": {
       "banner": {
-        "text": "You're trying the demo. Data resets when you leave.",
+        "text": "Private demo: only you can see this data. It's deleted when you leave or after 2 hours.",
         "cta": "Create my free account",
         "exit": "Exit"
       },

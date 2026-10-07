@@ -91,9 +91,11 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("subscriptions")
     .select(
-      "id, tenant_id, trial_end, current_period_end, past_due_desde, updated_at, last_payment_at, conekta_subscription_id, oferta_regreso_hasta, aviso_renovacion_en, aviso_gracia_en, aviso_solo_lectura_en, aviso_regreso_en, aviso_ultimo_en, tenants(subscription_status, nombre_comercial)"
+      "id, tenant_id, trial_end, current_period_end, past_due_desde, updated_at, last_payment_at, conekta_subscription_id, oferta_regreso_hasta, aviso_renovacion_en, aviso_gracia_en, aviso_solo_lectura_en, aviso_regreso_en, aviso_ultimo_en, tenants!inner(subscription_status, nombre_comercial, demo_expira_en)"
     )
     .or("last_payment_at.not.is.null,status.in.(past_due,canceled)")
+    // Los negocios demo de visitante (migracion 112) nacen "pagados": fuera.
+    .is("tenants.demo_expira_en", null)
     .order("updated_at")
     .limit(MAX_POR_EJECUCION);
 

@@ -136,8 +136,21 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
   it("el panel mide el alto VISIBLE (dvh), no el de la barra del navegador escondida", () => {
     // EL DEFECTO (2026-10-06): con `h-screen`/`100vh`, en Chrome de Android la
     // pagina se desplazaba y "Ver carrito" quedaba detras del dock.
-    expect(shell).toMatch(/<div className="flex h-dvh overflow-hidden/);
+    expect(shell).toMatch(/<div className="flex h-\[calc\(100dvh-var\(--alto-avisos,0px\)\)\] overflow-hidden/);
     expect(alto).not.toMatch(/100vh/);
+  });
+
+  it("los avisos de arriba (demo, fin de prueba) se descuentan del alto", () => {
+    // EL DEFECTO (2026-10-07): en la demo, la franja morada empujaba el panel
+    // y en el POS del celular "Ver carrito" quedaba debajo del dock.
+    // Y quedan fijos arriba (fin de prueba en «testr», 2026-10-07: el aviso se
+    // iba con el scroll).
+    expect(shell).toContain('<div ref={avisosRef} className="sticky top-0 z-40">');
+    expect(shell).toContain('"--alto-avisos"');
+    for (const corte of alto.match(/h-\[calc\([^\]]+\]/g) ?? []) {
+      expect(corte).toContain("var(--alto-avisos,0px)");
+    }
+    expect(alto.match(/h-\[calc\(/g)).toHaveLength(6);
   });
 
   it("las medidas que asume alto-panel.ts siguen siendo esas", () => {
@@ -146,9 +159,9 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
     expect(footer).toContain("py-2");
     expect(footer).toContain("md:py-3");
     expect(footer).toContain("leading-4");
-    expect(alto).toContain("h-[calc(100dvh-200px-env(safe-area-inset-bottom))]");
-    expect(alto).toContain("md:h-[calc(100dvh-216px-env(safe-area-inset-bottom))]");
-    expect(alto).toContain("lg:h-[calc(100dvh-152px)]");
+    expect(alto).toContain("h-[calc(100dvh-var(--alto-avisos,0px)-200px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("md:h-[calc(100dvh-var(--alto-avisos,0px)-216px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("lg:h-[calc(100dvh-var(--alto-avisos,0px)-152px)]");
   });
 
   it.each([
@@ -172,7 +185,7 @@ describe("el pie queda pegado al fondo y el POS no desplaza la página", () => {
 
   it("el pie se oculta en el POS por debajo de lg, y ALTO_PANEL_POS lo descuenta", () => {
     expect(footer).toContain("hidden lg:block");
-    expect(alto).toContain("h-[calc(100dvh-144px-env(safe-area-inset-bottom))]");
-    expect(alto).toContain("md:h-[calc(100dvh-152px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("h-[calc(100dvh-var(--alto-avisos,0px)-144px-env(safe-area-inset-bottom))]");
+    expect(alto).toContain("md:h-[calc(100dvh-var(--alto-avisos,0px)-152px-env(safe-area-inset-bottom))]");
   });
 });

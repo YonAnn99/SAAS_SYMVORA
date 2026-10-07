@@ -20,7 +20,8 @@ function BillingSuccessContent() {
   const searchParams = useSearchParams();
   const billingPath = `/${locale}/billing`;
   const isPaid = searchParams.get("payment_status") === "paid";
-  const isCash = searchParams.get("type") === "cash";
+  // Pago único (antes solo efectivo): se confirma después, no al volver.
+  const isCash = ["cash", "unico", "bank_transfer"].includes(searchParams.get("type") ?? "");
   const [countdown, setCountdown] = useState(5);
 
   // La cuenta regresiva y el redirect van en efectos separados a propósito: React

@@ -32,6 +32,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Es evidencia legal: solo se registran las versiones VIGENTES, nunca una
+    // que mande el cliente a su gusto. Una pestaña con el bundle anterior al
+    // deploy recibe 409 y el banner le vuelve a pedir la aceptación.
+    if (
+      parsed.data.termsVersion !== LEGAL_DOCUMENT_VERSIONS.terms ||
+      parsed.data.privacyVersion !== LEGAL_DOCUMENT_VERSIONS.privacy ||
+      parsed.data.cookiesVersion !== LEGAL_DOCUMENT_VERSIONS.cookies
+    ) {
+      return NextResponse.json(
+        { error: "Outdated document versions", current: LEGAL_DOCUMENT_VERSIONS },
+        { status: 409 }
+      );
+    }
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },

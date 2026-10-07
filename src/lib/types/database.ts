@@ -26,6 +26,8 @@ export type Database = {
           codigo_postal: string | null;
           subscription_status: "trial" | "active" | "past_due" | "canceled" | "expired" | null;
           creado_en: string;
+          /** Migracion 112: negocio demo de un visitante (se borra al vencer). NULL = real. */
+          demo_expira_en?: string | null;
         };
         Insert: {
           id?: string;

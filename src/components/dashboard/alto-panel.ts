@@ -26,6 +26,12 @@
  * de más, la pagina entera se desplazaba y "Ver carrito" quedaba detras del
  * dock. El contenedor del panel (`dashboard-shell.tsx`) usa `h-dvh` por lo mismo.
  *
+ * Los AVISOS de arriba (franja de la demo, fin de prueba o pago vencido) van
+ * en el flujo, encima del panel: el shell mide su alto y lo publica en
+ * `--alto-avisos` (`dashboard-shell.tsx`); cada cuenta lo resta. Sin eso, con
+ * un aviso visible la pagina media mas que la pantalla y en el POS "Ver
+ * carrito" quedaba debajo del dock (demo en celular, 2026-10-07).
+ *
  * ⚠️ Si cambia el alto del encabezado, el relleno de <main>, el pie o el dock,
  * hay que rehacer esta cuenta. `legal-footer.test.ts` vigila que esas piezas
  * sigan como aqui se asume.
@@ -34,7 +40,7 @@
  * las clases. Armada con variables, no las encontraria.
  */
 export const ALTO_PANEL_COMPLETO =
-  "h-[calc(100dvh-200px-env(safe-area-inset-bottom))] md:h-[calc(100dvh-216px-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-152px)]";
+  "h-[calc(100dvh-var(--alto-avisos,0px)-200px-env(safe-area-inset-bottom))] md:h-[calc(100dvh-var(--alto-avisos,0px)-216px-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-var(--alto-avisos,0px)-152px)]";
 
 /**
  * El mismo cálculo para el Punto de Venta, que por debajo de `lg` NO lleva el
@@ -46,4 +52,4 @@ export const ALTO_PANEL_COMPLETO =
  *   lg:      igual que `ALTO_PANEL_COMPLETO` (el pie sí se ve)
  */
 export const ALTO_PANEL_POS =
-  "h-[calc(100dvh-144px-env(safe-area-inset-bottom))] md:h-[calc(100dvh-152px-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-152px)]";
+  "h-[calc(100dvh-var(--alto-avisos,0px)-144px-env(safe-area-inset-bottom))] md:h-[calc(100dvh-var(--alto-avisos,0px)-152px-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-var(--alto-avisos,0px)-152px)]";

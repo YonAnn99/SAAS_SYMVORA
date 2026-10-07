@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { precioCobroCents, trasCobrar } from "@/features/payments/promocion";
+import { metodoDePagoConekta } from "@/features/payments/metodo-pago-conekta";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -732,8 +733,11 @@ export async function POST(request: Request) {
           .single();
 
         if (subData) {
-          const paidMethod =
-            data.charges?.data?.[0]?.payment_method?.type || "card";
+          // Al enum de la base: con tarjeta Conekta manda "credit"/"debit", y un
+          // tipo desconocido haria fallar el registro del pago.
+          const paidMethod = metodoDePagoConekta(
+            data.charges?.data?.[0]?.payment_method?.type
+          );
 
           // create-checkout ya insertó una fila "pending" con este mismo
           // conekta_order_id al generar la orden; se actualiza en vez de

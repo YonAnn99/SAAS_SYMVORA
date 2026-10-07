@@ -20,6 +20,10 @@
     {
       "path": "/api/cron/avisos-stock",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/limpiar-demos",
+      "schedule": "0 9 * * *"
     }
   ]
 }

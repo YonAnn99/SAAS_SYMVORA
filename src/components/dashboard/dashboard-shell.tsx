@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { DockMovil } from "@/components/layout/dock-movil";
@@ -21,6 +21,26 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Los avisos de arriba (demo, fin de prueba, pago vencido) ocupan alto EN EL
+  // FLUJO, encima del panel. Se mide y se publica en `--alto-avisos` para que
+  // el panel (y las alturas de `alto-panel.ts`) midan la pantalla MENOS los
+  // avisos: si no, la pagina se desplazaba y en el POS del celular "Ver
+  // carrito" quedaba debajo del dock. Variable CSS y no estado: sin re-render.
+  const avisosRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const avisos = avisosRef.current;
+    if (!avisos) return;
+    const raiz = document.documentElement;
+    const publicar = () => raiz.style.setProperty("--alto-avisos", `${avisos.offsetHeight}px`);
+    publicar();
+    const observador = new ResizeObserver(publicar);
+    observador.observe(avisos);
+    return () => {
+      observador.disconnect();
+      raiz.style.removeProperty("--alto-avisos");
+    };
+  }, []);
+
   return (
     <TenantProvider>
       {/* Dentro de TenantProvider a la fuerza: necesita el tenantId para
@@ -29,15 +49,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <TutorialProvider>
       {/* Una sola ventana de "¿Seguro?" para todo el panel (ver `confirmar.tsx`). */}
       <ConfirmarProvider>
-        <DemoBanner />
-        <PolicyUpdateBanner />
-        <AvisoEstadoPago />
-        <OpenRegisterPrompt />
+        {/* `sticky`: refuerzo. El panel ya descuenta su alto y la pagina no se
+            desplaza, pero si algo vuelve a hacerla mas alta, el aviso (p. ej.
+            "Tu prueba termina hoy") sigue a la vista en vez de irse con el scroll. */}
+        <div ref={avisosRef} className="sticky top-0 z-40">
+          <DemoBanner />
+          <PolicyUpdateBanner />
+          <AvisoEstadoPago />
+          <OpenRegisterPrompt />
+        </div>
         {/* En escritorio el fondo es el de la barra lateral (`--nav-bg`) y la
             columna de contenido lo tapa con la esquina izquierda redondeada:
             el panel se ve "desbordado" sobre el menú y la pestaña activa del
             menú se funde con él (ver `.nav-pestana` en globals.css). */}
-        <div className="flex h-dvh overflow-hidden lg:bg-[var(--nav-bg)]">
+        <div className="flex h-[calc(100dvh-var(--alto-avisos,0px))] overflow-hidden lg:bg-[var(--nav-bg)]">
           <Sidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
           <div className="flex flex-1 flex-col overflow-hidden bg-background lg:rounded-l-[28px]">
             <Header onSearchOpen={() => setSearchOpen(true)} />

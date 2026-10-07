@@ -11,16 +11,52 @@
 - **Stack:** Next.js 16 (App Router; `proxy.ts` reemplaza a `middleware.ts`), React 19, Supabase (RLS,
   RPCs), Tailwind v4, next-intl (es por defecto, en), Zustand, Zod 4, Base UI (shadcn base-nova),
   Recharts, Sentry, Resend.
-- **Pagos:** Conekta (checkout hosted, suscripción recurrente con tarjeta, efectivo y SPEI de pago único)
-  y Mercado Pago Point en el POS.
+- **Pagos:** Conekta (checkout hosted) y Mercado Pago Point en el POS. En /billing hay dos botones:
+  «Pagar con tarjeta» = suscripción recurrente (Conekta solo acepta TARJETA en suscripciones: ese checkout
+  nunca mostrará otros métodos) y «Otros métodos de pago» (`type: "unico"`) = orden de pago único con efectivo,
+  SPEI, Pago Directo BBVA y Aplazo (`features/payments/metodo-pago-conekta.ts`). El webhook normaliza el
+  método del cargo al enum `payment_method` con `metodoDePagoConekta` (tarjeta llega como "credit"/"debit").
 - **Precio** (única fuente: `src/lib/pricing.ts`): $399 MXN/mes o $3,588/año. Planes de Conekta `-v3`.
 - **CFDI 4.0:** existe, pero está **oculto** por decisión de negocio. Para reactivarlo, ver
   `src/lib/feature-flags.ts` y la sesión 2026-09-05 en CONTEXT.md.
+
+## ⚠️ HAY NEGOCIOS REALES EN PRODUCCIÓN (desde octubre de 2026)
+Clientes reales ya venden con SYMVORA a diario. Un error ya no es una prueba fallida: es una venta que no
+se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cambio va con más precaución:
+- **Una sola base de datos**: el Supabase de `localhost` ES el de producción. Lo que se escribe o se borra
+  desde el dev server, desde un script o con el MCP, pasa en los negocios reales.
+- **Migraciones aditivas y probadas**:
+  - Siempre con transacción revertida (`begin; …; rollback;`) antes de `apply_migration`.
+  - Preferir `ADD COLUMN IF NOT EXISTS`, `CREATE OR REPLACE` y columnas nuevas con default o NULL.
+  - **Nunca** `DROP`/renombrar columnas o tablas, ni cambiar tipos, sin un plan de transición en dos pasos:
+    primero el código deja de usarlas y se despliega; después se quitan.
+- **Datos**:
+  - Nada de `UPDATE`/`DELETE` sin `WHERE` acotado y un `count(*)` previo con el mismo filtro.
+  - No tocar negocios ajenos al de pruebas: solo «Miscelanea Symvora» (ver «Datos de prueba»).
+    «HUEVO ROCA» es un cliente real.
+  - Un borrado de datos de un negocio real solo con OK explícito del usuario.
+- **Compatibilidad con pestañas abiertas**: tras un deploy, los navegadores siguen con el código anterior
+  un rato.
+  - Una API que cambia debe aceptar también la forma anterior.
+  - Una columna nueva no puede ser obligatoria para el cliente viejo.
+- **Cambios que ve todo el mundo**: avisar al usuario antes de desplegar lo que interrumpe a todos.
+  - Ejemplos: subir una versión legal (vuelve a mostrar el aviso), cambiar el flujo de cobro o la caja.
+  - Los cambios grandes van con plan aprobado.
+- **Cobros**: las llaves de Conekta son de producción; nunca pagar «para probar».
+- **Verificar antes de dar por hecho**: tsc + vitest + ESLint, y en la base, comprobar con SQL que el
+  resultado es el esperado.
 
 ## Dominios y despliegue
 - `www.symvora.com.mx` = landing (canónico SEO); `app.` = sistema; `demo.` = demo pública (host propio
   para no mezclar cookies).
 - El enrutado entre hosts y el `noindex` (todo lo que no sea www) viven en `lib/supabase/middleware.ts`.
+- **Demo privada por visitante** (migración 112, `lib/demo.ts`): «Probar demo» crea un usuario propio
+  (`app_metadata.is_demo`, correo `demo-<uuid>@demo.symvora.com.mx`, sin contraseña) y SU negocio sembrado
+  (`crear_negocio_demo`). Nadie ve lo de otro. Se borra al salir (X de la franja → `/api/demo/salir` →
+  `borrar_mi_demo`) o a las 2 h (`borrar_demos_vencidas`: en cada entrada y cron diario `/api/cron/limpiar-demos`).
+  Tope de 300 demos vivas. **REGLA:** `tenants.demo_expira_en IS NOT NULL` = negocio demo; todo cron, conteo o
+  vista interna sobre negocios debe ignorarlos. `_borrar_negocio_demo` se niega a tocar un negocio real.
+  `reset_demo_tenant()` y el «Abarrotes Don Pedro» compartido (`demo@symvora.com`) quedan sin uso como respaldo.
 - **Vercel:** proyecto `saas-symvora`, build `next build --webpack`, despliegue por Git desde `main`.
   - Cambiar una variable de entorno **requiere redeploy**.
   - `vercel --prod` despliega el working tree local: deja `git status` limpio antes.
@@ -120,8 +156,10 @@
       venta, `ventasCobradas` lo reinicia (`key`). Con «Tarjeta (terminal)» va un botón, porque la confirma la
       terminal.
     - El pie legal se oculta en `/pos` por debajo de `lg`; el POS mide `ALTO_PANEL_POS`. Las alturas usan
-      `dvh` (y el shell `h-dvh`), nunca `vh`: en Chrome de Android `100vh` desplazaba la página y escondía
-      "Ver carrito" detrás del dock. La cuadrícula lleva `overscroll-y-contain`.
+      `dvh`, nunca `vh`: en Chrome de Android `100vh` desplazaba la página y escondía "Ver carrito" detrás
+      del dock. Además restan `--alto-avisos`: el shell mide los avisos de arriba (franja de la demo, fin de
+      prueba, pago vencido) y publica su alto; sin eso, con un aviso visible pasaba lo mismo (y el aviso se iba
+      con el scroll). Su envoltorio es `sticky top-0`: siempre a la vista. La cuadrícula lleva `overscroll-y-contain`.
     - **El carrito se conserva al recargar** (sessionStorage `symvora-carrito`, `persist` con
       `skipHydration`; `usePosCart` lo restaura al montar). Tiene dueño `userId:tenantId`: si cambia, se vacía.
       Se borra al cobrar y al cerrar sesión (`vaciarCarritoGuardado`). No se agrega nada hasta `restaurado`.
@@ -192,7 +230,11 @@
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**
   - Documentos: aviso de privacidad, términos, cookies.
-  - Las aceptaciones se registran en `legal_acceptances`, con banner de actualización.
+  - Las aceptaciones se registran en `legal_acceptances`, con banner de actualización. **La tabla (migración
+    010) no existía en producción hasta el 2026-10-07**: no hay evidencia de aceptaciones anteriores a esa
+    fecha. Al aplicarla, todo usuario existente ve una vez el aviso y su aceptación queda guardada.
+    `/api/legal/accept` solo registra las versiones vigentes (409 si no). RLS: cada quien ve e inserta solo
+    las suyas; nadie modifica ni borra.
   - Versiones en `lib/legal/versions.ts`; privacidad en `v1.3-2026-10-02`; términos en `v1.3-2026-10-06`
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
     Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba.
@@ -272,9 +314,9 @@
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (943 tests al 2026-10-06) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (985 tests al 2026-10-07) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 111) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 113; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

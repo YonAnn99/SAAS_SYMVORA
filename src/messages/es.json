@@ -501,14 +501,14 @@
     "addCard": "Pagar con tarjeta",
     "addCardRedirect": "Redirigiendo a Conekta...",
     "addCardNote": "Se activa el cobro automático — tu tarjeta se cargará sola cada periodo.",
-    "payCash": "Pagar en efectivo en tienda",
-    "payCashNote": "Pago único — no se renueva solo, tendrás que volver a pagar cada periodo.",
+    "payCash": "Otros métodos de pago",
+    "payCashNote": "Pago único con efectivo en tienda, transferencia SPEI, Pago Directo BBVA o a plazos con Aplazo. No se renueva solo: tendrás que volver a pagar cada periodo.",
     "referenceGenerated": "Referencia generada",
     "referenceCopied": "Referencia copiada",
     "paymentSuccess": "Pago exitoso",
     "paymentSuccessDescription": "Tu pago ha sido procesado correctamente. Tu suscripción está activa.",
     "paymentPending": "Referencia de pago generada",
-    "paymentPendingDescription": "Recibimos tu solicitud de pago en efectivo. Tu suscripción se activará automáticamente en cuanto se confirme el pago en tienda (puede tardar hasta 48 horas). Revisa tu correo, ahí también te enviamos la referencia.",
+    "paymentPendingDescription": "Recibimos tu solicitud de pago. Tu suscripción se activará automáticamente en cuanto Conekta confirme el pago: en tienda puede tardar hasta 48 horas y por transferencia suele ser casi inmediato. Revisa tu correo, ahí también te enviamos la referencia.",
     "paymentPendingCard": "Pago en proceso",
     "paymentPendingCardDescription": "Tu pago está siendo procesado por Conekta. Tu suscripción se activará automáticamente en cuanto se confirme — esto normalmente toma solo unos minutos.",
     "redirectingIn": "Redirigiendo en {seconds} segundos...",
@@ -965,7 +965,7 @@
     },
     "demo": {
       "banner": {
-        "text": "Estás probando la demo. Los datos se reinician al salir.",
+        "text": "Demo privada: solo tú ves estos datos. Se borra al salir o en 2 horas.",
         "cta": "Crear mi cuenta gratis",
         "exit": "Salir"
       },

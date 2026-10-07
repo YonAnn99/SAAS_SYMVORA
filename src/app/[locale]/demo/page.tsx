@@ -26,6 +26,20 @@ export default function DemoEntryPage({
 
     async function startDemo() {
       try {
+        // Quien vuelve a "Probar demo" con una demo abierta: la anterior se
+        // borra ya (si no, quedaria huerfana hasta vencer). Migracion 112.
+        try {
+          const supabaseActual = createSupabaseBrowserClient();
+          const {
+            data: { session },
+          } = await supabaseActual.auth.getSession();
+          if ((session?.user.app_metadata as Record<string, unknown> | undefined)?.is_demo === true) {
+            await fetch("/api/demo/salir", { method: "POST" });
+          }
+        } catch {
+          // ignore: vence sola
+        }
+
         const res = await fetch(
           `/api/demo/start?locale=${encodeURIComponent(resolvedLocale)}`,
           { method: "POST" }
@@ -102,10 +116,10 @@ export default function DemoEntryPage({
         <p className="text-neutral-500 leading-relaxed">
           {error ?? (
             <>
-              Estamos cargando los datos de{" "}
+              Estamos preparando tu propia copia de{" "}
               <strong>Abarrotes Don Pedro</strong>: productos, clientes, ventas
-              del último mes y caja abierta. Te llevamos al dashboard en un
-              momento.
+              del último mes y caja abierta. Es privada: solo tú la ves. Te
+              llevamos al dashboard en un momento.
             </>
           )}
         </p>

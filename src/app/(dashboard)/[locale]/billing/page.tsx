@@ -246,14 +246,16 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
     }
   };
 
-  const handlePayCash = async () => {
+  // Pago único ("Otros métodos de pago"): efectivo, SPEI, BBVA o Aplazo en el
+  // checkout de Conekta. La tarjeta va aparte porque es la única recurrente.
+  const handlePagoUnico = async () => {
     if (!tenantId) return;
     setProcessing(true);
     try {
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "cash", locale, period: selectedPeriod }),
+        body: JSON.stringify({ tenant_id: tenantId, type: "unico", locale, period: selectedPeriod }),
       });
 
       const data = await response.json();
@@ -671,7 +673,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 <div className="space-y-1.5">
                   <SpecularActionButton
                     tone="money"
-                    onClick={handlePayCash}
+                    onClick={handlePagoUnico}
                     disabled={processing || !tenantId}
                     className="w-full h-9"
                   >
