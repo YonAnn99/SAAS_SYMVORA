@@ -96,6 +96,10 @@
   --chart-3: #F59E0B;
   --chart-4: #EF4444;
   --chart-5: #8B5CF6;
+  /* Serie principal de las graficas (Chart.js lee el valor real, ver
+     `use-tema-grafica.ts`). Aparte de --chart-1 porque en oscuro ese azul casi
+     no se ve sobre el fondo. */
+  --chart-principal: #0F172A;
   --radius: 0.625rem;
   --sidebar: #FAFAF9;
   --sidebar-foreground: #0F172A;
@@ -134,6 +138,7 @@
   --chart-3: #D97706;
   --chart-4: #DC2626;
   --chart-5: #7C3AED;
+  --chart-principal: #60A5FA;
   --sidebar: #0A0A0A;
   --sidebar-foreground: #F0EFED;
   --sidebar-primary: #1E3A8A;

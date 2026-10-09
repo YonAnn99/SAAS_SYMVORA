@@ -80,13 +80,17 @@ export async function requireTenantAccess(
 
   const role = membership.role as UserRole;
 
+  // Permiso EFECTIVO, no solo el del rol: las excepciones por usuario
+  // (`user_permission_overrides`) ganan en ambos sentidos, igual que en
+  // `authorize()`. Mirar solo `role_permissions` dejaba sin la funcion a quien
+  // el dueño se la concedio y se la dejaba a quien se la quito.
   if (options.permission) {
-    const { data: hasPermission } = await serviceClient
-      .from("role_permissions")
-      .select("permission")
-      .eq("role", role)
-      .eq("permission", options.permission)
-      .single();
+    const hasPermission = await tienePermisoEfectivo(
+      user.id,
+      role,
+      options.permission,
+      options.tenantId
+    );
 
     if (!hasPermission) {
       return {
@@ -107,20 +111,27 @@ export async function requireTenantAccess(
  * base: primero su excepcion por usuario (gana en ambos sentidos) y, si no
  * tiene, lo que da su rol. Para rutas que corren con la service role y no
  * pueden llamar a `authorize()` (que lee el JWT de la sesion).
+ *
+ * Con `tenantId` la excepcion se busca solo en ese negocio. `authorize()` no
+ * puede acotarla (no recibe el tenant); hoy da igual porque cada usuario tiene
+ * un solo negocio (migracion 087), pero aqui si se sabe y es lo exacto.
  */
 export async function tienePermisoEfectivo(
   userId: string,
   role: UserRole | undefined,
-  permission: string
+  permission: string,
+  tenantId?: string
 ): Promise<boolean> {
   const serviceClient = createSupabaseServiceRoleClient();
 
-  const { data: excepcion } = await serviceClient
+  let consultaExcepcion = serviceClient
     .from("user_permission_overrides")
     .select("granted")
     .eq("user_id", userId)
-    .eq("permission", permission)
-    .maybeSingle();
+    .eq("permission", permission);
+  if (tenantId) consultaExcepcion = consultaExcepcion.eq("tenant_id", tenantId);
+
+  const { data: excepcion } = await consultaExcepcion.maybeSingle();
   if (excepcion) return Boolean(excepcion.granted);
 
   if (!role) return false;

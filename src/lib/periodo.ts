@@ -144,3 +144,48 @@ export function rangoDePeriodo(
     }
   }
 }
+
+/**
+ * El periodo inmediatamente anterior, para la comparacion de Reportes.
+ *
+ * - dia: el dia anterior. semana: los 7 dias previos.
+ * - mes: del dia 1 al MISMO dia del mes pasado (el 8 de octubre se compara con
+ *   1-8 de septiembre, no con septiembre completo: un tramo comparable). Si el
+ *   mes pasado es mas corto, se recorta a su ultimo dia (31 mar -> 28/29 feb).
+ * - trimestre / ano: el mismo tramo de calendario justo antes del actual.
+ */
+export function rangoAnterior(periodo: Periodo, rango: RangoFechas): RangoFechas {
+  const { desde, hasta } = rango;
+
+  switch (periodo) {
+    case "dia":
+    case "semana": {
+      const dias = periodo === "dia" ? 1 : 7;
+      const nuevoDesde = startOfDay(desde);
+      nuevoDesde.setDate(nuevoDesde.getDate() - dias);
+      const nuevoHasta = endOfDay(hasta);
+      nuevoHasta.setDate(nuevoHasta.getDate() - dias);
+      return { desde: nuevoDesde, hasta: nuevoHasta };
+    }
+    case "mes": {
+      const anio = desde.getFullYear();
+      const mes = desde.getMonth() - 1;
+      const inicio = new Date(anio, mes, 1);
+      const dia = Math.min(hasta.getDate(), getDaysInMonth(inicio.getFullYear(), inicio.getMonth()));
+      return {
+        desde: startOfDay(inicio),
+        hasta: endOfDay(new Date(inicio.getFullYear(), inicio.getMonth(), dia)),
+      };
+    }
+    case "trimestre":
+    case "ano":
+    default: {
+      const nuevoDesde = startOfDay(desde);
+      if (periodo === "ano") nuevoDesde.setFullYear(nuevoDesde.getFullYear() - 1);
+      else nuevoDesde.setMonth(nuevoDesde.getMonth() - 3);
+      const nuevoHasta = endOfDay(desde);
+      nuevoHasta.setDate(nuevoHasta.getDate() - 1);
+      return { desde: nuevoDesde, hasta: nuevoHasta };
+    }
+  }
+}

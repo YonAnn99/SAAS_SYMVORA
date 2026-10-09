@@ -10,7 +10,8 @@
   sucursales. Pensado para abarrotes, ropa, ferreterías, farmacias, etc.
 - **Stack:** Next.js 16 (App Router; `proxy.ts` reemplaza a `middleware.ts`), React 19, Supabase (RLS,
   RPCs), Tailwind v4, next-intl (es por defecto, en), Zustand, Zod 4, Base UI (shadcn base-nova),
-  Recharts, Sentry, Resend.
+  Chart.js (react-chartjs-2; base en `components/charts/`: `registro.ts`, `use-tema-grafica.ts`, `opciones.ts`),
+  Sentry, Resend.
 - **Pagos:** Conekta (checkout hosted) y Mercado Pago Point en el POS. En /billing hay dos botones:
   «Pagar con tarjeta» = suscripción recurrente (Conekta solo acepta TARJETA en suscripciones: ese checkout
   nunca mostrará otros métodos) y «Otros métodos de pago» (`type: "unico"`) = orden de pago único con efectivo,
@@ -68,6 +69,8 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 ## Reglas de arquitectura (no romper)
 - **Seguridad multi-tenant:**
   - `requireTenantAccess(permission)` en toda API; autentica por cookie, nunca por claims del JWT.
+    Decide con el permiso EFECTIVO (`tienePermisoEfectivo`): la excepción por usuario del negocio gana
+    sobre el rol, igual que `authorize()`. No volver a consultar solo `role_permissions`.
   - Nunca usar `user_metadata` para autorización.
   - Las ~75 políticas de escritura usan `authorize()`, que considera las excepciones por usuario
     (`user_permission_overrides`).
@@ -315,7 +318,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (985 tests al 2026-10-07) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (993 tests al 2026-10-08) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 113; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.

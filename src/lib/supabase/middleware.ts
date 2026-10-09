@@ -5,6 +5,7 @@ import { permissionForPath } from "@/lib/modules";
 import { inicioPara } from "@/lib/inicio";
 import type { UserRole } from "@/lib/types/database";
 import { isMarketingPath, stripLocale } from "@/lib/rutas-marketing";
+import { urlDeLogin } from "@/lib/ruta-de-regreso";
 
 const APP_HOST = "https://app.symvora.com.mx";
 const MARKETING_HOST = "https://www.symvora.com.mx";
@@ -160,13 +161,16 @@ export async function updateSession(request: NextRequest) {
     (segment) => request.nextUrl.pathname.endsWith(segment)
   );
 
-  // /billing es "publica" solo para efectos del redirect de login y del
-  // chequeo de suscripcion (bug #9: una suscripcion expirada redirige a
-  // /billing, y si /billing exigiera suscripcion se cicla). El chequeo de ROL
-  // si debe correr ahi — no puede ciclarse porque manda a /dashboard, otra
-  // ruta. Antes caia dentro de `!isPublicRoute` y por eso
+  // /billing se salta SOLO el chequeo de suscripcion (bug #9: una suscripcion
+  // expirada redirige a /billing, y si /billing exigiera suscripcion se cicla).
+  // El chequeo de ROL si debe correr ahi — no puede ciclarse porque manda a
+  // /dashboard, otra ruta. Antes caia dentro de `!isPublicRoute` y por eso
   // SUPER_ADMIN_ONLY_PATHS era codigo muerto: cualquier CAJERO entraba a
   // /billing y podia cancelar la suscripcion del negocio.
+  //
+  // Tampoco es publica para el login: estuvo en `isPublicRoute` y quien abria
+  // «Reactivar mi acceso» del correo sin sesion veia el panel vacio («No se
+  // encontro la suscripcion del tenant») en vez de la pantalla de entrada.
   const isBillingRoute = (() => {
     const clean = stripLocale(request.nextUrl.pathname);
     return clean === "/billing" || clean.startsWith("/billing/");
@@ -177,17 +181,18 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/marketing") ||
     request.nextUrl.pathname.startsWith("/api/conekta") ||
     request.nextUrl.pathname.startsWith("/api/mercadopago/webhook") ||
-    request.nextUrl.pathname.includes("/billing") ||
     request.nextUrl.pathname.includes("/demo") ||
     isLegalRoute ||
     isMarketingPath(request.nextUrl.pathname) ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);
 
+  // Sin sesion -> al login, con la pagina pedida en `?next=` para regresar a
+  // ella al entrar (p. ej. el enlace del correo a /billing). Directo a /auth y
+  // no a /login: esa ruta solo redirige y antes se perdian los parametros.
   if (!user && !isAuthRoute && !isPublicRoute) {
-    const url = request.nextUrl.clone();
-    const locale = request.nextUrl.pathname.split("/")[1] || "es";
-    url.pathname = `/${locale}/login`;
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(
+      new URL(urlDeLogin(request.nextUrl.pathname, request.nextUrl.search), request.url)
+    );
   }
 
   // Subscription + role access control for authenticated users on dashboard.

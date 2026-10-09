@@ -16,6 +16,11 @@ import { formatMXN } from "@/lib/money";
 import { rangoDePeriodo, type Periodo } from "@/lib/periodo";
 import { useSucursal } from "@/contexts/sucursal-context";
 import {
+  DonaConLeyenda,
+  ProveedoresChart,
+  VentasVsComprasChart,
+} from "@/components/charts/dynamic-charts";
+import {
   resumenCompras,
   type CompraParaResumen,
   type OrdenAbiertaParaResumen,
@@ -158,39 +163,27 @@ export function ComprasPeriodoCard({
               />
             </div>
 
-            {resumen.topProveedores.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Proveedores con más compras
-                </p>
-                {resumen.topProveedores.map((p) => (
-                  <div key={p.nombre} className="space-y-1">
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="min-w-0 truncate">
-                        {p.nombre}
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {p.compras} {p.compras === 1 ? "compra" : "compras"}
-                        </span>
-                      </span>
-                      <span className="shrink-0 font-mono text-sm tabular-nums">
-                        {formatMXN(p.total)}
-                      </span>
-                    </div>
-                    {/* Barra relativa al proveedor principal. */}
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{
-                          width: `${
-                            resumen.topProveedores[0].total > 0
-                              ? (p.total / resumen.topProveedores[0].total) * 100
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+            {resumen.numeroCompras > 0 ? (
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <VentasVsComprasChart
+                    title="Ventas vs compras"
+                    ventas={totalVentas}
+                    compras={resumen.totalComprado}
+                  />
+                  <DonaConLeyenda
+                    title="Cómo se pagaron las compras"
+                    data={comoSePagaron(resumen)}
+                    mostrarMonto
+                    simple
+                  />
+                </div>
+                {resumen.topProveedores.length > 0 && (
+                  <ProveedoresChart
+                    title="Proveedores con más compras"
+                    data={resumen.topProveedores}
+                  />
+                )}
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
@@ -202,6 +195,19 @@ export function ComprasPeriodoCard({
       </CardContent>
     </Card>
   );
+}
+
+/**
+ * Segmentos de "Como se pagaron": lo que salio del efectivo de alguna caja y el
+ * resto (transferencia, tarjeta, credito del proveedor...). Los vacios no van:
+ * una dona con un segmento en 0 solo agrega una fila "0%" a la leyenda.
+ */
+function comoSePagaron(resumen: ResumenCompras): { name: string; value: number }[] {
+  const otros = Math.max(0, Math.round((resumen.totalComprado - resumen.pagadoConCaja) * 100) / 100);
+  return [
+    { name: "Efectivo de caja", value: resumen.pagadoConCaja },
+    { name: "Otros medios", value: otros },
+  ].filter((s) => s.value > 0);
 }
 
 function Cifra({

@@ -1,73 +1,51 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { BarrasHorizontales } from "./barras-horizontales";
+import { montoCompleto, montoEje } from "./formato-grafica";
+import { ALTO_GRAFICA_CHICA } from "./tarjeta-grafica";
 
 interface TopProductsChartProps {
   data: { nombre: string; cantidad: number }[];
   title: string;
 }
 
+const formatoCantidad = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 });
+
 export function TopProductsChart({ data, title }: TopProductsChartProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
-          <div className="flex h-[280px] items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
-            Sin datos disponibles
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} layout="vertical">
-              <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-              <YAxis
-                type="category"
-                dataKey="nombre"
-                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                tickLine={false}
-                axisLine={false}
-                width={120}
-              />
-              {/* Sin `cursor`, Recharts pinta detras de la fila activa un
-                  rectangulo #ccc fijo: en modo oscuro se veia como una franja
-                  blanca que tapaba la barra. */}
-              <Tooltip
-                cursor={{ fill: "var(--muted)", opacity: 0.5, radius: 4 }}
-                labelStyle={{ color: "var(--foreground)", fontWeight: 500 }}
-                itemStyle={{ color: "var(--muted-foreground)" }}
-                contentStyle={{
-                  backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                }}
-                formatter={(value) => [Number(value), "Unidades vendidas"]}
-              />
-              <Bar
-                dataKey="cantidad"
-                fill="var(--primary)"
-                radius={[0, 4, 4, 0]}
-                maxBarSize={24}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+    <BarrasHorizontales
+      title={title}
+      etiquetas={data.map((d) => d.nombre)}
+      valores={data.map((d) => d.cantidad)}
+      nombreSerie="Unidades vendidas"
+      formatoTooltip={(v) => `${formatoCantidad.format(v)} vendidas`}
+      enteros
+    />
+  );
+}
+
+/** "Proveedores con más compras" dentro de la tarjeta de Compras de Reportes. */
+export function ProveedoresChart({
+  data,
+  title,
+}: {
+  data: { nombre: string; total: number; compras: number }[];
+  title: string;
+}) {
+  return (
+    <BarrasHorizontales
+      title={title}
+      etiquetas={data.map((d) => d.nombre)}
+      valores={data.map((d) => d.total)}
+      nombreSerie="Comprado"
+      formatoTooltip={montoCompleto}
+      formatoEje={montoEje}
+      detalleTooltip={(i) => {
+        const n = data[i]?.compras ?? 0;
+        return `${n} ${n === 1 ? "compra" : "compras"}`;
+      }}
+      simple
+      alto={ALTO_GRAFICA_CHICA}
+    />
   );
 }

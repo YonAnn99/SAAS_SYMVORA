@@ -22,6 +22,7 @@ import {
   loadRememberedEmail,
 } from "@/lib/auth/remembered-account";
 import { getAppUrl } from "@/lib/site";
+import { COOKIE_DESTINO_OAUTH } from "@/lib/ruta-de-regreso";
 import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
@@ -72,16 +73,23 @@ export function AuthForms({
   referralCode = null,
   referrerBusinessName = null,
   initialGiro,
+  destino = null,
 }: {
   initialMode?: AuthMode;
   referralCode?: string | null;
   referrerBusinessName?: string | null;
   /** Giro elegido desde su pagina de la landing (`?giro=`), ya validado. */
   initialGiro?: string;
+  /**
+   * Pagina a la que volver al entrar (`?next=`, ya validada con
+   * `rutaDeRegresoSegura`). Sin ella, al dashboard.
+   */
+  destino?: string | null;
 }) {
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
+  const despuesDeEntrar = destino ?? `/${locale}/dashboard`;
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
 
@@ -276,7 +284,7 @@ export function AuthForms({
     // Solo despues de que el servidor acepte las credenciales: recordar un
     // correo con el que no se pudo entrar no le sirve a nadie.
     applyRememberChoice(loginEmail, rememberMe);
-    router.push(`/${locale}/dashboard`);
+    router.push(despuesDeEntrar);
     router.refresh();
   };
 
@@ -338,7 +346,7 @@ export function AuthForms({
       // el que no se pudo entrar no le sirve a nadie. Se guarda el CORREO, y el
       // ambito "clave" lo mantiene aparte del correo del dueno.
       applyRememberChoice(keyEmail, rememberKeyMe, "clave");
-      router.push(`/${locale}/dashboard`);
+      router.push(despuesDeEntrar);
       router.refresh();
     } catch (err) {
       console.error("[key-login] Connection error:", err);
@@ -391,6 +399,11 @@ export function AuthForms({
       // en `redirectTo`: un parametro ahi puede no coincidir con las URLs de
       // retorno permitidas en Supabase, y Google volveria a la URL del sitio.
       document.cookie = `oauth_locale=${locale}; path=/; max-age=600; samesite=lax`;
+      // Igual para la pagina a la que volver (p. ej. /billing desde el correo).
+      // Sin destino se borra: una cookie vieja no debe desviar esta entrada.
+      document.cookie = destino
+        ? `${COOKIE_DESTINO_OAUTH}=${encodeURIComponent(destino)}; path=/; max-age=600; samesite=lax`
+        : `${COOKIE_DESTINO_OAUTH}=; path=/; max-age=0; samesite=lax`;
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider,

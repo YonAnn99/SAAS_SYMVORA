@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
       const sinTope = await tienePermisoEfectivo(
         auth.userId,
         auth.role,
-        "sales.discount_unlimited"
+        "sales.discount_unlimited",
+        body.tenant_id
       );
       const maximo =
         Math.round(computed.subtotal * TOPE_DESCUENTO_CAJERO_PCT) / 100;

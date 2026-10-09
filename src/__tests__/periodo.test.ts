@@ -7,6 +7,7 @@ import {
   isDateAfterOrEqual,
   isSameDay,
   PERIODOS,
+  rangoAnterior,
   rangoDePeriodo,
   startOfDay,
   type Periodo,
@@ -161,5 +162,63 @@ describe("ayudantes de fecha", () => {
     const tarde = new Date(2026, 8, 16, 20, 0);
     expect(isDateAfterOrEqual(manana, tarde)).toBe(true);
     expect(isDateAfterOrEqual(new Date(2026, 8, 15), tarde)).toBe(false);
+  });
+});
+
+describe("rangoAnterior", () => {
+  const anterior = (periodo: Periodo, fecha: Date | null = null, ahora = AHORA) => {
+    const rango = rangoDePeriodo(periodo, fecha, ahora);
+    if (!rango) throw new Error("sin rango");
+    const r = rangoAnterior(periodo, rango);
+    return { desde: sello(r.desde), hasta: sello(r.hasta) };
+  };
+
+  it("dia: el dia anterior completo", () => {
+    expect(anterior("dia", new Date(2026, 8, 1, 15))).toEqual({
+      desde: "2026-08-31 00:00:00.000",
+      hasta: "2026-08-31 23:59:59.999",
+    });
+  });
+
+  it("semana: los 7 dias previos, sin traslape", () => {
+    // Actual: 10 al 16 de sep.
+    expect(anterior("semana")).toEqual({
+      desde: "2026-09-03 00:00:00.000",
+      hasta: "2026-09-09 23:59:59.999",
+    });
+  });
+
+  it("mes: del 1 al mismo dia del mes pasado", () => {
+    expect(anterior("mes")).toEqual({
+      desde: "2026-08-01 00:00:00.000",
+      hasta: "2026-08-16 23:59:59.999",
+    });
+  });
+
+  it("mes: si el mes pasado es mas corto, se recorta a su ultimo dia", () => {
+    expect(anterior("mes", null, new Date(2026, 2, 31, 10))).toEqual({
+      desde: "2026-02-01 00:00:00.000",
+      hasta: "2026-02-28 23:59:59.999",
+    });
+  });
+
+  it("mes: en enero compara con diciembre del año anterior", () => {
+    expect(anterior("mes", null, new Date(2026, 0, 10, 10))).toEqual({
+      desde: "2025-12-01 00:00:00.000",
+      hasta: "2025-12-10 23:59:59.999",
+    });
+  });
+
+  it("trimestre y año: el tramo justo antes del actual", () => {
+    // Actual trimestre: 16 jun al 16 sep.
+    expect(anterior("trimestre")).toEqual({
+      desde: "2026-03-16 00:00:00.000",
+      hasta: "2026-06-15 23:59:59.999",
+    });
+    // Actual año: 16 sep 2025 al 16 sep 2026.
+    expect(anterior("ano")).toEqual({
+      desde: "2024-09-16 00:00:00.000",
+      hasta: "2025-09-15 23:59:59.999",
+    });
   });
 });

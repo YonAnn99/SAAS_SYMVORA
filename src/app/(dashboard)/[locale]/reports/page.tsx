@@ -10,7 +10,24 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Download, TrendingUp, Package, Users, CreditCard, ChevronLeft, ChevronRight } from "lucide-react";
-import { SalesChart, TopProductsChart, PaymentMethodsChart } from "@/components/charts/dynamic-charts";
+import {
+  IngresosGananciaChart,
+  PaymentMethodsChart,
+  SalesChart,
+  TopCategoriasChart,
+  TopProductsChart,
+  VentasPorDiaSemanaChart,
+  VentasPorHoraChart,
+} from "@/components/charts/dynamic-charts";
+import {
+  agrupacionDe,
+  alinearComparacion,
+  groupSalesByPeriod,
+  ingresosYGananciaPorPeriodo,
+  ventasPorCategoria,
+  ventasPorDiaSemana,
+  ventasPorHora,
+} from "@/features/reports/series-graficas";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useSucursal } from "@/contexts/sucursal-context";
@@ -34,6 +51,7 @@ import {
   isDateAfterOrEqual,
   isSameDay,
   PERIODOS,
+  rangoAnterior,
   rangoDePeriodo,
   startOfDay,
   type Periodo,
@@ -46,6 +64,11 @@ import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface ReportData {
   ventasPorPeriodo: { date: string; ventas: number }[];
+  /** Mismo largo que `ventasPorPeriodo`, alineado por posicion. */
+  ventasAnterior: number[];
+  ventasPorHora: { hora: string; total: number; ventas: number }[];
+  ventasPorDiaSemana: { dia: string; total: number; ventas: number }[];
+  ingresosGanancia: { date: string; ingresos: number; ganancia: number }[];
   topProductos: { nombre: string; cantidad: number; total: number }[];
   topCategorias: { name: string; value: number }[];
   metodosPago: { name: string; value: number }[];
@@ -75,6 +98,15 @@ const DIA_LABEL =
   PERIODOS.find((p) => p.valor === "dia")?.etiqueta ?? "Día específico";
 const WEEKDAY_LABELS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
 
+/** Leyenda de la linea de comparacion (ver `rangoAnterior`). */
+const ETIQUETA_ANTERIOR: Record<Periodo, string> = {
+  dia: "Día anterior",
+  semana: "Semana anterior",
+  mes: "Mismo tramo del mes pasado",
+  trimestre: "Trimestre anterior",
+  ano: "Año anterior",
+};
+
 /**
  * Tope de ventas por reporte. Todo lo de abajo (agrupar por periodo, top de
  * productos, ganancia, clientes frecuentes) se calcula en el navegador sobre
@@ -89,106 +121,6 @@ const MAX_VENTAS_REPORTE = 5000;
  * limite de longitud y provocar un 414 que tumba el reporte completo.
  */
 const DETALLE_BATCH_SIZE = 200;
-
-
-function generateHourSlots(): string[] {
-  const slots: string[] = [];
-  for (let h = 0; h < 24; h++) {
-    slots.push(`${String(h).padStart(2, "0")}:00`);
-  }
-  return slots;
-}
-
-function generateDaySlots(start: Date, end: Date): string[] {
-  const slots: string[] = [];
-  const current = startOfDay(start);
-  const last = startOfDay(end);
-  while (current.getTime() <= last.getTime()) {
-    slots.push(
-      current.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" })
-    );
-    current.setDate(current.getDate() + 1);
-  }
-  return slots;
-}
-
-function generateWeekSlots(start: Date, end: Date): string[] {
-  const slots: string[] = [];
-  const current = startOfDay(start);
-  const last = startOfDay(end);
-  while (current.getTime() <= last.getTime()) {
-    const weekStart = new Date(current);
-    weekStart.setDate(current.getDate() - current.getDay() + (current.getDay() === 0 ? -6 : 1));
-    const key = weekStart.toLocaleDateString("es-MX", {
-      day: "numeric",
-      month: "short",
-    });
-    if (!slots.includes(key)) {
-      slots.push(key);
-    }
-    current.setDate(current.getDate() + 1);
-  }
-  return slots;
-}
-
-function generateMonthSlots(start: Date, end: Date): string[] {
-  const slots: string[] = [];
-  const current = new Date(start.getFullYear(), start.getMonth(), 1);
-  const last = new Date(end.getFullYear(), end.getMonth(), 1);
-  while (current.getTime() <= last.getTime()) {
-    slots.push(
-      current.toLocaleDateString("es-MX", { month: "short", year: "numeric" })
-    );
-    current.setMonth(current.getMonth() + 1);
-  }
-  return slots;
-}
-
-function groupSalesByPeriod(
-  ventas: Array<{ fecha_venta: string; total: number }>,
-  startDate: Date,
-  endDate: Date,
-  groupBy: "hour" | "day" | "week" | "month"
-): { date: string; ventas: number }[] {
-  const salesMap = new Map<string, number>();
-
-  ventas.forEach((v) => {
-    const date = new Date(v.fecha_venta);
-    let key: string;
-
-    if (groupBy === "hour") {
-      key = `${String(date.getHours()).padStart(2, "0")}:00`;
-    } else if (groupBy === "day") {
-      key = date.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
-    } else if (groupBy === "week") {
-      const d = new Date(date);
-      const dayOfWeek = d.getDay();
-      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      d.setDate(d.getDate() + mondayOffset);
-      key = d.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
-    } else {
-      key = date.toLocaleDateString("es-MX", { month: "short", year: "numeric" });
-    }
-
-    salesMap.set(key, (salesMap.get(key) || 0) + v.total);
-  });
-
-  let slots: string[];
-  if (groupBy === "hour") {
-    slots = generateHourSlots();
-  } else if (groupBy === "day") {
-    slots = generateDaySlots(startDate, endDate);
-  } else if (groupBy === "week") {
-    slots = generateWeekSlots(startDate, endDate);
-  } else {
-    slots = generateMonthSlots(startDate, endDate);
-  }
-
-  return slots.map((slot) => ({
-    date: slot,
-    ventas: salesMap.get(slot) || 0,
-  }));
-}
 
 /** Clave de cache de un reporte: todo lo que cambia sus cifras. */
 function claveReporte(
@@ -214,6 +146,10 @@ export default function ReportsPage() {
   );
   const [reportData, setReportData] = useState<ReportData>(() => enCache?.datos ?? {
     ventasPorPeriodo: [],
+    ventasAnterior: [],
+    ventasPorHora: [],
+    ventasPorDiaSemana: [],
+    ingresosGanancia: [],
     topProductos: [],
     topCategorias: [],
     metodosPago: [],
@@ -285,10 +221,23 @@ export default function ReportsPage() {
     // detalle de ESTAS ventas, asi que filtrar aqui acota el reporte entero.
     if (sucursalId) qVentas = qVentas.eq("sucursal_id", sucursalId);
 
+    // Periodo anterior, solo para la linea de comparacion: fecha y total, con
+    // los mismos filtros. Va en el mismo `Promise.all` (no suma otra espera).
+    const anterior = rangoAnterior(periodo, rango);
+    let qVentasAnterior = supabase
+      .from("ventas")
+      .select("fecha_venta, total")
+      .eq("tenant_id", tenantId)
+      .gte("fecha_venta", anterior.desde.toISOString())
+      .lte("fecha_venta", anterior.hasta.toISOString())
+      .eq("estado", "COMPLETADA");
+    if (sucursalId) qVentasAnterior = qVentasAnterior.eq("sucursal_id", sucursalId);
+
     const [
       { data: ventas, error: ventasError },
       { data: productos },
       { data: clientes },
+      { data: ventasPrevias },
     ] = await Promise.all([
       qVentas
         // Tope duro: todo el reporte se agrega en el navegador, asi que sin
@@ -306,6 +255,9 @@ export default function ReportsPage() {
         .from("clientes")
         .select("id, nombre")
         .eq("tenant_id", tenantId),
+      qVentasAnterior
+        .order("fecha_venta", { ascending: false })
+        .limit(MAX_VENTAS_REPORTE),
     ]);
 
     const truncado = (ventas?.length ?? 0) >= MAX_VENTAS_REPORTE;
@@ -357,25 +309,20 @@ export default function ReportsPage() {
     }
 
     if (ventas && detalleVentas && productos) {
-      const daysDiff = Math.ceil(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      let groupBy: "hour" | "day" | "week" | "month";
-      if (periodo === "dia") {
-        groupBy = "hour";
-      } else if (daysDiff <= 7) {
-        groupBy = "day";
-      } else if (daysDiff <= 90) {
-        groupBy = "week";
-      } else {
-        groupBy = "month";
-      }
+      const groupBy = agrupacionDe(periodo === "dia", startDate, endDate);
 
       const ventasPorPeriodo = groupSalesByPeriod(
         ventas,
         startDate,
         endDate,
         groupBy
+      );
+      // Misma agrupacion que el actual para que las cubetas se correspondan.
+      const ventasAnterior = alinearComparacion(
+        ventasPorPeriodo.length,
+        groupSalesByPeriod(ventasPrevias ?? [], anterior.desde, anterior.hasta, groupBy).map(
+          (c) => c.ventas
+        )
       );
 
       const productoventasMap = new Map<
@@ -412,19 +359,9 @@ export default function ReportsPage() {
         .sort((a, b) => b.total - a.total)
         .slice(0, 10);
 
-      const categoryMap = new Map<string, number>();
-      topProductos.forEach((p) => {
-        const producto = productos.find((prod) => prod.nombre === p.nombre);
-        const categoria = producto?.categoria || "Sin categoría";
-        categoryMap.set(
-          categoria,
-          (categoryMap.get(categoria) || 0) + p.total
-        );
-      });
-
-      const topCategorias = Array.from(categoryMap.entries())
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value);
+      // De TODAS las lineas del periodo, por id de producto (ver
+      // `ventasPorCategoria`); antes salia solo del top 10 y por nombre.
+      const topCategorias = ventasPorCategoria(detalleVentas, productos);
 
       const metodosPagoMap = ventas.reduce(
         (acc, v) => {
@@ -481,6 +418,16 @@ export default function ReportsPage() {
 
       const nuevos: ReportData = {
         ventasPorPeriodo,
+        ventasAnterior,
+        ventasPorHora: ventasPorHora(ventas),
+        ventasPorDiaSemana: ventasPorDiaSemana(ventas),
+        ingresosGanancia: ingresosYGananciaPorPeriodo(
+          ventas,
+          detalleVentas,
+          startDate,
+          endDate,
+          groupBy
+        ),
         topProductos,
         topCategorias,
         metodosPago,
@@ -853,6 +800,14 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
+      <div className="animate-fade-in-up stagger-5">
+        <IngresosGananciaChart
+          data={reportData.ingresosGanancia ?? []}
+          title="Ingresos vs ganancia"
+          productosSinCosto={reportData.ganancia.productosSinCosto}
+        />
+      </div>
+
       {/* Compras del periodo: en que se fue el dinero (vista de flujo, aparte
           de la ganancia). Mismo periodo y sucursal que el resto del reporte. */}
       <ComprasPeriodoCard
@@ -872,6 +827,11 @@ export default function ReportsPage() {
                 ? `Ventas por hora — ${formatShortDate(selectedDate)}`
                 : "Ventas por período"
             }
+            comparacion={
+              reportData.ventasAnterior?.length
+                ? { etiqueta: ETIQUETA_ANTERIOR[periodo], datos: reportData.ventasAnterior }
+                : undefined
+            }
           />
         </div>
         <div className="animate-fade-in-up stagger-7">
@@ -880,6 +840,25 @@ export default function ReportsPage() {
             title="Distribución por método de pago"
           />
         </div>
+      </div>
+
+      {/* ¿Cuando vende mas el negocio? Con "dia" solo hay un dia de la semana:
+          esa grafica se omite. */}
+      <div className={`grid gap-4 ${periodo === "dia" ? "" : "md:grid-cols-2"}`}>
+        <div className="animate-fade-in-up stagger-8">
+          <VentasPorHoraChart
+            data={reportData.ventasPorHora ?? []}
+            title="Ventas por hora del día"
+          />
+        </div>
+        {periodo !== "dia" && (
+          <div className="animate-fade-in-up stagger-8">
+            <VentasPorDiaSemanaChart
+              data={reportData.ventasPorDiaSemana ?? []}
+              title="Ventas por día de la semana"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -892,43 +871,12 @@ export default function ReportsPage() {
             title="Top 10 productos más vendidos"
           />
         </div>
-        <Card className="animate-fade-in-up stagger-9">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">
-              Top Categorías
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {reportData.topCategorias.length === 0 ? (
-              <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-                Sin datos disponibles
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {reportData.topCategorias.slice(0, 5).map((cat) => {
-                  const maxVal = reportData.topCategorias[0]?.value || 1;
-                  const percentage = (cat.value / maxVal) * 100;
-                  return (
-                    <div key={cat.name} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{cat.name}</span>
-                        <span className="text-muted-foreground font-mono">
-                          ${cat.value.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="animate-fade-in-up stagger-9">
+          <TopCategoriasChart
+            data={reportData.topCategorias}
+            title="Top categorías (ventas sin IVA)"
+          />
+        </div>
       </div>
 
       {/* Top Customers */}
