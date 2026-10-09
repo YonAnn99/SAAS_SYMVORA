@@ -93,3 +93,44 @@ describe("tarjetas de variante", () => {
     expect(nuevaTarjeta([]).unidad).toBe(UNIDAD_DEL_PRODUCTO);
   });
 });
+
+describe("contenido del envase en la tarjeta (migracion 114)", () => {
+  const opciones = { productoId: "p1", baseSku: "COCA", imagenUrl: null, unidadProducto: "PIEZA" as const };
+
+  it("se guarda con la variante que se vende por pieza", () => {
+    const input = inputDeTarjeta(
+      tarjeta("2.5 L", { unidad: "PIEZA", contenidoCantidad: "2,5", contenidoUnidad: "LITRO" }),
+      opciones
+    );
+    expect(input.contenido_cantidad).toBe(2.5);
+    expect(input.contenido_unidad).toBe("LITRO");
+  });
+
+  it("vacio = el del producto (NULL), y a granel o servicio no se guarda", () => {
+    expect(inputDeTarjeta(tarjeta("600 ml"), opciones).contenido_cantidad).toBeNull();
+    const granel = inputDeTarjeta(
+      tarjeta("1 kg", { unidad: "KG", contenidoCantidad: "1", contenidoUnidad: "KG" }),
+      opciones
+    );
+    expect(granel.contenido_cantidad).toBeNull();
+    expect(granel.contenido_unidad).toBeNull();
+    const servicio = inputDeTarjeta(
+      tarjeta("Corte", { contenidoCantidad: "1", contenidoUnidad: "LITRO" }),
+      { ...opciones, esServicio: true }
+    );
+    expect(servicio.contenido_cantidad).toBeNull();
+  });
+
+  it("una cantidad sin medida es un problema de la seccion Datos", () => {
+    expect(problemaDeTarjeta(tarjeta("600 ml", { contenidoCantidad: "600" }))).toMatchObject({
+      mensaje: expect.stringMatching(/medida/),
+      seccion: "datos",
+    });
+  });
+
+  it("duplicar no copia el contenido", () => {
+    const copia = duplicarTarjeta(tarjeta("600 ml", { contenidoCantidad: "600", contenidoUnidad: "MILILITRO" }));
+    expect(copia.contenidoCantidad).toBe("");
+    expect(copia.contenidoUnidad).toBe("");
+  });
+});

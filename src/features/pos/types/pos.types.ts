@@ -93,6 +93,11 @@ export interface SaleReceipt {
    * el cobro; la reimpresion no guarda el porcentaje y dice "Descuento".
    */
   descuentoEtiqueta?: string | null;
+  /**
+   * Linea de la tarjeta de lealtad (migracion 115): "Sellos: 9/10" o
+   * "Premio canjeado: Café grande gratis". Solo la trae el cobro con tarjeta.
+   */
+  lealtad?: string | null;
 }
 
 /** Variante tal como la necesita el POS (subconjunto de `variantes_producto`). */

@@ -25,13 +25,38 @@ export async function createCustomer(
       tenant_id: tenantId,
       nombre: form.nombre.trim(),
       telefono: form.telefono || null,
-      email: form.email || null,
+      email: form.email.trim() || null,
       rfc: form.rfc.trim() || null,
       razon_social: form.razon_social.trim() || null,
       regimen_fiscal_receptor: form.regimen_fiscal_receptor || null,
       uso_cfdi: form.uso_cfdi || null,
       codigo_postal: form.codigo_postal || null,
     })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export interface CustomerUpdate {
+  nombre: string;
+  telefono: string | null;
+  email: string | null;
+  direccion: string | null;
+  limite_credito: number;
+}
+
+/**
+ * Corrige los datos de un cliente. La RLS lo acota al negocio y exige
+ * `inventory.manage`, la misma regla que darlo de alta o borrarlo.
+ */
+export async function updateCustomer(clienteId: string, cambios: CustomerUpdate): Promise<Cliente> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("clientes")
+    .update(cambios)
+    .eq("id", clienteId)
     .select()
     .single();
 

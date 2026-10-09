@@ -151,6 +151,141 @@ export function articulosDeLinea(cantidad: number, unidad: string | null | undef
   return esFraccionable(unidad) ? 1 : cantidad;
 }
 
+// ---------------------------------------------------------------------------
+// Contenido del envase (migracion 114)
+// ---------------------------------------------------------------------------
+//
+// Lo que TRAE un producto empaquetado (Coca Cola 2.5 L, Sabritas 45 g). Es
+// solo descriptivo: como se cobra lo decide `unidad_medida`. Antes se usaba la
+// unidad para esto y el POS acababa ofreciendo "1/4 l" de un refresco.
+
+/** Medidas validas para el contenido: las de medida, nunca pieza o caja. */
+export const UNIDADES_CONTENIDO = UNIDADES_FRACCIONABLES;
+
+/** Abreviatura del contenido tal como viene en las etiquetas: "L" mayuscula. */
+const ABREVIATURA_CONTENIDO: Partial<Record<UnidadMedida, string>> = {
+  KG: "kg",
+  GRAMO: "g",
+  LITRO: "L",
+  MILILITRO: "ml",
+  METRO: "m",
+};
+
+export interface Contenido {
+  cantidad: number;
+  unidad: UnidadMedida;
+}
+
+/** "2.5 L", "600 ml", "45 g". Vacio si falta algo o la medida no aplica. */
+export function formatearContenido(
+  cantidad: number | string | null | undefined,
+  unidad: string | null | undefined
+): string {
+  const n = Number(cantidad);
+  if (cantidad == null || !Number.isFinite(n) || n <= 0 || !esUnidad(unidad)) return "";
+  const abrev = ABREVIATURA_CONTENIDO[unidad];
+  if (!abrev) return "";
+  return `${Math.round(n * 1000) / 1000} ${abrev}`;
+}
+
+type ConContenido = {
+  contenido_cantidad?: number | string | null;
+  contenido_unidad?: string | null;
+};
+
+/**
+ * El contenido de lo que se vende: el de la variante si tiene uno, si no el
+ * del producto (misma regla que `unidadDeVenta`). `null` si ninguno lo tiene.
+ */
+export function contenidoDe(producto: ConContenido, variante?: ConContenido | null): Contenido | null {
+  const fuente =
+    variante?.contenido_cantidad != null && variante.contenido_unidad ? variante : producto;
+  const cantidad = Number(fuente.contenido_cantidad);
+  if (fuente.contenido_cantidad == null || !(cantidad > 0)) return null;
+  if (!esFraccionable(fuente.contenido_unidad)) return null;
+  return { cantidad, unidad: fuente.contenido_unidad as UnidadMedida };
+}
+
+/**
+ * Texto del contenido para pintarlo junto al nombre ("2.5 L"), con la misma
+ * herencia que `contenidoDe`. Vacio si no tiene o si se vende a granel: ahi la
+ * medida es la unidad de venta y repetirla confunde.
+ */
+export function textoContenido(
+  producto: ConContenido & { unidad_medida?: string | null },
+  variante?: (ConContenido & { unidad_medida?: string | null }) | null
+): string {
+  const unidad = variante?.unidad_medida ?? producto.unidad_medida;
+  if (esFraccionable(unidad)) return "";
+  const c = contenidoDe(producto, variante);
+  return c ? formatearContenido(c.cantidad, c.unidad) : "";
+}
+
+/**
+ * Lo capturado en el formulario -> lo que se guarda. Vacio = sin contenido
+ * (NULL en las dos columnas); con cantidad, la medida es obligatoria y la
+ * cantidad pasa por `normalizarCantidad` (mayor a 0, hasta 3 decimales).
+ */
+export function contenidoCapturado(
+  cantidadTexto: string,
+  unidad: string | null | undefined
+):
+  | { ok: true; contenido_cantidad: number | null; contenido_unidad: UnidadMedida | null }
+  | { ok: false; error: string } {
+  if (cantidadTexto.trim() === "") {
+    return { ok: true, contenido_cantidad: null, contenido_unidad: null };
+  }
+  if (!esFraccionable(unidad)) {
+    return { ok: false, error: "Elige la medida del contenido (ml, L, g, kg o m)" };
+  }
+  const cantidad = normalizarCantidad(cantidadTexto, unidad);
+  if (cantidad == null) {
+    return { ok: false, error: "El contenido debe ser un número mayor a 0" };
+  }
+  return { ok: true, contenido_cantidad: cantidad, contenido_unidad: unidad as UnidadMedida };
+}
+
+/** Texto de unidad que se escribe en nombres y atributos -> medida. */
+const UNIDAD_EN_TEXTO: [RegExp, UnidadMedida][] = [
+  [/^(ml|mililitros?)$/, "MILILITRO"],
+  [/^(l|lt|lts|litros?)$/, "LITRO"],
+  [/^(kg|kgs|kilos?|kilogramos?)$/, "KG"],
+  [/^(g|gr|grs|gramos?)$/, "GRAMO"],
+  [/^(m|mts|metros?)$/, "METRO"],
+];
+
+const MEDIDA_EN_TEXTO =
+  /(\d+(?:[.,]\d+)?)\s*(mililitros?|ml|litros?|lts?|l|kilogramos?|kilos?|kgs?|gramos?|grs?|g|metros?|mts|m)(?![a-záéíóúñ0-9])/i;
+
+/**
+ * Lee una medida escrita en un texto: "2.5 L", "600ml", "1,5 litros", "Sabritas
+ * 45 g". La primera que encuentre, o `null`. Sirve para sugerir el contenido a
+ * partir del nombre o de un atributo de la variante.
+ */
+export function contenidoDesdeTexto(texto: string | null | undefined): Contenido | null {
+  if (!texto) return null;
+  const m = texto.match(MEDIDA_EN_TEXTO);
+  if (!m) return null;
+  const cantidad = Math.round(Number(m[1].replace(",", ".")) * 1000) / 1000;
+  if (!(cantidad > 0)) return null;
+  const palabra = m[2].toLowerCase();
+  const unidad = UNIDAD_EN_TEXTO.find(([re]) => re.test(palabra))?.[1];
+  return unidad ? { cantidad, unidad } : null;
+}
+
+/**
+ * El nombre o algun atributo trae una medida ("Coca Cola 2.5 L"): pinta de
+ * producto empaquetado. Si ademas se eligio una unidad a granel, el formulario
+ * avisa que probablemente deberia venderse por pieza.
+ */
+export function pareceEmpaquetado(
+  nombre: string | null | undefined,
+  atributos: Array<string | { valor?: string | null }> = []
+): boolean {
+  if (contenidoDesdeTexto(nombre)) return true;
+  return atributos.some((a) => contenidoDesdeTexto(typeof a === "string" ? a : a.valor));
+}
+
 /** Clave de unidad del SAT (CFDI) para cada unidad. */
 export const CLAVE_SAT: Record<UnidadMedida, string> = {
   PIEZA: "H87",

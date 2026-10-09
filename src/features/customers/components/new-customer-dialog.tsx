@@ -46,6 +46,10 @@ export function NewCustomerDialog({
       toast.error("El nombre del cliente es requerido");
       return;
     }
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast.error("Revisa el correo: no parece válido");
+      return;
+    }
     setSaving(true);
     try {
       const customer = await createCustomer(tenantId, form);
@@ -94,6 +98,17 @@ export function NewCustomerDialog({
                 setForm({ ...form, telefono: e.target.value })
               }
               placeholder="55 0000 0000"
+            />
+          </div>
+          {/* Para mandarle su tarjeta de lealtad por correo, entre otras cosas. */}
+          <div className="space-y-1.5">
+            <Label htmlFor="nc-email">Correo (opcional)</Label>
+            <Input
+              id="nc-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="cliente@correo.com"
             />
           </div>
         </div>

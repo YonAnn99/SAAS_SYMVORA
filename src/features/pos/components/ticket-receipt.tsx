@@ -250,6 +250,11 @@ export function TicketReceipt({
           <span>{receipt.customerName}</span>
         </div>
       )}
+      {receipt.lealtad && (
+        <div className="ticket-fila">
+          <span>{receipt.lealtad}</span>
+        </div>
+      )}
 
       <footer className="ticket-pie">
         <p className="ticket-negocio-pie">{tenantName}</p>

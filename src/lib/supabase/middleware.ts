@@ -182,6 +182,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/conekta") ||
     request.nextUrl.pathname.startsWith("/api/mercadopago/webhook") ||
     request.nextUrl.pathname.includes("/demo") ||
+    // Tarjeta de lealtad del cliente final (migracion 115): la abre sin cuenta
+    // desde el enlace que le compartio el negocio.
+    stripLocale(request.nextUrl.pathname).startsWith("/tarjeta/") ||
     isLegalRoute ||
     isMarketingPath(request.nextUrl.pathname) ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);

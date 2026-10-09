@@ -34,7 +34,11 @@ import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 import { tarjetaManualDisponible } from "@/features/pos/tarjeta-disponible";
 import { useIsDemo } from "@/hooks/use-is-demo";
 
-import { completeSale } from "@/features/pos/services/pos-service";
+import { calculateSaleTotals, completeSale } from "@/features/pos/services/pos-service";
+import { usePosLealtad } from "@/features/lealtad/use-pos-lealtad";
+import { TiraLealtadPos } from "@/features/lealtad/components/tira-lealtad-pos";
+import { aplicarPremio, codigoDesdeEscaneo } from "@/features/lealtad/lealtad";
+import type { EstadoTarjeta } from "@/features/lealtad/types";
 import { numeroOperacion } from "@/features/pos/ticket-format";
 import { celebrarVenta } from "@/features/pos/celebracion-venta";
 import { logActivity } from "@/lib/supabase/activity-logger";
@@ -168,6 +172,40 @@ export default function POSPage() {
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+
+  // Tarjeta de lealtad de la venta (migracion 115). Sin programa activo todo
+  // es null y el cobro sigue el camino de siempre.
+  const lealtad = usePosLealtad(tenantId);
+  const conTerminal = selectedPayment === "TARJETA_TERMINAL";
+  // El premio en los renglones, SOLO para mostrar el total que cobrara el
+  // servidor (mismo algoritmo que `complete_sale_lealtad`). Al servidor se le
+  // mandan los renglones sin premio y lo calcula el.
+  const premioCalculado =
+    lealtad.programa && lealtad.tarjeta
+      ? aplicarPremio(items, {
+          tipo: lealtad.programa.premio_tipo,
+          productoId: lealtad.programa.premio_producto_id,
+          varianteId: lealtad.programa.premio_variante_id,
+          valor: lealtad.programa.premio_valor,
+        })
+      : null;
+  const canjearPremio =
+    lealtad.canjear && !conTerminal && premioCalculado !== null && !premioCalculado.faltaProducto;
+  const itemsCobro = canjearPremio && premioCalculado ? premioCalculado.items : items;
+  const totalsCobro = canjearPremio ? calculateSaleTotals(itemsCobro, includeIva) : totals;
+  const premioLealtad =
+    canjearPremio && premioCalculado && lealtad.programa
+      ? { etiqueta: lealtad.programa.premio_descripcion, monto: premioCalculado.monto }
+      : null;
+
+  // Elegir cliente adjunta su tarjeta (si tiene) y suelta la del anterior.
+  const seleccionarCliente = useCallback(
+    (id: string) => {
+      setSelectedCustomer(id);
+      void lealtad.adjuntarPorCliente(id === "none" ? null : id);
+    },
+    [lealtad]
+  );
 
   // Precios de la lista elegida, indexados. `null` = sin lista, y entonces
   // todo el POS se comporta exactamente como antes.
@@ -311,6 +349,24 @@ export default function POSPage() {
       if (loadingProducts || !carritoRestaurado) {
         return { tipo: "error", mensaje: "Actualizando precios, escanea de nuevo" };
       }
+      // Tarjeta de lealtad: su QR (la URL /tarjeta/...) o su codigo tecleado. Un
+      // codigo de producto gana si coincide con uno del catalogo.
+      const codigoTarjeta = lealtad.programa ? codigoDesdeEscaneo(codigo) : null;
+      if (
+        codigoTarjeta &&
+        (/\/tarjeta\//i.test(codigo) || !resolverCodigo(codigo, products, variantsByProduct))
+      ) {
+        const meta = lealtad.programa?.sellos_meta ?? 0;
+        void lealtad.adjuntarPorCodigo(codigoTarjeta).then((tarjeta) => {
+          if (!tarjeta) {
+            toast.error("Esa tarjeta de lealtad no es de este negocio");
+            return;
+          }
+          setSelectedCustomer(tarjeta.cliente_id);
+          toast.success(`Tarjeta de ${tarjeta.cliente?.nombre ?? "cliente"}: ${tarjeta.sellos}/${meta} sellos`);
+        });
+        return { tipo: "ok", mensaje: "Tarjeta de lealtad leída" };
+      }
       const encontrado = resolverCodigo(codigo, products, variantsByProduct);
       if (!encontrado) {
         return { tipo: "error", mensaje: `Código ${codigo.trim()} no encontrado` };
@@ -338,7 +394,7 @@ export default function POSPage() {
       addResolved(product, variant);
       return { tipo: "ok", mensaje: `${etiqueta} agregado` };
     },
-    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado]
+    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado, lealtad]
   );
 
   // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,
@@ -372,6 +428,7 @@ export default function POSPage() {
   const finalizeSale = useCallback(() => {
     clearCart();
     setSelectedCustomer("none");
+    lealtad.soltar();
     setSelectedPayment("");
     // La lista se suelta al cobrar, por decision del usuario: dejarla puesta
     // haria que el SIGUIENTE cliente, uno normal, se llevara el precio de
@@ -381,7 +438,7 @@ export default function POSPage() {
     // Cobrar solo cambia existencias: no se recargan clientes, listas ni
     // favoritos (ver `refetchStock`).
     void refetchStock();
-  }, [clearCart, refetchStock]);
+  }, [clearCart, refetchStock, lealtad]);
 
   const {
     mpReady,
@@ -477,12 +534,12 @@ export default function POSPage() {
   const montoRecibidoNum = montoRecibido === "" ? null : Number(montoRecibido);
   const cambio =
     isEfectivo && montoRecibidoNum != null && !Number.isNaN(montoRecibidoNum)
-      ? Math.round((montoRecibidoNum - totals.total) * 100) / 100
+      ? Math.round((montoRecibidoNum - totalsCobro.total) * 100) / 100
       : null;
   const montoRecibidoInsuficiente =
     isEfectivo &&
     items.length > 0 &&
-    (montoRecibidoNum == null || Number.isNaN(montoRecibidoNum) || montoRecibidoNum < totals.total);
+    (montoRecibidoNum == null || Number.isNaN(montoRecibidoNum) || montoRecibidoNum < totalsCobro.total);
 
   /**
    * Venta ya registrada que espera a que termine la animacion del slider para
@@ -552,26 +609,51 @@ export default function POSPage() {
         // y otra en Norte, una venta de Principal se descontaba (y validaba el
         // stock) en Norte, y fallaba con "Stock insuficiente".
         cajaId: cajaId ?? null,
-      })) as { id?: string } | null;
+        // Con tarjeta: misma venta + sello o canje (`complete_sale_lealtad`).
+        // Con terminal no llega aqui (`startTerminalSale`), sin sello.
+        tarjetaLealtadId: lealtad.tarjeta?.id ?? null,
+        canjearPremio,
+      })) as { id?: string; lealtad?: EstadoTarjeta } | null;
+
+      const estadoLealtad = venta?.lealtad ?? null;
+      const lineaLealtad = estadoLealtad
+        ? estadoLealtad.premio_canjeado
+          ? `Premio canjeado: ${estadoLealtad.premio_descripcion}`
+          : `Sellos: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}`
+        : null;
+      const descuentoManual = Math.round((totalsCobro.descuento - (premioLealtad?.monto ?? 0)) * 100) / 100;
 
       ventaRegistrada.current = {
         receipt: {
-          items: [...items],
-          total: totals.total,
+          items: [...itemsCobro],
+          total: totalsCobro.total,
           paymentMethod: selectedPayment,
           customerName,
           customerPhone: selectedCustomerObj?.telefono ?? null,
           montoRecibido: isEfectivo ? montoRecibidoNum : null,
           cambio: isEfectivo ? cambio : null,
           reference: venta?.id ?? null,
-          descuentoEtiqueta: totals.descuento > 0 ? etiquetaDescuento(descuentoTicket) : null,
+          descuentoEtiqueta: premioLealtad
+            ? descuentoManual > 0
+              ? "Descuento y premio"
+              : "Premio de lealtad"
+            : totalsCobro.descuento > 0
+              ? etiquetaDescuento(descuentoTicket)
+              : null,
+          lealtad: lineaLealtad,
         },
         descuento: descuentoTicket,
-        montoDescuento: totals.descuento,
-        subtotal: totals.subtotal,
-        total: totals.total,
+        // Solo el descuento MANUAL va a la Bitacora; el premio queda en la tarjeta.
+        montoDescuento: descuentoManual,
+        subtotal: totalsCobro.subtotal,
+        total: totalsCobro.total,
       };
-      toast.success(`Venta completada: $${totals.total.toFixed(2)}`);
+      toast.success(`Venta completada: $${totalsCobro.total.toFixed(2)}`);
+      if (estadoLealtad?.premio_canjeado) {
+        toast.success(`Premio canjeado: ${estadoLealtad.premio_descripcion}`);
+      } else if (estadoLealtad?.sello_sumado) {
+        toast.success(`Sello sumado: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}`);
+      }
     } catch (error) {
       // Un fallo de red aqui deja la venta EN DUDA: la peticion pudo llegar al
       // servidor y confirmarse, y perderse solo la respuesta. Antes daba igual
@@ -637,6 +719,7 @@ export default function POSPage() {
       }
       clearCart();
       setSelectedCustomer("none");
+      lealtad.soltar();
       setSelectedPayment("");
       setSelectedPriceList(SIN_LISTA);
       setMontoRecibido("");
@@ -646,6 +729,34 @@ export default function POSPage() {
       void refetchStock();
     }, 900);
   };
+
+  // Tarjeta de lealtad bajo el selector de cliente (las dos instancias del panel).
+  const productoPremio =
+    lealtad.programa?.premio_tipo === "producto"
+      ? products.find((p) => p.id === lealtad.programa?.premio_producto_id) ?? null
+      : null;
+  const tiraLealtad =
+    lealtad.tarjeta && lealtad.programa ? (
+      <TiraLealtadPos
+        tarjeta={lealtad.tarjeta}
+        programa={lealtad.programa}
+        canjear={canjearPremio}
+        onCanjear={lealtad.setCanjear}
+        onQuitar={lealtad.soltar}
+        conTerminal={conTerminal}
+        faltaProducto={Boolean(premioCalculado?.faltaProducto)}
+        onAgregarProductoPremio={
+          productoPremio
+            ? () => {
+                // Se agrega como cualquier producto (variante o cantidad si
+                // aplica) y el premio se aplica en cuanto la linea exista.
+                handleAddProduct(productoPremio);
+                lealtad.setCanjear(true);
+              }
+            : undefined
+        }
+      />
+    ) : null;
 
   // Una sola fuente para las dos instancias del panel de cobro (escritorio y
   // hoja movil). Estaban escritas por separado, y esa duplicacion es la que
@@ -777,7 +888,7 @@ export default function POSPage() {
 
         <MobileCartBar
           itemCount={itemCount}
-          total={totals.total}
+          total={totalsCobro.total}
           onOpen={() => setMobileCartOpen(true)}
         />
       </div>
@@ -791,10 +902,12 @@ export default function POSPage() {
           className="h-full overflow-y-auto -mx-1 px-1"
           customers={customers}
           selectedCustomer={selectedCustomer}
-          onSelectCustomer={setSelectedCustomer}
+          onSelectCustomer={seleccionarCliente}
           onNewCustomer={() => setShowNewCustomerDialog(true)}
           items={items}
-          totals={totals}
+          totals={totalsCobro}
+          premioLealtad={premioLealtad}
+          bajoCliente={tiraLealtad}
           itemCount={itemCount}
           includeIva={includeIva}
           onUpdateQuantity={updateQuantity}
@@ -841,10 +954,12 @@ export default function POSPage() {
             <CheckoutPanel
               customers={customers}
               selectedCustomer={selectedCustomer}
-              onSelectCustomer={setSelectedCustomer}
+              onSelectCustomer={seleccionarCliente}
               onNewCustomer={() => setShowNewCustomerDialog(true)}
               items={items}
-              totals={totals}
+              totals={totalsCobro}
+              premioLealtad={premioLealtad}
+              bajoCliente={tiraLealtad}
               itemCount={itemCount}
               includeIva={includeIva}
               onUpdateQuantity={updateQuantity}
@@ -958,7 +1073,7 @@ export default function POSPage() {
         onOpenChange={setShowNewCustomerDialog}
         tenantId={tenantId}
         onCreated={(customer) => {
-          setSelectedCustomer(customer.id);
+          seleccionarCliente(customer.id);
           void refetchCustomers();
         }}
       />

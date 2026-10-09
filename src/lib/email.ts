@@ -1426,3 +1426,53 @@ export async function sendAvisoStockEmail(params: {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/**
+ * Tarjeta de lealtad para el cliente final del negocio (migracion 115): se la
+ * manda el negocio desde Clientes. El remitente es SYMVORA, pero el correo
+ * habla del negocio; todo lo que escribio el negocio va escapado.
+ */
+export async function sendTarjetaLealtadEmail(params: {
+  to: string;
+  negocio: string;
+  programa: string;
+  premio: string;
+  sellos: number;
+  sellosMeta: number;
+  url: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite la tarjeta de lealtad");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const faltan = Math.max(0, params.sellosMeta - params.sellos);
+  const progreso =
+    faltan === 0
+      ? `¡Ya completaste tus ${params.sellosMeta} sellos! Muéstrale tu tarjeta al cajero para canjear: <strong>${esc(params.premio)}</strong>.`
+      : `Llevas <strong>${params.sellos} de ${params.sellosMeta}</strong> sellos. Al completarlos te llevas: <strong>${esc(params.premio)}</strong>.`;
+
+  const html = buildNoticeHtml({
+    preheader: `Tu tarjeta de ${esc(params.negocio)}`,
+    heading: `Tu tarjeta de ${esc(params.negocio)}`,
+    intro: `${esc(params.negocio)} te da la bienvenida a <strong>${esc(params.programa)}</strong>. Cada compra suma un sello: solo muestra el código de tu tarjeta al pagar.`,
+    highlight: progreso,
+    ctaLabel: "Ver mi tarjeta",
+    ctaHref: params.url,
+    mostrarBeneficios: false,
+  });
+
+  const resend = new Resend(resendApiKey);
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: params.to,
+      subject: `Tu tarjeta de lealtad de ${params.negocio}`,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló la tarjeta de lealtad:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

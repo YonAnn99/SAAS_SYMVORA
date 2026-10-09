@@ -14,6 +14,7 @@ import { variantLabel, variantPrice } from "./variant-picker-dialog";
 import type { PosViewMode } from "./pos-search-bar";
 import { variantesVisiblesEnFavoritos } from "../favoritos-pos";
 import { seVendeComoGeneral } from "@/features/sucursales/stock";
+import { textoContenido } from "@/lib/unidades";
 
 /**
  * Las columnas se calculan sobre el ancho REAL del contenedor (`@container`),
@@ -538,6 +539,13 @@ export function ProductGrid({
                   <span className="text-sm font-medium truncate w-full mt-0.5 @max-md:mt-0 @max-md:whitespace-normal @max-md:line-clamp-2 @max-md:min-h-10 @max-md:leading-5">
                     {product.nombre}
                   </span>
+                  {/* Contenido del envase (migracion 114): "2.5 L", "45 g".
+                      Las variantes ya lo dicen en su atributo. */}
+                  {textoContenido(product) && (
+                    <span className="text-xs font-semibold text-muted-foreground truncate w-full mt-0.5">
+                      {textoContenido(product)}
+                    </span>
+                  )}
                   <div className="flex items-center justify-between w-full mt-1 @max-md:flex-col @max-md:items-start @max-md:gap-1">
                     <span className="text-[13px] text-muted-foreground font-mono @max-md:text-[15px] @max-md:font-bold @max-md:text-foreground">
                       {precioDesde !== null

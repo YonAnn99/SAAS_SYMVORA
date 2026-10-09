@@ -13,6 +13,7 @@
  */
 
 import Image from "next/image";
+import { textoContenido } from "@/lib/unidades";
 import { useTranslations } from "next-intl";
 import {
   COLOR_ARCHIVAR,
@@ -177,6 +178,7 @@ export function ProductSwipeList({
                 )}
                 <p className="truncate text-xs opacity-60">
                   {t(`products.units.${product.unidad_medida}`)}
+                  {textoContenido(product) && ` ${textoContenido(product)}`}
                   {" · "}
                   {product.es_servicio ? "Servicio" : `${product.stock_actual} en stock`}
                 </p>

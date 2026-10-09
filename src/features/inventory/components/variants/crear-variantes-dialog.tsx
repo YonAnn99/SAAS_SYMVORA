@@ -25,7 +25,14 @@ import { Switch } from "@/components/ui/switch";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useModulos } from "@/hooks/use-modulos";
 import { unidadesOfrecidas } from "@/lib/modulos";
-import { enUnidad, porUnidad, type UnidadMedida } from "@/lib/unidades";
+import {
+  contenidoDesdeTexto,
+  enUnidad,
+  esFraccionable,
+  porUnidad,
+  type UnidadMedida,
+} from "@/lib/unidades";
+import { AvisoEmpaquetado, CampoContenido, OpcionesUnidad } from "../unidad-y-contenido";
 import { crearProductoConVariantes, subirImagenProducto } from "../../services/product-service";
 import { SelectorCategoria } from "../products/selector-categoria";
 import type { VarianteInput } from "../../services/variant-service";
@@ -492,6 +499,11 @@ function FormularioTarjeta({
   // Granel: el precio es POR UNIDAD ($180 = el kilo) y el POS cobra la
   // fraccion. Un servicio no tiene unidad (no lleva "por kg").
   const unidadTarjeta = servicio || tarjeta.unidad === UNIDAD_DEL_PRODUCTO ? null : tarjeta.unidad;
+  // Contenido del envase (migracion 114): solo si se vende por pieza. La
+  // medida de un atributo ("Capacidad 2.5 L") se ofrece para llenarlo.
+  const medidaEnAtributo =
+    tarjeta.atributos.map((a) => contenidoDesdeTexto(a.valor)).find((c) => c !== null) ?? null;
+  const granel = esFraccionable(unidadTarjeta);
   const campoNumero = (campo: "precio" | "costo" | "stock" | "stockMinimo", etiqueta: string, paso: string, ejemplo: string) => (
     <div className="space-y-1.5">
       <Label className="text-xs">{etiqueta}</Label>
@@ -628,21 +640,17 @@ function FormularioTarjeta({
               <div className={`grid grid-cols-1 gap-3 ${!servicio && categoria ? "sm:grid-cols-2" : ""}`}>
                 {!servicio && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Unidad de medida</Label>
+                    <Label className="text-xs">¿Cómo se vende?</Label>
                     <Select
                       items={Object.fromEntries(unidades.map((u) => [u, etiquetaUnidad(u)]))}
                       value={tarjeta.unidad}
                       onValueChange={(v) => typeof v === "string" && onCambio({ unidad: v })}
                     >
-                      <SelectTrigger className="h-8 w-full text-sm" aria-label="Unidad de medida de la variante">
+                      <SelectTrigger className="h-8 w-full text-sm" aria-label="Cómo se vende la variante">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {unidades.map((u) => (
-                          <SelectItem key={u} value={u}>
-                            {etiquetaUnidad(u)}
-                          </SelectItem>
-                        ))}
+                        <OpcionesUnidad unidades={unidades} etiqueta={etiquetaUnidad} />
                       </SelectContent>
                     </Select>
                   </div>
@@ -656,6 +664,36 @@ function FormularioTarjeta({
                   </div>
                 )}
               </div>
+            )}
+
+            {!servicio && granel && medidaEnAtributo && (
+              <AvisoEmpaquetado
+                sugerencia={medidaEnAtributo}
+                onVenderPorPieza={() =>
+                  onCambio({
+                    unidad: "PIEZA",
+                    ...(tarjeta.contenidoCantidad.trim() === ""
+                      ? {
+                          contenidoCantidad: String(medidaEnAtributo.cantidad),
+                          contenidoUnidad: medidaEnAtributo.unidad,
+                        }
+                      : {}),
+                  })
+                }
+              />
+            )}
+            {!servicio && !granel && (
+              <CampoContenido
+                cantidad={tarjeta.contenidoCantidad}
+                unidad={tarjeta.contenidoUnidad}
+                sugerencia={medidaEnAtributo}
+                onCambio={(cambio) =>
+                  onCambio({
+                    ...(cambio.cantidad !== undefined ? { contenidoCantidad: cambio.cantidad } : {}),
+                    ...(cambio.unidad !== undefined ? { contenidoUnidad: cambio.unidad } : {}),
+                  })
+                }
+              />
             )}
           </div>
         </AccordionItem>

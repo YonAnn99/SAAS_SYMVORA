@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -65,6 +65,11 @@ interface CheckoutPanelProps {
   ventasCobradas: number;
   onClearCart: () => void;
 
+  /** Debajo del selector de cliente: la tarjeta de lealtad de la venta. */
+  bajoCliente?: ReactNode;
+  /** Premio de lealtad aplicado, para separarlo del descuento manual. */
+  premioLealtad?: { etiqueta: string; monto: number } | null;
+
   className?: string;
 }
 
@@ -95,6 +100,8 @@ export function CheckoutPanel({
   onVentaConfirmada,
   ventasCobradas,
   onClearCart,
+  bajoCliente,
+  premioLealtad = null,
   className,
 }: CheckoutPanelProps) {
   const t = useTranslations();
@@ -116,6 +123,7 @@ export function CheckoutPanel({
         onSelectCustomer={onSelectCustomer}
         onNewCustomer={onNewCustomer}
       />
+      {bajoCliente}
 
       <PosCart
         items={items}
@@ -125,6 +133,7 @@ export function CheckoutPanel({
         onUpdateQuantity={onUpdateQuantity}
         onRemove={onRemove}
         onToggleIva={onToggleIva}
+        premioLealtad={premioLealtad}
       />
 
       <PaymentMethodPicker

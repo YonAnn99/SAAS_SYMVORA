@@ -1,7 +1,17 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { UNIDADES, enUnidad, esFraccionable, porUnidad } from "@/lib/unidades";
+import {
+  UNIDADES,
+  contenidoCapturado,
+  contenidoDesdeTexto,
+  enUnidad,
+  esFraccionable,
+  formatearContenido,
+  pareceEmpaquetado,
+  porUnidad,
+} from "@/lib/unidades";
+import { AvisoEmpaquetado, CampoContenido, OpcionesUnidad } from "../unidad-y-contenido";
 import { unidadesOfrecidas } from "@/lib/modulos";
 import { useModulos } from "@/hooks/use-modulos";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -32,7 +42,6 @@ import {
 import {
   Select,
   SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -127,6 +136,9 @@ export function ProductDialog({
         codigo_barras: product.codigo_barras || "",
         sku: product.sku || "",
         unidad_medida: product.unidad_medida,
+        contenido_cantidad:
+          product.contenido_cantidad != null ? String(Number(product.contenido_cantidad)) : "",
+        contenido_unidad: product.contenido_unidad ?? "",
         precio_venta: product.precio_venta.toString(),
         costo_compra: product.costo_compra.toString(),
         stock_actual: product.stock_actual.toString(),
@@ -213,6 +225,27 @@ export function ProductDialog({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Contenido del envase (migracion 114): solo para lo que se vende por pieza.
+  const admiteContenido =
+    !formData.es_servicio &&
+    formData.unidad_medida !== "SERVICIO" &&
+    !esFraccionable(formData.unidad_medida);
+  const medidaEnNombre = contenidoDesdeTexto(formData.nombre);
+  // Granel + una medida en el nombre ("Coca Cola 2.5 L" en Litro): se avisa.
+  const avisarEmpaquetado =
+    esFraccionable(formData.unidad_medida) && pareceEmpaquetado(formData.nombre);
+  const venderPorPieza = () =>
+    setFormData((prev) => ({
+      ...prev,
+      unidad_medida: "PIEZA",
+      ...(medidaEnNombre && prev.contenido_cantidad.trim() === ""
+        ? {
+            contenido_cantidad: String(medidaEnNombre.cantidad),
+            contenido_unidad: medidaEnNombre.unidad,
+          }
+        : {}),
+    }));
+
   /**
    * Marcar un producto como servicio arrastra dos cosas más.
    *
@@ -229,7 +262,13 @@ export function ProductDialog({
       ...prev,
       es_servicio: esServicio,
       ...(esServicio
-        ? { unidad_medida: "SERVICIO" as const, stock_actual: "0", stock_minimo: "0" }
+        ? {
+            unidad_medida: "SERVICIO" as const,
+            stock_actual: "0",
+            stock_minimo: "0",
+            contenido_cantidad: "",
+            contenido_unidad: "" as const,
+          }
         : {}),
     }));
   };
@@ -323,6 +362,17 @@ export function ProductDialog({
       return false;
     }
 
+    // El contenido solo aplica a lo que se vende por pieza; a granel o servicio
+    // se guarda vacio aunque hubiera algo escrito antes de cambiar la unidad.
+    const contenido = admiteContenido
+      ? contenidoCapturado(formData.contenido_cantidad, formData.contenido_unidad)
+      : ({ ok: true, contenido_cantidad: null, contenido_unidad: null } as const);
+    if (!contenido.ok) {
+      toast.error(contenido.error);
+      setSeccion(SECCION_DE_CAMPO.unidad_medida);
+      return false;
+    }
+
     let imagen_url = editingProduct?.imagen_url ?? null;
 
     if (imagenFile) {
@@ -348,6 +398,8 @@ export function ProductDialog({
       codigo_barras: formData.codigo_barras || null,
       sku: formData.sku || null,
       unidad_medida: formData.unidad_medida,
+      contenido_cantidad: contenido.contenido_cantidad,
+      contenido_unidad: contenido.contenido_unidad,
       precio_venta: parseFloat(formData.precio_venta) || 0,
       costo_compra: parseFloat(formData.costo_compra) || 0,
       stock_actual: parseFloat(formData.stock_actual) || 0,
@@ -408,6 +460,9 @@ export function ProductDialog({
   // Lo que se ve de cada seccion cerrada.
   const resumenDatos = [
     formData.unidad_medida ? t(`products.units.${formData.unidad_medida}`) : null,
+    admiteContenido
+      ? formatearContenido(formData.contenido_cantidad.replace(",", "."), formData.contenido_unidad) || null
+      : null,
     formData.categoria || null,
   ]
     .filter(Boolean)
@@ -465,7 +520,7 @@ export function ProductDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Unidad de medida *</Label>
+              <Label className="text-xs">¿Cómo se vende? *</Label>
               <Select
                 items={Object.fromEntries(UNIDADES.map((u) => [u, t(`products.units.${u}`)]))}
                 value={formData.unidad_medida}
@@ -476,11 +531,10 @@ export function ProductDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {/* De `@/lib/unidades`: agregar una unidad alli la trae aqui. */}
-                  {unidadesOfrecidas(modulos, formData.unidad_medida).map((u) => (
-                    <SelectItem key={u} value={u}>
-                      {t(`products.units.${u}`)}
-                    </SelectItem>
-                  ))}
+                  <OpcionesUnidad
+                    unidades={unidadesOfrecidas(modulos, formData.unidad_medida)}
+                    etiqueta={(u) => t(`products.units.${u}`)}
+                  />
                 </SelectContent>
               </Select>
             </div>
@@ -493,6 +547,25 @@ export function ProductDialog({
               />
             </div>
           </div>
+          {avisarEmpaquetado && (
+            <AvisoEmpaquetado sugerencia={medidaEnNombre} onVenderPorPieza={venderPorPieza} />
+          )}
+          {admiteContenido && (
+            <CampoContenido
+              cantidad={formData.contenido_cantidad}
+              unidad={formData.contenido_unidad}
+              sugerencia={medidaEnNombre}
+              onCambio={(cambio) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  ...(cambio.cantidad !== undefined ? { contenido_cantidad: cambio.cantidad } : {}),
+                  ...(cambio.unidad !== undefined
+                    ? { contenido_unidad: cambio.unidad as ProductFormData["contenido_unidad"] }
+                    : {}),
+                }))
+              }
+            />
+          )}
             </div>
           </AccordionItem>
           <AccordionItem title="Precio y costo" index={1} resumen={resumenPrecio}>

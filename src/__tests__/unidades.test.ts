@@ -10,6 +10,12 @@ import {
   formatearCantidad,
   normalizarCantidad,
   porUnidad,
+  contenidoCapturado,
+  contenidoDe,
+  contenidoDesdeTexto,
+  formatearContenido,
+  pareceEmpaquetado,
+  textoContenido,
 } from "@/lib/unidades";
 import { parseUnidadMedida } from "@/features/inventory/components/products/import/import-row-processor";
 
@@ -112,5 +118,90 @@ describe("granel: etiquetas y venta por importe", () => {
     expect(cantidadPorImporte("abc", 180, "KG")).toBeNull();
     expect(cantidadPorImporte(50, 0, "KG")).toBeNull();
     expect(cantidadPorImporte(0.0001, 180, "KG")).toBeNull();
+  });
+});
+
+describe("contenido del envase (migracion 114)", () => {
+  it("formatearContenido: abreviatura de etiqueta y sin ceros de relleno", () => {
+    expect(formatearContenido(2.5, "LITRO")).toBe("2.5 L");
+    expect(formatearContenido("600.000", "MILILITRO")).toBe("600 ml");
+    expect(formatearContenido(45, "GRAMO")).toBe("45 g");
+    expect(formatearContenido(1, "KG")).toBe("1 kg");
+    expect(formatearContenido(3, "METRO")).toBe("3 m");
+    expect(formatearContenido(1, "PIEZA")).toBe("");
+    expect(formatearContenido(null, "LITRO")).toBe("");
+    expect(formatearContenido(0, "LITRO")).toBe("");
+  });
+
+  it("contenidoDe: el de la variante si tiene, si no el del producto", () => {
+    const producto = { contenido_cantidad: 1, contenido_unidad: "LITRO" };
+    expect(contenidoDe(producto, { contenido_cantidad: 2.5, contenido_unidad: "LITRO" })).toEqual({
+      cantidad: 2.5,
+      unidad: "LITRO",
+    });
+    expect(contenidoDe(producto, { contenido_cantidad: null, contenido_unidad: null })).toEqual({
+      cantidad: 1,
+      unidad: "LITRO",
+    });
+    expect(contenidoDe(producto)).toEqual({ cantidad: 1, unidad: "LITRO" });
+    expect(contenidoDe({ contenido_cantidad: null, contenido_unidad: null })).toBeNull();
+    // La base devuelve numeric como texto.
+    expect(contenidoDe({ contenido_cantidad: "600.000" as unknown as number, contenido_unidad: "MILILITRO" })).toEqual({
+      cantidad: 600,
+      unidad: "MILILITRO",
+    });
+  });
+
+  it("contenidoDesdeTexto: lee medidas escritas de varias formas", () => {
+    expect(contenidoDesdeTexto("2.5 L")).toEqual({ cantidad: 2.5, unidad: "LITRO" });
+    expect(contenidoDesdeTexto("Coca-Cola 600ml")).toEqual({ cantidad: 600, unidad: "MILILITRO" });
+    expect(contenidoDesdeTexto("Leche 1,5 litros")).toEqual({ cantidad: 1.5, unidad: "LITRO" });
+    expect(contenidoDesdeTexto("Totis Original 60g")).toEqual({ cantidad: 60, unidad: "GRAMO" });
+    expect(contenidoDesdeTexto("Detergente Ace 1kg")).toEqual({ cantidad: 1, unidad: "KG" });
+    expect(contenidoDesdeTexto("Aceite Nutrioli 1 Lt")).toEqual({ cantidad: 1, unidad: "LITRO" });
+  });
+
+  it("contenidoDesdeTexto: no confunde piezas ni palabras con medidas", () => {
+    expect(contenidoDesdeTexto("Huevo San Juan 12pz")).toBeNull();
+    expect(contenidoDesdeTexto("12 manzanas")).toBeNull();
+    expect(contenidoDesdeTexto("Pan Bimbo Doble Fibra")).toBeNull();
+    expect(contenidoDesdeTexto("abc")).toBeNull();
+    expect(contenidoDesdeTexto("")).toBeNull();
+    expect(contenidoDesdeTexto(null)).toBeNull();
+  });
+
+  it("pareceEmpaquetado: por el nombre o por un atributo", () => {
+    expect(pareceEmpaquetado("Coca Cola 2.5 L")).toBe(true);
+    expect(pareceEmpaquetado("Coca Cola", [{ valor: "600 ml" }])).toBe(true);
+    expect(pareceEmpaquetado("Coca Cola", ["Roja"])).toBe(false);
+    expect(pareceEmpaquetado("Arroz")).toBe(false);
+  });
+});
+
+describe("contenidoCapturado", () => {
+  it("vacio = sin contenido", () => {
+    expect(contenidoCapturado("  ", "")).toEqual({ ok: true, contenido_cantidad: null, contenido_unidad: null });
+  });
+  it("con cantidad y medida se guarda normalizado", () => {
+    expect(contenidoCapturado("2,5", "LITRO")).toEqual({ ok: true, contenido_cantidad: 2.5, contenido_unidad: "LITRO" });
+  });
+  it("cantidad sin medida, medida de conteo o cantidad invalida: error", () => {
+    expect(contenidoCapturado("600", "").ok).toBe(false);
+    expect(contenidoCapturado("1", "PIEZA").ok).toBe(false);
+    expect(contenidoCapturado("0", "MILILITRO").ok).toBe(false);
+    expect(contenidoCapturado("abc", "GRAMO").ok).toBe(false);
+  });
+});
+
+describe("textoContenido", () => {
+  it("hereda el del producto y se calla a granel", () => {
+    const coca = { unidad_medida: "PIEZA", contenido_cantidad: null, contenido_unidad: null };
+    expect(textoContenido(coca, { contenido_cantidad: 2.5, contenido_unidad: "LITRO" })).toBe("2.5 L");
+    expect(textoContenido({ unidad_medida: "PIEZA", contenido_cantidad: 45, contenido_unidad: "GRAMO" })).toBe("45 g");
+    expect(textoContenido({ unidad_medida: "KG", contenido_cantidad: 1, contenido_unidad: "KG" })).toBe("");
+    expect(
+      textoContenido(coca, { unidad_medida: "LITRO", contenido_cantidad: 2.5, contenido_unidad: "LITRO" })
+    ).toBe("");
+    expect(textoContenido(coca)).toBe("");
   });
 });

@@ -86,6 +86,12 @@ interface PosCartProps {
   onUpdateQuantity: (key: string, cantidad: number) => void;
   onRemove: (key: string) => void;
   onToggleIva: (checked: boolean) => void;
+  /**
+   * Premio de lealtad aplicado (migracion 115). Ya viene dentro de
+   * `totals.descuento`: aqui se separa para que el descuento manual muestre
+   * solo lo suyo.
+   */
+  premioLealtad?: { etiqueta: string; monto: number } | null;
 }
 
 export function PosCart({
@@ -96,6 +102,7 @@ export function PosCart({
   onUpdateQuantity,
   onRemove,
   onToggleIva,
+  premioLealtad = null,
 }: PosCartProps) {
   const t = useTranslations();
   // Celular y tablet (la hoja del carrito): cada linea es una pastilla que se
@@ -231,8 +238,14 @@ export function PosCart({
             {/* Descuento manual a toda la compra (% o monto fijo). */}
             <DescuentoTicketControl
               subtotal={totals.subtotal}
-              monto={totals.descuento}
+              monto={Math.round((totals.descuento - (premioLealtad?.monto ?? 0)) * 100) / 100}
             />
+            {premioLealtad && premioLealtad.monto > 0 && (
+              <div className="flex justify-between gap-2 text-xs text-emerald-700 dark:text-emerald-400">
+                <span className="truncate">Premio: {premioLealtad.etiqueta}</span>
+                <span className="shrink-0 font-mono">-${premioLealtad.monto.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-xs">
               <label className="flex items-center gap-1.5 text-muted-foreground cursor-pointer select-none">
                 <Checkbox

@@ -20,6 +20,9 @@ export interface VarianteInput {
   stock_minimo?: number;
   /** Migracion 104: unidad propia; `null` = la del producto. */
   unidad_medida?: UnidadMedida | null;
+  /** Migracion 114: contenido del envase; `null` = el del producto. */
+  contenido_cantidad?: number | null;
+  contenido_unidad?: UnidadMedida | null;
   /**
    * Migracion 097. `talla`/`color` se mandan igual, como resumen compatible
    * (`resumenCompatible`), para todo lo que ya lee esas columnas.
@@ -61,7 +64,9 @@ export async function fetchVariantProducts(
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
     .from("productos")
-    .select("id, nombre, permite_variantes, permite_lotes, stock_minimo, unidad_medida, es_servicio")
+    .select(
+      "id, nombre, permite_variantes, permite_lotes, stock_minimo, unidad_medida, es_servicio, contenido_cantidad, contenido_unidad"
+    )
     .eq("tenant_id", tenantId)
     .is("archivado_en", null)
     // Todos los productos, no solo los que ya tienen variantes: si no,

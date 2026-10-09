@@ -8,6 +8,9 @@ export interface ProductInput {
   codigo_barras: string | null;
   sku: string | null;
   unidad_medida: Producto["unidad_medida"];
+  /** Contenido del envase (migracion 114). Opcional: la importacion no lo manda. */
+  contenido_cantidad?: number | null;
+  contenido_unidad?: Producto["unidad_medida"] | null;
   precio_venta: number;
   costo_compra: number;
   stock_actual: number;

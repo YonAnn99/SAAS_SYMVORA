@@ -25,7 +25,16 @@ import { useTranslations } from "next-intl";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useModulos } from "@/hooks/use-modulos";
 import { unidadesOfrecidas } from "@/lib/modulos";
-import { enUnidad, esFraccionable, porUnidad, type UnidadMedida } from "@/lib/unidades";
+import {
+  contenidoCapturado,
+  contenidoDesdeTexto,
+  enUnidad,
+  esFraccionable,
+  formatearContenido,
+  porUnidad,
+  type UnidadMedida,
+} from "@/lib/unidades";
+import { AvisoEmpaquetado, CampoContenido, OpcionesUnidad } from "../unidad-y-contenido";
 import type { ProductoOption, VarianteProducto } from "../../types/inventory.types";
 import type { VarianteInput } from "../../services/variant-service";
 import {
@@ -109,6 +118,9 @@ export function VariantDialog({
   const [descripcion, setDescripcion] = useState("");
   // Unidad propia de la variante (migracion 104) o la del producto.
   const [unidad, setUnidad] = useState<string>(UNIDAD_DEL_PRODUCTO);
+  // Contenido del envase propio (migracion 114); vacio = el del producto.
+  const [contenidoCantidad, setContenidoCantidad] = useState("");
+  const [contenidoUnidad, setContenidoUnidad] = useState("");
   // Foto (opcional): la que se eligio o tomo y si se quito la que tenia.
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [imagenPreview, setImagenPreview] = useState<string | null>(null);
@@ -132,6 +144,10 @@ export function VariantDialog({
     setStockMinimo(String(variant.stock_minimo ?? 0));
     setDescripcion(variant.descripcion ?? "");
     setUnidad(variant.unidad_medida ?? UNIDAD_DEL_PRODUCTO);
+    setContenidoCantidad(
+      variant.contenido_cantidad != null ? String(Number(variant.contenido_cantidad)) : ""
+    );
+    setContenidoUnidad(variant.contenido_unidad ?? "");
     setImagenFile(null);
     setImagenPreview(variant.imagen_url ?? null);
     setImagenQuitada(false);
@@ -157,6 +173,21 @@ export function VariantDialog({
     : "Igual que el producto";
   // La unidad con la que se vende: la suya o la del producto (para "por kg").
   const unidadEfectiva = unidad === UNIDAD_DEL_PRODUCTO ? producto?.unidad_medida : unidad;
+  const granel = esFraccionable(unidadEfectiva);
+  // Medida escrita en un atributo ("Capacidad 2.5 L"): sugerencia y aviso.
+  const medidaEnAtributo =
+    filas.map((f) => contenidoDesdeTexto(f.valores[0])).find((c) => c !== null) ?? null;
+  const contenidoDelProducto = producto
+    ? formatearContenido(producto.contenido_cantidad, producto.contenido_unidad)
+    : "";
+  const venderPorPieza = () => {
+    // Si el producto ya se vende por pieza, la variante lo hereda; si no, la suya.
+    setUnidad(producto && !esFraccionable(producto.unidad_medida) ? UNIDAD_DEL_PRODUCTO : "PIEZA");
+    if (medidaEnAtributo && contenidoCantidad.trim() === "") {
+      setContenidoCantidad(String(medidaEnAtributo.cantidad));
+      setContenidoUnidad(medidaEnAtributo.unidad);
+    }
+  };
   const tipos = useMemo(() => {
     const v = variantes.find((x) => x.producto_id === productoId && atributosDeVariante(x).length > 0);
     return tiposSugeridos(tenantGiro, v ? atributosDeVariante(v).map((a) => a.tipo) : []);
@@ -181,6 +212,14 @@ export function VariantDialog({
     }
     if (!(parseFloat(precio) > 0)) {
       toast.error("El precio de venta debe ser mayor a 0");
+      return false;
+    }
+    // A granel no lleva contenido: se guarda vacio aunque hubiera algo escrito.
+    const contenido = granel
+      ? ({ ok: true, contenido_cantidad: null, contenido_unidad: null } as const)
+      : contenidoCapturado(contenidoCantidad, contenidoUnidad);
+    if (!contenido.ok) {
+      toast.error(contenido.error);
       return false;
     }
 
@@ -212,6 +251,8 @@ export function VariantDialog({
       stock_minimo: Math.max(0, parseFloat(stockMinimo) || 0),
       descripcion: descripcion.trim() || null,
       unidad_medida: unidad === UNIDAD_DEL_PRODUCTO ? null : (unidad as UnidadMedida),
+      contenido_cantidad: contenido.contenido_cantidad,
+      contenido_unidad: contenido.contenido_unidad,
       imagen_url,
     });
   };
@@ -358,7 +399,7 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Unidad de medida</Label>
+              <Label className="text-xs">¿Cómo se vende?</Label>
               <Select
                 items={{
                   [UNIDAD_DEL_PRODUCTO]: etiquetaDelProducto,
@@ -367,20 +408,35 @@ export function VariantDialog({
                 value={unidad}
                 onValueChange={(v) => typeof v === "string" && setUnidad(v)}
               >
-                <SelectTrigger className="h-8 w-full text-sm" aria-label="Unidad de medida">
+                <SelectTrigger className="h-8 w-full text-sm" aria-label="Cómo se vende">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNIDAD_DEL_PRODUCTO}>{etiquetaDelProducto}</SelectItem>
-                  {unidadesVariante.map((u) => (
-                    <SelectItem key={u} value={u}>
-                      {t(`products.units.${u}`)}
-                    </SelectItem>
-                  ))}
+                  <OpcionesUnidad
+                    unidades={unidadesVariante}
+                    etiqueta={(u) => t(`products.units.${u}`)}
+                    extra={{ valor: UNIDAD_DEL_PRODUCTO, texto: etiquetaDelProducto }}
+                  />
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          {granel && medidaEnAtributo && (
+            <AvisoEmpaquetado sugerencia={medidaEnAtributo} onVenderPorPieza={venderPorPieza} />
+          )}
+          {!granel && (
+            <CampoContenido
+              cantidad={contenidoCantidad}
+              unidad={contenidoUnidad}
+              heredado={contenidoDelProducto || undefined}
+              sugerencia={medidaEnAtributo}
+              onCambio={(cambio) => {
+                if (cambio.cantidad !== undefined) setContenidoCantidad(cambio.cantidad);
+                if (cambio.unidad !== undefined) setContenidoUnidad(cambio.unidad);
+              }}
+            />
+          )}
 
           {/* SKU y codigo de barras */}
           <div className="grid grid-cols-2 gap-3">

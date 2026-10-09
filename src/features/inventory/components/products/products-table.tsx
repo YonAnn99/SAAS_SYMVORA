@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState, type ReactNode } from "react";
+import { textoContenido } from "@/lib/unidades";
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
 import Image from "next/image";
@@ -406,6 +407,9 @@ export function ProductsTable({
                         }
                       >
                         {t(`products.units.${product.unidad_medida}`)}
+                        {textoContenido(product) && (
+                          <span className="text-muted-foreground"> · {textoContenido(product)}</span>
+                        )}
                       </EditableSelectCell>
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
@@ -563,6 +567,9 @@ export function ProductsTable({
                         className={`text-[13px] ${v.unidad_medida ? "" : "text-muted-foreground"}`}
                       >
                         {t(`products.units.${v.unidad_medida ?? product.unidad_medida}`)}
+                        {textoContenido(product, v) && (
+                          <span className="text-muted-foreground"> · {textoContenido(product, v)}</span>
+                        )}
                       </CeldaPlegable>
                       <CeldaPlegable abierta={abierto} className="text-right text-[13px] font-mono">
                         <EditableTextCell

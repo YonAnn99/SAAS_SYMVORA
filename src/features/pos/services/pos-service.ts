@@ -48,6 +48,14 @@ export interface CompleteSaleParams {
    * el servidor lo relee de `precios_lista` (migracion 068).
    */
   listaPrecioId?: string | null;
+  /**
+   * Tarjeta de lealtad de la venta (migracion 115). Con ella se llama a
+   * `complete_sale_lealtad`, que suma el sello (o canjea el premio) en la misma
+   * transaccion. Sin ella, `complete_sale` de siempre.
+   */
+  tarjetaLealtadId?: string | null;
+  /** Canjear el premio en esta venta. Lo calcula y lo valida el servidor. */
+  canjearPremio?: boolean;
 }
 
 export function calculateSaleTotals(items: SaleItem[], includeIva = true): SaleTotals {
@@ -84,9 +92,18 @@ export async function completeSale(params: CompleteSaleParams) {
     cajaId,
     totalCobrado,
     listaPrecioId,
+    tarjetaLealtadId,
+    canjearPremio,
   } = params;
 
-  const llamar = () => supabase.rpc("complete_sale", {
+  // Con tarjeta de lealtad: misma venta + sello o canje. Los argumentos son los
+  // de `complete_sale` mas los dos de la tarjeta.
+  const rpc = tarjetaLealtadId ? "complete_sale_lealtad" : "complete_sale";
+  const extra = tarjetaLealtadId
+    ? { p_tarjeta_id: tarjetaLealtadId, p_canjear: Boolean(canjearPremio) }
+    : {};
+
+  const llamar = () => supabase.rpc(rpc, {
     p_tenant_id: tenantId,
     p_usuario_id: userId,
     p_cliente_id: clienteId,
@@ -113,6 +130,7 @@ export async function completeSale(params: CompleteSaleParams) {
     // Ya no hay otro origen posible: el modo sin conexión se retiró.
     p_origen: "online",
     p_lista_precio_id: listaPrecioId ?? null,
+    ...extra,
   });
 
   // Dos cobros (o un cobro y una compra) que tocan los mismos productos en el

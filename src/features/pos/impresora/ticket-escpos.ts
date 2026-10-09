@@ -123,6 +123,9 @@ export function ticketVentaEscPos({
   if (receipt.customerName) {
     t.linea(izquierdaDerecha("Cliente", receipt.customerName, cols));
   }
+  if (receipt.lealtad) {
+    t.parrafo(receipt.lealtad);
+  }
 
   // Pie
   t.separador();

@@ -144,6 +144,13 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - **Granel** (kg, g, l, ml, m): el precio se captura POR UNIDAD (los formularios dicen "por kg" vía
     `porUnidad`/`enUnidad` de `lib/unidades.ts`). En el POS, «¿Cuánto?» vende por cantidad o por importe
     (`cantidadPorImporte`: $50 a $180/kg = 0.278 kg); siempre se manda la cantidad, el servidor cobra cantidad × precio.
+  - **Contenido del envase ≠ unidad de venta** (migración 114): `unidad_medida` es CÓMO SE VENDE (el formulario
+    dice «¿Cómo se vende?»); lo que trae un empaquetado (Coca Cola 2.5 L, Sabritas 45 g) va en
+    `contenido_cantidad`/`contenido_unidad` de `productos` y `variantes_producto` (NULL en la variante = el del
+    producto). Solo descriptivo: no toca cobro ni stock. Helpers en `lib/unidades.ts` (`contenidoDe`,
+    `textoContenido`, `contenidoDesdeTexto`, `contenidoCapturado`); UI compartida en
+    `features/inventory/components/unidad-y-contenido.tsx`, con aviso si eligen granel y el nombre o un atributo
+    trae una medida. Antes se usaba la unidad para el contenido y el POS ofrecía «¼ l» de un refresco.
   - **Escáner con la cámara del celular**: `components/escaner/`, `lib/escaner/`, `barcode-detector` +
     `public/zxing/*.wasm`.
   - Favoritos por producto y por variante.
@@ -243,6 +250,33 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
     Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba.
 
+## Tarjetas de lealtad (migración 115, 2026-10-09)
+- **Vive dentro de Clientes** (`/customers`, pestaña «Tarjetas de lealtad», `?tab=lealtad`): configuración del
+  programa con vista previa, resumen del mes, lista de tarjetas, ajustar sellos y «Nueva tarjeta». En la pestaña
+  «Clientes», cada fila tiene «Tarjeta / Crear tarjeta» si el programa está activo. No hay ruta ni módulo aparte.
+- **Modelo:** `programas_lealtad` (uno por negocio; nace con `activo`), `tarjetas_lealtad` (código de 12 caracteres
+  aleatorios que va en el QR) y `movimientos_lealtad` (sello / canje / ajuste). Un sello por venta: índice único
+  `(venta_id, tipo)`, así un reintento no duplica.
+- **Escrituras:** el programa por tabla con RLS `authorize('loyalty.manage')` (SUPER_ADMIN, ORG_ADMIN). Tarjetas y
+  sellos SOLO por RPC: `emitir_tarjeta_lealtad` (`sales.create`), `ajustar_sellos_lealtad` (`loyalty.manage`) y
+  `complete_sale_lealtad`. Las tres tablas tienen el trigger de solo lectura (096).
+- **Cobro:** con tarjeta, el POS llama `complete_sale_lealtad` (mismos argumentos que `complete_sale` más
+  `p_tarjeta_id` y `p_canjear`), que valida el tope del descuento manual, calcula el premio en el servidor
+  (producto: una unidad; monto; porcentaje), crea la venta con `_crear_venta_desde_items` y suma el sello o canjea.
+  La venta del canje no suma sello. `complete_sale` no se tocó. El POS anticipa el premio con `aplicarPremio`
+  (`features/lealtad/lealtad.ts`), que es el MISMO algoritmo: si cambia uno, cambia el otro. Con «Tarjeta
+  (terminal)» la lealtad no aplica (se confirma sin sesión).
+- **POS:** escanear el QR (o teclear el código) adjunta la tarjeta y su cliente (`codigoDesdeEscaneo`; un código
+  de producto gana si coincide con el catálogo). Elegir un cliente con tarjeta la adjunta. La tira va bajo el
+  selector de cliente (`TiraLealtadPos`); el ticket imprime «Sellos: 9/10» o «Premio canjeado».
+- **Tarjeta pública:** `/[locale]/tarjeta/[codigo]` sin login (ruta pública en el middleware), con cliente
+  anónimo, `tarjeta_publica` (la ÚNICA función de lealtad para `anon`: solo primer nombre del cliente, sin
+  teléfono, correo ni montos) y rate limit de 60/min por IP. Manifest propio
+  (`/api/tarjeta/[codigo]/manifest`) para «Agregar a pantalla de inicio». QR con `qrcode` (SVG).
+- **Correo:** `POST /api/lealtad/enviar-tarjeta` (`sales.create`, 20/h por usuario, no en demo); el destino sale de
+  la base, nunca de la petición.
+- **Pendiente:** Google Wallet y Apple Wallet (requieren cuentas de emisor) y lealtad con terminal Mercado Pago.
+
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
@@ -320,7 +354,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (993 tests al 2026-10-08) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 113; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 115; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

@@ -4,7 +4,7 @@
  * precio, costo, stock y minimo). Aqui vive la logica pura (resumen, armado del
  * insert y deteccion de repetidas), separada del componente para probarla.
  */
-import type { UnidadMedida } from "@/lib/unidades";
+import { contenidoCapturado, esFraccionable, type UnidadMedida } from "@/lib/unidades";
 import type { VarianteInput } from "./services/variant-service";
 import {
   TIPO_PERSONALIZADO,
@@ -31,6 +31,9 @@ export interface TarjetaVariante {
   imagenPreview: string | null;
   descripcion: string;
   unidad: string;
+  /** Contenido del envase (migracion 114). "" = el del producto. */
+  contenidoCantidad: string;
+  contenidoUnidad: string;
   sku: string;
   codigo: string;
   precio: string;
@@ -52,6 +55,8 @@ export function nuevaTarjeta(
     imagenPreview: null,
     descripcion: "",
     unidad: UNIDAD_DEL_PRODUCTO,
+    contenidoCantidad: "",
+    contenidoUnidad: "",
     sku: "",
     codigo: "",
     precio: "",
@@ -63,8 +68,9 @@ export function nuevaTarjeta(
 }
 
 /**
- * Copia para "Duplicar": todo igual salvo el valor de los atributos, el SKU y
- * el codigo de barras, que identifican a cada variante.
+ * Copia para "Duplicar": todo igual salvo el valor de los atributos, el SKU,
+ * el codigo de barras y el contenido, que identifican a cada variante (la
+ * copia de la de 600 ml no es de 600 ml).
  */
 export function duplicarTarjeta(t: TarjetaVariante): TarjetaVariante {
   return {
@@ -73,6 +79,8 @@ export function duplicarTarjeta(t: TarjetaVariante): TarjetaVariante {
     atributos: t.atributos.map((a) => ({ ...a, valor: "" })),
     sku: "",
     codigo: "",
+    contenidoCantidad: "",
+    contenidoUnidad: "",
   };
 }
 
@@ -157,6 +165,8 @@ export function problemaDeTarjeta(
   if (atributosDeTarjeta(t).length === 0) {
     return { mensaje: "Escribe el valor del atributo (ej. 600 ml)", seccion: "datos" };
   }
+  const contenido = contenidoCapturado(t.contenidoCantidad, t.contenidoUnidad);
+  if (!contenido.ok) return { mensaje: contenido.error, seccion: "datos" };
   if (!(parseFloat(t.precio) > 0)) {
     return { mensaje: "El precio de venta debe ser mayor a 0", seccion: "precio" };
   }
@@ -181,6 +191,12 @@ export function inputDeTarjeta(
 ): VarianteInput {
   const servicio = Boolean(opciones.esServicio);
   const atributos = atributosDeTarjeta(t);
+  const unidadEfectiva = t.unidad === UNIDAD_DEL_PRODUCTO ? opciones.unidadProducto : t.unidad;
+  // El contenido es de lo que se vende por pieza: a granel o servicio, NULL.
+  const contenido =
+    servicio || esFraccionable(unidadEfectiva)
+      ? null
+      : contenidoCapturado(t.contenidoCantidad, t.contenidoUnidad);
   return {
     producto_id: opciones.productoId,
     sku: t.sku.trim() || skuDeCombinacion(opciones.baseSku, atributos.map((a) => a.valor)),
@@ -196,6 +212,8 @@ export function inputDeTarjeta(
       servicio || t.unidad === UNIDAD_DEL_PRODUCTO || t.unidad === opciones.unidadProducto
         ? null
         : (t.unidad as UnidadMedida),
+    contenido_cantidad: contenido?.ok ? contenido.contenido_cantidad : null,
+    contenido_unidad: contenido?.ok ? contenido.contenido_unidad : null,
     imagen_url: opciones.imagenUrl,
   };
 }

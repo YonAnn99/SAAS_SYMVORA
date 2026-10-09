@@ -122,6 +122,8 @@ export type Database = {
           nombre: string;
           descripcion: string | null;
           unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
+          contenido_cantidad: number | null;
+          contenido_unidad: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
           precio_venta: number;
           costo_compra: number;
           stock_actual: number;
@@ -147,6 +149,8 @@ export type Database = {
           nombre: string;
           descripcion?: string | null;
           unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
+          contenido_cantidad?: number | null;
+          contenido_unidad?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
           precio_venta: number;
           costo_compra: number;
           stock_actual?: number;
@@ -172,6 +176,8 @@ export type Database = {
           nombre?: string;
           descripcion?: string | null;
           unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO";
+          contenido_cantidad?: number | null;
+          contenido_unidad?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
           precio_venta?: number;
           costo_compra?: number;
           stock_actual?: number;
@@ -874,6 +880,8 @@ export type Database = {
           descripcion: string | null;
           stock_minimo: number;
           unidad_medida: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
+          contenido_cantidad: number | null;
+          contenido_unidad: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
           /** Migracion 110: NULL = activa. Opcional: las consultas con columnas elegidas no la traen. */
           archivado_en?: string | null;
         };
@@ -895,6 +903,8 @@ export type Database = {
           descripcion?: string | null;
           stock_minimo?: number;
           unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
+          contenido_cantidad?: number | null;
+          contenido_unidad?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
           archivado_en?: string | null;
         };
         Update: {
@@ -915,6 +925,8 @@ export type Database = {
           descripcion?: string | null;
           stock_minimo?: number;
           unidad_medida?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
+          contenido_cantidad?: number | null;
+          contenido_unidad?: "PIEZA" | "KG" | "GRAMO" | "LITRO" | "MILILITRO" | "METRO" | "CAJA" | "PAQUETE" | "PAR" | "DOCENA" | "SERVICIO" | null;
           archivado_en?: string | null;
         };
       };

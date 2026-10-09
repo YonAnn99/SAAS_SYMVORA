@@ -33,6 +33,9 @@ export interface ProductoOption extends ProductOption {
   stock_minimo?: number | null;
   /** La unidad que hereda la variante si no elige la suya (migracion 104). */
   unidad_medida?: UnidadMedida;
+  /** El contenido que hereda la variante si no tiene el suyo (migracion 114). */
+  contenido_cantidad?: number | null;
+  contenido_unidad?: UnidadMedida | null;
   /** Servicio: sus variantes no llevan stock. */
   es_servicio?: boolean;
 }
@@ -57,6 +60,9 @@ export interface ProductFormData {
   codigo_barras: string;
   sku: string;
   unidad_medida: UnidadMedida;
+  /** Contenido del envase (migracion 114): texto del input, "" = sin contenido. */
+  contenido_cantidad: string;
+  contenido_unidad: UnidadMedida | "";
   precio_venta: string;
   costo_compra: string;
   stock_actual: string;
@@ -73,6 +79,8 @@ export const defaultProductFormData: ProductFormData = {
   codigo_barras: "",
   sku: "",
   unidad_medida: "PIEZA",
+  contenido_cantidad: "",
+  contenido_unidad: "",
   precio_venta: "",
   costo_compra: "",
   stock_actual: "0",
