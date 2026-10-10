@@ -25,7 +25,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useCustomers, CreditPaymentDialog, EditCustomerDialog } from "@/features/customers";
+import { useCustomers, CreditPaymentDialog, EditCustomerDialog, deleteCustomer } from "@/features/customers";
+import { BotonEliminar } from "@/components/ui/boton-eliminar";
+import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Cliente } from "@/lib/types/database";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { useLealtad } from "@/features/lealtad/use-lealtad";
@@ -63,6 +65,27 @@ export default function CustomersPage() {
   // Editar: misma regla que la base (RLS de `clientes`: `inventory.manage`).
   const puedeEditarClientes = can("inventory.manage");
   const [editando, setEditando] = useState<Cliente | null>(null);
+
+  // Eliminar: misma regla que editar. Con saldo pendiente se bloquea en la
+  // fila; con ventas, la base lo impide y `deleteCustomer` lo explica.
+  const eliminarCliente = async (cliente: Cliente) => {
+    const teniaTarjeta = Boolean(tarjetaDe(cliente.id));
+    try {
+      await deleteCustomer(cliente.id);
+      void logActivity({
+        action: "DELETE",
+        entity: "cliente",
+        entityId: cliente.id,
+        entityName: cliente.nombre,
+      });
+      toast.success(`Cliente ${cliente.nombre} eliminado`);
+      void refresh();
+      // Su tarjeta de lealtad se borro en cascada.
+      if (teniaTarjeta) void lealtad.refrescar();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo eliminar el cliente");
+    }
+  };
 
   // La pestaña sale de `?tab=` (mismo patron que Configuracion).
   const searchParams = useSearchParams();
@@ -244,6 +267,20 @@ export default function CustomersPage() {
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
+                                )}
+                                {puedeEditarClientes && (
+                                  <BotonEliminar
+                                    nombre={c.nombre}
+                                    disabled={c.saldo_pendiente > 0}
+                                    detalle={
+                                      c.saldo_pendiente > 0
+                                        ? "Tiene saldo pendiente: registra su abono antes de eliminarlo"
+                                        : tarjetaDe(c.id)
+                                          ? "También se borra su tarjeta de lealtad. No se puede deshacer"
+                                          : "No se puede deshacer"
+                                    }
+                                    onEliminar={() => eliminarCliente(c)}
+                                  />
                                 )}
                                 {programaActivo && (
                                   <Button

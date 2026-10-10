@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Heart, Layers, LayoutGrid, Search, SlidersHorizontal, Tag } from "lucide-react";
+import { Heart, Layers, LayoutGrid, QrCode, Search, SlidersHorizontal, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -32,6 +32,11 @@ interface PosSearchBarProps {
   onKeyDown: (e: React.KeyboardEvent) => void;
   /** Codigo leido con la camara (modo continuo): agrega y responde. */
   onCodigoCamara?: (codigo: string) => ResultadoEscaneo;
+  /**
+   * QR de una tarjeta de lealtad leido con la camara (migracion 115). Solo
+   * llega con el programa activo; sin el no se pinta el boton.
+   */
+  onTarjetaCamara?: (codigo: string) => ResultadoEscaneo;
   categories: string[];
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
@@ -53,6 +58,7 @@ export function PosSearchBar({
   onSearchChange,
   onKeyDown,
   onCodigoCamara,
+  onTarjetaCamara,
   categories,
   selectedCategory,
   onCategoryChange,
@@ -116,6 +122,17 @@ export function PosSearchBar({
             />
           )}
         </div>
+        {onTarjetaCamara && (
+          <BotonEscanear
+            modo="continuo"
+            variante="suelto"
+            titulo="Escanear tarjeta de lealtad"
+            descripcion="Apunta la cámara al QR de la tarjeta del cliente."
+            icono={<QrCode className="h-5 w-5 sm:h-4 sm:w-4" />}
+            onCodigo={onTarjetaCamara}
+            className="max-sm:h-12 max-sm:w-12 max-sm:rounded-xl max-sm:border-border max-sm:bg-card max-sm:text-foreground sm:h-9 sm:w-9"
+          />
+        )}
         <button
           type="button"
           onClick={() => setAjustesAbiertos(true)}

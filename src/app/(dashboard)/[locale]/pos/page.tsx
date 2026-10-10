@@ -338,6 +338,35 @@ export default function POSPage() {
     [variantsByProduct, addResolved, idsDeLista, nombreListaElegida]
   );
 
+  // Adjunta la tarjeta de lealtad leida (ya normalizada) y asigna su cliente a
+  // la venta. Lo usan el buscador/escaner de productos y el boton del QR.
+  const adjuntarTarjetaEscaneada = useCallback(
+    (codigoTarjeta: string) => {
+      const meta = lealtad.programa?.sellos_meta ?? 0;
+      void lealtad.adjuntarPorCodigo(codigoTarjeta).then((tarjeta) => {
+        if (!tarjeta) {
+          toast.error("Esa tarjeta de lealtad no es de este negocio");
+          return;
+        }
+        setSelectedCustomer(tarjeta.cliente_id);
+        toast.success(`Tarjeta de ${tarjeta.cliente?.nombre ?? "cliente"}: ${tarjeta.sellos}/${meta} sellos`);
+      });
+    },
+    [lealtad]
+  );
+
+  // Boton QR del POS: solo acepta tarjetas. Un codigo de producto suena mal y
+  // la camara sigue abierta; una tarjeta la cierra.
+  const leerTarjetaCamara = useCallback(
+    (codigo: string): ResultadoEscaneo => {
+      const codigoTarjeta = codigoDesdeEscaneo(codigo);
+      if (!codigoTarjeta) return { tipo: "error", mensaje: "Ese código no es una tarjeta de lealtad" };
+      adjuntarTarjetaEscaneada(codigoTarjeta);
+      return { tipo: "salir", mensaje: "Tarjeta de lealtad leída" };
+    },
+    [adjuntarTarjetaEscaneada]
+  );
+
   // Un codigo leido, venga del lector fisico (Enter en el buscador) o de la
   // camara. Mismas reglas que tocar el producto en la cuadricula, pero
   // respondiendo en vez de avisar: la camara en modo continuo necesita saber
@@ -356,15 +385,7 @@ export default function POSPage() {
         codigoTarjeta &&
         (/\/tarjeta\//i.test(codigo) || !resolverCodigo(codigo, products, variantsByProduct))
       ) {
-        const meta = lealtad.programa?.sellos_meta ?? 0;
-        void lealtad.adjuntarPorCodigo(codigoTarjeta).then((tarjeta) => {
-          if (!tarjeta) {
-            toast.error("Esa tarjeta de lealtad no es de este negocio");
-            return;
-          }
-          setSelectedCustomer(tarjeta.cliente_id);
-          toast.success(`Tarjeta de ${tarjeta.cliente?.nombre ?? "cliente"}: ${tarjeta.sellos}/${meta} sellos`);
-        });
+        adjuntarTarjetaEscaneada(codigoTarjeta);
         return { tipo: "ok", mensaje: "Tarjeta de lealtad leída" };
       }
       const encontrado = resolverCodigo(codigo, products, variantsByProduct);
@@ -394,7 +415,7 @@ export default function POSPage() {
       addResolved(product, variant);
       return { tipo: "ok", mensaje: `${etiqueta} agregado` };
     },
-    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado, lealtad]
+    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado, lealtad, adjuntarTarjetaEscaneada]
   );
 
   // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,
@@ -834,6 +855,7 @@ export default function POSPage() {
           onSearchChange={setSearch}
           onKeyDown={handleKeyDown}
           onCodigoCamara={agregarPorCodigo}
+          onTarjetaCamara={lealtad.programa ? leerTarjetaCamara : undefined}
           categories={categories}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}

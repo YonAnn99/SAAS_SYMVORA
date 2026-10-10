@@ -33,6 +33,8 @@ interface EscanerCamaraProps {
   onOpenChange: (open: boolean) => void;
   modo: ModoEscaner;
   titulo?: string;
+  /** Texto bajo el titulo; sin el, el de cada modo. */
+  descripcion?: string;
   /** Cada codigo leido. En modo "uno" el escaner se cierra despues. */
   onCodigo: (codigo: string) => ResultadoEscaneo | void;
 }
@@ -40,16 +42,17 @@ interface EscanerCamaraProps {
 /** Lecturas por segundo: suficiente para sentirse inmediato sin calentar el celular. */
 const INTERVALO_MS = 150;
 
-export function EscanerCamara({ open, onOpenChange, modo, titulo, onCodigo }: EscanerCamaraProps) {
+export function EscanerCamara({ open, onOpenChange, modo, titulo, descripcion, onCodigo }: EscanerCamaraProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{titulo ?? "Escanear código"}</DialogTitle>
           <DialogDescription>
-            {modo === "continuo"
-              ? "Apunta a cada código; se agregan solos con un bip."
-              : "Apunta la cámara al código de barras."}
+            {descripcion ??
+              (modo === "continuo"
+                ? "Apunta a cada código; se agregan solos con un bip."
+                : "Apunta la cámara al código de barras.")}
           </DialogDescription>
         </DialogHeader>
         {/* Montado solo abierto: cada apertura empieza limpia y, al cerrar, el

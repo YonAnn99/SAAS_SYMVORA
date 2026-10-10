@@ -64,6 +64,25 @@ export async function updateCustomer(clienteId: string, cambios: CustomerUpdate)
   return data;
 }
 
+/**
+ * Elimina un cliente. La RLS exige `inventory.manage`.
+ *
+ * Un cliente con ventas (o cobros con terminal) no se puede borrar: esas
+ * tablas lo referencian sin cascada y Postgres responde 23503. Se traduce a un
+ * mensaje legible. Sus abonos y su tarjeta de lealtad se borran en cascada,
+ * pero solo existen abonos si hubo ventas a credito, que ya lo impiden.
+ */
+export async function deleteCustomer(clienteId: string): Promise<void> {
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error("Tiene ventas registradas: no se puede eliminar");
+    }
+    throw error;
+  }
+}
+
 export async function getCurrentUserId(): Promise<string | null> {
   const supabase = createSupabaseBrowserClient();
   const {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { ScanBarcode } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { camaraDisponible, faltaHttps } from "@/lib/escaner/detector";
@@ -63,6 +63,10 @@ interface BotonEscanearProps {
    * `suelto`: boton cuadrado con borde, del alto de los campos `h-8`/`h-9`.
    */
   variante?: "dentro" | "suelto";
+  /** Icono del boton; por defecto el de codigo de barras. */
+  icono?: ReactNode;
+  /** Texto bajo el titulo del escaner (p. ej. "Apunta al QR de la tarjeta"). */
+  descripcion?: string;
   className?: string;
 }
 
@@ -71,6 +75,8 @@ export function BotonEscanear({
   titulo,
   onCodigo,
   variante = "dentro",
+  icono,
+  descripcion,
   className,
 }: BotonEscanearProps) {
   const hay = useHayCamara();
@@ -83,7 +89,7 @@ export function BotonEscanear({
         type="button"
         onClick={() => setAbierto(true)}
         aria-label={titulo ?? "Escanear con la cámara"}
-        title="Escanear con la cámara"
+        title={titulo ?? "Escanear con la cámara"}
         className={cn(
           "inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
           variante === "dentro"
@@ -92,13 +98,14 @@ export function BotonEscanear({
           className
         )}
       >
-        <ScanBarcode className="h-4 w-4" />
+        {icono ?? <ScanBarcode className="h-4 w-4" />}
       </button>
       <EscanerCamara
         open={abierto}
         onOpenChange={setAbierto}
         modo={modo}
         titulo={titulo}
+        descripcion={descripcion}
         onCodigo={onCodigo}
       />
     </>
