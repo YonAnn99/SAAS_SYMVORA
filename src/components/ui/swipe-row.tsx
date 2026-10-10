@@ -16,6 +16,8 @@
  *     "Recibir" en ordenes de compra). Solo si la fila empezo cerrada; debajo
  *     aparece una capa de su color y, al soltar pasado el umbral, la fila
  *     regresa y se ejecuta. Sin ella, ese lado resiste como en el original.
+ *     Su capa no recibe toques (`pointer-events-none`): queda encima del cajon
+ *     y, sin eso, tapaba los botones de las acciones.
  *   - `nudgeStart`: al cambiar, la fila se asoma dos veces hacia el lado de
  *     `startAction` y regresa: avisa que esa accion se acaba de habilitar.
  *
@@ -541,9 +543,13 @@ const SwipeRow: React.FC<SwipeRowProps> = ({
           ) : null}
         </motion.div>
         {startAction ? (
+          // `pointer-events-none`: esta capa va DESPUES del cajon y ocupa toda la
+          // fila; con opacidad 0 no se ve, pero sin esto se quedaba con los
+          // toques y "Editar"/"Eliminar" no respondian. No necesita clics: su
+          // accion se dispara al soltar el deslizamiento (`up`).
           <motion.div
             aria-hidden="true"
-            className="absolute inset-0 flex items-center gap-2 px-5 text-[13px] font-medium group-data-[direction=left]:justify-start group-data-[direction=right]:justify-end"
+            className="pointer-events-none absolute inset-0 flex items-center gap-2 px-5 text-[13px] font-medium group-data-[direction=left]:justify-start group-data-[direction=right]:justify-end"
             style={{
               opacity: startOpacity,
               background: startAction.color ?? '#16a34a',

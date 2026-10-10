@@ -8,6 +8,7 @@
  *   deslizar a la mitad  -> Eliminar | Editar (abre el dialogo de siempre)
  *   deslizar completo    -> Eliminar
  *   deslizar a la DERECHA -> Archivar (con confirmacion; sin `onArchive`, nada)
+ *   tocar                 -> con variantes, su hoja; producto unico, Editar
  *
  * Desde `md` se sigue usando la tabla (con su edicion en linea).
  */
@@ -118,7 +119,9 @@ export function ProductSwipeList({
                 : undefined
             }
             onOpenChange={alAbrir}
-            onTap={nVariantes > 0 && onVerVariantes ? () => onVerVariantes(product) : undefined}
+            // Tocar (sin deslizar): con variantes abre su hoja; un producto
+            // unico abre Editar directo, sin tener que deslizar.
+            onTap={nVariantes > 0 && onVerVariantes ? () => onVerVariantes(product) : () => onEdit(product)}
           >
             <span onPointerDown={noArrastrar} className="flex shrink-0 items-center">
               <Checkbox
