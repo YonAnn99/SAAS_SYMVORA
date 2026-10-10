@@ -637,10 +637,22 @@ export default function POSPage() {
       })) as { id?: string; lealtad?: EstadoTarjeta } | null;
 
       const estadoLealtad = venta?.lealtad ?? null;
+      // Con tarjeta, sin canje y sin sello: la venta no llego a la compra
+      // minima del programa (el servidor solo sella si total >= minima).
+      const compraMinima = Number(lealtad.programa?.compra_minima ?? 0);
+      const sinSelloPorMinima = Boolean(
+        estadoLealtad &&
+          !estadoLealtad.reintento &&
+          !estadoLealtad.premio_canjeado &&
+          !estadoLealtad.sello_sumado &&
+          compraMinima > 0
+      );
       const lineaLealtad = estadoLealtad
         ? estadoLealtad.premio_canjeado
           ? `Premio canjeado: ${estadoLealtad.premio_descripcion}`
-          : `Sellos: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}`
+          : `Sellos: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}${
+              sinSelloPorMinima ? ` (compra menor a $${compraMinima.toFixed(2)})` : ""
+            }`
         : null;
       const descuentoManual = Math.round((totalsCobro.descuento - (premioLealtad?.monto ?? 0)) * 100) / 100;
 
@@ -674,6 +686,8 @@ export default function POSPage() {
         toast.success(`Premio canjeado: ${estadoLealtad.premio_descripcion}`);
       } else if (estadoLealtad?.sello_sumado) {
         toast.success(`Sello sumado: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}`);
+      } else if (sinSelloPorMinima) {
+        toast.info(`No sumó sello: la compra mínima es $${compraMinima.toFixed(2)}`);
       }
     } catch (error) {
       // Un fallo de red aqui deja la venta EN DUDA: la peticion pudo llegar al
@@ -766,6 +780,7 @@ export default function POSPage() {
         onQuitar={lealtad.soltar}
         conTerminal={conTerminal}
         faltaProducto={Boolean(premioCalculado?.faltaProducto)}
+        totalVenta={totalsCobro.total}
         onAgregarProductoPremio={
           productoPremio
             ? () => {

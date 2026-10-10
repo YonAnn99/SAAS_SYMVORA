@@ -19,6 +19,7 @@ export function TiraLealtadPos({
   conTerminal,
   faltaProducto,
   onAgregarProductoPremio,
+  totalVenta,
 }: {
   tarjeta: TarjetaConCliente;
   programa: ProgramaLealtad;
@@ -30,9 +31,14 @@ export function TiraLealtadPos({
   /** Premio de producto que no esta en el carrito. */
   faltaProducto: boolean;
   onAgregarProductoPremio?: () => void;
+  /** Total de esta venta (con IVA y descuentos), para decir si alcanza la compra minima. */
+  totalVenta: number;
 }) {
   const p = progreso(tarjeta.sellos, programa.sellos_meta);
   const tienePremio = p.premiosDisponibles > 0;
+  // Misma regla que el servidor: el TOTAL de la venta contra la compra minima.
+  const minima = Number(programa.compra_minima) || 0;
+  const faltaParaSello = Math.round((minima - totalVenta) * 100) / 100;
 
   return (
     <div className="mb-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
@@ -86,11 +92,15 @@ export function TiraLealtadPos({
           )}
         </div>
       ) : (
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          {Number(programa.compra_minima) > 0
-            ? `Esta compra suma 1 sello si es de $${Number(programa.compra_minima).toFixed(2)} o más.`
-            : "Esta compra suma 1 sello."}
-        </p>
+        minima > 0 && faltaParaSello > 0 ? (
+          <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">
+            Faltan ${faltaParaSello.toFixed(2)} para sumar sello (compra mínima ${minima.toFixed(2)}).
+          </p>
+        ) : (
+          <p className="mt-1.5 text-[11px] text-emerald-700 dark:text-emerald-400">
+            ✓ Esta compra suma 1 sello.
+          </p>
+        )
       )}
     </div>
   );

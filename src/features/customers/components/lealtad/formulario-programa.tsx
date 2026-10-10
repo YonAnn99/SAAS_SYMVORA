@@ -245,7 +245,8 @@ export function FormularioPrograma({
             className="h-8 max-w-40 text-sm font-mono"
           />
           <p className="text-[11px] text-muted-foreground">
-            Con $0 cualquier compra suma 1 sello. La compra con la que se canjea el premio no suma.
+            Las compras menores a este monto (total con IVA) no suman sello. Pon 0 para que cualquier compra cuente.
+            La compra con la que se canjea el premio no suma.
           </p>
         </div>
 
