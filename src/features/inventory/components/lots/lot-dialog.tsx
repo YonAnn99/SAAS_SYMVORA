@@ -195,9 +195,18 @@ export function LotDialog({
               <Combobox
                 items={products}
                 value={form.producto_id || null}
-                onValueChange={(v) =>
-                  setForm((prev) => ({ ...prev, producto_id: (v as string) ?? "", variante_id: "" }))
-                }
+                onValueChange={(v) => {
+                  const id = (v as string) ?? "";
+                  const costo = products.find((p) => p.id === id)?.costo_compra;
+                  setForm((prev) => ({
+                    ...prev,
+                    producto_id: id,
+                    variante_id: "",
+                    // Sugerencia: el costo actual del producto, si no se escribio otro.
+                    costo_unitario:
+                      prev.costo_unitario || !costo ? prev.costo_unitario : String(Number(costo)),
+                  }));
+                }}
                 itemToStringLabel={(v) => products.find((p) => p.id === v)?.nombre ?? ""}
                 filter={(candidato, query) =>
                   (candidato as unknown as ProductoOption).nombre
@@ -359,6 +368,10 @@ export function LotDialog({
               onChange={(e) => set("costo_unitario", e.target.value)}
               className="h-8 text-sm font-mono"
             />
+            <p className="text-[11px] text-muted-foreground">
+              Lo que pagaste por cada pieza de este lote (de la factura del proveedor). Solo es
+              informativo: la ganancia se calcula con el costo del producto.
+            </p>
           </div>
         </div>
         <DialogFooter>

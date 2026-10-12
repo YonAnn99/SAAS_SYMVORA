@@ -15,7 +15,28 @@ export type TipoNotificacion =
   | "compra"
   | "orden_compra"
   | "ajuste"
-  | "traspaso";
+  | "traspaso"
+  // 118: lotes y caducidades
+  | "lote_por_caducar"
+  | "lote_caducado"
+  | "lote"
+  | "insumo_faltante";
+
+/** Todos los tipos: la campana tiene que saber pintar cada uno. */
+export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
+  "stock_bajo",
+  "stock_agotado",
+  "caja_cerrada",
+  "producto",
+  "compra",
+  "orden_compra",
+  "ajuste",
+  "traspaso",
+  "lote_por_caducar",
+  "lote_caducado",
+  "lote",
+  "insumo_faltante",
+];
 
 export interface Notificacion {
   id: string;

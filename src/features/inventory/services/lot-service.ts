@@ -74,7 +74,7 @@ export async function fetchLotProducts(
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
     .from("productos")
-    .select("id, nombre, permite_variantes, permite_lotes")
+    .select("id, nombre, permite_variantes, permite_lotes, costo_compra")
     .eq("tenant_id", tenantId)
     .is("archivado_en", null)
     .eq("es_servicio", false)

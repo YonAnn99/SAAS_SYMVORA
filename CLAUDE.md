@@ -308,7 +308,14 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Pestaña Lotes con existencias por sucursal y kárdex (`lote-movimientos-dialog.tsx`).
   - Vista previa de lotes en Traspasos.
   - Detalle de venta con lotes e insumos.
-- Pendiente: aviso de lotes por caducar (hoy solo el badge en la pestaña Lotes) y expediente clínico.
+- **Avisos (migración 118):**
+  - `lote_por_caducar` (15 días antes) y `lote_caducado`: los crea `revisar_caducidades`. La campana la llama al abrir
+    la app, una vez por pestaña; el cron `avisos-stock` (8:00) la corre para todos los negocios, sin demos. Hay un
+    aviso por lote, estado y fecha.
+  - `lote`: un colaborador registró, editó o eliminó un lote.
+  - `insumo_faltante`: aviso por venta, desde un trigger por sentencia en `detalle_venta_insumos`.
+- El costo unitario del lote es solo informativo: la ganancia usa el costo del producto o variante.
+- Pendiente: expediente clínico.
 
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
@@ -334,6 +341,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     una venta, un cierre o una compra. Un evento nuevo se agrega con un trigger que llame `_notif_accion` y un tipo
     nuevo en el CHECK de `notificaciones.tipo`.
   - El negocio demo no genera avisos (`_notif_tenant_activo`).
+  - Tipos de lotes y caducidades (118): ver «Lotes por sucursal». Un tipo nuevo va en el CHECK, en
+    `TIPOS_NOTIFICACION` (`lib/notificaciones.ts`) y en `ESTILO` de la campana; `notificaciones-tipos.test.ts` compara
+    la lista con el CHECK.
 - **Descartar** (migración 109): es POR USUARIO, nunca borra la fila compartida. `ocultar_notificacion(id)` guarda
   en `notificaciones_ocultas` y la RLS de `notificaciones` esconde las que tengan `oculta_en >= creado_en`. Así una
   agrupada que se actualiza después reaparece con el conteo nuevo. En escritorio (`useEsEscritorio`) es la X al
@@ -387,7 +397,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1078 tests al 2026-10-12) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 117; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 118; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

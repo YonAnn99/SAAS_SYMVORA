@@ -9,7 +9,10 @@ import { enviarAvisosStockPendientes } from "@/features/notificaciones/services/
  *    inmediato y lo pide la campana (`/api/notificaciones/correo-stock`); si
  *    nadie quedó conectado (cerró la pestaña justo al vender, o le tocaba
  *    esperar los 15 minutos), el aviso no se pierde: sale aquí.
- * 2. Borra las notificaciones de más de 30 días: la campana solo muestra las
+ * 2. Revisa caducidades (migración 118): avisa de los lotes con existencias que
+ *    caducan en los próximos 15 días o ya caducaron (`revisar_caducidades`,
+ *    idempotente). La campana también la corre al abrir la app.
+ * 3. Borra las notificaciones de más de 30 días: la campana solo muestra las
  *    30 más recientes y la Bitácora ya guarda el historial.
  *
  * HORARIO: `vercel.json` la programa a las 14:00 UTC = 8:00 en Ciudad de
@@ -63,11 +66,23 @@ export async function GET(request: Request) {
     }
   }
 
+  // Sin sesión (service_role): revisa todos los negocios reales.
+  const { data: caducidades, error: errorCaducidades } = await supabase.rpc("revisar_caducidades");
+  if (errorCaducidades) {
+    console.error("[cron avisos-stock] revisión de caducidades:", errorCaducidades.message);
+  }
+
   const limite = new Date(Date.now() - RETENCION_DIAS * 24 * 60 * 60 * 1000).toISOString();
   const { count: borradas } = await supabase
     .from("notificaciones")
     .delete({ count: "exact" })
     .lt("creado_en", limite);
 
-  return NextResponse.json({ ok: true, negocios: negocios.length, resumen, borradas: borradas ?? 0 });
+  return NextResponse.json({
+    ok: true,
+    negocios: negocios.length,
+    resumen,
+    caducidades: Number(caducidades ?? 0),
+    borradas: borradas ?? 0,
+  });
 }

@@ -4,6 +4,10 @@ import { useState } from "react";
 import {
   ArrowLeftRight,
   Bell,
+  Boxes,
+  CalendarClock,
+  CalendarX2,
+  FlaskConical,
   ClipboardList,
   Package,
   PackageX,
@@ -37,6 +41,10 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
   orden_compra: { icono: ClipboardList, clase: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
   ajuste: { icono: SlidersHorizontal, clase: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
   traspaso: { icono: ArrowLeftRight, clase: "bg-teal-500/15 text-teal-600 dark:text-teal-400" },
+  lote_caducado: { icono: CalendarX2, clase: "bg-red-500/15 text-red-600 dark:text-red-400" },
+  lote_por_caducar: { icono: CalendarClock, clase: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  lote: { icono: Boxes, clase: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
+  insumo_faltante: { icono: FlaskConical, clase: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
 };
 
 /** Icono del tipo, con el punto de "nueva" en su esquina. */

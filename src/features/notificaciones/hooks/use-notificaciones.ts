@@ -32,6 +32,13 @@ const PAUSA_FOCO_MS = 30_000;
  *   (`/api/notificaciones/correo-stock`). La base decide si toca y evita
  *   duplicados; si responde "esperar", se reintenta pasado ese tiempo.
  */
+/**
+ * Negocios cuya caducidad ya se reviso en esta pestaña (migracion 118). La
+ * revision es idempotente en la base; esto solo evita repetirla en cada
+ * montaje. El cron de las 8:00 la hace tambien para quien no abra la app.
+ */
+const caducidadesRevisadas = new Set<string>();
+
 export function useNotificaciones() {
   const { tenantId, userId } = useTenantContext();
   const [lista, setLista] = useState<Notificacion[]>([]);
@@ -138,6 +145,22 @@ export function useNotificaciones() {
       window.removeEventListener("focus", alEnfocar);
       void supabase.removeChannel(canal);
     };
+  }, [tenantId, userId, cargar]);
+
+  // Lotes por caducar o caducados (118): se revisa al abrir la app. Lo que
+  // cree llega por Realtime; se recarga igual por si el canal aun no conecta.
+  useEffect(() => {
+    if (!tenantId || !userId || caducidadesRevisadas.has(tenantId)) return;
+    caducidadesRevisadas.add(tenantId);
+    const t = window.setTimeout(() => {
+      const supabase = createSupabaseBrowserClient();
+      supabase
+        .rpc("revisar_caducidades", { p_tenant_id: tenantId })
+        .then(({ data, error }) => {
+          if (!error && Number(data) > 0) void cargar();
+        });
+    }, 2000);
+    return () => window.clearTimeout(t);
   }, [tenantId, userId, cargar]);
 
   // Correo de stock pendiente.

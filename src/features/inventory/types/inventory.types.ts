@@ -38,6 +38,8 @@ export interface ProductoOption extends ProductOption {
   contenido_unidad?: UnidadMedida | null;
   /** Servicio: sus variantes no llevan stock. */
   es_servicio?: boolean;
+  /** Para precargar el costo de un lote nuevo. */
+  costo_compra?: number | null;
 }
 
 export interface VarianteOption {
