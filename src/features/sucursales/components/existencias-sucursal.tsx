@@ -44,7 +44,14 @@ interface ProductoLocal {
  * Los servicios salen con "—": no tienen existencias, pero si tienen "se vende
  * aqui" (un local puede no ofrecer envios a domicilio, por ejemplo).
  */
-export function ExistenciasSucursal({ tenantId }: { tenantId: string }) {
+export function ExistenciasSucursal({
+  tenantId,
+  version = 0,
+}: {
+  tenantId: string;
+  /** Sube con "Actualizar" de la pagina: vuelve a cargar. */
+  version?: number;
+}) {
   const { seleccionada, sucursales } = useSucursal();
   const { can } = usePermissions();
   const puedeEditar = can("inventory.manage");
@@ -82,7 +89,7 @@ export function ExistenciasSucursal({ tenantId }: { tenantId: string }) {
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargar(), 0);
     return () => window.clearTimeout(t0);
-  }, [cargar]);
+  }, [cargar, version]);
 
   const visibles = useMemo(() => {
     const q = busqueda.trim().toLowerCase();

@@ -67,24 +67,28 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
     }
     // Con datos en cache no se muestra el "cargando": se actualiza por detras.
     if (!leerCache(claveCompras(tenantId))) setLoading(true);
-    const [purchasesData, suppliersData, productsData, variantsData] =
-      await Promise.all([
-        fetchPurchases(tenantId),
-        fetchSuppliers(tenantId),
-        fetchOrderProducts(tenantId),
-        fetchOrderVariants(tenantId),
-      ]);
-    setPurchases(purchasesData);
-    setSuppliers(suppliersData);
-    setProducts(productsData);
-    setVariants(variantsData);
-    setLoading(false);
-    guardarCache<ComprasEnCache>(claveCompras(tenantId), {
-      compras: purchasesData,
-      proveedores: suppliersData,
-      productos: productsData,
-      variantes: variantsData,
-    });
+    // Pase lo que pase, el "Cargando" se apaga: sin esto, un error lo dejaba fijo y solo se salia con F5.
+    try {
+      const [purchasesData, suppliersData, productsData, variantsData] =
+        await Promise.all([
+          fetchPurchases(tenantId),
+          fetchSuppliers(tenantId),
+          fetchOrderProducts(tenantId),
+          fetchOrderVariants(tenantId),
+        ]);
+      setPurchases(purchasesData);
+      setSuppliers(suppliersData);
+      setProducts(productsData);
+      setVariants(variantsData);
+      guardarCache<ComprasEnCache>(claveCompras(tenantId), {
+        compras: purchasesData,
+        proveedores: suppliersData,
+        productos: productsData,
+        variantes: variantsData,
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [tenantId]);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { ArrowLeft, Info, Pencil, Plus, Search } from "lucide-react";
@@ -48,7 +49,7 @@ export default function PriceListDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const { lista, items, loading, saving, agregar, quitar, guardarPrecios, activar } =
+  const { lista, items, loading, saving, refetch, agregar, quitar, guardarPrecios, activar } =
     usePriceList(id);
 
   const [catalogo, setCatalogo] = useState<FilaSeleccionable[]>([]);
@@ -161,15 +162,18 @@ export default function PriceListDetailPage({
             {lista?.activa ? " · Activa" : " · Borrador"}
           </p>
         </div>
-        <Button
-          variant={lista?.activa ? "outline" : "default"}
-          size="sm"
-          className="h-8"
-          onClick={() => void activar(!lista?.activa)}
-          disabled={loading}
-        >
-          {lista?.activa ? "Desactivar lista" : "Guardar y activar"}
-        </Button>
+        <div className="flex gap-2">
+          <BotonActualizar onActualizar={refetch} />
+          <Button
+            variant={lista?.activa ? "outline" : "default"}
+            size="sm"
+            className="h-8"
+            onClick={() => void activar(!lista?.activa)}
+            disabled={loading}
+          >
+            {lista?.activa ? "Desactivar lista" : "Guardar y activar"}
+          </Button>
+        </div>
       </div>
 
       {/* El aviso es importante: sin él, alguien sube el precio base de un

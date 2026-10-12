@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Shield, UserCog, Key, RefreshCw, SlidersHorizontal, Store, Pencil } from "lucide-react";
+import { Users, Shield, UserCog, Key, SlidersHorizontal, Store, Pencil } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PermissionsDialog } from "@/features/users/components/permissions-dialog";
@@ -62,6 +62,7 @@ import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
 import { toast } from "sonner";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 export default function UsersPage() {
@@ -313,6 +314,12 @@ export default function UsersPage() {
             descripcion="Gestiona los usuarios y permisos de tu organización"
           />
         </div>
+        <div className="flex gap-2">
+        <BotonActualizar
+          onActualizar={() =>
+            Promise.all([fetchMemberships(), fetchAsignaciones(), canManage ? fetchInviteKeys() : null])
+          }
+        />
         {canManage && (
           <SpecularActionButton
             tone="add"
@@ -324,6 +331,7 @@ export default function UsersPage() {
             {t("users.addUser")}
           </SpecularActionButton>
         )}
+        </div>
       </div>
 
       {/* Role summary cards */}
@@ -516,9 +524,6 @@ export default function UsersPage() {
                 <Key className="h-4 w-4" />
                 {t("users.inviteKeys") || "Claves de acceso"}
               </CardTitle>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={fetchInviteKeys}>
-                <RefreshCw className="h-3.5 w-3.5" />
-              </Button>
             </div>
           </CardHeader>
           <CardContent>

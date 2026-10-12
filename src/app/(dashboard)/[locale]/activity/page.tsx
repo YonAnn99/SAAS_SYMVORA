@@ -48,6 +48,7 @@ import {
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 interface ActivityLog {
   id: string;
@@ -249,6 +250,7 @@ export default function ActivityPage() {
             <SelectItem value="traspaso">{t("common.traspaso")}</SelectItem>
           </SelectContent>
         </Select>
+        <BotonActualizar className="self-start sm:self-auto" onActualizar={() => fetchLogs(0)} />
       </div>
 
       <Card className="animate-fade-in-up stagger-2">

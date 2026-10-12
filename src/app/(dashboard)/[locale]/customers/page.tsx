@@ -30,6 +30,7 @@ import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Cliente } from "@/lib/types/database";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { useLealtad } from "@/features/lealtad/use-lealtad";
 import { PestanaLealtad, paraVentana } from "@/features/customers/components/lealtad/pestana-lealtad";
 import {
@@ -141,6 +142,11 @@ export default function CustomersPage() {
             descripcion={t("customers.subtitle")}
           />
         </div>
+        {/* Clientes y tarjetas de lealtad a la vez: las dos pestañas se cruzan. */}
+        <BotonActualizar
+          className="self-start sm:self-auto"
+          onActualizar={() => Promise.all([refresh(), lealtad.refrescar()])}
+        />
       </div>
 
       <Tabs value={pestanaVisible} onValueChange={cambiarPestana} className="w-full animate-fade-in-up stagger-2">

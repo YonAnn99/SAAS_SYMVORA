@@ -42,14 +42,18 @@ export function useInventoryAdjustments(
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    const [adjustmentsData, productsData] = await Promise.all([
-      fetchAdjustments(tenantId),
-      fetchAdjustmentProducts(tenantId),
-    ]);
-    setAdjustments(adjustmentsData);
-    setProducts(productsData);
-    setLoading(false);
-    guardarCache(["ajustes", tenantId], { ajustes: adjustmentsData, productos: productsData });
+    // Pase lo que pase, el "Cargando" se apaga: sin esto, un error lo dejaba fijo y solo se salia con F5.
+    try {
+      const [adjustmentsData, productsData] = await Promise.all([
+        fetchAdjustments(tenantId),
+        fetchAdjustmentProducts(tenantId),
+      ]);
+      setAdjustments(adjustmentsData);
+      setProducts(productsData);
+      guardarCache(["ajustes", tenantId], { ajustes: adjustmentsData, productos: productsData });
+    } finally {
+      setLoading(false);
+    }
   }, [tenantId]);
 
   useEffect(() => {

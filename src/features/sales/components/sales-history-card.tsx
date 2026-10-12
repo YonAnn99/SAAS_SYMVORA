@@ -53,6 +53,8 @@ interface SalesHistoryCardProps {
   tenantId: string | null;
   periodo: Periodo;
   fechaElegida: Date | null;
+  /** Sube con "Actualizar" de la pagina: vuelve a pedir la pagina actual. */
+  version?: number;
 }
 
 interface Cajero {
@@ -75,6 +77,7 @@ export function SalesHistoryCard({
   tenantId,
   periodo,
   fechaElegida,
+  version = 0,
 }: SalesHistoryCardProps) {
   const t = useTranslations();
   const { can } = usePermissions();
@@ -96,12 +99,21 @@ export function SalesHistoryCard({
     cargando,
     irAPagina,
     sinFechaElegida,
+    refetch,
   } = useSalesHistory(
     tenantId,
     periodo,
     fechaElegida,
     cajeroSel === TODOS_LOS_CAJEROS ? null : cajeroSel
   );
+
+  // "Actualizar" de la pagina (el 0 inicial no cuenta: la carga ya corre sola).
+  useEffect(() => {
+    if (!version) return;
+    void refetch();
+    // Solo cuando sube la version, no cuando cambia `refetch`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version]);
 
   // La lista de cajeros solo hace falta si se pueden ver las ventas de otros.
   useEffect(() => {

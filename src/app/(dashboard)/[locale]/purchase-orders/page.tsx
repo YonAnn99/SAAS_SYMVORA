@@ -17,6 +17,7 @@ import { PurchaseOrderDetailDialog } from "@/features/inventory";
 import { etiquetaVariante } from "@/features/inventory/purchase-order-items";
 import type { DetalleOrdenCompra } from "@/features/inventory";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 export default function PurchaseOrdersPage() {
   const { tenantId, tenantName, loading: tenantLoading } = useCurrentTenant();
@@ -51,6 +52,7 @@ export default function PurchaseOrdersPage() {
     handleReceive,
     handleWhatsApp,
     enviandoId,
+    refetch,
   } = usePurchaseOrders(tenantId, tenantLoading, tenantName ?? undefined);
   const [ordenAbierta, setOrdenAbierta] = useState<string | null>(null);
 
@@ -77,14 +79,16 @@ export default function PurchaseOrdersPage() {
             descripcion="Gestiona órdenes de compra con flujo de estados"
           />
         </div>
-        <SpecularActionButton
-          tone="add"
-          className="h-8 active:scale-[0.98] transition-transform"
-          onClick={handleAdd}
-        >
-
-          Nueva orden
-        </SpecularActionButton>
+        <div className="flex gap-2">
+          <BotonActualizar onActualizar={refetch} />
+          <SpecularActionButton
+            tone="add"
+            className="h-8 flex-1 active:scale-[0.98] transition-transform sm:flex-none"
+            onClick={handleAdd}
+          >
+            Nueva orden
+          </SpecularActionButton>
+        </div>
       </div>
 
       {/* Search */}

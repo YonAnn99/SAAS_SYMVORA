@@ -20,6 +20,7 @@ import { useSucursal } from "@/contexts/sucursal-context";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { destinoPorDefecto, sucursalDelPos } from "@/features/sucursales/seleccion";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 export default function FinancesPage() {
   const t = useTranslations();
@@ -99,6 +100,7 @@ export default function FinancesPage() {
           />
         </OpenSinceTooltip>
         <div className="flex items-center gap-2">
+        <BotonActualizar onActualizar={cash.refetch} />
         {esDueno && <SucursalSelector />}
         {!cash.activeRegister ? (
           <span id="tutorial-open-cash-btn">

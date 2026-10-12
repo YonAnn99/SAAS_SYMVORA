@@ -28,6 +28,7 @@ import { QuickFilters } from "@/features/inventory/components/products/quick-fil
 import { ProductsFilterDialog } from "@/features/inventory/components/products/products-filter-dialog";
 import { BotonEscanear } from "@/components/escaner/boton-escanear";
 import { BarraProductosMovil } from "@/features/inventory/components/products/barra-productos-movil";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { Button } from "@/components/ui/button";
 
 import { useVariants } from "@/features/inventory/hooks/use-variants";
@@ -213,6 +214,8 @@ export default function ProductsPage() {
 
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
+  // Sube con "Actualizar": vuelve a cargar tambien la pestaña Archivados.
+  const [actualizaciones, setActualizaciones] = useState(0);
   const [activeTab, setActiveTab] = useState(
     requestedTab && ["lots", "adjustments", "archived"].includes(requestedTab)
       ? requestedTab
@@ -294,6 +297,16 @@ export default function ProductsPage() {
           {/* Con varias sucursales, la columna de existencias es la del local
               elegido aqui. No se dibuja en un negocio de un solo local. */}
           <SucursalSelector className="order-1 h-8 w-full sm:order-none sm:w-auto" />
+          {/* Catalogo y Archivados. Lotes y Ajustes llevan el suyo en su barra. */}
+          {(currentTab === "catalog" || currentTab === "archived") && (
+            <BotonActualizar
+              className="order-5 col-span-2 w-full sm:order-none sm:col-span-1 sm:w-auto"
+              onActualizar={async () => {
+                setActualizaciones((v) => v + 1);
+                await Promise.all([refetch(), variantes.refetch()]);
+              }}
+            />
+          )}
           {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
               Va el primero porque es lo que menos se usa a diario; los dos de
               la derecha son los del trabajo del día. */}
@@ -532,7 +545,7 @@ export default function ProductsPage() {
               {tenantId && (
                 <ProductosArchivadosSeccion
                   tenantId={tenantId}
-                  version={archivadosVersion + variantes.archivadosVersion}
+                  version={archivadosVersion + variantes.archivadosVersion + actualizaciones}
                   onRestaurado={() => {
                     void refetch();
                     void variantes.refetch();

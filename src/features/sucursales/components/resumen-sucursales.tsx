@@ -48,7 +48,14 @@ const claveResumen = (tenantId: string) => {
   return ["resumen-sucursales", tenantId, hoy.getFullYear(), hoy.getMonth()];
 };
 
-export function ResumenSucursales({ tenantId }: { tenantId: string }) {
+export function ResumenSucursales({
+  tenantId,
+  version = 0,
+}: {
+  tenantId: string;
+  /** Sube con "Actualizar" de la pagina: vuelve a cargar. */
+  version?: number;
+}) {
   const { sucursales, seleccionada, setSeleccionada } = useSucursal();
   // Cache entre modulos (`lib/cache-datos.ts`), por negocio y mes: solo para
   // mostrar; `cargar` lo reemplaza en cuanto llega.
@@ -110,7 +117,7 @@ export function ResumenSucursales({ tenantId }: { tenantId: string }) {
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargar(), 0);
     return () => window.clearTimeout(t0);
-  }, [cargar]);
+  }, [cargar, version]);
 
   const { filas, total } = useMemo(
     () => resumenPorSucursal(sucursales, ventas, stock, cajas),

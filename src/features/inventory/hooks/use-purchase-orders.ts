@@ -81,24 +81,28 @@ export function usePurchaseOrders(
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    const [ordersData, suppliersData, productsData, variantsData] =
-      await Promise.all([
-        fetchOrders(tenantId),
-        fetchOrderSuppliers(tenantId),
-        fetchOrderProducts(tenantId),
-        fetchOrderVariants(tenantId),
-      ]);
-    setOrders(ordersData);
-    setSuppliers(suppliersData);
-    setProducts(productsData);
-    setVariants(variantsData);
-    setLoading(false);
-    guardarCache(["ordenes-compra", tenantId], {
-      ordenes: ordersData,
-      proveedores: suppliersData,
-      productos: productsData,
-      variantes: variantsData,
-    });
+    // Pase lo que pase, el "Cargando" se apaga: sin esto, un error lo dejaba fijo y solo se salia con F5.
+    try {
+      const [ordersData, suppliersData, productsData, variantsData] =
+        await Promise.all([
+          fetchOrders(tenantId),
+          fetchOrderSuppliers(tenantId),
+          fetchOrderProducts(tenantId),
+          fetchOrderVariants(tenantId),
+        ]);
+      setOrders(ordersData);
+      setSuppliers(suppliersData);
+      setProducts(productsData);
+      setVariants(variantsData);
+      guardarCache(["ordenes-compra", tenantId], {
+        ordenes: ordersData,
+        proveedores: suppliersData,
+        productos: productsData,
+        variantes: variantsData,
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [tenantId]);
 
   useEffect(() => {

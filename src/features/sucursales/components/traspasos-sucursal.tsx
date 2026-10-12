@@ -50,7 +50,14 @@ function fechaCorta(iso: string): string {
  * El servidor vuelve a validarlo todo igualmente (y bloquea la fila, por si
  * entre tanto se vendio): lo de aqui es para decirlo antes y sin viaje.
  */
-export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
+export function TraspasosSucursal({
+  tenantId,
+  version = 0,
+}: {
+  tenantId: string;
+  /** Sube con "Actualizar" de la pagina: vuelve a cargar existencias e historial. */
+  version?: number;
+}) {
   const { todasActivas, sucursales, seleccionada, permitidas } = useSucursal();
   const { can } = usePermissions();
   const puedeTraspasar = can("inventory.manage");
@@ -116,12 +123,12 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargarOpciones(), 0);
     return () => window.clearTimeout(t0);
-  }, [cargarOpciones]);
+  }, [cargarOpciones, version]);
 
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargarHistorial(), 0);
     return () => window.clearTimeout(t0);
-  }, [cargarHistorial]);
+  }, [cargarHistorial, version]);
 
   const porValor = useMemo(() => new Map(opciones.map((o) => [o.valor, o])), [opciones]);
 

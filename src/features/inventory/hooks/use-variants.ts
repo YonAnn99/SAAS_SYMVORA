@@ -102,30 +102,34 @@ export function useVariants(
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    const sumarSuyas = !seleccionada && restringido;
-    const [variantsData, productsData, stockLocal, favoritasData] = await Promise.all([
-      fetchVariants(tenantId),
-      cargarProductos ? fetchVariantProducts(tenantId) : Promise.resolve([] as ProductoOption[]),
-      seleccionada
-        ? fetchStockSucursal(seleccionada)
+    // Pase lo que pase, el "Cargando" se apaga: sin esto, un error lo dejaba fijo y solo se salia con F5.
+    try {
+      const sumarSuyas = !seleccionada && restringido;
+      const [variantsData, productsData, stockLocal, favoritasData] = await Promise.all([
+        fetchVariants(tenantId),
+        cargarProductos ? fetchVariantProducts(tenantId) : Promise.resolve([] as ProductoOption[]),
+        seleccionada
+          ? fetchStockSucursal(seleccionada)
+          : sumarSuyas
+            ? fetchStockSucursal(permitidas)
+            : Promise.resolve(null),
+        fetchVariantesFavoritas(tenantId),
+      ]);
+      const variantes = !stockLocal
+        ? variantsData
         : sumarSuyas
-          ? fetchStockSucursal(permitidas)
-          : Promise.resolve(null),
-      fetchVariantesFavoritas(tenantId),
-    ]);
-    const variantes = !stockLocal
-      ? variantsData
-      : sumarSuyas
-        ? conStockSumadoVariantes(variantsData, stockLocal)
-        : conStockDeSucursalVariantes(variantsData, stockLocal);
-    setFavoritas(favoritasData);
-    setVariants(variantes);
-    setProducts(productsData);
-    setLoading(false);
-    guardarCache<VariantesEnCache>(
-      ["variantes", tenantId, seleccionada, restringido, permitidas, cargarProductos],
-      { variantes, favoritas: [...favoritasData], productos: productsData }
-    );
+          ? conStockSumadoVariantes(variantsData, stockLocal)
+          : conStockDeSucursalVariantes(variantsData, stockLocal);
+      setFavoritas(favoritasData);
+      setVariants(variantes);
+      setProducts(productsData);
+      guardarCache<VariantesEnCache>(
+        ["variantes", tenantId, seleccionada, restringido, permitidas, cargarProductos],
+        { variantes, favoritas: [...favoritasData], productos: productsData }
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [tenantId, seleccionada, restringido, permitidas, cargarProductos]);
 
   useEffect(() => {

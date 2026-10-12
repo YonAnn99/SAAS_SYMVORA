@@ -127,32 +127,36 @@ export function useCashRegister(
       sucursalCargada.current = sucursalId;
       setLoading(true);
     }
-    const userId = await getCurrentUserId();
-    if (!userId) return;
+    // Pase lo que pase, el "Cargando" se apaga (si esta sigue siendo la ultima
+    // peticion): antes, sin usuario o con un error, se quedaba fijo hasta F5.
+    try {
+      const userId = await getCurrentUserId();
+      if (!userId) return;
 
-    const register = await fetchActiveRegister(userId, sucursalId);
-    if (register) {
-      const [movementData, ventasTotal] = await Promise.all([
-        fetchMovements(register.id),
-        fetchVentasTotal(
-          register.tenant_id,
-          userId,
-          register.fecha_apertura,
-          register.sucursal_id ?? null
-        ),
-      ]);
-      if (id !== peticion.current) return;
-      setActiveRegister(register);
-      setMovements(movementData);
-      setTotalVentas(ventasTotal);
-    } else {
-      if (id !== peticion.current) return;
-      setActiveRegister(null);
-      setMovements([]);
-      setTotalVentas(0);
+      const register = await fetchActiveRegister(userId, sucursalId);
+      if (register) {
+        const [movementData, ventasTotal] = await Promise.all([
+          fetchMovements(register.id),
+          fetchVentasTotal(
+            register.tenant_id,
+            userId,
+            register.fecha_apertura,
+            register.sucursal_id ?? null
+          ),
+        ]);
+        if (id !== peticion.current) return;
+        setActiveRegister(register);
+        setMovements(movementData);
+        setTotalVentas(ventasTotal);
+      } else {
+        if (id !== peticion.current) return;
+        setActiveRegister(null);
+        setMovements([]);
+        setTotalVentas(0);
+      }
+    } finally {
+      if (id === peticion.current) setLoading(false);
     }
-
-    setLoading(false);
   }, [sucursalId]);
 
   useEffect(() => {

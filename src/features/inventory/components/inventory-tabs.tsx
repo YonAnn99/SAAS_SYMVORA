@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import {
   useLots,
   LotDialog,
@@ -67,6 +68,7 @@ export function LotsSection({
     handleCreate,
     handleUpdate,
     handleDelete,
+    refetch,
   } = useLots(tenantId, tenantLoading);
 
   useAbrirCrearPedido(abrirCrear, openCreateDialog, onAbrirCrearAtendido);
@@ -83,13 +85,16 @@ export function LotsSection({
             className="pl-8 h-8 text-sm"
           />
         </div>
-        <SpecularActionButton
-          tone="add"
-          className="h-8 active:scale-[0.98] transition-transform"
-          onClick={openCreateDialog}
-        >
-          Registrar lote
-        </SpecularActionButton>
+        <div className="flex gap-2">
+          <BotonActualizar onActualizar={refetch} />
+          <SpecularActionButton
+            tone="add"
+            className="h-8 flex-1 active:scale-[0.98] transition-transform sm:flex-none"
+            onClick={openCreateDialog}
+          >
+            Registrar lote
+          </SpecularActionButton>
+        </div>
       </div>
 
       <LotsTable
@@ -148,6 +153,7 @@ export function AdjustmentsSection({
     saving,
     openCreateDialog,
     handleSave,
+    refetch,
   } = useInventoryAdjustments(tenantId, tenantLoading);
 
   useAbrirCrearPedido(abrirCrear, openCreateDialog, onAbrirCrearAtendido);
@@ -164,13 +170,16 @@ export function AdjustmentsSection({
             className="pl-8 h-8 text-sm"
           />
         </div>
-        <SpecularActionButton
-          tone="add"
-          className="h-8 active:scale-[0.98] transition-transform"
-          onClick={openCreateDialog}
-        >
-          Nuevo ajuste
-        </SpecularActionButton>
+        <div className="flex gap-2">
+          <BotonActualizar onActualizar={refetch} />
+          <SpecularActionButton
+            tone="add"
+            className="h-8 flex-1 active:scale-[0.98] transition-transform sm:flex-none"
+            onClick={openCreateDialog}
+          >
+            Nuevo ajuste
+          </SpecularActionButton>
+        </div>
       </div>
 
       <AdjustmentsTable

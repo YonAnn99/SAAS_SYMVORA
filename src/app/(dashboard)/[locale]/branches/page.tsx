@@ -14,6 +14,7 @@ import { ResumenSucursales } from "@/features/sucursales/components/resumen-sucu
 import { ExistenciasSucursal } from "@/features/sucursales/components/existencias-sucursal";
 import { TraspasosSucursal } from "@/features/sucursales/components/traspasos-sucursal";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 /**
  * Modulo de Sucursales.
@@ -32,8 +33,10 @@ import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
  */
 export default function BranchesPage() {
   const { tenantId, loading } = useCurrentTenant();
-  const { hayVarias } = useSucursal();
+  const { hayVarias, refetch: refetchSucursales } = useSucursal();
   const [pestana, setPestana] = useState("resumen");
+  // Sube con "Actualizar": Resumen, Existencias y Traspasos vuelven a cargar.
+  const [version, setVersion] = useState(0);
 
   // Lleva al formulario de alta de `SucursalesCard` y deja el cursor en
   // "Nombre", listo para escribir.
@@ -69,8 +72,16 @@ export default function BranchesPage() {
             descripcion="Compara tus locales, revisa sus existencias y mueve mercancía entre ellos"
           />
         </div>
-        {/* Con un solo local no hay nada que elegir. */}
-        {hayVarias && <SucursalSelector />}
+        <div className="flex items-center gap-2">
+          <BotonActualizar
+            onActualizar={async () => {
+              setVersion((v) => v + 1);
+              await refetchSucursales();
+            }}
+          />
+          {/* Con un solo local no hay nada que elegir. */}
+          {hayVarias && <SucursalSelector />}
+        </div>
       </div>
 
       {!hayVarias ? (
@@ -130,13 +141,13 @@ export default function BranchesPage() {
           </TabsList>
 
           <TabsContent value="resumen">
-            <ResumenSucursales tenantId={tenantId} />
+            <ResumenSucursales tenantId={tenantId} version={version} />
           </TabsContent>
           <TabsContent value="existencias">
-            <ExistenciasSucursal tenantId={tenantId} />
+            <ExistenciasSucursal tenantId={tenantId} version={version} />
           </TabsContent>
           <TabsContent value="traspasos">
-            <TraspasosSucursal tenantId={tenantId} />
+            <TraspasosSucursal tenantId={tenantId} version={version} />
           </TabsContent>
           <TabsContent value="locales">
             <SucursalesCard />

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -31,7 +32,7 @@ const MAX_NOMBRE = 30;
 export default function PriceListsPage() {
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const { listas, loading, saving, crear, alternarActiva, eliminar } =
+  const { listas, loading, saving, refetch, crear, alternarActiva, eliminar } =
     usePriceLists(tenantId, tenantLoading);
 
   const [creando, setCreando] = useState(false);
@@ -78,13 +79,16 @@ export default function PriceListsPage() {
             precios de distribuidor
           </p>
         </div>
-        <SpecularActionButton
-          tone="money"
-          className="h-8 active:scale-[0.98] transition-transform"
-          onClick={() => setCreando(true)}
-        >
-          Crear lista
-        </SpecularActionButton>
+        <div className="flex gap-2">
+          <BotonActualizar onActualizar={refetch} />
+          <SpecularActionButton
+            tone="money"
+            className="h-8 active:scale-[0.98] transition-transform"
+            onClick={() => setCreando(true)}
+          >
+            Crear lista
+          </SpecularActionButton>
+        </div>
       </div>
 
       {loading ? (

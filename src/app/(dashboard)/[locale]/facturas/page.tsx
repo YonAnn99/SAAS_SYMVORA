@@ -57,6 +57,7 @@ import {
   USOS_CFDI,
 } from "@/features/facturacion/catalogs";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 interface FacturaLinea {
   producto_id: string;
@@ -354,6 +355,10 @@ export default function FacturasPage() {
           />
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <BotonActualizar
+            className="w-full sm:w-auto"
+            onActualizar={() => Promise.all([fetchFacturas(), fetchProductos()])}
+          />
           <Button
             size="sm"
             variant="outline"

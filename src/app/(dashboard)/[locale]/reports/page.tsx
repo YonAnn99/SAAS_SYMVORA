@@ -60,6 +60,7 @@ import { SalesHistoryCard } from "@/features/sales/components/sales-history-card
 import { ComprasPeriodoCard } from "@/features/inventory/components/compras-periodo-card";
 import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface ReportData {
@@ -181,6 +182,9 @@ export default function ReportsPage() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const today = useMemo(() => startOfDay(new Date()), []);
+
+  // Sube con "Actualizar": el historial de ventas vuelve a pedir su pagina.
+  const [versionHistorial, setVersionHistorial] = useState(0);
 
   const fetchReportData = useCallback(async () => {
     if (!tenantId) return;
@@ -668,6 +672,12 @@ export default function ReportsPage() {
             <Download className="h-3.5 w-3.5" />
             Exportar
           </Button>
+          <BotonActualizar
+            onActualizar={async () => {
+              setVersionHistorial((v) => v + 1);
+              await fetchReportData();
+            }}
+          />
         </div>
       </div>
 
@@ -934,6 +944,7 @@ export default function ReportsPage() {
         tenantId={tenantId}
         periodo={periodo}
         fechaElegida={selectedDate}
+        version={versionHistorial}
       />
     </div>
   );

@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { calcularGanancia } from "@/lib/profit";
 import { primerNombre } from "@/lib/nombre-usuario";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface DashboardStats {
@@ -266,14 +267,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2 self-start">
           <SucursalSelector />
-          <SpecularActionButton
-            tone="neutral"
-            onClick={fetchDashboardData}
-            disabled={loading}
-            className="h-9 gap-2"
-          >
-            Actualizar
-          </SpecularActionButton>
+          <BotonActualizar className="h-9" onActualizar={fetchDashboardData} />
         </div>
       </div>
 

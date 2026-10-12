@@ -82,32 +82,36 @@ export function useProducts(
 
   const refetch = useCallback(async () => {
     if (!tenantId) return;
-    // En paralelo: son tablas distintas y esperar una para pedir la otra solo
-    // suma latencia a la primera carga.
-    // "Todas" de un usuario restringido son SUS locales: se suman esos, no el
-    // total del negocio, que incluiria sucursales que no lleva.
-    const sumarSuyas = !seleccionada && restringido;
-    const [data, favs, stockLocal] = await Promise.all([
-      fetchProducts(tenantId),
-      fetchFavoritos(tenantId),
-      seleccionada
-        ? fetchStockSucursal(seleccionada)
+    // Pase lo que pase, el "Cargando" se apaga: sin esto, un error lo dejaba fijo y solo se salia con F5.
+    try {
+      // En paralelo: son tablas distintas y esperar una para pedir la otra solo
+      // suma latencia a la primera carga.
+      // "Todas" de un usuario restringido son SUS locales: se suman esos, no el
+      // total del negocio, que incluiria sucursales que no lleva.
+      const sumarSuyas = !seleccionada && restringido;
+      const [data, favs, stockLocal] = await Promise.all([
+        fetchProducts(tenantId),
+        fetchFavoritos(tenantId),
+        seleccionada
+          ? fetchStockSucursal(seleccionada)
+          : sumarSuyas
+            ? fetchStockSucursal(permitidas)
+            : Promise.resolve(null),
+      ]);
+      const productos = !stockLocal
+        ? data
         : sumarSuyas
-          ? fetchStockSucursal(permitidas)
-          : Promise.resolve(null),
-    ]);
-    const productos = !stockLocal
-      ? data
-      : sumarSuyas
-        ? conStockSumado(data, stockLocal)
-        : conStockDeSucursal(data, stockLocal);
-    setProducts(productos);
-    setFavoritos(favs);
-    setLoading(false);
-    guardarCache<ProductosEnCache>(["productos", tenantId, seleccionada, restringido, permitidas], {
-      productos,
-      favoritos: [...favs],
-    });
+          ? conStockSumado(data, stockLocal)
+          : conStockDeSucursal(data, stockLocal);
+      setProducts(productos);
+      setFavoritos(favs);
+      guardarCache<ProductosEnCache>(["productos", tenantId, seleccionada, restringido, permitidas], {
+        productos,
+        favoritos: [...favs],
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [tenantId, seleccionada, restringido, permitidas]);
 
   useEffect(() => {

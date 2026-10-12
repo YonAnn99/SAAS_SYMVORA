@@ -13,6 +13,7 @@ import { PurchaseDetailDialog } from "@/features/inventory";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useAccionRapida } from "@/hooks/use-accion-rapida";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 export default function PurchasesPage() {
   const t = useTranslations();
@@ -39,6 +40,7 @@ export default function PurchasesPage() {
     handleCancelPurchase,
     products,
     variants,
+    refetch,
   } = usePurchases(tenantId, tenantLoading);
   const [compraAbierta, setCompraAbierta] = useState<string | null>(null);
   const [pestana, setPestana] = useState("purchases");
@@ -64,11 +66,12 @@ export default function PurchasesPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="animate-fade-in-up stagger-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <EncabezadoModulo
           titulo={t("purchases.title")}
           descripcion="Gestiona compras y proveedores"
         />
+        <BotonActualizar className="self-start sm:self-auto" onActualizar={refetch} />
       </div>
 
       <Tabs
