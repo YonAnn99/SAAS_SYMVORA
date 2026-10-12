@@ -200,4 +200,31 @@ describe("completeSale", () => {
       "Error al procesar la venta"
     );
   });
+
+  it("manda los insumos ajustados de un servicio, sin nombres y unidos (117)", async () => {
+    rpcMock.mockResolvedValueOnce({ data: { id: "venta-5" }, error: null });
+    await completeSale({
+      ...params,
+      items: [
+        {
+          productId: "serv",
+          nombre: "Consulta",
+          cantidad: 1,
+          precioUnitario: 300,
+          descuento: 0,
+          unidad_medida: "SERVICIO",
+          insumos: [
+            { productId: "vac", varianteId: null, cantidad: 0.5, nombre: "Vacuna" },
+            { productId: "vac", varianteId: null, cantidad: 0.25, nombre: "Vacuna" },
+            { productId: "jer", varianteId: null, cantidad: 0, nombre: "Jeringa" },
+          ],
+        },
+        params.items[0],
+      ],
+    });
+    const [servicio, normal] = rpcMock.mock.calls[0][1].p_items;
+    expect(servicio.insumos).toEqual([{ productId: "vac", varianteId: null, cantidad: 0.75 }]);
+    // Sin ajuste no viaja la clave: el servidor usa la receta.
+    expect("insumos" in normal).toBe(false);
+  });
 });

@@ -50,8 +50,11 @@ export interface VarianteOption {
 export interface LoteOption {
   id: string;
   numero_lote: string;
+  /** Total en todas las sucursales (migracion 116: SUM de existencias_lote). */
   cantidad: number;
   fecha_caducidad: string | null;
+  variante_id?: string | null;
+  existencias_lote?: { sucursal_id: string; cantidad: number }[];
 }
 
 export interface ProductFormData {
@@ -116,24 +119,6 @@ export const defaultVarianteFormData: VarianteFormData = {
   precio_venta: "",
   costo_compra: "",
   stock_actual: "0",
-};
-
-export interface LoteFormData {
-  producto_id: string;
-  numero_lote: string;
-  cantidad: string;
-  fecha_caducidad: string;
-  fecha_fabricacion: string;
-  costo_unitario: string;
-}
-
-export const defaultLoteFormData: LoteFormData = {
-  producto_id: "",
-  numero_lote: "",
-  cantidad: "",
-  fecha_caducidad: "",
-  fecha_fabricacion: "",
-  costo_unitario: "",
 };
 
 export type MotivoAjuste =

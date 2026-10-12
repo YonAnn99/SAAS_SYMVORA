@@ -1,3 +1,4 @@
+import { insumosParaRpc, type InsumoLinea } from "@/features/inventory/insumos";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Producto } from "@/lib/types/database";
 import type { MetodoPago, SaleTotals, VarianteProducto } from "../types/pos.types";
@@ -17,6 +18,8 @@ export interface SaleItem {
   precioUnitario: number;
   descuento: number;
   unidad_medida: string;
+  /** Insumos ajustados de un servicio (117). Sin la clave: la receta. */
+  insumos?: InsumoLinea[] | null;
 }
 
 export interface CompleteSaleParams {
@@ -119,6 +122,8 @@ export async function completeSale(params: CompleteSaleParams) {
       varianteId: item.varianteId ?? null,
       cantidad: item.cantidad,
       descuento: item.descuento,
+      // Solo si se ajustaron en el POS: sin la clave, el servidor usa la receta.
+      ...(item.insumos ? { insumos: insumosParaRpc(item.insumos) } : {}),
     })),
     p_include_iva: includeIva,
     p_notas: notas || null,

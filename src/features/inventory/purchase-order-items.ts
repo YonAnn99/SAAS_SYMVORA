@@ -13,6 +13,8 @@ export interface ProductoOpcion {
   nombre: string;
   costo_compra: number;
   categoria: string | null;
+  /** "Maneja lotes y caducidad": la compra pide lote por renglon (migracion 116). */
+  permite_lotes?: boolean | null;
 }
 
 export interface VarianteOpcion {
@@ -34,6 +36,8 @@ export interface OpcionCompra {
   keywords: string;
   /** La del producto; las variantes heredan la de su padre. */
   categoria: string | null;
+  /** Del producto (las variantes lo heredan): pide lote y caducidad. */
+  conLotes?: boolean;
 }
 
 const SEPARADOR = "::";
@@ -85,6 +89,7 @@ export function construirOpciones(
       costo: Number(p.costo_compra) || 0,
       keywords: p.nombre,
       categoria: p.categoria,
+      conLotes: Boolean(p.permite_lotes),
     });
 
     // Un producto marcado `permite_variantes` pero SIN variantes creadas no
@@ -103,6 +108,7 @@ export function construirOpciones(
         costo: Number(v.costo_compra) || 0,
         keywords: `${p.nombre} ${sufijo}`,
         categoria: p.categoria,
+        conLotes: Boolean(p.permite_lotes),
       });
     }
   }

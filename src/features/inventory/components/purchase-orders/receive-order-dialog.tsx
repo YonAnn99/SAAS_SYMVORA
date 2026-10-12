@@ -51,6 +51,8 @@ interface ReceiveOrderDialogProps {
   details: DetalleOrdenCompra[];
   /** Nombre a mostrar en el renglón, ya con la variante si la lleva. */
   nombreProducto: (productoId: string, varianteId: string | null) => string;
+  /** "Maneja lotes y caducidad": se pide lote y caducidad de lo que llega. */
+  conLotes?: (productoId: string) => boolean;
   saving: boolean;
   /** `cajaId`: "Pagada con efectivo de la caja"; `null` si se paga por fuera. */
   onConfirm: (
@@ -69,11 +71,14 @@ export function ReceiveOrderDialog({
   order,
   details,
   nombreProducto,
+  conLotes,
   saving,
   onConfirm,
 }: ReceiveOrderDialogProps) {
   /** Lo que se escribe en cada renglón, como texto. Clave: id del detalle. */
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
+  /** Lote y caducidad por renglon (solo productos con lotes). */
+  const [lotes, setLotes] = useState<Record<string, { numero: string; caducidad: string }>>({});
   const [numeroFactura, setNumeroFactura] = useState("");
   const [pagarConCaja, setPagarConCaja] = useState(false);
   const { tenantId } = useCurrentTenant();
@@ -95,6 +100,7 @@ export function ReceiveOrderDialog({
         inicial[d.id] = String(pendientePorLinea(d));
       }
       setCantidades(inicial);
+      setLotes({});
       setNumeroFactura("");
       setPagarConCaja(false);
     }, 0);
@@ -147,7 +153,18 @@ export function ReceiveOrderDialog({
   function confirmar() {
     const items: ItemRecepcion[] = lineas
       .filter((l) => l.valor > 0)
-      .map((l) => ({ detalle_id: l.detalle.id, cantidad_recibida: l.valor }));
+      .map((l) => {
+        const lote = lotes[l.detalle.id];
+        const numero = lote?.numero.trim();
+        return numero
+          ? {
+              detalle_id: l.detalle.id,
+              cantidad_recibida: l.valor,
+              numero_lote: numero,
+              fecha_caducidad: lote.caducidad || null,
+            }
+          : { detalle_id: l.detalle.id, cantidad_recibida: l.valor };
+      });
     onConfirm(
       items,
       numeroFactura.trim() || null,
@@ -192,6 +209,42 @@ export function ReceiveOrderDialog({
                       <span className="block text-xs text-destructive">
                         {l.parseo.error}
                       </span>
+                    )}
+                    {conLotes?.(l.detalle.producto_id) && l.pendiente > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <Input
+                          placeholder="Lote (opcional)"
+                          aria-label="Número de lote"
+                          value={lotes[l.detalle.id]?.numero ?? ""}
+                          onChange={(e) =>
+                            setLotes((prev) => ({
+                              ...prev,
+                              [l.detalle.id]: {
+                                numero: e.target.value,
+                                caducidad: prev[l.detalle.id]?.caducidad ?? "",
+                              },
+                            }))
+                          }
+                          disabled={saving}
+                          className="h-7 w-32 font-mono text-xs"
+                        />
+                        <Input
+                          type="date"
+                          aria-label="Caducidad del lote"
+                          value={lotes[l.detalle.id]?.caducidad ?? ""}
+                          onChange={(e) =>
+                            setLotes((prev) => ({
+                              ...prev,
+                              [l.detalle.id]: {
+                                numero: prev[l.detalle.id]?.numero ?? "",
+                                caducidad: e.target.value,
+                              },
+                            }))
+                          }
+                          disabled={saving}
+                          className="h-7 w-36 text-xs"
+                        />
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">

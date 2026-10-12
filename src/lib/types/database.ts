@@ -824,7 +824,10 @@ export type Database = {
           id: string;
           tenant_id: string;
           producto_id: string;
+          /** NULL = lote del producto; si no, de esa variante (migracion 116). */
+          variante_id: string | null;
           numero_lote: string;
+          /** SUM(existencias_lote): la mantiene un trigger, no se escribe a mano. */
           cantidad: number;
           fecha_caducidad: string | null;
           fecha_fabricacion: string | null;

@@ -71,11 +71,11 @@ export async function fetchProductLots(
   const supabase = createSupabaseBrowserClient();
   const { data } = await supabase
     .from("lotes")
-    .select("id, numero_lote, cantidad, fecha_caducidad")
+    .select("id, numero_lote, cantidad, fecha_caducidad, variante_id, existencias_lote(sucursal_id, cantidad)")
     .eq("tenant_id", tenantId)
     .eq("producto_id", productoId)
-    .eq("estado", "ACTIVO")
-    .order("fecha_caducidad", { ascending: true });
+    // Tambien los agotados: un conteo puede devolverle piezas a su lote.
+    .order("fecha_caducidad", { ascending: true, nullsFirst: false });
   return data ?? [];
 }
 

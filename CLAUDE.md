@@ -277,6 +277,39 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   la base, nunca de la petición.
 - **Pendiente:** Google Wallet y Apple Wallet (requieren cuentas de emisor) y lealtad con terminal Mercado Pago.
 
+## Lotes por sucursal (116) e insumos por servicio (117), 2026-10-12
+- **Regla central:** la existencia sigue siendo `stock_sucursal.cantidad`. Los lotes la REPARTEN:
+  `existencias_lote(lote_id, sucursal_id, cantidad)` con Σ ≤ stock; lo que sobra es stock «sin lote».
+  - `lotes.cantidad` = Σ existencias (trigger); nadie la escribe a mano (otro trigger la protege).
+  - `lotes.variante_id`: un producto con variantes tiene lotes por variante.
+  - `movimientos_lote` es el kárdex: COMPRA, VENTA, INSUMO, TRASPASO_*, AJUSTE, CUADRE…
+  - Tablas solo con SELECT por RLS; se escribe por RPC.
+- **Consumo FEFO** (`_consumir_lotes`): primero el lote que caduca antes, luego lo sin lote.
+  - **Las piezas de lotes caducados NO se venden** (decisión de negocio): la venta falla con «hay piezas de lotes
+    caducados (lote X)». Caducado = `fecha_caducidad < hoy` en CDMX (`_hoy_mx`).
+  - El traspaso mueve los mismos lotes al destino (vigentes, luego sin lote, al final caducados).
+  - Compras (directa y recepción de OC) aceptan `numero_lote`/`fecha_caducidad` por renglón (opcional).
+  - Un ajuste con lote mueve ese lote en esa sucursal.
+  - **Cuadre:** trigger en `stock_sucursal`: si el stock baja por una ruta que no sabe de lotes, consume el
+    excedente FEFO. Nunca hay más lotes que stock.
+- Alta manual: `registrar_lote` («ya está en mi inventario» reparte stock sin lote; «mercancía nueva» suma con
+  un `ajustes_inventario` OTRO). Un lote con ventas o traspasos no se borra.
+- **Insumos por servicio:** `insumos_servicio` (receta por unidad), editada en el producto con
+  `guardar_insumos_servicio` (sobre un servicio ya guardado).
+  - Al cobrar, `_crear_venta_desde_items` los descuenta con sus lotes (INSUMO).
+  - En el POS la línea puede traer `insumos` (TOTALES de la línea, `CartItem.insumos`). Sin la clave: la receta.
+    Al cambiar la cantidad, los ajustados se escalan.
+  - **Si un insumo no alcanza, NO se bloquea el cobro:** baja hasta 0 y queda `faltante` en
+    `detalle_venta_insumos`. El costo del servicio suma el de sus insumos.
+- `_crear_venta_desde_items` (117) valida lo vendido directo AGREGADO por producto/variante: dos renglones del
+  mismo producto ya no pasan del stock. Los candados incluyen los insumos, en el mismo orden por id (107).
+- Frontend:
+  - Lógica pura en `features/inventory/lotes.ts` e `insumos.ts`.
+  - Pestaña Lotes con existencias por sucursal y kárdex (`lote-movimientos-dialog.tsx`).
+  - Vista previa de lotes en Traspasos.
+  - Detalle de venta con lotes e insumos.
+- Pendiente: aviso de lotes por caducar (hoy solo el badge en la pestaña Lotes) y expediente clínico.
+
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
@@ -352,9 +385,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (993 tests al 2026-10-08) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1078 tests al 2026-10-12) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 115; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 117; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

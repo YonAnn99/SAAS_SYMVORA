@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { CampoSucursal } from "@/features/sucursales/components/campo-sucursal";
 import { destinoPorDefecto } from "@/features/sucursales/seleccion";
+import { existenciaEn } from "../../lotes";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -86,16 +87,29 @@ export function AdjustmentDialog({
     return variant ? `${variant.talla} - ${variant.color} (${variant.sku || "N/A"})` : formData.variante_id;
   }, [variants, formData.variante_id]);
 
-  const selectedLotName = useMemo(() => {
-    if (!formData.lote_id) return "";
-    const lot = lots.find((l) => l.id === formData.lote_id);
-    if (!lot) return formData.lote_id;
-    let display = `${lot.numero_lote} - ${lot.cantidad} unidades`;
+  // 116: el lote se ajusta en la sucursal elegida. Se ofrecen los de la
+  // variante elegida, con lo que hay de cada uno en ESA sucursal.
+  const lotesDelAjuste = useMemo(
+    () =>
+      lots
+        .filter((l) => (l.variante_id ?? "") === formData.variante_id)
+        .map((l) => ({
+          ...l,
+          enSucursal: existenciaEn(l.existencias_lote, sucursalId),
+        })),
+    [lots, formData.variante_id, sucursalId]
+  );
+
+  const etiquetaLote = (lot: (typeof lotesDelAjuste)[number]) => {
+    let display = `${lot.numero_lote} · ${lot.enSucursal} aquí`;
     if (lot.fecha_caducidad) {
-      display += ` (Exp: ${new Date(lot.fecha_caducidad).toLocaleDateString("es-MX")})`;
+      display += ` (cad. ${new Date(`${lot.fecha_caducidad}T12:00:00`).toLocaleDateString("es-MX")})`;
     }
     return display;
-  }, [lots, formData.lote_id]);
+  };
+
+  const loteElegido = lotesDelAjuste.find((l) => l.id === formData.lote_id);
+  const selectedLotName = loteElegido ? etiquetaLote(loteElegido) : "";
 
   const updateField = (field: keyof AjusteFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -193,7 +207,9 @@ export function AdjustmentDialog({
               <Label className="text-xs">Variante (opcional)</Label>
               <Select
                 value={formData.variante_id}
-                onValueChange={(v) => updateField("variante_id", v ?? "")}
+                onValueChange={(v) =>
+                  setFormData((prev) => ({ ...prev, variante_id: v ?? "", lote_id: "" }))
+                }
               >
                 <SelectTrigger className="h-8 w-full text-sm">
                   <SelectValue placeholder="Sin variante">
@@ -212,7 +228,7 @@ export function AdjustmentDialog({
             </div>
           )}
 
-          {lots.length > 0 && (
+          {lotesDelAjuste.length > 0 && (
             <div className="space-y-1.5">
               <Label className="text-xs">Lote (opcional)</Label>
               <Select
@@ -226,13 +242,9 @@ export function AdjustmentDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Sin lote</SelectItem>
-                  {lots.map((lot) => (
+                  {lotesDelAjuste.map((lot) => (
                     <SelectItem key={lot.id} value={lot.id}>
-                      {lot.numero_lote} - {lot.cantidad} unidades
-                      {lot.fecha_caducidad &&
-                        ` (Exp: ${new Date(lot.fecha_caducidad).toLocaleDateString(
-                          "es-MX"
-                        )})`}
+                      {etiquetaLote(lot)}
                     </SelectItem>
                   ))}
                 </SelectContent>

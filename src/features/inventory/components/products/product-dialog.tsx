@@ -1,5 +1,7 @@
 "use client";
 
+import { usePermissions } from "@/hooks/use-permissions";
+import { InsumosServicioEditor } from "./insumos-servicio-editor";
 import { useTranslations } from "next-intl";
 import {
   UNIDADES,
@@ -98,6 +100,7 @@ export function ProductDialog({
   // Modulos del negocio (Configuracion -> Modulos): deciden que unidades y que
   // opciones se ofrecen. Lo que el producto YA usa se muestra siempre.
   const { modulos } = useModulos();
+  const { can } = usePermissions();
   const [formData, setFormData] = useState<ProductFormData>(
     defaultProductFormData
   );
@@ -680,6 +683,17 @@ export function ProductDialog({
             </p>
           </div>
           )}
+          {/* Insumos por servicio (migracion 117): la receta se edita sobre un
+              servicio ya guardado, porque necesita su id. */}
+          {formData.es_servicio &&
+            (editingProduct?.es_servicio && can("inventory.manage") ? (
+              <InsumosServicioEditor tenantId={tenantId} servicioId={editingProduct.id} />
+            ) : !editingProduct ? (
+              <p className="ml-11 text-[11px] text-muted-foreground">
+                ¿Usa medicamentos o materiales? Guarda el servicio y vuelve a abrirlo para indicar
+                sus insumos: se descontarán solos al cobrarlo.
+              </p>
+            ) : null)}
           {(modulos.permite_lotes_caducidad || formData.permite_lotes) && (
           <div className="space-y-1">
             <div className="flex items-center gap-2">

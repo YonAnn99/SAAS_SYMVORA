@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -73,11 +73,15 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type {
+  CartItem,
   MetodoPagoDirecto,
   Producto,
   SaleReceipt,
   VarianteProducto,
 } from "@/features/pos/types/pos.types";
+import { insumosDeLinea, type RecetasServicio } from "@/features/inventory/insumos";
+import { fetchRecetasServicios } from "@/features/inventory/services/insumos-service";
+import { InsumosVentaDialog } from "@/features/pos/components/insumos-venta-dialog";
 
 export default function POSPage() {
   const t = useTranslations();
@@ -110,8 +114,36 @@ export default function POSPage() {
     seleccionada,
     activas,
   });
-  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, setIncludeIva, clearCart, descuentoTicket, restaurado: carritoRestaurado } =
+  const { items, totals, itemCount, includeIva, addItem, removeItem, updateQuantity, updateInsumos, setIncludeIva, clearCart, descuentoTicket, restaurado: carritoRestaurado } =
     usePosCart(tenantId, usuarioContexto || null);
+
+  // Insumos por servicio (migracion 117): las recetas se cargan aparte del
+  // catalogo; si fallan, el servidor usa igual la receta al cobrar.
+  const [recetas, setRecetas] = useState<RecetasServicio>(() => new Map());
+  const [lineaInsumos, setLineaInsumos] = useState<CartItem | null>(null);
+  useEffect(() => {
+    if (!tenantId) return;
+    let vigente = true;
+    fetchRecetasServicios(tenantId)
+      .then((r) => vigente && setRecetas(r))
+      .catch(() => undefined);
+    return () => {
+      vigente = false;
+    };
+  }, [tenantId]);
+  // Un servicio sin receta solo ofrece "insumos" si el negocio ya los usa.
+  const insumosDe = useCallback(
+    (item: CartItem) =>
+      insumosDeLinea(item, recetas) ??
+      (recetas.size > 0 && item.unidad_medida === "SERVICIO" ? [] : null),
+    [recetas]
+  );
+  // Estable mientras la ventana esta abierta: si cambiara en cada render, la
+  // ventana reiniciaria lo que se esta editando.
+  const insumosDeLaLinea = useMemo(
+    () => (lineaInsumos ? insumosDe(lineaInsumos) : null),
+    [lineaInsumos, insumosDe]
+  );
   const {
     products,
     variantsByProduct,
@@ -944,6 +976,8 @@ export default function POSPage() {
           items={items}
           totals={totalsCobro}
           premioLealtad={premioLealtad}
+          insumosDe={insumosDe}
+          onEditarInsumos={setLineaInsumos}
           bajoCliente={tiraLealtad}
           itemCount={itemCount}
           includeIva={includeIva}
@@ -996,6 +1030,8 @@ export default function POSPage() {
               items={items}
               totals={totalsCobro}
               premioLealtad={premioLealtad}
+              insumosDe={insumosDe}
+              onEditarInsumos={setLineaInsumos}
               bajoCliente={tiraLealtad}
               itemCount={itemCount}
               includeIva={includeIva}
@@ -1024,6 +1060,19 @@ export default function POSPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <InsumosVentaDialog
+        item={lineaInsumos}
+        insumos={insumosDeLaLinea}
+        tenantId={tenantId}
+        onGuardar={(insumos) => {
+          if (lineaInsumos) {
+            updateInsumos(cartLineKey(lineaInsumos.productId, lineaInsumos.varianteId), insumos);
+          }
+          setLineaInsumos(null);
+        }}
+        onClose={() => setLineaInsumos(null)}
+      />
 
       <CantidadDialog
         open={pidiendoCantidad !== null}

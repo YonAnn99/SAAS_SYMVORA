@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { FlaskConical, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -23,6 +23,7 @@ import {
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
 import { useEsEscritorio } from "@/hooks/use-es-movil";
+import { textoInsumos, type InsumoLinea } from "@/features/inventory/insumos";
 
 /**
  * Cantidad de una linea: se toca para escribirla. Sirve para 0.750 kg y
@@ -92,6 +93,9 @@ interface PosCartProps {
    * solo lo suyo.
    */
   premioLealtad?: { etiqueta: string; monto: number } | null;
+  /** Insumos que usara un servicio del carrito (117); `null` si no lleva. */
+  insumosDe?: (item: CartItem) => InsumoLinea[] | null;
+  onEditarInsumos?: (item: CartItem) => void;
 }
 
 export function PosCart({
@@ -103,6 +107,8 @@ export function PosCart({
   onRemove,
   onToggleIva,
   premioLealtad = null,
+  insumosDe,
+  onEditarInsumos,
 }: PosCartProps) {
   const t = useTranslations();
   // Celular y tablet (la hoja del carrito): cada linea es una pastilla que se
@@ -136,6 +142,7 @@ export function PosCart({
           <div className="flex-1 min-h-32 overflow-y-auto space-y-3">
             {items.map((item) => {
               const clave = cartLineKey(item.productId, item.varianteId);
+              const insumos = insumosDe?.(item) ?? null;
               const fila = (
                 <>
                 <div className="flex-1 min-w-0">
@@ -150,6 +157,22 @@ export function PosCart({
                   <p className="text-xs text-muted-foreground font-mono">
                     ${item.precioUnitario.toFixed(2)} x {formatearCantidad(item.cantidad, item.unidad_medida)}
                   </p>
+                  {insumos && (
+                    <button
+                      type="button"
+                      onPointerDown={noArrastrar}
+                      onClick={() => onEditarInsumos?.(item)}
+                      disabled={!onEditarInsumos}
+                      title="Ajustar los insumos de esta venta"
+                      className="mt-0.5 flex max-w-full items-center gap-1 text-left text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      <FlaskConical className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      <span className="truncate">
+                        {item.insumos ? "Ajustado: " : "Usa: "}
+                        {textoInsumos(insumos)}
+                      </span>
+                    </button>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 max-lg:gap-0.5 max-lg:rounded-xl max-lg:bg-background max-lg:p-0.5" onPointerDown={noArrastrar}>
                   {/* Por medida (kg, m…) no hay ±1: 0.750 kg + 1 no es lo que
@@ -198,7 +221,7 @@ export function PosCart({
                   <FilaDeslizable
                     key={clave}
                     label={item.nombre}
-                    alto={68}
+                    alto={insumos ? 84 : 68}
                     onOpenChange={alAbrir}
                     acciones={[
                       {

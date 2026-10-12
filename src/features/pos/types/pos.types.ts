@@ -1,3 +1,4 @@
+import type { InsumoLinea } from "@/features/inventory/insumos";
 import type { Cliente, Producto } from "@/lib/types/database";
 
 export type { Cliente, Producto };
@@ -23,6 +24,11 @@ export interface CartItem {
   precioUnitario: number;
   descuento: number;
   unidad_medida: UnidadMedida;
+  /**
+   * Insumos de un SERVICIO ajustados para esta venta (migracion 117), en
+   * cantidades TOTALES de la linea. Sin la clave, el servidor usa la receta.
+   */
+  insumos?: InsumoLinea[] | null;
 }
 
 export interface SaleTotals {

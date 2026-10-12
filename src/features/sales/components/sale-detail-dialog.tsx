@@ -28,6 +28,11 @@ import { clavePagoI18n, numeroOperacion } from "@/features/pos/ticket-format";
 import { formatMXN } from "@/lib/money";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { useSaleDetail } from "../hooks/use-sales-history";
+import { fetchLotesDeVenta, textoLotes, type LoteDeVenta } from "../services/lotes-de-venta";
+import {
+  fetchInsumosDeVenta,
+  type InsumoDeVenta,
+} from "@/features/inventory/services/insumos-service";
 
 interface SaleDetailDialogProps {
   /** Id de la venta a mostrar, o `null` para cerrar. */
@@ -53,6 +58,41 @@ export function SaleDetailDialog({
   const t = useTranslations();
   const { venta, receipt, cargando, abrir, cerrar } = useSaleDetail();
   const [ticketAbierto, setTicketAbierto] = useState(false);
+  // Lotes que salieron con esta venta (116). Solo informativo: si falla, no
+  // estorba al detalle ni a la reimpresion.
+  const [lotes, setLotes] = useState<LoteDeVenta[]>([]);
+  // Insumos que uso cada servicio (117), con lo que falto en existencias.
+  const [insumos, setInsumos] = useState<InsumoDeVenta[]>([]);
+
+  useEffect(() => {
+    if (!ventaId) return;
+    let vigente = true;
+    const t0 = window.setTimeout(() => {
+      setLotes([]);
+      setInsumos([]);
+      fetchLotesDeVenta(ventaId)
+        .then((l) => vigente && setLotes(l))
+        .catch(() => undefined);
+      fetchInsumosDeVenta(ventaId)
+        .then((i) => vigente && setInsumos(i))
+        .catch(() => undefined);
+    }, 0);
+    return () => {
+      vigente = false;
+      window.clearTimeout(t0);
+    };
+  }, [ventaId]);
+
+  const insumosDe = (servicioId: string) => insumos.filter((i) => i.servicio_id === servicioId);
+  const lotesDeInsumo = (productoId: string, varianteId: string | null) =>
+    lotes.filter(
+      (l) => l.tipo === "INSUMO" && l.producto_id === productoId && (l.variante_id ?? null) === varianteId
+    );
+
+  const lotesDe = (productoId: string, varianteId: string | null) =>
+    lotes.filter(
+      (l) => l.tipo === "VENTA" && l.producto_id === productoId && (l.variante_id ?? null) === varianteId
+    );
 
   useEffect(() => {
     if (!ventaId) {
@@ -141,6 +181,33 @@ export function SaleDetailDialog({
                           {(r.talla || r.color) && (
                             <span className="block text-muted-foreground">
                               {[r.talla, r.color].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                          {lotesDe(r.producto_id, r.variante_id ?? null).length > 0 && (
+                            <span className="block text-[11px] text-muted-foreground">
+                              Lote {textoLotes(lotesDe(r.producto_id, r.variante_id ?? null))}
+                            </span>
+                          )}
+                          {insumosDe(r.producto_id).length > 0 && (
+                            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                              Usó:{" "}
+                              {insumosDe(r.producto_id)
+                                .map((ins) => {
+                                  const lotesIns = lotesDeInsumo(ins.producto_id, ins.variante_id);
+                                  return `${Math.round((ins.cantidad + ins.faltante) * 1000) / 1000} ${ins.nombre}${
+                                    lotesIns.length > 0 ? ` (lote ${textoLotes(lotesIns)})` : ""
+                                  }`;
+                                })
+                                .join(" · ")}
+                            </span>
+                          )}
+                          {insumosDe(r.producto_id).some((ins) => ins.faltante > 0) && (
+                            <span className="block text-[11px] text-amber-700 dark:text-amber-400">
+                              Sin existencias al cobrar:{" "}
+                              {insumosDe(r.producto_id)
+                                .filter((ins) => ins.faltante > 0)
+                                .map((ins) => `${ins.faltante} ${ins.nombre}`)
+                                .join(" · ")}
                             </span>
                           )}
                         </td>

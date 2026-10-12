@@ -111,6 +111,8 @@ export interface TraspasoHistorial {
   origen: string;
   destino: string;
   lineas: { producto: string; cantidad: number }[];
+  /** Lotes que viajaron (migracion 116); vacio si nada llevaba lote. */
+  lotes: { numero: string; cantidad: number }[];
 }
 
 /** Los ultimos traspasos del negocio, con nombres ya resueltos para pintar. */
@@ -125,9 +127,11 @@ export async function fetchTraspasos(
       `id, creado_en, notas,
        origen:sucursales!traspasos_sucursal_origen_id_fkey(nombre),
        destino:sucursales!traspasos_sucursal_destino_id_fkey(nombre),
-       detalle_traspaso(cantidad, productos(nombre))`
+       detalle_traspaso(cantidad, productos(nombre)),
+       movimientos_lote(tipo, cantidad, lotes(numero_lote))`
     )
     .eq("tenant_id", tenantId)
+    .eq("movimientos_lote.tipo", "TRASPASO_SALIDA")
     .order("creado_en", { ascending: false })
     .limit(limite);
   if (error) throw error;
@@ -139,6 +143,7 @@ export async function fetchTraspasos(
     origen: { nombre: string } | null;
     destino: { nombre: string } | null;
     detalle_traspaso: { cantidad: number; productos: { nombre: string } | null }[];
+    movimientos_lote: { cantidad: number; lotes: { numero_lote: string } | null }[] | null;
   };
 
   return ((data ?? []) as unknown as Fila[]).map((t) => ({
@@ -151,5 +156,37 @@ export async function fetchTraspasos(
       producto: d.productos?.nombre ?? "Producto eliminado",
       cantidad: Number(d.cantidad),
     })),
+    lotes: (t.movimientos_lote ?? []).map((m) => ({
+      numero: m.lotes?.numero_lote ?? "—",
+      cantidad: Math.abs(Number(m.cantidad)),
+    })),
   }));
+}
+
+export interface LoteEnSucursal {
+  id: string;
+  producto_id: string;
+  variante_id: string | null;
+  numero_lote: string;
+  fecha_caducidad: string | null;
+  creado_en: string;
+  cantidad: number;
+}
+
+/** Lo que hay de cada lote en una sucursal: para anticipar que sale en un traspaso. */
+export async function fetchLotesEnSucursal(sucursalId: string): Promise<LoteEnSucursal[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("existencias_lote")
+    .select("cantidad, lotes(id, producto_id, variante_id, numero_lote, fecha_caducidad, creado_en)")
+    .eq("sucursal_id", sucursalId)
+    .gt("cantidad", 0);
+  if (error) throw error;
+  type Fila = {
+    cantidad: number;
+    lotes: Omit<LoteEnSucursal, "cantidad"> | null;
+  };
+  return ((data ?? []) as unknown as Fila[])
+    .filter((f) => f.lotes)
+    .map((f) => ({ ...(f.lotes as Omit<LoteEnSucursal, "cantidad">), cantidad: Number(f.cantidad) }));
 }

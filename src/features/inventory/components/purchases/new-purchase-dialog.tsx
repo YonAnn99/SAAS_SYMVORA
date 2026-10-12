@@ -160,6 +160,12 @@ export function NewPurchaseDialog({
     [opciones, categoria]
   );
 
+  const opcionDeRenglon = (r: RenglonCompraForm) => {
+    if (!r.valor) return undefined;
+    const { productoId, varianteId } = descomponerValor(r.valor);
+    return buscarOpcion(opciones, productoId, varianteId);
+  };
+
   const actualizarRenglon = (
     index: number,
     campo: keyof RenglonCompraForm,
@@ -406,6 +412,39 @@ export function NewPurchaseDialog({
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       </div>
+                      {/* Productos con "Maneja lotes y caducidad": el lote
+                          entra a la sucursal que recibe (migracion 116). Es
+                          opcional: sin numero, las piezas quedan sin lote. */}
+                      {opcionDeRenglon(renglon)?.conLotes && (
+                        <div className="col-span-12 grid grid-cols-2 gap-2 rounded-md bg-muted/40 px-2 py-1.5">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">
+                              Lote
+                            </Label>
+                            <Input
+                              placeholder="Opcional"
+                              value={renglon.numero_lote ?? ""}
+                              onChange={(e) =>
+                                actualizarRenglon(index, "numero_lote", e.target.value)
+                              }
+                              className="h-8 text-sm font-mono"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">
+                              Caducidad
+                            </Label>
+                            <Input
+                              type="date"
+                              value={renglon.fecha_caducidad ?? ""}
+                              onChange={(e) =>
+                                actualizarRenglon(index, "fecha_caducidad", e.target.value)
+                              }
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -14,11 +14,14 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { mensajeDeError } from "@/features/inventory/error-message";
 import {
+  fetchLotesEnSucursal,
   fetchStockSucursal,
   fetchTraspasos,
   registrarTraspaso,
+  type LoteEnSucursal,
   type TraspasoHistorial,
 } from "@/features/sucursales/services/stock-sucursal-service";
+import { previsualizarTraspaso } from "@/features/inventory/lotes";
 import { opcionesDeTraspaso, type OpcionTraspaso } from "@/features/sucursales/traspaso";
 import { SelectSimple } from "@/components/ui/select-simple";
 
@@ -57,6 +60,8 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
   const [lineas, setLineas] = useState<Linea[]>([LINEA_VACIA]);
   const [notas, setNotas] = useState("");
   const [opciones, setOpciones] = useState<OpcionTraspaso[]>([]);
+  // Lotes del origen: para decir ANTES de enviar cuales salen (FEFO).
+  const [lotesOrigen, setLotesOrigen] = useState<LoteEnSucursal[]>([]);
   const [historial, setHistorial] = useState<TraspasoHistorial[]>([]);
   const [enviando, setEnviando] = useState(false);
 
@@ -72,11 +77,12 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
   const cargarOpciones = useCallback(async () => {
     if (!origen) {
       setOpciones([]);
+      setLotesOrigen([]);
       return;
     }
     try {
       const supabase = createSupabaseBrowserClient();
-      const [prods, vars, filas] = await Promise.all([
+      const [prods, vars, filas, lotes] = await Promise.all([
         supabase
           .from("productos")
           .select("id, nombre, es_servicio")
@@ -88,10 +94,12 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
           .eq("tenant_id", tenantId)
           .is("archivado_en", null),
         fetchStockSucursal(origen),
+        fetchLotesEnSucursal(origen).catch(() => [] as LoteEnSucursal[]),
       ]);
       if (prods.error) throw prods.error;
       if (vars.error) throw vars.error;
       setOpciones(opcionesDeTraspaso(prods.data ?? [], vars.data ?? [], filas));
+      setLotesOrigen(lotes);
     } catch (error) {
       toast.error(mensajeDeError(error));
     }
@@ -242,8 +250,19 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
                 )}
                 {lineas.map((l, i) => {
                   const op = porValor.get(l.valor);
+                  const cantidad = Number(l.cantidad);
+                  const lotesDelProducto = op
+                    ? lotesOrigen.filter(
+                        (x) => x.producto_id === op.productoId && (x.variante_id ?? null) === op.varianteId
+                      )
+                    : [];
+                  const salen =
+                    op && lotesDelProducto.length > 0 && cantidad > 0 && cantidad <= op.disponible
+                      ? previsualizarTraspaso(lotesDelProducto, op.disponible, cantidad)
+                      : null;
                   return (
-                    <div key={i} className="flex items-center gap-2">
+                    <div key={i} className="space-y-1">
+                    <div className="flex items-center gap-2">
                       <SelectSimple
                         ariaLabel="Producto"
                         value={l.valor}
@@ -275,6 +294,19 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
+                    </div>
+                    {salen && (
+                      <p className="pl-1 text-[11px] text-muted-foreground">
+                        Salen:{" "}
+                        {[
+                          ...salen.lotes.map(
+                            (t) =>
+                              `lote ${t.numero_lote} ×${t.cantidad}${t.vencido ? " (caducado)" : ""}`
+                          ),
+                          ...(salen.sinLote > 0 ? [`sin lote ×${salen.sinLote}`] : []),
+                        ].join(" · ")}
+                      </p>
+                    )}
                     </div>
                   );
                 })}
@@ -332,6 +364,11 @@ export function TraspasosSucursal({ tenantId }: { tenantId: string }) {
                     {t.lineas.map((l) => `${l.cantidad} × ${l.producto}`).join(", ")}
                     {t.notas ? ` — ${t.notas}` : ""}
                   </p>
+                  {t.lotes.length > 0 && (
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      Lotes: {t.lotes.map((x) => `${x.numero} ×${x.cantidad}`).join(", ")}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>

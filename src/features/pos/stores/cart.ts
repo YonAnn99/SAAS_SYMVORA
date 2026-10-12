@@ -40,6 +40,8 @@ interface CartStore {
   removeItem: (key: string) => void;
   updateQuantity: (key: string, cantidad: number) => void;
   updateDiscount: (key: string, descuento: number) => void;
+  /** Insumos ajustados de un servicio (117); `null` vuelve a la receta. */
+  updateInsumos: (key: string, insumos: CartItem["insumos"]) => void;
   setIncludeIva: (value: boolean) => void;
   clearCart: () => void;
   getSubtotal: () => number;
@@ -116,8 +118,26 @@ export const useCartStore = create<CartStore>()(
     }
 
     set((state) => ({
+      items: state.items.map((i) => {
+        if (cartLineKey(i.productId, i.varianteId) !== key) return i;
+        // Insumos ajustados a mano: se escalan con la cantidad (2 consultas
+        // usan el doble de lo que se ajusto para una).
+        const insumos =
+          i.insumos && i.cantidad > 0
+            ? i.insumos.map((x) => ({
+                ...x,
+                cantidad: Math.round(((x.cantidad * cantidad) / i.cantidad) * 1000) / 1000,
+              }))
+            : i.insumos;
+        return { ...i, cantidad, insumos };
+      }),
+    }));
+  },
+
+  updateInsumos: (key, insumos) => {
+    set((state) => ({
       items: state.items.map((i) =>
-        cartLineKey(i.productId, i.varianteId) === key ? { ...i, cantidad } : i
+        cartLineKey(i.productId, i.varianteId) === key ? { ...i, insumos: insumos ?? null } : i
       ),
     }));
   },

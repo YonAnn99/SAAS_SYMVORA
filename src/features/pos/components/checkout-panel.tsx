@@ -11,6 +11,7 @@ import { PosCart } from "./pos-cart";
 import { cn } from "@/lib/utils";
 import type { Cliente } from "@/lib/types/database";
 import type { CartItem, SaleTotals } from "../types/pos.types";
+import type { InsumoLinea } from "@/features/inventory/insumos";
 import { montosRapidos } from "../montos-rapidos";
 import type { MotivoBloqueo } from "../venta-bloqueada";
 import { precargarSonidoVenta } from "../celebracion-venta";
@@ -69,6 +70,9 @@ interface CheckoutPanelProps {
   bajoCliente?: ReactNode;
   /** Premio de lealtad aplicado, para separarlo del descuento manual. */
   premioLealtad?: { etiqueta: string; monto: number } | null;
+  /** Insumos de los servicios del carrito (117). */
+  insumosDe?: (item: CartItem) => InsumoLinea[] | null;
+  onEditarInsumos?: (item: CartItem) => void;
 
   className?: string;
 }
@@ -102,6 +106,8 @@ export function CheckoutPanel({
   onClearCart,
   bajoCliente,
   premioLealtad = null,
+  insumosDe,
+  onEditarInsumos,
   className,
 }: CheckoutPanelProps) {
   const t = useTranslations();
@@ -134,6 +140,8 @@ export function CheckoutPanel({
         onRemove={onRemove}
         onToggleIva={onToggleIva}
         premioLealtad={premioLealtad}
+        insumosDe={insumosDe}
+        onEditarInsumos={onEditarInsumos}
       />
 
       <PaymentMethodPicker

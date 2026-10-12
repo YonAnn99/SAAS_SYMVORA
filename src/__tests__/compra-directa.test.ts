@@ -130,3 +130,26 @@ describe("traducción al RPC", () => {
     expect(typeof item.costo_unitario).toBe("number");
   });
 });
+
+describe("lote y caducidad (migración 116)", () => {
+  const valor = componerValor("p1", null);
+
+  it("sin lote el renglón va igual que antes", () => {
+    const [r] = aRenglonesRpc([{ valor, cantidad: "2", costo_unitario: "5", numero_lote: "  " }]);
+    expect(r).toEqual({ producto_id: "p1", variante_id: null, cantidad: 2, costo_unitario: 5 });
+  });
+
+  it("con lote manda número y caducidad", () => {
+    const [r] = aRenglonesRpc([
+      { valor, cantidad: "2", costo_unitario: "5", numero_lote: " L-01 ", fecha_caducidad: "2027-01-31" },
+    ]);
+    expect(r).toMatchObject({ numero_lote: "L-01", fecha_caducidad: "2027-01-31" });
+  });
+
+  it("caducidad sin número de lote no se puede guardar", () => {
+    const v = validarCompraDirecta([
+      { valor, cantidad: "2", costo_unitario: "5", fecha_caducidad: "2027-01-31" },
+    ]);
+    expect(v).toEqual({ ok: false, motivo: "caducidad-sin-lote", renglon: 1 });
+  });
+});

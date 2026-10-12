@@ -97,7 +97,7 @@ export async function fetchOrderProducts(
   // `categoria` alimenta el filtro del selector (ver `filtrarPorCategoria`).
   const { data } = await supabase
     .from("productos")
-    .select("id, nombre, costo_compra, categoria")
+    .select("id, nombre, costo_compra, categoria, permite_lotes")
     .eq("tenant_id", tenantId)
     .is("archivado_en", null)
     .order("nombre");
@@ -246,6 +246,9 @@ export async function updateOrderStatus(
 export interface ItemRecepcion {
   detalle_id: string;
   cantidad_recibida: number;
+  /** Lote y caducidad de lo que llego (migracion 116). Opcionales. */
+  numero_lote?: string;
+  fecha_caducidad?: string | null;
 }
 
 export interface ResultadoRecepcion {

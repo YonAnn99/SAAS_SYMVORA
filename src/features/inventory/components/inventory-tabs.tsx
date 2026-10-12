@@ -12,6 +12,7 @@ import {
   AdjustmentDialog,
   AdjustmentsTable,
 } from "@/features/inventory";
+import { LoteMovimientosDialog } from "./lots/lote-movimientos-dialog";
 
 export interface InventorySectionProps {
   tenantId: string | null;
@@ -47,18 +48,24 @@ export function LotsSection({
   const {
     lots,
     products,
+    variants,
     filteredLots,
     getProductName,
+    nombreSucursal,
+    sucursalSeleccionada,
     search,
     setSearch,
     loading,
     showDialog,
     setShowDialog,
     editingLot,
+    verLote,
+    setVerLote,
     saving,
     openCreateDialog,
     openEditDialog,
-    handleSave,
+    handleCreate,
+    handleUpdate,
     handleDelete,
   } = useLots(tenantId, tenantLoading);
 
@@ -81,7 +88,7 @@ export function LotsSection({
           className="h-8 active:scale-[0.98] transition-transform"
           onClick={openCreateDialog}
         >
-          Agregar lote
+          Registrar lote
         </SpecularActionButton>
       </div>
 
@@ -90,8 +97,11 @@ export function LotsSection({
         filteredLots={filteredLots}
         loading={loading}
         getProductName={getProductName}
+        nombreSucursal={nombreSucursal}
+        sucursalSeleccionada={sucursalSeleccionada}
         onEdit={openEditDialog}
         onDelete={handleDelete}
+        onVer={setVerLote}
         onAdd={openCreateDialog}
       />
 
@@ -100,8 +110,17 @@ export function LotsSection({
         onOpenChange={setShowDialog}
         editingLot={editingLot}
         products={products}
+        variants={variants}
         saving={saving}
-        onSave={handleSave}
+        onCreate={handleCreate}
+        onUpdate={handleUpdate}
+      />
+
+      <LoteMovimientosDialog
+        lote={verLote}
+        onOpenChange={(open) => !open && setVerLote(null)}
+        nombreProducto={verLote ? getProductName(verLote) : ""}
+        nombreSucursal={nombreSucursal}
       />
     </div>
   );

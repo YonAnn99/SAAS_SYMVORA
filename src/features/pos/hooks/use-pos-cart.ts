@@ -14,6 +14,7 @@ export interface PosCartState {
   addItem: ReturnType<typeof useCartStore.getState>["addItem"];
   removeItem: ReturnType<typeof useCartStore.getState>["removeItem"];
   updateQuantity: ReturnType<typeof useCartStore.getState>["updateQuantity"];
+  updateInsumos: ReturnType<typeof useCartStore.getState>["updateInsumos"];
   setIncludeIva: ReturnType<typeof useCartStore.getState>["setIncludeIva"];
   descuentoTicket: DescuentoTicket | null;
   setDescuentoTicket: ReturnType<typeof useCartStore.getState>["setDescuentoTicket"];
@@ -69,6 +70,7 @@ export function usePosCart(tenantId: string | null, userId: string | null): PosC
     addItem: store.addItem,
     removeItem: store.removeItem,
     updateQuantity: store.updateQuantity,
+    updateInsumos: store.updateInsumos,
     setIncludeIva: store.setIncludeIva,
     descuentoTicket: store.descuentoTicket,
     setDescuentoTicket: store.setDescuentoTicket,

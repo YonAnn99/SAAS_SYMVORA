@@ -142,6 +142,7 @@ export default function PurchaseOrdersPage() {
           // se verían idénticos y no se sabría en cuál escribir.
           return v ? `${base} · ${etiquetaVariante(v)}` : base;
         }}
+        conLotes={(id) => Boolean(products.find((p) => p.id === id)?.permite_lotes)}
         saving={receiving}
         onConfirm={handleReceive}
       />

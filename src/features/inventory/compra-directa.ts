@@ -26,6 +26,9 @@ export interface RenglonCompraForm {
   valor: string;
   cantidad: string;
   costo_unitario: string;
+  /** Lote y caducidad (migracion 116). Solo se piden en productos con lotes. */
+  numero_lote?: string;
+  fecha_caducidad?: string;
 }
 
 /** Un renglon listo para el RPC. */
@@ -34,13 +37,17 @@ export interface RenglonCompraRpc {
   variante_id: string | null;
   cantidad: number;
   costo_unitario: number;
+  /** Solo si el renglon trae lote: el servidor lo da de alta en la sucursal. */
+  numero_lote?: string;
+  fecha_caducidad?: string | null;
 }
 
 export type MotivoRenglonInvalido =
   | "sin-renglones"
   | "sin-producto"
   | "cantidad-invalida"
-  | "costo-invalido";
+  | "costo-invalido"
+  | "caducidad-sin-lote";
 
 export interface ValidacionCompra {
   ok: boolean;
@@ -54,6 +61,7 @@ export const MENSAJES_RENGLON: Record<MotivoRenglonInvalido, string> = {
   "sin-producto": "Elige el producto de cada renglón",
   "cantidad-invalida": "La cantidad de cada renglón debe ser mayor que cero",
   "costo-invalido": "El costo de cada renglón no puede ser negativo",
+  "caducidad-sin-lote": "Pon el número de lote de la caducidad que capturaste",
 };
 
 /**
@@ -101,6 +109,11 @@ export function validarCompraDirecta(
     if (!Number.isFinite(costo) || costo < 0) {
       return { ok: false, motivo: "costo-invalido", renglon: numero };
     }
+
+    // La caducidad vive en el lote: sin numero no hay donde guardarla.
+    if (r.fecha_caducidad?.trim() && !r.numero_lote?.trim()) {
+      return { ok: false, motivo: "caducidad-sin-lote", renglon: numero };
+    }
   }
 
   return { ok: true, renglon: null };
@@ -118,11 +131,18 @@ export function aRenglonesRpc(
 ): RenglonCompraRpc[] {
   return renglonesConDatos(renglones).map((r) => {
     const { productoId, varianteId } = descomponerValor(r.valor);
-    return {
+    const renglon: RenglonCompraRpc = {
       producto_id: productoId,
       variante_id: varianteId,
       cantidad: parseFloat(r.cantidad),
       costo_unitario: parseFloat(r.costo_unitario),
     };
+    // Sin lote, el renglon va exactamente como antes de la 116.
+    const lote = r.numero_lote?.trim();
+    if (lote) {
+      renglon.numero_lote = lote;
+      renglon.fecha_caducidad = r.fecha_caducidad?.trim() || null;
+    }
+    return renglon;
   });
 }
