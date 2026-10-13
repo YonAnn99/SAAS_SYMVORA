@@ -352,7 +352,7 @@ export function CrearVariantesDialog({
           )}
 
           {/* Variantes: una tarjeta desplegable por variante */}
-          <div className="rounded-xl border border-border px-3">
+          <div>
             <Accordion variante="panel" activeIndex={abierta} onActiveIndexChange={setAbierta}>
               {tarjetas.map((tarjeta, i) => (
                 <AccordionItem
@@ -360,7 +360,6 @@ export function CrearVariantesDialog({
                   index={i}
                   title={`Variante ${i + 1}`}
                   resumen={resumenTarjeta(tarjeta, servicio)}
-                  className={i === n - 1 ? "border-b-0" : undefined}
                 >
                   <FormularioTarjeta
                     tarjeta={tarjeta}
@@ -519,10 +518,10 @@ function FormularioTarjeta({
     </div>
   );
 
-  // Las secciones van en su propio recuadro, para distinguirlas de las
-  // tarjetas de variante que las contienen.
+  // Las secciones van con otro fondo (el acordeon anidado lo pone solo), para
+  // distinguirlas de las tarjetas de variante que las contienen.
   return (
-    <div className="rounded-lg border border-border bg-muted/20 px-3">
+    <div>
       <Accordion variante="panel" activeIndex={seccion} onActiveIndexChange={onSeccion}>
         <AccordionItem
           title="Datos de la variante"

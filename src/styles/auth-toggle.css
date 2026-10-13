@@ -93,6 +93,18 @@
   accent-color: #1a1a1a;
 }
 
+/* Filas del acordeon (`components/ui/accordion.tsx`, animacion «Bouncy
+   Accordion»): tarjetas blancas con borde. Un fondo gris escondería los inputs
+   (#f0f0f0, sin borde). Entre dos filas unidas, una linea mas tenue. */
+.auth-accordion-item {
+  background-color: #fff;
+  border-color: #e5e5e5;
+}
+
+.auth-accordion-item[data-unida] {
+  border-top-color: #f0f0f0;
+}
+
 .auth-container .auth-accordion-title,
 .auth-accordion-title {
   font-size: 14px;
@@ -885,7 +897,12 @@
   }
 
   .auth-accordion-item {
-    border-bottom-color: var(--border) !important;
+    background-color: var(--card);
+    border-color: var(--border) !important;
+  }
+
+  .auth-accordion-item[data-unida] {
+    border-top-color: color-mix(in oklab, var(--border) 50%, transparent) !important;
   }
 
   .auth-accordion-title {
