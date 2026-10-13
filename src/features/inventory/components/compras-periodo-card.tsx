@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Truck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ContadorAnimado } from "@/components/ui/contador-animado";
 import { formatMXN } from "@/lib/money";
 import { rangoDePeriodo, type Periodo } from "@/lib/periodo";
 import { useSucursal } from "@/contexts/sucursal-context";
@@ -138,25 +139,25 @@ export function ComprasPeriodoCard({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <Cifra
                 etiqueta="Total comprado"
-                valor={formatMXN(resumen.totalComprado)}
+                monto={resumen.totalComprado}
                 detalle={`${resumen.numeroCompras} ${
                   resumen.numeroCompras === 1 ? "compra" : "compras"
                 }`}
               />
               <Cifra
                 etiqueta="Pagado con efectivo de caja"
-                valor={formatMXN(resumen.pagadoConCaja)}
+                monto={resumen.pagadoConCaja}
                 detalle="Salió del cajón"
               />
               <Cifra
                 etiqueta="Ventas − compras"
-                valor={formatMXN(resumen.diferencia)}
+                monto={resumen.diferencia}
                 detalle={`Ventas: ${formatMXN(totalVentas)}`}
                 negativo={resumen.diferencia < 0}
               />
               <Cifra
                 etiqueta="Pendiente por recibir"
-                valor={formatMXN(resumen.pendientePorRecibir)}
+                monto={resumen.pendientePorRecibir}
                 detalle={`${resumen.ordenesAbiertas} ${
                   resumen.ordenesAbiertas === 1 ? "orden abierta" : "órdenes abiertas"
                 } · al día de hoy`}
@@ -212,12 +213,13 @@ function comoSePagaron(resumen: ResumenCompras): { name: string; value: number }
 
 function Cifra({
   etiqueta,
-  valor,
+  monto,
   detalle,
   negativo = false,
 }: {
   etiqueta: string;
-  valor: string;
+  /** Cuenta desde 0 hasta el monto (`ContadorAnimado`). */
+  monto: number;
   detalle: string;
   negativo?: boolean;
 }) {
@@ -231,7 +233,7 @@ function Cifra({
           negativo ? "text-[#9F2F2D] dark:text-[#F2A5A4]" : ""
         }`}
       >
-        {valor}
+        <ContadorAnimado valor={monto} prefijo="$" decimales={2} />
       </p>
       <p className="text-xs text-muted-foreground">{detalle}</p>
     </div>

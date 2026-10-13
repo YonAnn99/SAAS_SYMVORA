@@ -61,6 +61,7 @@ import { ComprasPeriodoCard } from "@/features/inventory/components/compras-peri
 import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
+import { ContadorAnimado } from "@/components/ui/contador-animado";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface ReportData {
@@ -686,22 +687,28 @@ export default function ReportsPage() {
         {[
           {
             title: "Total Ventas",
-            value: `$${reportData.resumen.totalVentas.toFixed(2)}`,
+            value: <ContadorAnimado valor={reportData.resumen.totalVentas} prefijo="$" decimales={2} />,
             icon: TrendingUp,
           },
           {
             title: "Transacciones",
-            value: reportData.resumen.totalTransacciones.toString(),
+            value: <ContadorAnimado valor={reportData.resumen.totalTransacciones} />,
             icon: CreditCard,
           },
           {
             title: "Ticket Promedio",
-            value: `$${reportData.resumen.ticketPromedio.toFixed(2)}`,
+            value: <ContadorAnimado valor={reportData.resumen.ticketPromedio} prefijo="$" decimales={2} />,
             icon: Package,
           },
           {
             title: "Productos Vendidos",
-            value: reportData.resumen.productosVendidos.toString(),
+            value: (
+              // Con granel la cantidad trae fraccion (kg, l): entonces con 2 decimales.
+              <ContadorAnimado
+                valor={reportData.resumen.productosVendidos}
+                decimales={Number.isInteger(reportData.resumen.productosVendidos) ? 0 : 2}
+              />
+            ),
             icon: Package,
           },
         ].map((card, i) => (
@@ -741,7 +748,7 @@ export default function ReportsPage() {
                 Ingresos (sin IVA)
               </p>
               <p className="text-xl font-semibold font-mono">
-                ${reportData.ganancia.ingresos.toFixed(2)}
+                <ContadorAnimado valor={reportData.ganancia.ingresos} prefijo="$" decimales={2} />
               </p>
             </div>
             <div>
@@ -749,7 +756,7 @@ export default function ReportsPage() {
                 Costo de lo vendido
               </p>
               <p className="text-xl font-semibold font-mono text-muted-foreground">
-                ${reportData.ganancia.costoVendido.toFixed(2)}
+                <ContadorAnimado valor={reportData.ganancia.costoVendido} prefijo="$" decimales={2} />
               </p>
             </div>
             <div>
@@ -763,9 +770,9 @@ export default function ReportsPage() {
                     : "text-emerald-600 dark:text-emerald-400"
                 }`}
               >
-                ${reportData.ganancia.ganancia.toFixed(2)}
+                <ContadorAnimado valor={reportData.ganancia.ganancia} prefijo="$" decimales={2} />
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  {reportData.ganancia.margenPct.toFixed(1)}%
+                  <ContadorAnimado valor={reportData.ganancia.margenPct} sufijo="%" decimales={1} />
                 </span>
               </p>
             </div>
@@ -797,9 +804,9 @@ export default function ReportsPage() {
                   >
                     <span className="truncate">{p.nombre}</span>
                     <span className="shrink-0 font-mono text-emerald-600 dark:text-emerald-400">
-                      ${p.ganancia.toFixed(2)}
+                      <ContadorAnimado valor={p.ganancia} prefijo="$" decimales={2} />
                       <span className="ml-2 text-xs text-muted-foreground">
-                        de ${p.ingresos.toFixed(2)}
+                        de <ContadorAnimado valor={p.ingresos} prefijo="$" decimales={2} />
                       </span>
                     </span>
                   </div>
@@ -922,10 +929,10 @@ export default function ReportsPage() {
                     <tr key={i} className="border-b last:border-0">
                       <td className="py-2 font-medium">{cliente.nombre}</td>
                       <td className="py-2 text-right font-mono">
-                        {cliente.compras}
+                        <ContadorAnimado valor={cliente.compras} />
                       </td>
                       <td className="py-2 text-right font-mono">
-                        ${cliente.total.toFixed(2)}
+                        <ContadorAnimado valor={cliente.total} prefijo="$" decimales={2} />
                       </td>
                     </tr>
                   ))}

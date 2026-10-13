@@ -24,6 +24,7 @@ import { calcularGanancia } from "@/lib/profit";
 import { primerNombre } from "@/lib/nombre-usuario";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
+import { ContadorAnimado } from "@/components/ui/contador-animado";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface DashboardStats {
@@ -227,29 +228,38 @@ export default function DashboardPage() {
     }
   }, [tenantLoading, tenantId, fetchDashboardData]);
 
+  // Los numeros cuentan desde 0 hasta su valor (`ContadorAnimado`).
+  const pesos = (n: number) => <ContadorAnimado valor={n} prefijo="$" decimales={2} />;
   const kpis = [
-    { title: t("dashboard.salesToday"), value: `$${stats.ventasHoy.toFixed(2)}`, icon: DollarSign, idx: 1, trend: null, color: "from-blue-500" },
-    { title: t("dashboard.salesMonth"), value: `$${stats.ventasMes.toFixed(2)}`, icon: TrendingUp, idx: 2, trend: stats.crecimientoVentas, color: "from-emerald-500" },
+    { title: t("dashboard.salesToday"), value: pesos(stats.ventasHoy), icon: DollarSign, idx: 1, trend: null, color: "from-blue-500" },
+    { title: t("dashboard.salesMonth"), value: pesos(stats.ventasMes), icon: TrendingUp, idx: 2, trend: stats.crecimientoVentas, color: "from-emerald-500" },
     // Ganancia sobre productos: margen BRUTO, no la utilidad del negocio (no
     // descuenta renta, sueldos ni gastos). El título lo dice para no inducir
     // a error. Si hay productos sin costo capturado se avisa en el subtítulo,
     // porque si no el número parecería completo cuando es parcial.
     {
       title: "Ganancia del mes",
-      value: `$${stats.gananciaMes.toFixed(2)}`,
+      value: pesos(stats.gananciaMes),
       icon: TrendingUp,
       idx: 3,
       trend: null,
       color: "from-violet-500",
-      subtitle:
-        stats.productosSinCosto > 0
-          ? `${stats.margenMesPct.toFixed(1)}% · ${stats.productosSinCosto} sin costo`
-          : `${stats.margenMesPct.toFixed(1)}% de margen`,
+      subtitle: (
+        <>
+          <ContadorAnimado valor={stats.margenMesPct} sufijo="%" decimales={1} />
+          {stats.productosSinCosto > 0
+            ? ` · ${stats.productosSinCosto} sin costo`
+            : " de margen"}
+        </>
+      ),
     },
-    { title: t("dashboard.averageTicket"), value: `$${stats.ticketPromedio.toFixed(2)}`, icon: ShoppingCart, idx: 4, trend: null, color: "from-amber-500" },
-    { title: "Clientes Atendidos", value: stats.clientesAtendidos.toString(), icon: Users, idx: 4, trend: null, color: "from-violet-500" },
-    { title: "Productos Vendidos", value: stats.productosVendidos.toString(), icon: Package, idx: 5, trend: null, color: "from-pink-500" },
-    { title: "Ventas Mes Anterior", value: `$${stats.ventasAnteriores.toFixed(2)}`, icon: CreditCard, idx: 6, trend: null, color: "from-cyan-500" },
+    { title: t("dashboard.averageTicket"), value: pesos(stats.ticketPromedio), icon: ShoppingCart, idx: 4, trend: null, color: "from-amber-500" },
+    { title: "Clientes Atendidos", value: <ContadorAnimado valor={stats.clientesAtendidos} />, icon: Users, idx: 4, trend: null, color: "from-violet-500" },
+    { title: "Productos Vendidos", value: (
+        // Con granel la cantidad trae fraccion (kg, l): entonces con 2 decimales.
+        <ContadorAnimado valor={stats.productosVendidos} decimales={Number.isInteger(stats.productosVendidos) ? 0 : 2} />
+      ), icon: Package, idx: 5, trend: null, color: "from-pink-500" },
+    { title: "Ventas Mes Anterior", value: pesos(stats.ventasAnteriores), icon: CreditCard, idx: 6, trend: null, color: "from-cyan-500" },
   ];
 
   return (
@@ -302,7 +312,8 @@ export default function DashboardPage() {
               <div className="text-2xl font-bold tracking-tight">{kpi.value}</div>
               {kpi.trend !== null && kpi.trend !== 0 && (
                 <p className={`text-xs mt-2 font-medium ${kpi.trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {kpi.trend > 0 ? '↑' : '↓'} {Math.abs(kpi.trend).toFixed(1)}%
+                  {kpi.trend > 0 ? '↑' : '↓'}{" "}
+                  <ContadorAnimado valor={Math.abs(kpi.trend)} sufijo="%" decimales={1} />
                 </p>
               )}
               {"subtitle" in kpi && kpi.subtitle && (
