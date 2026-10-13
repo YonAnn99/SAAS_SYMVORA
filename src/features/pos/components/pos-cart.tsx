@@ -125,7 +125,8 @@ export function PosCart({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-sm font-medium">
           <span>{t("pos.cart")}</span>
-          <span className="text-xs font-normal text-muted-foreground font-mono">
+          {/* `data-conteo-carrito`: salta cuando aterriza el vuelo al carrito. */}
+          <span data-conteo-carrito className="inline-block text-xs font-normal text-muted-foreground font-mono">
             {itemCount}
           </span>
         </CardTitle>
@@ -238,7 +239,13 @@ export function PosCart({
                 );
               }
               return (
-                <div key={clave} className="flex items-center justify-between gap-2 py-1 animate-fade-in-up">
+                // `data-linea-carrito`: aqui aterriza el vuelo del producto
+                // tocado (`vuelo-al-carrito.ts`) y destella.
+                <div
+                  key={clave}
+                  data-linea-carrito={clave}
+                  className="flex items-center justify-between gap-2 rounded-md py-1 animate-fade-in-up"
+                >
                   {fila}
                 </div>
               );

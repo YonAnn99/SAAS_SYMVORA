@@ -27,6 +27,7 @@ import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { esFraccionable, unidadDeVenta } from "@/lib/unidades";
 import { cartLineKey } from "@/features/pos/stores/cart";
+import { animarAlCarrito } from "@/features/pos/vuelo-al-carrito";
 import { CantidadDialog } from "@/features/pos/components/cantidad-dialog";
 import { ALTO_PANEL_POS } from "@/components/dashboard/alto-panel";
 import { primerNombre } from "@/lib/nombre-usuario";
@@ -165,6 +166,9 @@ export default function POSPage() {
   // de cliente ni cuando la PWA abre el POS desde su cache sin conexion.
   const { hasOpenRegister, loading: loadingRegister } = useOpenRegister(tenantId);
   const [variantPickerFor, setVariantPickerFor] = useState<Producto | null>(null);
+  // La foto de la ultima tarjeta tocada: de ahi despega el vuelo al carrito,
+  // tambien despues de elegir variante o capturar «¿Cuánto?». `null` = sin vuelo.
+  const origenVueloRef = useRef<HTMLElement | null>(null);
   // Producto por medida (kg, l, m…) esperando que el cajero diga cuánto.
   const [pidiendoCantidad, setPidiendoCantidad] = useState<{
     product: Producto;
@@ -267,6 +271,9 @@ export default function POSPage() {
   // entraba 1 y no habia forma de cobrar 0.750 kg.
   const addResolved = useCallback(
     (product: Producto, variant: VarianteProducto | null, cantidad?: number) => {
+      // De donde despega la animacion al carrito: la foto de la tarjeta tocada.
+      // Se consume aqui; si este toque abre «¿Cuánto?», la conserva el ref.
+      const origen = origenVueloRef.current;
       // Al volver al POS se pinta el catalogo de la cache mientras llegan los
       // precios frescos (menos de un segundo). En ese rato no se agrega nada:
       // la linea guardaria el precio viejo y el ticket no cuadraria con lo
@@ -281,6 +288,7 @@ export default function POSPage() {
         setPidiendoCantidad({ product, variant });
         return;
       }
+      origenVueloRef.current = null;
       // El precio base primero (la variante tiene el suyo; 0 = "usa el del
       // producto") y encima, si hay lista, el de la lista. Este es el mismo
       // orden que sigue el servidor en `_crear_venta_desde_items`: si aqui se
@@ -303,6 +311,7 @@ export default function POSPage() {
         ),
         unidad_medida: unidadDeVenta(product, variant),
       });
+      animarAlCarrito(origen, cartLineKey(product.id, variant?.id ?? null));
     },
     [addItem, mapaLista, loadingProducts, carritoRestaurado]
   );
@@ -342,7 +351,9 @@ export default function POSPage() {
   );
 
   const handleAddProduct = useCallback(
-    (product: Producto) => {
+    (product: Producto, origen?: HTMLElement | null) => {
+      // Si abre las variantes, el vuelo sale de esta tarjeta al elegir una.
+      origenVueloRef.current = origen ?? null;
       if (idsDeLista && !idsDeLista.has(product.id)) {
         toast.error(
           `"${product.nombre}" no esta en ${nombreListaElegida}. Cambia a precios normales para venderlo.`
@@ -405,6 +416,8 @@ export default function POSPage() {
   // si sonar bien, sonar mal o cerrarse para dejar paso a otra ventana.
   const agregarPorCodigo = useCallback(
     (codigo: string): ResultadoEscaneo => {
+      // Un codigo no tiene tarjeta de origen: sin vuelo, solo el aterrizaje.
+      origenVueloRef.current = null;
       // Mismo candado que `addResolved`: con el catalogo de la cache aun sin
       // confirmar no se agrega (el aviso sale en el escaner, no un toast).
       if (loadingProducts || !carritoRestaurado) {
@@ -937,7 +950,8 @@ export default function POSPage() {
           favoritos={favoritos}
           variantesFavoritas={variantesFavoritas}
           onAddProduct={handleAddProduct}
-          onAddVariant={(product, variant) => {
+          onAddVariant={(product, variant, origen) => {
+            origenVueloRef.current = origen ?? null;
             if (idsDeLista && !idsDeLista.has(product.id)) {
               toast.error(
                 `"${product.nombre}" no está en ${nombreListaElegida}. Cambia a precios normales para venderlo.`

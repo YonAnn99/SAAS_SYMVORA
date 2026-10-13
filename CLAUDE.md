@@ -175,6 +175,12 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
       `skipHydration`; `usePosCart` lo restaura al montar). Tiene dueño `userId:tenantId`: si cambia, se vacía.
       Se borra al cobrar y al cerrar sesión (`vaciarCarritoGuardado`). No se agrega nada hasta `restaurado`.
     - El dock usa etiquetas cortas («Vender», «Órdenes»).
+  - **Vuelo al carrito** (`features/pos/vuelo-al-carrito.ts`, 2026-10-12): al agregar desde una tarjeta, una copia
+    de su foto (`data-foto-pos`) vuela en arco a su línea (`data-linea-carrito`, escritorio) o a la barra
+    (`data-barra-carrito`/`data-destino-carrito`, celular). Solo visual (WAAPI, sin librerías): el carrito cambia
+    antes. Variantes y «¿Cuánto?» despegan de la tarjeta al confirmar (`origenVueloRef` en la página); escáner y
+    Enter sin vuelo, solo aterrizaje. La barra muestra el conteo viejo hasta aterrizar (`useVuelosAlCarrito`); su
+    `aria-label` siempre dice lo real. `prefers-reduced-motion`: solo un destello.
   - **«Tarjeta» (manual) bloqueado sin terminal** (`tarjetaManualDisponible` en `features/pos/tarjeta-disponible.ts`):
     se habilita con Mercado Pago Point lista (`mpReady`) o con una terminal externa declarada en Configuración →
     Métodos de pago (`configuracion_json.pos_config.terminal_externa`, leída en el store de `use-modulos.ts`).
@@ -395,7 +401,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (1078 tests al 2026-10-12) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1088 tests al 2026-10-12) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 118; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.

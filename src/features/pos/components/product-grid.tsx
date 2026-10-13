@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type MouseEvent } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Heart, Package, Palette, Plus, ShoppingCart } from "lucide-react";
@@ -85,8 +85,13 @@ interface ProductGridProps {
   hasSearch: boolean;
   viewMode?: PosViewMode;
   isFavoritesFilter?: boolean;
-  onAddProduct: (product: Producto) => void;
-  onAddVariant?: (product: Producto, variant: VarianteProducto | null) => void;
+  /** `origen`: la foto de la tarjeta tocada, de donde sale la animacion al carrito. */
+  onAddProduct: (product: Producto, origen?: HTMLElement | null) => void;
+  onAddVariant?: (
+    product: Producto,
+    variant: VarianteProducto | null,
+    origen?: HTMLElement | null
+  ) => void;
   variantsByProduct?: Record<string, VarianteProducto[]>;
   variantCountByProduct?: Record<string, number>;
   precioDe?: (product: Producto, variant?: VarianteProducto | null) => number;
@@ -95,6 +100,11 @@ interface ProductGridProps {
   variantesFavoritas?: ReadonlySet<string>;
   /** Cuánto lleva ya el carrito: por producto (todas sus líneas) y por variante. */
   enCarrito?: { porProducto: Record<string, number>; porVariante: Record<string, number> };
+}
+
+/** La foto de la tarjeta tocada (`data-foto-pos`): de ahi despega el vuelo al carrito. */
+function fotoDe(e: MouseEvent<HTMLElement>): HTMLElement | null {
+  return e.currentTarget.querySelector<HTMLElement>("[data-foto-pos]");
 }
 
 /** "×2", "×0.75": lo que ya va en el carrito, sobre la foto. */
@@ -302,7 +312,7 @@ export function ProductGrid({
               return (
                 <button
                   key={item.key}
-                  onClick={() => {
+                  onClick={(e) => {
                     if (agotado) {
                       toast.error(
                         `La variante "${variantLabel(item.variant)}" está agotada`
@@ -310,18 +320,18 @@ export function ProductGrid({
                       return;
                     }
                     if (onAddVariant) {
-                      onAddVariant(item.product, item.variant);
+                      onAddVariant(item.product, item.variant, fotoDe(e));
                     } else {
-                      onAddProduct(item.product);
+                      onAddProduct(item.product, fotoDe(e));
                     }
                   }}
                   className={cn(
-                    "relative flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up border-l-4 @max-md:rounded-2xl",
+                    "relative flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up border-l-4 @max-md:rounded-2xl active:scale-[0.97]",
                     item.familyColor.border
                   )}
                   style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
-                  <div className="relative w-full aspect-[4/3] shrink-0">
+                  <div data-foto-pos className="relative w-full aspect-[4/3] shrink-0">
                     {/* La foto de la variante si tiene; si no, la del producto. */}
                     {item.variant.imagen_url || item.product.imagen_url ? (
                       <Image
@@ -413,20 +423,20 @@ export function ProductGrid({
               return (
                 <button
                   key={item.key}
-                  onClick={() => {
+                  onClick={(e) => {
                     if (onAddVariant) {
-                      onAddVariant(item.product, null);
+                      onAddVariant(item.product, null, fotoDe(e));
                     } else {
-                      onAddProduct(item.product);
+                      onAddProduct(item.product, fotoDe(e));
                     }
                   }}
                   className={cn(
-                    "flex flex-col items-start overflow-hidden rounded-lg border border-dashed border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up border-l-4",
+                    "flex flex-col items-start overflow-hidden rounded-lg border border-dashed border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up border-l-4 active:scale-[0.97]",
                     item.familyColor.border
                   )}
                   style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
-                  <div className="relative w-full aspect-[4/3] shrink-0">
+                  <div data-foto-pos className="relative w-full aspect-[4/3] shrink-0">
                     {item.product.imagen_url ? (
                       <Image
                         src={item.product.imagen_url}
@@ -498,11 +508,11 @@ export function ProductGrid({
             return (
               <button
                 key={product.id}
-                onClick={() => onAddProduct(product)}
-                className="relative flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up @max-md:rounded-2xl"
+                onClick={(e) => onAddProduct(product, fotoDe(e))}
+                className="relative flex flex-col items-start overflow-hidden rounded-lg border border-border bg-background hover:bg-accent hover:border-accent-foreground/20 transition-all duration-150 text-left animate-fade-in-up @max-md:rounded-2xl active:scale-[0.97]"
                 style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
               >
-                <div className="relative w-full aspect-[4/3] shrink-0">
+                <div data-foto-pos className="relative w-full aspect-[4/3] shrink-0">
                   {product.imagen_url ? (
                     <Image
                       src={product.imagen_url}
