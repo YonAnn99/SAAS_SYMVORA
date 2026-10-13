@@ -11,7 +11,7 @@ function normalizar(texto: string): string {
 }
 
 /**
- * Indice de guias con buscador. Filtra en el navegador (son 12 guias) por
+ * Indice de guias con buscador. Filtra en el navegador (son 15 guias) por
  * titulo, resumen y titulos de sus pasos, asi "corte" encuentra la guia de caja.
  */
 export function AprendeIndice() {
@@ -35,7 +35,7 @@ export function AprendeIndice() {
           type="search"
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
-          placeholder="Busca: corte de caja, variantes, traspasos…"
+          placeholder="Busca: corte de caja, lealtad, caducidades…"
           aria-label="Buscar en las guías"
           className="w-full rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 pl-11 pr-4 py-3 text-sm text-black dark:text-neutral-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />

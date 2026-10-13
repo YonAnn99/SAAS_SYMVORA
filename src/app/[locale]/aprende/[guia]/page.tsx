@@ -14,6 +14,7 @@ import {
 } from "@/features/marketing/aprende";
 import { breadcrumbSchema, howToSchema } from "@/lib/seo/structured-data";
 import { getSiteUrl } from "@/lib/site";
+import { cn } from "@/lib/utils";
 import { DIAS_PRUEBA } from "@/lib/trial";
 
 /**
@@ -141,12 +142,17 @@ export default async function GuiaPage({ params }: { params: Params }) {
                             </h3>
                             <p className="mt-1.5 text-neutral-600 dark:text-neutral-300 leading-relaxed">{p.texto}</p>
                             {p.captura && (
+                              // Una pantalla completa ocupa el ancho; una ventana
+                              // pequeña va a su tamaño real, sin estirarse.
                               <Image
-                                src={p.captura}
+                                src={p.captura.src}
                                 alt={`${guia.titulo}: ${p.titulo}`}
-                                width={1280}
-                                height={800}
-                                className="mt-4 w-full h-auto rounded-xl border border-neutral-200 dark:border-neutral-800"
+                                width={p.captura.ancho}
+                                height={p.captura.alto}
+                                className={cn(
+                                  "mt-4 h-auto max-w-full rounded-xl border border-neutral-200 dark:border-neutral-800",
+                                  p.captura.ancho >= 1000 && "w-full"
+                                )}
                               />
                             )}
                           </div>

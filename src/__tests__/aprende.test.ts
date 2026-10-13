@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GUIAS, guiaParaRuta, guiaPorSlug, idYoutube, rutaGuia } from "@/features/marketing/aprende";
@@ -13,8 +13,8 @@ import sitemap from "@/app/sitemap";
  */
 
 describe("contenido de las guías", () => {
-  it("12 guías, sin slugs repetidos y válidos para URL", () => {
-    expect(GUIAS.length).toBeGreaterThanOrEqual(12);
+  it("15 guías, sin slugs repetidos y válidos para URL", () => {
+    expect(GUIAS.length).toBeGreaterThanOrEqual(15);
     expect(new Set(GUIAS.map((g) => g.slug)).size).toBe(GUIAS.length);
     for (const g of GUIAS) expect(g.slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
   });
@@ -31,9 +31,32 @@ describe("contenido de las guías", () => {
     for (const g of GUIAS) for (const r of g.relacionadas) expect(guiaPorSlug(r), `${g.slug} → ${r}`).toBeDefined();
   });
 
+  it("las guías de funciones sin pantalla propia existen y se enlazan desde su módulo", () => {
+    const enlaces: Record<string, string> = {
+      "tarjetas-de-lealtad": "clientes-y-credito",
+      "lotes-caducidades-e-insumos": "productos-e-inventario",
+      notificaciones: "primeros-pasos",
+    };
+    for (const [slug, desde] of Object.entries(enlaces)) {
+      expect(guiaPorSlug(slug), slug).toBeDefined();
+      expect(guiaPorSlug(desde)?.relacionadas, `${desde} → ${slug}`).toContain(slug);
+    }
+  });
+
+  it("las capturas existen en /public y traen su tamaño", () => {
+    for (const g of GUIAS)
+      for (const s of g.secciones)
+        for (const p of s.pasos) {
+          if (!p.captura) continue;
+          expect(existsSync(join(process.cwd(), "public", p.captura.src)), p.captura.src).toBe(true);
+          expect(p.captura.ancho > 0 && p.captura.alto > 0, p.captura.src).toBe(true);
+        }
+  });
+
   it("no documenta lo que el sistema no hace", () => {
     // La facturacion (CFDI) esta apagada y exportar reportes aun no funciona.
-    const prohibidas = /factura|cfdi|export(a|ar)\b.*(pdf|csv)|descarga el reporte/i;
+    // "Completar venta" ya no existe: se cobra deslizando.
+    const prohibidas = /factura|cfdi|export(a|ar)\b.*(pdf|csv)|descarga el reporte|completar venta/i;
     for (const g of GUIAS) {
       const texto = JSON.stringify({ ...g, icono: undefined });
       expect(texto, g.slug).not.toMatch(prohibidas);

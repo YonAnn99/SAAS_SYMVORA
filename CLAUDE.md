@@ -401,7 +401,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (1088 tests al 2026-10-12) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1090 tests al 2026-10-12) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 118; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
