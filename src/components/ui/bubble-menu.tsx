@@ -34,7 +34,15 @@ export default function BubbleMenu({
   menuBg?: string;
   menuContentColor?: string;
   useFixedPosition?: boolean;
-  items?: Array<{ label: string; href: string; rotation: number }>;
+  items?: Array<{
+    label: string;
+    href: string;
+    rotation: number;
+    /** Color propio de la pildora (por defecto, `menuBg` / `menuContentColor`). */
+    bgColor?: string;
+    textColor?: string;
+    hoverStyles?: { bgColor?: string; textColor?: string };
+  }>;
   animationEase?: string;
   animationDuration?: number;
   staggerDelay?: number;
@@ -150,7 +158,7 @@ export default function BubbleMenu({
       {showOverlay && (
         <div ref={overlayRef} className={`bubble-menu-items ${useFixedPosition ? 'fixed' : 'absolute'} inset-0 flex items-center justify-center pointer-events-none z-[1000]`} aria-hidden={!isMenuOpen}>
           <ul className="pill-list list-none m-0 px-6 w-full max-w-[1600px] mx-auto flex flex-wrap gap-x-0 gap-y-1 pointer-events-auto" role="menu" aria-label="Menu links">
-            {menuItems.map((item: { label: string; href: string; rotation?: number; ariaLabel?: string; hoverStyles?: { bgColor?: string; textColor?: string } }, idx: number) => (
+            {menuItems.map((item: { label: string; href: string; rotation?: number; ariaLabel?: string; bgColor?: string; textColor?: string; hoverStyles?: { bgColor?: string; textColor?: string } }, idx: number) => (
               <li key={idx} role="none" className="pill-col flex justify-center items-stretch box-border">
                 <a
                   role="menuitem"
@@ -160,8 +168,8 @@ export default function BubbleMenu({
                   className="pill-link w-full rounded-[999px] no-underline bg-white text-inherit shadow-[0_4px_14px_rgba(0,0,0,0.10)] flex items-center justify-center relative transition-[background,color] duration-300 ease-in-out box-border whitespace-nowrap overflow-hidden"
                   style={{
                     '--item-rot': `${item.rotation ?? 0}deg`,
-                    '--pill-bg': menuBg,
-                    '--pill-color': menuContentColor,
+                    '--pill-bg': item.bgColor || menuBg,
+                    '--pill-color': item.textColor || menuContentColor,
                     '--hover-bg': item.hoverStyles?.bgColor || '#f3f4f6',
                     '--hover-color': item.hoverStyles?.textColor || menuContentColor,
                     background: 'var(--pill-bg)',

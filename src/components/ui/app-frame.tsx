@@ -57,12 +57,20 @@ export function AppFrame({
       <div className="md:hidden">
         <BubbleMenu
           items={[
+            { label: "Iniciar sesión", href: "/login", rotation: -8 },
+            {
+              label: "Prueba gratis",
+              href: "/signup",
+              rotation: 8,
+              // Color opuesto al modo (variables en globals.css).
+              bgColor: "var(--bubble-cta-bg)",
+              textColor: "var(--bubble-cta-text)",
+              hoverStyles: { bgColor: "var(--bubble-cta-bg)", textColor: "var(--bubble-cta-text)" },
+            },
             { label: "Precios", href: `${inicio}#pricing`, rotation: -8 },
             { label: "Aprende", href: "/es/aprende", rotation: 8 },
             { label: "Nosotros", href: "/es/nosotros", rotation: -8 },
             { label: "Contáctanos", href: `${inicio}#footer-contacto`, rotation: 8 },
-            { label: "Iniciar sesión", href: "/login", rotation: -8 },
-            { label: "Prueba gratis", href: "/signup", rotation: 8 },
           ]}
           logo={
             <a href={inicio || "#"} onClick={alLogo} aria-label="SYMVORA, ir al inicio" className="block w-[100px] h-[28px] overflow-hidden">

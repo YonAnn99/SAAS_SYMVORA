@@ -8,11 +8,16 @@
   /* Variables para el BubbleMenu de Móviles */
   --bubble-bg: #ffffff;
   --bubble-text: #09090b;
+  /* «Prueba gratis»: color opuesto al modo (azul SYMVORA en claro, blanco en oscuro) */
+  --bubble-cta-bg: #1e3a8a;
+  --bubble-cta-text: #ffffff;
 }
 
 .dark {
   --bubble-bg: #09090b;
   --bubble-text: #ffffff;
+  --bubble-cta-bg: #ffffff;
+  --bubble-cta-text: #1e3a8a;
 }
 
 /* Scrollbar hide utility */
