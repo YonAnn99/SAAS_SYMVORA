@@ -54,9 +54,9 @@ describe("contenido de las guías", () => {
   });
 
   it("no documenta lo que el sistema no hace", () => {
-    // La facturacion (CFDI) esta apagada y exportar reportes aun no funciona.
-    // "Completar venta" ya no existe: se cobra deslizando.
-    const prohibidas = /factura|cfdi|export(a|ar)\b.*(pdf|csv)|descarga el reporte|completar venta/i;
+    // La facturacion (CFDI) esta apagada. "Completar venta" ya no existe: se
+    // cobra deslizando. (Exportar reportes a Excel/PDF ya funciona.)
+    const prohibidas = /factura|cfdi|completar venta/i;
     for (const g of GUIAS) {
       const texto = JSON.stringify({ ...g, icono: undefined });
       expect(texto, g.slug).not.toMatch(prohibidas);

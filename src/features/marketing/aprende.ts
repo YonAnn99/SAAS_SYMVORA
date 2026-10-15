@@ -501,6 +501,7 @@ export const GUIAS: Guia[] = [
           { titulo: "Elige el periodo", texto: "En Reportes elige «Última semana», «Este mes», «Último trimestre», «Último año» o un «Día específico». Ves el total de ventas, las transacciones, el ticket promedio y los productos vendidos." },
           { titulo: "Ganancia sobre productos", texto: "Ves los ingresos sin IVA, el costo de lo vendido y la ganancia, y los productos que más te dejan. Es margen bruto: no descuenta renta, sueldos ni otros gastos. Los productos sin costo capturado no entran en el cálculo." },
           { titulo: "Gráficas", texto: "Ingresos contra ganancia, ventas por periodo comparadas con el periodo anterior, métodos de pago, ventas por hora y por día de la semana, los 10 productos más vendidos y las categorías que más venden. También ves las compras del periodo y tus clientes más frecuentes." },
+          { titulo: "Exporta tu reporte", texto: "Con «Exportar» descargas en Excel o PDF el periodo y la sucursal que estás viendo: el resumen, la ganancia, los productos, los clientes y la lista de ventas una por una. El reporte se divide en pestañas (Resumen, Ventas, Productos, Clientes e Historial) para ver una parte a la vez." },
         ],
       },
       {

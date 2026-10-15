@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Download, TrendingUp, Package, Users, CreditCard, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, ChevronDown, Download, FileSpreadsheet, FileText, Loader2, TrendingUp, Package, Users, CreditCard, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   IngresosGananciaChart,
   PaymentMethodsChart,
@@ -62,6 +62,21 @@ import { calcularGanancia, gananciaPorProducto } from "@/lib/profit";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { ContadorAnimado } from "@/components/ui/contador-animado";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import {
+  armarSeccionesReporte,
+  exportarReporteExcel,
+  exportarReportePdf,
+  nombreArchivoReporte,
+  traerVentasParaExportar,
+} from "@/features/reports/exportar-reporte";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
 
 interface ReportData {
@@ -93,6 +108,19 @@ interface ReportData {
     topPorGanancia: { nombre: string; ganancia: number; ingresos: number }[];
   };
 }
+
+/**
+ * La pagina se parte en pestañas: se ve un grupo a la vez, en celular y en
+ * escritorio. Con todo seguido habia que bajar demasiado.
+ */
+type GrupoReporte = "resumen" | "ventas" | "productos" | "clientes" | "historial";
+const GRUPOS: { valor: GrupoReporte; etiqueta: string }[] = [
+  { valor: "resumen", etiqueta: "Resumen" },
+  { valor: "ventas", etiqueta: "Ventas" },
+  { valor: "productos", etiqueta: "Productos" },
+  { valor: "clientes", etiqueta: "Clientes" },
+  { valor: "historial", etiqueta: "Historial" },
+];
 
 // La etiqueta sale de la lista compartida para que el desplegable y el
 // resumen del disparador no puedan decir cosas distintas.
@@ -136,8 +164,8 @@ function claveReporte(
 
 export default function ReportsPage() {
   const t = useTranslations();
-  const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const { seleccionada: sucursalId } = useSucursal();
+  const { tenantId, tenantName, loading: tenantLoading } = useCurrentTenant();
+  const { seleccionada: sucursalId, sucursales } = useSucursal();
   // Cache entre modulos (`lib/cache-datos.ts`), por negocio, sucursal, periodo,
   // fecha elegida y DIA de hoy (el "mes" de hoy no es el de mañana). La vista
   // inicial es "mes" sin fecha: es la que se pinta al instante al volver.
@@ -492,8 +520,57 @@ export default function ReportsPage() {
     setCalendarOpen((prev) => !prev);
   }, [periodo]);
 
-  const handleExport = () => {
-    toast.info("Exportación en desarrollo");
+  const [exportando, setExportando] = useState(false);
+  const [grupo, setGrupo] = useState<GrupoReporte>("resumen");
+  const grupoClase = (g: GrupoReporte) =>
+    cn("space-y-6 md:space-y-8", grupo !== g && "hidden");
+
+  // Exporta lo que se ve: el mismo periodo, sucursal y cifras de la pantalla,
+  // mas la lista de ventas (RPC `listar_ventas`: un cajero solo las suyas).
+  const handleExport = async (formato: "excel" | "pdf") => {
+    const rango = rangoDePeriodo(periodo, selectedDate);
+    if (!tenantId || !rango || exportando) return;
+    setExportando(true);
+    const aviso = toast.loading("Preparando reporte…");
+    try {
+      const { ventas, truncado } = await traerVentasParaExportar({
+        tenantId,
+        desde: rango.desde,
+        hasta: rango.hasta,
+        sucursalId,
+      });
+      const meta = {
+        negocio: tenantName || "Mi negocio",
+        sucursal: sucursalId ? (sucursales.find((s) => s.id === sucursalId)?.nombre ?? null) : null,
+        periodo:
+          periodo === "dia" && selectedDate
+            ? formatShortDate(selectedDate)
+            : (PERIODOS.find((p) => p.valor === periodo)?.etiqueta ?? periodo),
+        desde: rango.desde,
+        hasta: rango.hasta,
+        generado: new Date(),
+        resumenTruncado: reporteTruncado,
+        ventasTruncadas: truncado,
+        esDia: periodo === "dia",
+      };
+      const secciones = armarSeccionesReporte(reportData, ventas, meta);
+      const archivo = nombreArchivoReporte(meta);
+      if (formato === "excel") await exportarReporteExcel(secciones, archivo);
+      else await exportarReportePdf(secciones, meta, archivo);
+      toast.success(formato === "excel" ? "Reporte descargado en Excel" : "Reporte descargado en PDF", { id: aviso });
+    } catch {
+      toast.error("No se pudo generar el reporte. Intenta de nuevo.", { id: aviso });
+    } finally {
+      setExportando(false);
+    }
+  };
+  const sinRango = periodo === "dia" && !selectedDate;
+
+  const cambiarGrupo = (valor: unknown) => {
+    if (typeof valor !== "string" || !GRUPOS.some((g) => g.valor === valor)) return;
+    setGrupo(valor as GrupoReporte);
+    // La barra queda fija arriba; el contenido nuevo empieza bajo ella.
+    document.getElementById("pestanas-reporte")?.scrollIntoView({ block: "start" });
   };
 
   const calendarDays = useMemo(() => {
@@ -553,10 +630,12 @@ export default function ReportsPage() {
             descripcion="Análisis detallado de ventas, productos y clientes"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <SucursalSelector className="w-[170px] h-8" />
+        {/* En celular se acomodan en dos filas: sucursal y periodo, y abajo
+            calendario, Exportar y Actualizar. En una sola fila median ~550 px. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <SucursalSelector className="h-8 min-w-[140px] flex-1 sm:w-[170px] sm:flex-none" />
           <Select value={periodo} onValueChange={(v) => v && esPeriodo(v) && setPeriodo(v)}>
-            <SelectTrigger className="w-[160px] h-8">
+            <SelectTrigger className="h-8 min-w-[140px] flex-1 sm:w-[160px] sm:flex-none">
               <CalendarIcon className="h-3.5 w-3.5 mr-2" />
               {periodo === "dia" && selectedDate ? (
                 <span className="flex flex-1 text-left">{selectDisplayValue}</span>
@@ -664,15 +743,30 @@ export default function ReportsPage() {
             </PopoverContent>
           </Popover>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-2"
-            onClick={handleExport}
-          >
-            <Download className="h-3.5 w-3.5" />
-            Exportar
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              disabled={loading || exportando || sinRango}
+              render={<Button variant="outline" size="sm" className="h-8 gap-2" />}
+            >
+              {exportando ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              Exportar
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => void handleExport("excel")}>
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => void handleExport("pdf")}>
+                <FileText className="h-4 w-4" />
+                PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <BotonActualizar
             onActualizar={async () => {
               setVersionHistorial((v) => v + 1);
@@ -682,6 +776,27 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {/* Pestañas, fijas arriba (el scroll es el <main>). */}
+      <Tabs
+        id="pestanas-reporte"
+        value={grupo}
+        onValueChange={cambiarGrupo}
+        className="sticky top-0 z-20 -mx-4 bg-background/95 px-4 py-2 backdrop-blur md:-mx-6 md:px-6"
+      >
+        <TabsList className="w-full sm:w-fit">
+          {GRUPOS.map((g) => (
+            <TabsTrigger
+              key={g.valor}
+              value={g.valor}
+              className="max-sm:group-data-[variant=default]/tabs-list:px-1.5"
+            >
+              {g.etiqueta}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
+      <div className={grupoClase("resumen")}>
       {/* Summary Cards */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {[
@@ -723,7 +838,7 @@ export default function ReportsPage() {
               <card.icon className="h-3.5 w-3.5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-semibold tracking-tight font-mono">
+              <div className="text-lg font-semibold tracking-tight font-mono sm:text-xl">
                 {card.value}
               </div>
             </CardContent>
@@ -834,9 +949,12 @@ export default function ReportsPage() {
         totalVentas={reportData.resumen.totalVentas}
       />
 
+      </div>
+
+      <div className={grupoClase("ventas")}>
       {/* Charts Grid */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="animate-fade-in-up stagger-6">
+        <div className="min-w-0 animate-fade-in-up stagger-6">
           <SalesChart
             data={reportData.ventasPorPeriodo}
             title={
@@ -851,7 +969,7 @@ export default function ReportsPage() {
             }
           />
         </div>
-        <div className="animate-fade-in-up stagger-7">
+        <div className="min-w-0 animate-fade-in-up stagger-7">
           <PaymentMethodsChart
             data={reportData.metodosPago}
             title="Distribución por método de pago"
@@ -862,14 +980,14 @@ export default function ReportsPage() {
       {/* ¿Cuando vende mas el negocio? Con "dia" solo hay un dia de la semana:
           esa grafica se omite. */}
       <div className={`grid gap-4 ${periodo === "dia" ? "" : "md:grid-cols-2"}`}>
-        <div className="animate-fade-in-up stagger-8">
+        <div className="min-w-0 animate-fade-in-up stagger-8">
           <VentasPorHoraChart
             data={reportData.ventasPorHora ?? []}
             title="Ventas por hora del día"
           />
         </div>
         {periodo !== "dia" && (
-          <div className="animate-fade-in-up stagger-8">
+          <div className="min-w-0 animate-fade-in-up stagger-8">
             <VentasPorDiaSemanaChart
               data={reportData.ventasPorDiaSemana ?? []}
               title="Ventas por día de la semana"
@@ -878,8 +996,11 @@ export default function ReportsPage() {
         )}
       </div>
 
+      </div>
+
+      <div className={grupoClase("productos")}>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="animate-fade-in-up stagger-8">
+        <div className="min-w-0 animate-fade-in-up stagger-8">
           <TopProductsChart
             data={reportData.topProductos.map((p) => ({
               nombre: p.nombre,
@@ -888,7 +1009,7 @@ export default function ReportsPage() {
             title="Top 10 productos más vendidos"
           />
         </div>
-        <div className="animate-fade-in-up stagger-9">
+        <div className="min-w-0 animate-fade-in-up stagger-9">
           <TopCategoriasChart
             data={reportData.topCategorias}
             title="Top categorías (ventas sin IVA)"
@@ -896,6 +1017,9 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      </div>
+
+      <div className={grupoClase("clientes")}>
       {/* Top Customers */}
       <Card className="animate-fade-in-up stagger-10">
         <CardHeader>
@@ -943,6 +1067,9 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
+      </div>
+
+      <div className={grupoClase("historial")}>
       {/* El historial de ventas individuales. Va al final, despues de los
           agregados: primero el resumen del periodo, luego el detalle. Comparte
           el selector de periodo de arriba, asi que responde al mismo filtro que
@@ -953,6 +1080,7 @@ export default function ReportsPage() {
         fechaElegida={selectedDate}
         version={versionHistorial}
       />
+      </div>
     </div>
   );
 }

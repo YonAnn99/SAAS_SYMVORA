@@ -309,7 +309,7 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="pl-3">
-              <div className="text-2xl font-bold tracking-tight">{kpi.value}</div>
+              <div className="text-xl font-bold tracking-tight sm:text-2xl">{kpi.value}</div>
               {kpi.trend !== null && kpi.trend !== 0 && (
                 <p className={`text-xs mt-2 font-medium ${kpi.trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                   {kpi.trend > 0 ? '↑' : '↓'}{" "}

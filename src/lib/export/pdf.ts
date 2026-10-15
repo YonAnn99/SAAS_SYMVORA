@@ -8,7 +8,7 @@ interface ExportColumn<T> {
  * jsPDF y su plugin de tablas pesan ~350 kB: se descargan al generar el primer
  * PDF, no al abrir la pantalla.
  */
-async function cargarJsPdf() {
+export async function cargarJsPdf() {
   const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),

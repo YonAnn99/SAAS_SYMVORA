@@ -401,7 +401,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (1090 tests al 2026-10-12) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1108 tests al 2026-10-14) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 118; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
@@ -456,5 +456,5 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] `public/aprende/primeros-pasos/crear-producto` (sin extensión, duplicado de `crear-producto.webp`).
 - [ ] Subir Supabase a Pro (techo de 4 conexiones en Free).
 - [ ] Fotos de producto reemplazadas quedan huérfanas en Storage.
-- [ ] OAuth Microsoft (Azure) pendiente; exportación CSV/PDF solo conectada en `/products`.
+- [ ] OAuth Microsoft (Azure) pendiente; exportación CSV/PDF conectada en `/products` y Excel/PDF en Reportes (`features/reports/exportar-reporte.ts`).
 - [ ] Peso de la landing: `motion` en 16 componentes. Es todo o nada; ver CONTEXT.md.

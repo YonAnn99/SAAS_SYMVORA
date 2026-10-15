@@ -165,6 +165,40 @@ export function SalesHistoryCard({
       );
     }
     return (
+      <>
+        {/* Celular: renglones en vez de la tabla (5-7 columnas obligaban a
+            desplazarse de lado). Abren el mismo detalle. */}
+        <ul className="divide-y divide-border sm:hidden">
+          {ventas.map((v) => (
+            <li key={v.id}>
+              <button
+                type="button"
+                onClick={() => setVentaAbierta(v.id)}
+                className="flex w-full flex-col gap-0.5 py-2.5 text-left"
+              >
+                <span className="flex items-center gap-2 text-xs">
+                  <span className="whitespace-nowrap text-muted-foreground">{horaCorta(v.fecha_venta)}</span>
+                  <span className="font-mono">#{numeroOperacion(v.id)}</span>
+                  <EstadoVentaBadge estado={v.estado} />
+                  <span className="ml-auto shrink-0 font-mono text-sm font-medium tabular-nums">
+                    {formatMXN(v.total)}
+                  </span>
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {[
+                    v.cliente_nombre ?? "Cliente general",
+                    t(clavePagoI18n(v.metodo_pago)),
+                    veTodas ? v.cajero_nombre?.trim() || v.cajero_email : null,
+                    verSucursal ? v.sucursal_nombre : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      <div className="max-sm:hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -214,6 +248,8 @@ export function SalesHistoryCard({
           ))}
         </TableBody>
       </Table>
+      </div>
+      </>
     );
   }, [sinFechaElegida, cargando, ventas, veTodas, verSucursal, t]);
 
