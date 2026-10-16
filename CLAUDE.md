@@ -252,9 +252,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     fecha. Al aplicarla, todo usuario existente ve una vez el aviso y su aceptación queda guardada.
     `/api/legal/accept` solo registra las versiones vigentes (409 si no). RLS: cada quien ve e inserta solo
     las suyas; nadie modifica ni borra.
-  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.3-2026-10-02`; términos en `v1.3-2026-10-06`
+  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.4-2026-10-15` (edad opcional); términos en `v1.3-2026-10-06`
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
-    Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba.
+    Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba; la **edad** es opcional y se captura en Mi perfil (`user_metadata.edad`, 18-120).
 
 ## Tarjetas de lealtad (migración 115, 2026-10-09)
 - **Vive dentro de Clientes** (`/customers`, pestaña «Tarjetas de lealtad», `?tab=lealtad`): configuración del
@@ -386,6 +386,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - La invitación pide Nombre y Apellido (opcional), guardados en `user_invite_keys.nombre/apellido`.
     `key-login` los copia a `user_metadata.nombre`.
   - El dueño edita el nombre desde Usuarios con `PATCH /api/users/[userId]/nombre`.
+  - El registro con correo solo pide **Nombre y Apellido**; el nombre por partes (`primer_nombre`, `segundo_nombre`,
+    `apellido_paterno`, `apellido_materno`) y la edad se completan en Mi perfil. `nombre`/`nombre_completo`/`full_name`
+    siguen con el nombre armado (`armarNombre`); `partesDelNombre` ignora partes que ya no formen el nombre vigente.
   - `get_tenant_members` devuelve `user_nombre`; `listar_ventas`/`detalle_venta` devuelven `cajero_nombre`.
   - El saludo "¡Hola, {nombre}!" sale en el Dashboard y arriba del buscador del POS.
 - **Cartera de clientes interna:** vista `interno.cartera_clientes` (migraciones 100 y 111), no expuesta por la
@@ -401,7 +404,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (1108 tests al 2026-10-14) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1114 tests al 2026-10-15) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
 - **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 118; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
@@ -440,7 +443,7 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] Con plan Pro de Vercel: cambiar el cron `/api/cron/seguimiento-whatsapp` a cada hora (`"0 * * * *"`).
 
 ## Aviso de Privacidad
-- [ ] Al hacer deploy, privacidad v1.3-2026-10-02 (SMS/Twilio) y términos v1.3-2026-10-06 (mayoría de edad) vuelven a mostrar el aviso de cambios.
+- [ ] Al hacer deploy, privacidad v1.4-2026-10-15 (SMS/Twilio y edad opcional) y términos v1.3-2026-10-06 (mayoría de edad) vuelven a mostrar el aviso de cambios.
       El aviso promete 15 días de anticipación para cambios.
 - [ ] Reemplazar `[Domicilio del responsable]`, que sigue sin datos.
 

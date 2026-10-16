@@ -33,10 +33,10 @@ function celularValido(data: { pais: string; telefono: string }) {
 
 export const signupSchema = z
   .object({
-    nombre: z.string().min(1, "El nombre es requerido"),
-    segundo_nombre: z.string().optional(),
-    apellido_paterno: z.string().min(1, "El apellido paterno es requerido"),
-    apellido_materno: z.string().min(1, "El apellido materno es requerido"),
+    // Solo nombre y apellido para crear la cuenta rapido; el nombre completo
+    // (segundo nombre, apellido materno) y la edad se capturan en Mi perfil.
+    nombre: z.string().trim().min(1, "El nombre es requerido"),
+    apellido: z.string().trim().min(1, "El apellido es requerido"),
     nombre_establecimiento: z.string().min(2, "El nombre del establecimiento es requerido"),
     // Slug de uno de los 20 giros de la landing (`GIROS`), no ya una de las 7
     // configuraciones: el formulario ofrece los 20.

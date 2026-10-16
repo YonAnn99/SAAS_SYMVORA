@@ -9,7 +9,16 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { subirLogoNegocio } from "@/lib/logo-negocio";
-import { nombreCompleto } from "@/lib/nombre-usuario";
+import {
+  armarNombre,
+  EDAD_MAXIMA,
+  EDAD_MINIMA,
+  edadDe,
+  edadValida,
+  nombreCompleto,
+  partesDelNombre,
+  type PartesNombre,
+} from "@/lib/nombre-usuario";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +55,15 @@ const roleBadges: Record<string, { label: string; className: string }> = {
 
 const MAX_NOMBRE_NEGOCIO = 100;
 
+// Nombre completo por partes. El registro solo pide nombre y apellido; aqui
+// se completa. Obligatorios: nombre y apellido paterno.
+const CAMPOS_NOMBRE: { clave: keyof PartesNombre; etiqueta: string; autoComplete: string }[] = [
+  { clave: "primerNombre", etiqueta: "Nombre *", autoComplete: "given-name" },
+  { clave: "segundoNombre", etiqueta: "Segundo nombre (opcional)", autoComplete: "additional-name" },
+  { clave: "apellidoPaterno", etiqueta: "Apellido paterno *", autoComplete: "family-name" },
+  { clave: "apellidoMaterno", etiqueta: "Apellido materno (opcional)", autoComplete: "off" },
+];
+
 interface ProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -66,7 +84,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     role === "SUPER_ADMIN" || role === "ORG_ADMIN" || can("org.manage_settings");
 
   const [email, setEmail] = useState("");
+  // `fullName` es el nombre guardado (encabezado del perfil); `partes` y
+  // `edad`, lo que se edita en «Datos personales».
   const [fullName, setFullName] = useState("");
+  const [partes, setPartes] = useState<PartesNombre>(partesDelNombre(null));
+  const [edad, setEdad] = useState("");
   const [savingName, setSavingName] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
@@ -102,6 +124,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         setEmail(user.email || "");
         // Incluye el nombre capturado al crear la cuenta (`nombre`).
         setFullName(nombreCompleto(user.user_metadata));
+        setPartes(partesDelNombre(user.user_metadata));
+        const edadGuardada = edadDe(user.user_metadata);
+        setEdad(edadGuardada === null ? "" : String(edadGuardada));
       }
     };
 
@@ -114,28 +139,56 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
 
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim()) {
+    const limpio = (v: string) => v.trim().replace(/\s+/g, " ");
+    const datos: PartesNombre = {
+      primerNombre: limpio(partes.primerNombre),
+      segundoNombre: limpio(partes.segundoNombre),
+      apellidoPaterno: limpio(partes.apellidoPaterno),
+      apellidoMaterno: limpio(partes.apellidoMaterno),
+    };
+    if (!datos.primerNombre) {
       toast.error("El nombre no puede estar vacío");
+      return;
+    }
+    if (!datos.apellidoPaterno) {
+      toast.error("El apellido paterno no puede estar vacío");
+      return;
+    }
+    const edadNumero = edad.trim() === "" ? null : Number(edad);
+    if (edadNumero !== null && !edadValida(edadNumero)) {
+      toast.error(`La edad debe ser un número entero de ${EDAD_MINIMA} a ${EDAD_MAXIMA}`);
       return;
     }
 
     setSavingName(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const nombre = fullName.trim();
+      const nombre = armarNombre(datos);
       // Las tres claves con el mismo valor: `nombre` es la que leen los
       // correos de corte de caja y Conekta; las otras, versiones anteriores.
+      // Las partes van aparte para volver a llenar este formulario.
       const { error } = await supabase.auth.updateUser({
-        data: { nombre, nombre_completo: nombre, full_name: nombre },
+        data: {
+          nombre,
+          nombre_completo: nombre,
+          full_name: nombre,
+          primer_nombre: datos.primerNombre,
+          segundo_nombre: datos.segundoNombre,
+          apellido_paterno: datos.apellidoPaterno,
+          apellido_materno: datos.apellidoMaterno,
+          edad: edadNumero,
+        },
       });
 
       if (error) throw error;
+      setFullName(nombre);
+      setPartes(datos);
       // El saludo del Dashboard lee el nombre del contexto del negocio.
       await refetchTenant();
-      toast.success("Nombre actualizado correctamente");
+      toast.success("Datos personales actualizados");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Error al actualizar el nombre"
+        err instanceof Error ? err.message : "Error al actualizar tus datos personales"
       );
     } finally {
       setSavingName(false);
@@ -264,24 +317,50 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     <div className="space-y-4 pt-1">
       {/* Sección: Datos personales */}
       <form onSubmit={handleUpdateName} className="space-y-2">
-        <Label className="text-xs font-medium">Nombre completo</Label>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="Tu nombre completo"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="h-8 text-sm"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            variant="outline"
-            disabled={savingName}
-            className="h-8 px-3 text-xs shrink-0 cursor-pointer"
-          >
-            {savingName ? "Guardando..." : "Guardar"}
-          </Button>
+        <p className="text-xs font-medium">Datos personales</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {CAMPOS_NOMBRE.map(({ clave, etiqueta, autoComplete }) => (
+            <div key={clave} className="space-y-1">
+              <Label htmlFor={`perfil-${clave}`} className="text-xs text-muted-foreground">
+                {etiqueta}
+              </Label>
+              <Input
+                id={`perfil-${clave}`}
+                type="text"
+                autoComplete={autoComplete}
+                value={partes[clave]}
+                onChange={(e) => setPartes((p) => ({ ...p, [clave]: e.target.value }))}
+                className="h-8 text-sm"
+              />
+            </div>
+          ))}
+          <div className="space-y-1">
+            <Label htmlFor="perfil-edad" className="text-xs text-muted-foreground">
+              Edad (opcional)
+            </Label>
+            <Input
+              id="perfil-edad"
+              type="number"
+              inputMode="numeric"
+              min={EDAD_MINIMA}
+              max={EDAD_MAXIMA}
+              step={1}
+              value={edad}
+              onChange={(e) => setEdad(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="flex items-end justify-end">
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              disabled={savingName}
+              className="h-8 px-3 text-xs shrink-0 cursor-pointer"
+            >
+              {savingName ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
         </div>
       </form>
 

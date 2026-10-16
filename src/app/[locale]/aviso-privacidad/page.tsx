@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function AvisoPrivacidadPage() {
   return (
-    <LegalShell title="Aviso de Privacidad Integral" updatedAt="2 de octubre de 2026">
+    <LegalShell title="Aviso de Privacidad Integral" updatedAt="15 de octubre de 2026">
       <p>
         SYMVORA (&quot;la Plataforma&quot;, &quot;nosotros&quot;), con domicilio en [Domicilio del responsable],
         pone a disposición de sus usuarios el presente Aviso de Privacidad Integral, en
@@ -29,7 +29,7 @@ export default function AvisoPrivacidadPage() {
       <h2>2. Datos personales que recabamos</h2>
       <p>De los titulares (usuarios de la Plataforma) recabamos los siguientes datos:</p>
       <ul>
-        <li>Identificación: nombre(s) y apellidos, correo electrónico, número celular con lada de país.</li>
+        <li>Identificación: nombre(s) y apellidos, edad (opcional, solo si el usuario la captura en su perfil), correo electrónico, número celular con lada de país.</li>
         <li>
           Datos de su negocio: nombre comercial, giro comercial, logotipo, datos
           fiscales (RFC, razón social, régimen fiscal, código postal) necesarios para la

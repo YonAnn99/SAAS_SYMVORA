@@ -29,6 +29,7 @@ import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
+import { armarNombre } from "@/lib/nombre-usuario";
 import { useBorradorRegistro } from "@/features/onboarding/borrador-registro";
 import "@/styles/auth-toggle.css";
 
@@ -143,9 +144,7 @@ export function AuthForms({
 
   // Signup state
   const [nombre, setNombre] = useState("");
-  const [segundoNombre, setSegundoNombre] = useState("");
-  const [apellidoPaterno, setApellidoPaterno] = useState("");
-  const [apellidoMaterno, setApellidoMaterno] = useState("");
+  const [apellido, setApellido] = useState("");
   // Celular obligatorio: lada (pais) + numero nacional; se guarda en E.164.
   const [paisTelefono, setPaisTelefono] = useState(PAIS_POR_DEFECTO);
   const [telefono, setTelefono] = useState("");
@@ -444,9 +443,7 @@ export function AuthForms({
 
     const validation = signupSchema.safeParse({
       nombre,
-      segundo_nombre: segundoNombre || undefined,
-      apellido_paterno: apellidoPaterno,
-      apellido_materno: apellidoMaterno,
+      apellido,
       nombre_establecimiento: nombreEstablecimiento,
       giro,
       pais: paisTelefono,
@@ -468,9 +465,16 @@ export function AuthForms({
 
     const supabase = createSupabaseBrowserClient();
 
-    const fullName = [nombre, segundoNombre, apellidoPaterno, apellidoMaterno]
-      .filter(Boolean)
-      .join(" ");
+    // El nombre completo se arma igual que en Mi perfil (`armarNombre`); las
+    // partes van aparte para que el perfil las muestre en su campo.
+    const primerNombre = validation.data.nombre;
+    const apellidoPaterno = validation.data.apellido;
+    const fullName = armarNombre({
+      primerNombre,
+      segundoNombre: "",
+      apellidoPaterno,
+      apellidoMaterno: "",
+    });
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: signupEmail,
@@ -479,6 +483,8 @@ export function AuthForms({
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         data: {
           nombre: fullName,
+          primer_nombre: primerNombre,
+          apellido_paterno: apellidoPaterno,
           nombre_establecimiento: nombreEstablecimiento,
           giro,
           telefono: telefonoE164,
@@ -538,7 +544,7 @@ export function AuthForms({
   // `useBorradorRegistro`): se manda al salir de los campos de contacto.
   const guardarBorradorActual = () =>
     guardarBorrador({
-      nombre: [nombre, apellidoPaterno].filter(Boolean).join(" "),
+      nombre: [nombre, apellido].filter(Boolean).join(" "),
       negocio: nombreEstablecimiento,
       pais: paisTelefono,
       telefono,
@@ -618,28 +624,16 @@ export function AuthForms({
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     onBlur={guardarBorradorActual}
+                    autoComplete="given-name"
                     required
                   />
                   <input
                     type="text"
-                    placeholder={t("auth.middleNameOptional")}
-                    value={segundoNombre}
-                    onChange={(e) => setSegundoNombre(e.target.value)}
-                  />
-                </div>
-                <div className="auth-grid-2">
-                  <input
-                    type="text"
-                    placeholder={t("auth.lastName") + " *"}
-                    value={apellidoPaterno}
-                    onChange={(e) => setApellidoPaterno(e.target.value)}
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder={t("auth.maternalLastName") + " *"}
-                    value={apellidoMaterno}
-                    onChange={(e) => setApellidoMaterno(e.target.value)}
+                    placeholder={t("auth.lastNameSingle") + " *"}
+                    value={apellido}
+                    onChange={(e) => setApellido(e.target.value)}
+                    onBlur={guardarBorradorActual}
+                    autoComplete="family-name"
                     required
                   />
                 </div>

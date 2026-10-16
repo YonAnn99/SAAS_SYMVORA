@@ -93,6 +93,7 @@
     "middleNameOptional": "Middle name (optional)",
     "lastName": "Last name",
     "maternalLastName": "Mother's last name",
+    "lastNameSingle": "Last name",
     "phone": "Mobile number",
     "businessName": "Business name",
     "businessNamePlaceholder": "My Business",
