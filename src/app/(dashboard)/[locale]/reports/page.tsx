@@ -626,7 +626,8 @@ export default function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
           <EncabezadoModulo
-            titulo="Reportes y Analytics"
+            // En celular solo «Reportes»; desde `sm`, el titulo completo.
+            titulo={<>Reportes<span className="max-sm:hidden"> y Analytics</span></>}
             descripcion="Análisis detallado de ventas, productos y clientes"
           />
         </div>

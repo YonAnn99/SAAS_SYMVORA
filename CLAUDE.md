@@ -55,7 +55,8 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   (`app_metadata.is_demo`, correo `demo-<uuid>@demo.symvora.com.mx`, sin contraseña) y SU negocio sembrado
   (`crear_negocio_demo`). Nadie ve lo de otro. Se borra al salir (X de la franja → `/api/demo/salir` →
   `borrar_mi_demo`) o a las 2 h (`borrar_demos_vencidas`: en cada entrada y cron diario `/api/cron/limpiar-demos`).
-  Tope de 300 demos vivas. **REGLA:** `tenants.demo_expira_en IS NOT NULL` = negocio demo; todo cron, conteo o
+  Tope de 300 demos vivas. La migración 119 (2026-10-15) arregló `crear_negocio_demo`: la IP de la aceptación legal
+  iba como texto a una columna `inet` y, desde que existe `legal_acceptances` (2026-10-07), ninguna demo se creaba. **REGLA:** `tenants.demo_expira_en IS NOT NULL` = negocio demo; todo cron, conteo o
   vista interna sobre negocios debe ignorarlos. `_borrar_negocio_demo` se niega a tocar un negocio real.
   `reset_demo_tenant()` y el «Abarrotes Don Pedro» compartido (`demo@symvora.com`) quedan sin uso como respaldo.
 - **Vercel:** proyecto `saas-symvora`, build `next build --webpack`, despliegue por Git desde `main`.
@@ -406,7 +407,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1114 tests al 2026-10-15) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 118; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 119; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
