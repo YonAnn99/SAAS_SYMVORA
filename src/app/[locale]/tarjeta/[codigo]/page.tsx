@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { CreditCard, Smartphone } from "lucide-react";
 import { TarjetaVisual } from "@/features/lealtad/components/tarjeta-visual";
+import { TarjetaViva } from "@/features/lealtad/components/tarjeta-viva";
 import { obtenerTarjetaPublica } from "@/features/lealtad/tarjeta-publica.server";
-import { urlTarjeta } from "@/features/lealtad/lealtad";
+import { paletaDeTarjeta, urlTarjeta } from "@/features/lealtad/lealtad";
 import { qrSvg } from "@/features/lealtad/qr";
 
 /**
@@ -51,7 +52,9 @@ export default async function TarjetaPage({ params }: Props) {
   }
 
   const svg = await qrSvg(urlTarjeta(tarjeta.codigo, locale));
-  const oscura = tarjeta.paleta === "oscura";
+  // Con fondo libre, lo de alrededor sigue al fondo de la tarjeta, no a la paleta.
+  const colores = paletaDeTarjeta(tarjeta.paleta, tarjeta.color_acento, tarjeta.color_fondo);
+  const oscura = colores.oscuro;
 
   return (
     <main
@@ -59,22 +62,33 @@ export default async function TarjetaPage({ params }: Props) {
         oscura ? "bg-slate-950 text-slate-100" : "bg-slate-100 text-slate-900"
       }`}
     >
-      <TarjetaVisual
-        datos={{
-          negocio: tarjeta.negocio,
-          logoUrl: tarjeta.logo_url,
-          programa: tarjeta.programa,
-          paleta: tarjeta.paleta,
-          colorAcento: tarjeta.color_acento,
-          sellos: tarjeta.sellos,
-          sellosMeta: tarjeta.sellos_meta,
-          premio: tarjeta.premio_descripcion,
-          cliente: tarjeta.cliente,
-          codigo: tarjeta.codigo,
-          qrSvg: svg,
-          activa: tarjeta.activa,
-        }}
-      />
+      <TarjetaViva
+        codigo={tarjeta.codigo}
+        sellos={tarjeta.sellos}
+        canjes={tarjeta.premios_canjeados}
+        meta={tarjeta.sellos_meta}
+        acento={colores.acento}
+        oscura={oscura}
+      >
+        <TarjetaVisual
+          datos={{
+            negocio: tarjeta.negocio,
+            logoUrl: tarjeta.logo_url,
+            programa: tarjeta.programa,
+            paleta: tarjeta.paleta,
+            colorAcento: tarjeta.color_acento,
+            iconoSello: tarjeta.icono_sello,
+            colorFondo: tarjeta.color_fondo,
+            sellos: tarjeta.sellos,
+            sellosMeta: tarjeta.sellos_meta,
+            premio: tarjeta.premio_descripcion,
+            cliente: tarjeta.cliente,
+            codigo: tarjeta.codigo,
+            qrSvg: svg,
+            activa: tarjeta.activa,
+          }}
+        />
+      </TarjetaViva>
 
       {/* Sin Wallet todavia: la tarjeta se guarda como acceso directo. */}
       <details

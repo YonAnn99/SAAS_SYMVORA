@@ -2,11 +2,18 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ICONOS_SELLO,
+  cambioDeTarjeta,
   codigoAgrupado,
   codigoDesdeEscaneo,
   aplicarPremio,
+  contraste,
+  esInactiva,
+  iconoDeSello,
+  inicioDeSemana,
   luminancia,
   paletaDeTarjeta,
+  panelLealtad,
   progreso,
   textoProgreso,
   urlTarjeta,
@@ -93,19 +100,136 @@ describe("paletaDeTarjeta", () => {
   });
 });
 
-describe("contrato de la tarjeta publica (migracion 115)", () => {
-  const sql = readFileSync(join(process.cwd(), "supabase/migrations/115_tarjetas_lealtad.sql"), "utf8");
-  const publica = sql.slice(sql.indexOf("FUNCTION public.tarjeta_publica"));
-  const cuerpo = publica.slice(0, publica.indexOf("$$;", publica.indexOf("AS $$")));
+describe.each(["115_tarjetas_lealtad.sql", "120_lealtad_icono_y_fondo.sql"])(
+  "contrato de la tarjeta publica (%s)",
+  (archivo) => {
+    const sql = readFileSync(join(process.cwd(), "supabase/migrations", archivo), "utf8");
+    const publica = sql.slice(sql.indexOf("FUNCTION public.tarjeta_publica"));
+    const cuerpo = publica.slice(0, publica.indexOf("$$;", publica.indexOf("AS $$")));
 
-  it("no expone telefono, correo ni montos del cliente", () => {
-    for (const campo of ["telefono", "email", "direccion", "saldo_pendiente", "limite_credito", "rfc", "total"]) {
-      expect(cuerpo, campo).not.toMatch(new RegExp(`\\b${campo}\\b`));
-    }
+    it("no expone telefono, correo ni montos del cliente", () => {
+      for (const campo of ["telefono", "email", "direccion", "saldo_pendiente", "limite_credito", "rfc", "total"]) {
+        expect(cuerpo, campo).not.toMatch(new RegExp(`\\b${campo}\\b`));
+      }
+    });
+
+    it("del cliente solo da el primer nombre", () => {
+      expect(cuerpo).toMatch(/split_part\(btrim\(c\.nombre\), ' ', 1\)/);
+    });
+
+    it("solo la pueden llamar anon y authenticated", () => {
+      expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.tarjeta_publica\(text\) FROM PUBLIC;/);
+      expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION public\.tarjeta_publica\(text\) TO anon, authenticated;/);
+    });
+  }
+);
+
+describe("icono del sello (migracion 120)", () => {
+  it("la lista del selector es la misma que el CHECK de la base", () => {
+    const sql = readFileSync(join(process.cwd(), "supabase/migrations/120_lealtad_icono_y_fondo.sql"), "utf8");
+    const check = sql.slice(sql.indexOf("icono_sello IN ("), sql.indexOf("))", sql.indexOf("icono_sello IN (")));
+    const enBase = [...check.matchAll(/'([a-z]+)'/g)].map((m) => m[1]).sort();
+    expect(ICONOS_SELLO.map((i) => i.valor).sort()).toEqual(enBase);
   });
 
-  it("del cliente solo da el primer nombre", () => {
-    expect(cuerpo).toMatch(/split_part\(btrim\(c\.nombre\), ' ', 1\)/);
+  it("un valor vacio o desconocido cae en la palomita", () => {
+    expect(iconoDeSello("cafe")).toBe("cafe");
+    expect(iconoDeSello(undefined)).toBe("check");
+    expect(iconoDeSello("unicornio")).toBe("check");
+  });
+});
+
+describe("paletaDeTarjeta con fondo propio", () => {
+  it("sobre un fondo claro el texto es oscuro, y al reves", () => {
+    const crema = paletaDeTarjeta("oscura", "#B45309", "#FEF3C7");
+    expect(crema.fondo).toBe("#FEF3C7");
+    expect(crema.oscuro).toBe(false);
+    expect(contraste(crema.texto, crema.fondo)).toBeGreaterThan(7);
+
+    const cafe = paletaDeTarjeta("clara", "#F59E0B", "#3B2416");
+    expect(cafe.oscuro).toBe(true);
+    expect(contraste(cafe.texto, cafe.fondo)).toBeGreaterThan(7);
+  });
+
+  it("un acento que se pierde contra el fondo se corrige", () => {
+    const c = paletaDeTarjeta("clara", "#064E3B", "#064E3B");
+    expect(contraste(c.acento, c.fondo)).toBeGreaterThanOrEqual(1.8);
+  });
+
+  it("un fondo invalido usa la paleta, como antes", () => {
+    expect(paletaDeTarjeta("oscura", null, "rojo")).toEqual(paletaDeTarjeta("oscura", null));
+    expect(paletaDeTarjeta("clara", null).oscuro).toBe(false);
+    expect(paletaDeTarjeta("oscura", null).oscuro).toBe(true);
+  });
+});
+
+describe("cambioDeTarjeta (tarjeta publica viva)", () => {
+  it("la primera vez en el celular no anima nada", () => {
+    expect(cambioDeTarjeta(null, { sellos: 4, canjes: 0 }, 6)).toEqual({ nuevos: [], completa: false });
+  });
+
+  it("los sellos nuevos rebotan", () => {
+    expect(cambioDeTarjeta({ sellos: 3, canjes: 0 }, { sellos: 5, canjes: 0 }, 6)).toEqual({ nuevos: [3, 4], completa: false });
+  });
+
+  it("al completar la tarjeta hay celebracion, una sola vez", () => {
+    expect(cambioDeTarjeta({ sellos: 5, canjes: 0 }, { sellos: 6, canjes: 0 }, 6)).toEqual({ nuevos: [5], completa: true });
+    expect(cambioDeTarjeta({ sellos: 6, canjes: 0 }, { sellos: 6, canjes: 0 }, 6)).toEqual({ nuevos: [], completa: false });
+  });
+
+  it("tras un canje la cuenta empieza de nuevo", () => {
+    expect(cambioDeTarjeta({ sellos: 6, canjes: 0 }, { sellos: 0, canjes: 1 }, 6)).toEqual({ nuevos: [], completa: false });
+    expect(cambioDeTarjeta({ sellos: 6, canjes: 0 }, { sellos: 1, canjes: 1 }, 6)).toEqual({ nuevos: [0], completa: false });
+  });
+
+  it("un ajuste que quita sellos no anima", () => {
+    expect(cambioDeTarjeta({ sellos: 4, canjes: 0 }, { sellos: 2, canjes: 0 }, 6)).toEqual({ nuevos: [], completa: false });
+  });
+});
+
+describe("panelLealtad", () => {
+  // Viernes 16 de octubre de 2026, mediodia (hora local).
+  const ahora = new Date(2026, 9, 16, 12);
+  const hace = (dias: number) => new Date(ahora.getTime() - dias * 86_400_000).toISOString();
+
+  it("la semana empieza en lunes", () => {
+    const lunes = inicioDeSemana(ahora);
+    expect(lunes.getDay()).toBe(1);
+    expect(lunes.getDate()).toBe(12);
+    expect(inicioDeSemana(new Date(2026, 9, 18)).getDate()).toBe(12); // domingo
+  });
+
+  it("cuenta a un sello, con premio e inactivas solo en tarjetas activas", () => {
+    const tarjetas = [
+      { sellos: 9, activa: true, ultima_visita: hace(2) },
+      { sellos: 9, activa: false, ultima_visita: hace(2) },
+      { sellos: 10, activa: true, ultima_visita: hace(1) },
+      { sellos: 3, activa: true, ultima_visita: hace(45) },
+      { sellos: 0, activa: true, ultima_visita: null },
+    ];
+    const p = panelLealtad(tarjetas, [], 10, ahora);
+    expect(p.aUnSello).toBe(1);
+    expect(p.conPremio).toBe(1);
+    expect(p.inactivas).toBe(1);
+    expect(p.diasEntreVisitas).toBeNull();
+    expect(esInactiva(tarjetas[4], ahora)).toBe(false);
+  });
+
+  it("frecuencia: promedio entre visitas del mismo cliente; sellos por semana", () => {
+    const sellos = [
+      { tarjeta_id: "a", creado_en: hace(0) },
+      { tarjeta_id: "a", creado_en: hace(4) },
+      { tarjeta_id: "a", creado_en: hace(10) },
+      { tarjeta_id: "b", creado_en: hace(1) },
+      { tarjeta_id: "c", creado_en: hace(200) }, // fuera de las 8 semanas
+    ];
+    const p = panelLealtad([], sellos, 10, ahora);
+    expect(p.diasEntreVisitas).toBe(5);
+    expect(p.recurrentes).toBe(1);
+    expect(p.semanas).toHaveLength(8);
+    expect(p.semanas[7].sellos).toBe(3); // lunes 12 a viernes 16: hoy, hace 1 y hace 4
+    expect(p.semanas[6].sellos).toBe(1); // hace 10 dias: semana del lunes 5
+    expect(p.semanas.reduce((s, w) => s + w.sellos, 0)).toBe(4);
   });
 });
 

@@ -5,9 +5,44 @@
  * Sin hooks ni "use client": la usan la pagina publica (servidor) y la vista
  * previa del formulario en Clientes (cliente), y tienen que verse IGUAL.
  */
-import { Check, Gift } from "lucide-react";
-import { codigoAgrupado, paletaDeTarjeta, progreso, textoProgreso } from "../lealtad";
-import type { PaletaTarjeta } from "../types";
+import {
+  Beer,
+  Bone,
+  Check,
+  Coffee,
+  Croissant,
+  Dumbbell,
+  Flower2,
+  Gift,
+  Heart,
+  IceCreamCone,
+  PawPrint,
+  Pizza,
+  Scissors,
+  ShoppingBag,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
+import { codigoAgrupado, iconoDeSello, paletaDeTarjeta, progreso, textoProgreso } from "../lealtad";
+import type { IconoSello, PaletaTarjeta } from "../types";
+
+/** Dibujo de cada icono de sello (`ICONOS_SELLO` en lealtad.ts). */
+export const ICONO_SELLO: Record<IconoSello, LucideIcon> = {
+  check: Check,
+  cafe: Coffee,
+  estrella: Star,
+  corazon: Heart,
+  huella: PawPrint,
+  hueso: Bone,
+  pizza: Pizza,
+  tijeras: Scissors,
+  flor: Flower2,
+  pan: Croissant,
+  helado: IceCreamCone,
+  bolsa: ShoppingBag,
+  pesa: Dumbbell,
+  cerveza: Beer,
+};
 
 export interface DatosTarjetaVisual {
   negocio: string;
@@ -15,6 +50,9 @@ export interface DatosTarjetaVisual {
   programa: string;
   paleta: PaletaTarjeta;
   colorAcento: string | null;
+  /** Migracion 120; sin el, la palomita y el fondo de la paleta. */
+  iconoSello?: IconoSello | null;
+  colorFondo?: string | null;
   sellos: number;
   sellosMeta: number;
   premio: string;
@@ -32,7 +70,8 @@ function capitalizar(nombre: string): string {
 }
 
 export function TarjetaVisual({ datos, compacta = false }: { datos: DatosTarjetaVisual; compacta?: boolean }) {
-  const c = paletaDeTarjeta(datos.paleta, datos.colorAcento);
+  const c = paletaDeTarjeta(datos.paleta, datos.colorAcento, datos.colorFondo);
+  const Sello = ICONO_SELLO[iconoDeSello(datos.iconoSello)];
   const p = progreso(datos.sellos, datos.sellosMeta);
   const columnas = p.meta <= 5 ? p.meta : p.meta <= 10 ? 5 : p.meta <= 12 ? 6 : 8;
   const activa = datos.activa ?? true;
@@ -75,7 +114,8 @@ export function TarjetaVisual({ datos, compacta = false }: { datos: DatosTarjeta
           </p>
         )}
 
-        {/* Sellos: el ultimo lleva el regalo para que se entienda la meta. */}
+        {/* Sellos: el ultimo lleva el regalo para que se entienda la meta.
+            `data-sello` / `data-premio`: los anima la tarjeta publica (`TarjetaViva`). */}
         <div
           className="grid gap-2.5"
           style={{ gridTemplateColumns: `repeat(${columnas}, minmax(0, 1fr))` }}
@@ -88,6 +128,7 @@ export function TarjetaVisual({ datos, compacta = false }: { datos: DatosTarjeta
             return (
               <div
                 key={i}
+                data-sello={i}
                 className="flex aspect-square items-center justify-center rounded-full transition-colors"
                 style={
                   lleno
@@ -98,7 +139,7 @@ export function TarjetaVisual({ datos, compacta = false }: { datos: DatosTarjeta
                 {ultimo ? (
                   <Gift className="h-1/2 w-1/2" aria-hidden="true" />
                 ) : lleno ? (
-                  <Check className="h-1/2 w-1/2" strokeWidth={3} aria-hidden="true" />
+                  <Sello className="h-1/2 w-1/2" strokeWidth={Sello === Check ? 3 : 2.25} aria-hidden="true" />
                 ) : (
                   <span className="text-[10px] font-medium opacity-70">{i + 1}</span>
                 )}
@@ -122,6 +163,7 @@ export function TarjetaVisual({ datos, compacta = false }: { datos: DatosTarjeta
 
         {conPremio && (
           <div
+            data-premio
             className="flex items-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium"
             style={{ backgroundColor: c.acento, color: c.sobreAcento }}
           >

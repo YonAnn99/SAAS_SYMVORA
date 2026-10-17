@@ -24,6 +24,8 @@ export const TIMEOUTS = {
   whatsapp: 5_000,
   /** SMS (Twilio): mismo criterio que WhatsApp. */
   sms: 5_000,
+  /** Turnstile (Cloudflare): verificar el captcha del registro con QR; sin respuesta, no hay alta. */
+  turnstile: 5_000,
   /**
    * PAC (Finkok / SWSapien): el timbrado CFDI es legitimamente lento — hay un
    * SOAP y el SAT detras. 20s es generoso a proposito; por debajo se cortarian

@@ -13,6 +13,7 @@ import {
   PackageX,
   ShoppingCart,
   SlidersHorizontal,
+  Stamp,
   Trash2,
   TriangleAlert,
   Wallet,
@@ -45,6 +46,7 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
   lote_por_caducar: { icono: CalendarClock, clase: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
   lote: { icono: Boxes, clase: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
   insumo_faltante: { icono: FlaskConical, clase: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
+  lealtad_alta: { icono: Stamp, clase: "bg-pink-500/15 text-pink-600 dark:text-pink-400" },
 };
 
 /** Icono del tipo, con el punto de "nueva" en su esquina. */

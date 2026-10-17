@@ -20,7 +20,9 @@ export type TipoNotificacion =
   | "lote_por_caducar"
   | "lote_caducado"
   | "lote"
-  | "insumo_faltante";
+  | "insumo_faltante"
+  // 121: un cliente se unio a la tarjeta de lealtad con el QR del local
+  | "lealtad_alta";
 
 /** Todos los tipos: la campana tiene que saber pintar cada uno. */
 export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
@@ -36,6 +38,7 @@ export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
   "lote_caducado",
   "lote",
   "insumo_faltante",
+  "lealtad_alta",
 ];
 
 export interface Notificacion {

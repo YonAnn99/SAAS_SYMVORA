@@ -14,7 +14,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/tarjeta/[co
     return NextResponse.json({ error: "Tarjeta no encontrada" }, { status: 404 });
   }
 
-  const colores = paletaDeTarjeta(tarjeta.paleta, tarjeta.color_acento);
+  const colores = paletaDeTarjeta(tarjeta.paleta, tarjeta.color_acento, tarjeta.color_fondo);
   const ruta = `/es/tarjeta/${tarjeta.codigo}`;
 
   return NextResponse.json(

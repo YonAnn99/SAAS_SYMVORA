@@ -22,13 +22,15 @@ import {
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { formatMXN } from "@/lib/money";
-import { TarjetaVisual } from "@/features/lealtad/components/tarjeta-visual";
-import { ACENTO_POR_DEFECTO, paletaDeTarjeta } from "@/features/lealtad/lealtad";
+import { ICONO_SELLO, TarjetaVisual } from "@/features/lealtad/components/tarjeta-visual";
+import { ACENTO_POR_DEFECTO, ICONOS_SELLO, iconoDeSello, paletaDeTarjeta } from "@/features/lealtad/lealtad";
 import type { ProgramaInput } from "@/features/lealtad/lealtad-service";
 import type { PaletaTarjeta, ProgramaLealtad, TipoPremio } from "@/features/lealtad/types";
 
 /** Colores sugeridos para el acento; el selector libre queda al lado. */
 const ACENTOS = ["#1E3A8A", "#047857", "#B45309", "#B91C1C", "#6D28D9", "#BE185D", "#0F766E"];
+/** Fondos sugeridos (crema, rosa, menta, cafe, verde, indigo, negro); el selector libre queda al lado. */
+const FONDOS = ["#FEF3C7", "#FCE7F3", "#DCFCE7", "#3B2416", "#064E3B", "#1E1B4B", "#0A0A0A"];
 
 const TIPOS: { valor: TipoPremio; texto: string }[] = [
   { valor: "producto", texto: "Producto gratis" },
@@ -52,6 +54,10 @@ function inicial(p: ProgramaLealtad | null): ProgramaInput {
     compra_minima: Number(p?.compra_minima ?? 0),
     paleta: p?.paleta ?? "clara",
     color_acento: p?.color_acento ?? ACENTO_POR_DEFECTO,
+    icono_sello: iconoDeSello(p?.icono_sello),
+    color_fondo: p?.color_fondo ?? null,
+    alta_publica: p?.alta_publica ?? false,
+    aviso_privacidad_url: p?.aviso_privacidad_url ?? null,
     activo: p?.activo ?? true,
   };
 }
@@ -117,12 +123,19 @@ export function FormularioPrograma({
     if (form.premio_tipo !== "producto" && !(Number(form.premio_valor) > 0)) return "Indica el valor del premio";
     if (form.premio_tipo === "porcentaje" && Number(form.premio_valor) > 100) return "El porcentaje va hasta 100";
     if (!descripcion.trim()) return "Describe el premio (ej. Café grande gratis)";
+    const aviso = form.aviso_privacidad_url?.trim();
+    if (aviso && !/^https:\/\/\S+$/.test(aviso)) return "El enlace del aviso debe empezar con https://";
     return null;
   }, [form, descripcion]);
 
   const guardar = () => {
     if (problema) return;
-    void onGuardar({ ...form, nombre: form.nombre.trim(), premio_descripcion: descripcion.trim() });
+    void onGuardar({
+      ...form,
+      nombre: form.nombre.trim(),
+      premio_descripcion: descripcion.trim(),
+      aviso_privacidad_url: form.aviso_privacidad_url?.trim() || null,
+    });
   };
 
   // Vista previa: un cliente de ejemplo con ~70% de sus sellos.
@@ -251,16 +264,43 @@ export function FormularioPrograma({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs">Paleta de la tarjeta</Label>
+          <Label className="text-xs">Sello</Label>
+          <div className="grid grid-cols-7 gap-1.5" role="radiogroup" aria-label="Dibujo del sello">
+            {ICONOS_SELLO.map(({ valor, texto }) => {
+              const Icono = ICONO_SELLO[valor];
+              const elegido = form.icono_sello === valor;
+              return (
+                <button
+                  key={valor}
+                  type="button"
+                  role="radio"
+                  aria-checked={elegido}
+                  aria-label={texto}
+                  title={texto}
+                  onClick={() => cambiar("icono_sello", valor)}
+                  className={`flex aspect-square items-center justify-center rounded-lg border-2 transition-colors ${
+                    elegido ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-muted-foreground/40"
+                  }`}
+                >
+                  <Icono className="h-4 w-4" aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Fondo de la tarjeta</Label>
           <div className="grid grid-cols-2 gap-2">
             {(["clara", "oscura"] as PaletaTarjeta[]).map((paleta) => {
               const c = paletaDeTarjeta(paleta, form.color_acento);
-              const elegida = form.paleta === paleta;
+              // Una paleta elegida quita el fondo propio.
+              const elegida = form.paleta === paleta && !form.color_fondo;
               return (
                 <button
                   key={paleta}
                   type="button"
-                  onClick={() => cambiar("paleta", paleta)}
+                  onClick={() => setForm((prev) => ({ ...prev, paleta, color_fondo: null }))}
                   className={`flex items-center gap-2 rounded-xl border-2 p-2.5 text-left text-xs font-medium transition-colors ${
                     elegida ? "border-primary" : "border-border hover:border-muted-foreground/40"
                   }`}
@@ -279,6 +319,35 @@ export function FormularioPrograma({
               );
             })}
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-muted-foreground">O tu color:</span>
+            {FONDOS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => cambiar("color_fondo", color)}
+                aria-label={`Fondo ${color}`}
+                className={`h-7 w-7 rounded-full border-2 transition-transform ${
+                  form.color_fondo?.toUpperCase() === color ? "scale-110 border-foreground" : "border-border"
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+            <input
+              type="color"
+              value={form.color_fondo ?? "#FFFFFF"}
+              onChange={(e) => cambiar("color_fondo", e.target.value.toUpperCase())}
+              aria-label="Otro color de fondo"
+              className="h-7 w-9 cursor-pointer rounded border border-border bg-transparent"
+            />
+          </div>
+          {form.color_fondo && (
+            <p className="text-[11px] text-muted-foreground">El texto se ajusta solo para que se lea sobre tu fondo.</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Color de los sellos</Label>
           <div className="flex flex-wrap items-center gap-2">
             {ACENTOS.map((color) => (
               <button
@@ -300,6 +369,36 @@ export function FormularioPrograma({
               className="h-7 w-9 cursor-pointer rounded border border-border bg-transparent"
             />
           </div>
+        </div>
+
+        <div className="space-y-2 rounded-xl border border-border px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Registro con QR del local</p>
+              <p className="text-[11px] text-muted-foreground">
+                Tus clientes escanean un cartel en tu mostrador y sacan su tarjeta solos, con su nombre y celular.
+              </p>
+            </div>
+            <Switch checked={form.alta_publica} onCheckedChange={(v) => cambiar("alta_publica", Boolean(v))} />
+          </div>
+          {form.alta_publica && (
+            <div className="space-y-1.5 border-t border-border pt-2">
+              <Label className="text-xs">Enlace a tu aviso de privacidad (opcional)</Label>
+              <Input
+                type="url"
+                inputMode="url"
+                value={form.aviso_privacidad_url ?? ""}
+                maxLength={300}
+                onChange={(e) => cambiar("aviso_privacidad_url", e.target.value || null)}
+                placeholder="https://tunegocio.com/privacidad"
+                className="h-8 text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Tu negocio es responsable de los datos de tus clientes. Si tienes tu propio aviso, tu cliente lo verá
+                al registrarse.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
@@ -337,6 +436,8 @@ export function FormularioPrograma({
             programa: form.nombre || "Tarjeta de lealtad",
             paleta: form.paleta,
             colorAcento: form.color_acento,
+            iconoSello: form.icono_sello,
+            colorFondo: form.color_fondo,
             sellos: sellosEjemplo,
             sellosMeta: Math.min(50, Math.max(2, form.sellos_meta || 2)),
             premio: descripcion || "tu premio",

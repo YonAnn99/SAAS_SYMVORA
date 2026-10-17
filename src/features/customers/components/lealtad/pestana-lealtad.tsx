@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { ChevronDown, Gift, Loader2, PauseCircle, Plus, QrCode, Search, Settings2, SlidersHorizontal, Stamp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,15 +17,40 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Cliente } from "@/lib/types/database";
-import { progreso } from "@/features/lealtad/lealtad";
+import { DIAS_INACTIVO, esInactiva, panelLealtad, progreso } from "@/features/lealtad/lealtad";
 import type { useLealtad } from "@/features/lealtad/use-lealtad";
-import type { TarjetaConCliente } from "@/features/lealtad/lealtad-service";
+import { SEMANAS_PANEL, type TarjetaConCliente } from "@/features/lealtad/lealtad-service";
+import { ALTO_GRAFICA_CHICA } from "@/components/charts/tarjeta-grafica";
 import { CustomerSelector } from "../customer-selector";
 import { NewCustomerDialog } from "../new-customer-dialog";
 import { FormularioPrograma } from "./formulario-programa";
+import { QrMostrador } from "./qr-mostrador";
 import { VentanaTarjeta, type TarjetaParaVentana } from "./ventana-tarjeta";
 
 type Lealtad = ReturnType<typeof useLealtad>;
+
+// Chart.js solo baja al abrir la pestaña.
+const GraficaSellos = dynamic(() => import("./grafica-sellos").then((m) => m.GraficaSellos), {
+  ssr: false,
+  loading: () => <div className={`${ALTO_GRAFICA_CHICA} w-full animate-pulse rounded-md bg-muted`} />,
+});
+
+type Filtro = "todas" | "un-sello" | "premio" | "inactivas" | "qr";
+
+const FILTROS: { valor: Filtro; texto: string }[] = [
+  { valor: "todas", texto: "Todas" },
+  { valor: "un-sello", texto: "A un sello" },
+  { valor: "premio", texto: "Con premio" },
+  { valor: "inactivas", texto: `Sin venir ${DIAS_INACTIVO} días` },
+  { valor: "qr", texto: "Se unieron con QR" },
+];
+
+function diasTexto(dias: number | null): string {
+  if (dias == null) return "—";
+  if (dias < 1) return "< 1 día";
+  const n = dias < 10 ? Math.round(dias * 10) / 10 : Math.round(dias);
+  return `${n} ${n === 1 ? "día" : "días"}`;
+}
 
 function fechaCorta(iso: string | null): string {
   if (!iso) return "—";
@@ -59,20 +85,38 @@ export function PestanaLealtad({
   clientes: Cliente[];
   onClienteCreado: () => void;
 }) {
-  const { programa, tarjetas, resumen, cargando, guardando, guardar, emitir, ajustar } = lealtad;
+  const { programa, tarjetas, resumen, cargando, guardando, guardar, emitir, ajustar, refrescar } = lealtad;
   const [configAbierta, setConfigAbierta] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [ventana, setVentana] = useState<TarjetaParaVentana | null>(null);
   const [ajustando, setAjustando] = useState<TarjetaConCliente | null>(null);
   const [nuevaAbierta, setNuevaAbierta] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>("todas");
+  const listaRef = useRef<HTMLDivElement>(null);
+  const metaPrograma = programa?.sellos_meta ?? 10;
+
+  const panel = useMemo(
+    () => panelLealtad(tarjetas, resumen?.sellosRecientes ?? [], metaPrograma, new Date(), { numSemanas: SEMANAS_PANEL }),
+    [tarjetas, resumen, metaPrograma]
+  );
 
   const filtradas = useMemo(() => {
+    const ahora = new Date();
+    const porFiltro = tarjetas.filter((t) => {
+      if (filtro === "todas") return true;
+      if (filtro === "qr") return t.origen === "qr";
+      if (!t.activa) return false;
+      const p = progreso(t.sellos, metaPrograma);
+      if (filtro === "un-sello") return p.faltan === 1;
+      if (filtro === "premio") return p.premiosDisponibles > 0;
+      return esInactiva(t, ahora);
+    });
     const q = busqueda.trim().toLowerCase();
-    if (!q) return tarjetas;
-    return tarjetas.filter(
+    if (!q) return porFiltro;
+    return porFiltro.filter(
       (t) => t.cliente?.nombre.toLowerCase().includes(q) || t.codigo.toLowerCase().includes(q.replace(/-/g, ""))
     );
-  }, [tarjetas, busqueda]);
+  }, [tarjetas, busqueda, filtro, metaPrograma]);
 
   if (cargando) {
     return (
@@ -125,6 +169,10 @@ export function PestanaLealtad({
       compra_minima: Number(programa.compra_minima),
       paleta: programa.paleta,
       color_acento: programa.color_acento,
+      icono_sello: programa.icono_sello,
+      color_fondo: programa.color_fondo,
+      alta_publica: programa.alta_publica,
+      aviso_privacidad_url: programa.aviso_privacidad_url,
       activo: true,
     });
 
@@ -164,6 +212,57 @@ export function PestanaLealtad({
         ))}
       </div>
 
+      {/* Quien vuelve y quien esta cerca del premio. Las tarjetas con filtro
+          llevan a la lista ya filtrada. */}
+      <Card>
+        <CardContent className="grid gap-5 p-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
+          <div className="grid grid-cols-2 gap-2.5 self-start">
+            {[
+              { etiqueta: "A un sello del premio", valor: String(panel.aUnSello), filtro: "un-sello" as Filtro },
+              { etiqueta: "Premios por canjear", valor: String(panel.conPremio), filtro: "premio" as Filtro },
+              {
+                etiqueta: "Vuelven cada",
+                valor: diasTexto(panel.diasEntreVisitas),
+                nota: `${panel.recurrentes} ${panel.recurrentes === 1 ? "cliente volvió" : "clientes volvieron"}`,
+              },
+              {
+                etiqueta: `Sin venir ${DIAS_INACTIVO} días`,
+                valor: String(panel.inactivas),
+                filtro: "inactivas" as Filtro,
+              },
+            ].map((m) => {
+              const contenido = (
+                <>
+                  <p className="text-[11px] leading-tight text-muted-foreground">{m.etiqueta}</p>
+                  <p className="mt-1 font-mono text-lg font-semibold">{m.valor}</p>
+                  {"nota" in m && <p className="text-[10px] text-muted-foreground">{m.nota}</p>}
+                </>
+              );
+              return "filtro" in m && m.filtro ? (
+                <button
+                  key={m.etiqueta}
+                  type="button"
+                  onClick={() => {
+                    setFiltro(m.filtro);
+                    listaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className={`rounded-xl border p-3 text-left transition-colors hover:border-primary/50 ${
+                    filtro === m.filtro ? "border-primary bg-primary/5" : "border-border"
+                  }`}
+                >
+                  {contenido}
+                </button>
+              ) : (
+                <div key={m.etiqueta} className="rounded-xl border border-border p-3">
+                  {contenido}
+                </div>
+              );
+            })}
+          </div>
+          <GraficaSellos semanas={panel.semanas} />
+        </CardContent>
+      </Card>
+
       {/* Configuracion, plegada: ya existe y lo diario es la lista. */}
       <Card>
         <button
@@ -197,8 +296,12 @@ export function PestanaLealtad({
         )}
       </Card>
 
+      {programa.alta_publica && (
+        <QrMostrador programa={programa} puedeConfigurar={puedeConfigurar} onCodigoCambiado={refrescar} />
+      )}
+
       {/* Tarjetas */}
-      <Card>
+      <Card ref={listaRef} className="scroll-mt-4">
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-sm font-medium">
@@ -228,11 +331,33 @@ export function PestanaLealtad({
           </div>
         </CardHeader>
         <CardContent>
+          {tarjetas.length > 0 && (
+            <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1" role="radiogroup" aria-label="Filtrar tarjetas">
+              {FILTROS.map((f) => (
+                <button
+                  key={f.valor}
+                  type="button"
+                  role="radio"
+                  aria-checked={filtro === f.valor}
+                  onClick={() => setFiltro(f.valor)}
+                  className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    filtro === f.valor
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.texto}
+                </button>
+              ))}
+            </div>
+          )}
           {filtradas.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
               {tarjetas.length === 0
                 ? "Aún no hay tarjetas. Crea la primera con «Nueva tarjeta» o desde la lista de clientes."
-                : "Ninguna tarjeta coincide con la búsqueda."}
+                : filtro !== "todas" && !busqueda.trim()
+                  ? "Ninguna tarjeta en este grupo por ahora."
+                  : "Ninguna tarjeta coincide con la búsqueda."}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -251,8 +376,18 @@ export function PestanaLealtad({
                     const p = progreso(t.sellos, meta);
                     return (
                       <TableRow key={t.id}>
-                        <TableCell className="max-w-40 truncate text-sm font-medium">
-                          {t.cliente?.nombre ?? "—"}
+                        <TableCell className="max-w-48 text-sm font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate">{t.cliente?.nombre ?? "—"}</span>
+                            {t.origen === "qr" && (
+                              <span
+                                className="shrink-0 rounded-full bg-pink-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-pink-700 dark:text-pink-300"
+                                title="Se registró solo con el QR del mostrador"
+                              >
+                                QR
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="min-w-32">
                           <div className="flex items-center gap-2">

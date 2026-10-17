@@ -8,7 +8,7 @@
  * servidor confirmara.
  */
 import { getAppUrl } from "@/lib/site";
-import type { PaletaTarjeta } from "./types";
+import type { IconoSello, PaletaTarjeta } from "./types";
 
 /** Mismo alfabeto que `_codigo_tarjeta_lealtad`: sin 0/O, 1/I/L ni U. */
 const CODIGO = /^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{12}$/;
@@ -69,6 +69,99 @@ export function urlTarjeta(codigo: string, locale = "es", base = getAppUrl()): s
 }
 
 // ---------------------------------------------------------------------------
+// Registro con el QR del local (migracion 121)
+// ---------------------------------------------------------------------------
+
+/** Mismo alfabeto que las tarjetas, 10 caracteres (CHECK de la 121). */
+const CODIGO_ALTA = /^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{10}$/;
+
+/** El codigo del cartel normalizado, o `null` si no puede ser uno. */
+export function codigoAltaValido(texto: string | null | undefined): string | null {
+  const c = (texto ?? "").trim().toUpperCase();
+  return CODIGO_ALTA.test(c) ? c : null;
+}
+
+/** Enlace que lleva el QR del cartel. */
+export function urlAlta(codigoAlta: string, locale = "es", base = getAppUrl()): string {
+  return `${base.replace(/\/$/, "")}/${locale === "en" ? "en" : "es"}/tarjeta/unirse/${codigoAlta}`;
+}
+
+/** Frase del premio en el cartel: "Junta 10 sellos y llévate: Café grande gratis". */
+export function textoPremioCartel(meta: number, premio: string): string {
+  const m = progreso(0, meta).meta;
+  return `Junta ${m} ${m === 1 ? "sello" : "sellos"} y llévate: ${premio.trim()}`;
+}
+
+/** Espacios repetidos fuera, como lo guarda `alta_publica_lealtad`. */
+export function limpiarNombre(nombre: string): string {
+  return nombre.replace(/\s+/g, " ").trim();
+}
+
+/** Misma regla que `alta_publica_lealtad`: 2 a 60 caracteres, sin enlaces ni correos. */
+export function nombreAltaValido(nombre: string): boolean {
+  const n = limpiarNombre(nombre);
+  return n.length >= 2 && n.length <= 60 && !/(https?:|www\.|[<>/@])/i.test(n);
+}
+
+/** Ultimos 10 digitos: asi compara la base un celular con los que ya tiene el negocio. */
+export function ultimos10(telefono: string | null | undefined): string {
+  return (telefono ?? "").replace(/\D/g, "").slice(-10);
+}
+
+/** Tarjetas sacadas desde este celular con un cartel (localStorage `symvora-mis-tarjetas`). */
+export interface MiTarjeta {
+  codigoAlta: string;
+  codigo: string;
+}
+
+/** Lee la lista guardada; cualquier cosa rara se ignora. */
+export function leerMisTarjetas(crudo: string | null): MiTarjeta[] {
+  if (!crudo) return [];
+  try {
+    const lista = JSON.parse(crudo) as unknown;
+    if (!Array.isArray(lista)) return [];
+    return lista.filter(
+      (t): t is MiTarjeta =>
+        typeof t?.codigoAlta === "string" && typeof t?.codigo === "string" && codigoDesdeEscaneo(t.codigo) !== null
+    );
+  } catch {
+    return [];
+  }
+}
+
+/** Agrega (o reemplaza) la tarjeta de ese cartel; guarda a lo mucho 20. */
+export function agregarMiTarjeta(lista: MiTarjeta[], nueva: MiTarjeta): MiTarjeta[] {
+  return [nueva, ...lista.filter((t) => t.codigoAlta !== nueva.codigoAlta)].slice(0, 20);
+}
+
+// ---------------------------------------------------------------------------
+// Icono del sello (migracion 120)
+// ---------------------------------------------------------------------------
+
+/** Iconos del sello, en el orden del selector. Misma lista que el CHECK de la 120. */
+export const ICONOS_SELLO: { valor: IconoSello; texto: string }[] = [
+  { valor: "check", texto: "Palomita" },
+  { valor: "estrella", texto: "Estrella" },
+  { valor: "corazon", texto: "Corazón" },
+  { valor: "cafe", texto: "Café" },
+  { valor: "pan", texto: "Pan" },
+  { valor: "pizza", texto: "Pizza" },
+  { valor: "helado", texto: "Helado" },
+  { valor: "cerveza", texto: "Cerveza" },
+  { valor: "huella", texto: "Huella" },
+  { valor: "hueso", texto: "Hueso" },
+  { valor: "tijeras", texto: "Tijeras" },
+  { valor: "flor", texto: "Flor" },
+  { valor: "pesa", texto: "Pesa" },
+  { valor: "bolsa", texto: "Bolsa" },
+];
+
+/** El icono guardado, o la palomita si no hay (respuesta vieja) o no se reconoce. */
+export function iconoDeSello(valor: string | null | undefined): IconoSello {
+  return ICONOS_SELLO.some((i) => i.valor === valor) ? (valor as IconoSello) : "check";
+}
+
+// ---------------------------------------------------------------------------
 // Paleta
 // ---------------------------------------------------------------------------
 
@@ -86,6 +179,8 @@ export interface ColoresTarjeta {
   sobreAcento: string;
   /** Sello vacio y fondo de la barra. */
   vacio: string;
+  /** El fondo es oscuro: la pagina publica pinta su alrededor oscuro tambien. */
+  oscuro: boolean;
 }
 
 function rgb(hex: string): [number, number, number] | null {
@@ -117,13 +212,45 @@ function mezclar(hex: string, con: string, peso: number): string {
   return aHex([0, 1, 2].map((i) => a[i] * (1 - peso) + b[i] * peso) as [number, number, number]);
 }
 
+/** Contraste WCAG entre dos colores: 1 (iguales) a 21 (negro sobre blanco). */
+export function contraste(a: string, b: string): number {
+  const [x, y] = [luminancia(a), luminancia(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
+
 /**
  * Colores de la tarjeta para cada paleta. El acento es el del negocio, pero se
  * aclara sobre fondo oscuro (o se oscurece sobre claro) cuando casi no se
  * veria: un azul marino sobre negro deja los sellos invisibles.
+ *
+ * Con `fondo` (color libre, migracion 120) la paleta deja de importar: el
+ * texto sale del fondo (claro u oscuro, el que mas contraste) y el acento se
+ * corrige igual si se pierde contra el.
  */
-export function paletaDeTarjeta(paleta: PaletaTarjeta, acento: string | null | undefined): ColoresTarjeta {
+export function paletaDeTarjeta(
+  paleta: PaletaTarjeta,
+  acento: string | null | undefined,
+  fondo?: string | null
+): ColoresTarjeta {
   const base = acento && rgb(acento) ? aHex(rgb(acento)!) : ACENTO_POR_DEFECTO;
+  const sobre = (color: string) => (luminancia(color) > 0.45 ? "#0F172A" : "#FFFFFF");
+
+  if (fondo && rgb(fondo)) {
+    const f = aHex(rgb(fondo)!);
+    const oscuro = contraste(f, "#FFFFFF") >= contraste(f, "#0F172A");
+    const texto = oscuro ? "#F8FAFC" : "#0F172A";
+    const visible = contraste(base, f) < 1.8 ? mezclar(base, texto, 0.5) : base;
+    return {
+      fondo: f,
+      texto,
+      textoSuave: mezclar(texto, f, 0.35),
+      borde: mezclar(f, texto, 0.14),
+      acento: visible,
+      sobreAcento: sobre(visible),
+      vacio: mezclar(f, texto, 0.08),
+      oscuro,
+    };
+  }
 
   if (paleta === "oscura") {
     const visible = luminancia(base) < 0.12 ? mezclar(base, "#FFFFFF", 0.45) : base;
@@ -133,8 +260,9 @@ export function paletaDeTarjeta(paleta: PaletaTarjeta, acento: string | null | u
       textoSuave: "#94A3B8",
       borde: "#1E293B",
       acento: visible,
-      sobreAcento: luminancia(visible) > 0.45 ? "#0F172A" : "#FFFFFF",
+      sobreAcento: sobre(visible),
       vacio: "#1E293B",
+      oscuro: true,
     };
   }
 
@@ -145,8 +273,146 @@ export function paletaDeTarjeta(paleta: PaletaTarjeta, acento: string | null | u
     textoSuave: "#64748B",
     borde: "#E2E8F0",
     acento: visible,
-    sobreAcento: luminancia(visible) > 0.45 ? "#0F172A" : "#FFFFFF",
+    sobreAcento: sobre(visible),
     vacio: "#F1F5F9",
+    oscuro: false,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tarjeta publica viva
+// ---------------------------------------------------------------------------
+
+/** Lo que la tarjeta publica recuerda de la ultima vez que el cliente la abrio. */
+export interface VistaTarjeta {
+  sellos: number;
+  canjes: number;
+}
+
+export interface CambioTarjeta {
+  /** Indices de la cuadricula que se llenaron desde la ultima vista (para el rebote). */
+  nuevos: number[];
+  /** Se acaba de completar la tarjeta: confeti y regalo. */
+  completa: boolean;
+}
+
+/**
+ * Que cambio entre la ultima vista y la actual. Sin vista previa (primera vez
+ * en este celular) no se anima nada. Si hubo un canje, la cuenta empezo de
+ * nuevo: los sellos de ahora son todos nuevos.
+ */
+export function cambioDeTarjeta(previa: VistaTarjeta | null, actual: VistaTarjeta, meta: number): CambioTarjeta {
+  if (!previa) return { nuevos: [], completa: false };
+  const ahora = progreso(actual.sellos, meta);
+  const desde = actual.canjes > previa.canjes ? 0 : progreso(previa.sellos, meta).llenos;
+  const nuevos: number[] = [];
+  for (let i = desde; i < ahora.llenos; i++) nuevos.push(i);
+  const antesCompleta = actual.canjes === previa.canjes && progreso(previa.sellos, meta).premiosDisponibles > 0;
+  return { nuevos, completa: ahora.premiosDisponibles > 0 && !antesCompleta };
+}
+
+// ---------------------------------------------------------------------------
+// Panel del programa
+// ---------------------------------------------------------------------------
+
+/** Lo minimo de una tarjeta para las metricas del panel. */
+export interface TarjetaParaPanel {
+  sellos: number;
+  activa: boolean;
+  ultima_visita: string | null;
+}
+
+/** Un sello sumado (fecha del movimiento `sello`). */
+export interface SelloParaPanel {
+  tarjeta_id: string;
+  creado_en: string;
+}
+
+export interface PanelLealtad {
+  /** Tarjetas activas a las que les falta exactamente un sello. */
+  aUnSello: number;
+  /** Tarjetas activas con un premio completo sin canjear. */
+  conPremio: number;
+  /** Tarjetas activas que ya vinieron alguna vez y no vuelven desde hace `diasInactivo`. */
+  inactivas: number;
+  /** Dias promedio entre dos visitas del mismo cliente; null sin datos suficientes. */
+  diasEntreVisitas: number | null;
+  /** Clientes que volvieron (2 visitas o mas) en la ventana de sellos consultada. */
+  recurrentes: number;
+  /** Sellos por semana, la mas vieja primero (lunes a domingo). */
+  semanas: { inicio: string; sellos: number }[];
+}
+
+const DIA_MS = 86_400_000;
+/** Sin sello en este lapso, el cliente "dejo de venir". */
+export const DIAS_INACTIVO = 30;
+
+/** Tarjeta activa que ya vino alguna vez y no vuelve desde hace `dias`. */
+export function esInactiva(t: TarjetaParaPanel, ahora = new Date(), dias = DIAS_INACTIVO): boolean {
+  return t.activa && t.ultima_visita != null && new Date(t.ultima_visita).getTime() < ahora.getTime() - dias * DIA_MS;
+}
+
+/** Lunes 00:00 (hora local) de la semana de `fecha`. */
+export function inicioDeSemana(fecha: Date): Date {
+  const d = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+/**
+ * Metricas del panel de lealtad a partir de las tarjetas y los sellos de las
+ * ultimas `numSemanas` semanas. Una "visita" es un sello: el programa suma uno
+ * por venta.
+ */
+export function panelLealtad(
+  tarjetas: TarjetaParaPanel[],
+  sellos: SelloParaPanel[],
+  meta: number,
+  ahora = new Date(),
+  { numSemanas = 8, diasInactivo = DIAS_INACTIVO }: { numSemanas?: number; diasInactivo?: number } = {}
+): PanelLealtad {
+  const activas = tarjetas.filter((t) => t.activa);
+
+  // Semanas: de la mas vieja a la actual.
+  const actual = inicioDeSemana(ahora);
+  const semanas = Array.from({ length: numSemanas }, (_, i) => {
+    const d = new Date(actual);
+    d.setDate(d.getDate() - 7 * (numSemanas - 1 - i));
+    return { inicio: d, sellos: 0 };
+  });
+  const porTarjeta = new Map<string, number[]>();
+  for (const s of sellos) {
+    const t = new Date(s.creado_en);
+    if (Number.isNaN(t.getTime())) continue;
+    const semana = inicioDeSemana(t).getTime();
+    const i = semanas.findIndex((w) => w.inicio.getTime() === semana);
+    if (i >= 0) semanas[i].sellos += 1;
+    const lista = porTarjeta.get(s.tarjeta_id) ?? [];
+    lista.push(t.getTime());
+    porTarjeta.set(s.tarjeta_id, lista);
+  }
+
+  // Frecuencia: promedio de los huecos entre visitas consecutivas de cada tarjeta.
+  let suma = 0;
+  let huecos = 0;
+  let recurrentes = 0;
+  for (const tiempos of porTarjeta.values()) {
+    if (tiempos.length < 2) continue;
+    recurrentes += 1;
+    tiempos.sort((a, b) => a - b);
+    for (let i = 1; i < tiempos.length; i++) {
+      suma += tiempos[i] - tiempos[i - 1];
+      huecos += 1;
+    }
+  }
+
+  return {
+    aUnSello: activas.filter((t) => progreso(t.sellos, meta).faltan === 1).length,
+    conPremio: activas.filter((t) => progreso(t.sellos, meta).premiosDisponibles > 0).length,
+    inactivas: activas.filter((t) => esInactiva(t, ahora, diasInactivo)).length,
+    diasEntreVisitas: huecos ? Math.round((suma / huecos / DIA_MS) * 10) / 10 : null,
+    recurrentes,
+    semanas: semanas.map((w) => ({ inicio: w.inicio.toISOString(), sellos: w.sellos })),
   };
 }
 

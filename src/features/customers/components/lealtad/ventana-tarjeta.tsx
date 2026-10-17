@@ -123,6 +123,8 @@ export function VentanaTarjeta({
               programa: programa.nombre,
               paleta: programa.paleta,
               colorAcento: programa.color_acento,
+              iconoSello: programa.icono_sello,
+              colorFondo: programa.color_fondo,
               sellos: tarjeta.sellos,
               sellosMeta: programa.sellos_meta,
               premio: programa.premio_descripcion,

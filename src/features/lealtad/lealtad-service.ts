@@ -1,5 +1,6 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { EstadoTarjeta, ProgramaLealtad, TarjetaLealtad, TipoPremio, PaletaTarjeta } from "./types";
+import { inicioDeSemana, type SelloParaPanel } from "./lealtad";
+import type { EstadoTarjeta, IconoSello, ProgramaLealtad, TarjetaLealtad, TipoPremio, PaletaTarjeta } from "./types";
 
 /**
  * Acceso a datos de las tarjetas de lealtad (migracion 115).
@@ -23,6 +24,11 @@ export interface ProgramaInput {
   compra_minima: number;
   paleta: PaletaTarjeta;
   color_acento: string | null;
+  icono_sello: IconoSello;
+  color_fondo: string | null;
+  /** Migracion 121. `codigo_alta` no va: lo genera la base. */
+  alta_publica: boolean;
+  aviso_privacidad_url: string | null;
   activo: boolean;
 }
 
@@ -30,7 +36,12 @@ export interface ResumenLealtad {
   tarjetasActivas: number;
   sellosDelMes: number;
   canjesDelMes: number;
+  /** Sellos de las ultimas `SEMANAS_PANEL` semanas, para las metricas y la grafica del panel. */
+  sellosRecientes: SelloParaPanel[];
 }
+
+/** Semanas que cubre la grafica del panel (y la frecuencia de visitas). */
+export const SEMANAS_PANEL = 8;
 
 export async function fetchPrograma(tenantId: string): Promise<ProgramaLealtad | null> {
   const supabase = createSupabaseBrowserClient();
@@ -78,10 +89,17 @@ export async function fetchTarjetas(tenantId: string): Promise<TarjetaConCliente
   return (data ?? []) as TarjetaConCliente[];
 }
 
-/** Tarjetas activas, sellos sumados y premios canjeados en el mes en curso. */
+/**
+ * Tarjetas activas, sellos y premios del mes en curso, y los sellos de las
+ * ultimas `SEMANAS_PANEL` semanas (una sola consulta cubre las dos ventanas).
+ */
 export async function fetchResumen(tenantId: string, ahora = new Date()): Promise<ResumenLealtad> {
   const supabase = createSupabaseBrowserClient();
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
+  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  const inicioSemanas = inicioDeSemana(ahora);
+  inicioSemanas.setDate(inicioSemanas.getDate() - 7 * (SEMANAS_PANEL - 1));
+  const desde = inicioMes < inicioSemanas ? inicioMes : inicioSemanas;
+
   const [{ count: activas }, { data: movimientos }] = await Promise.all([
     supabase
       .from("tarjetas_lealtad")
@@ -90,17 +108,22 @@ export async function fetchResumen(tenantId: string, ahora = new Date()): Promis
       .eq("activa", true),
     supabase
       .from("movimientos_lealtad")
-      .select("tipo")
+      .select("tipo, tarjeta_id, creado_en")
       .eq("tenant_id", tenantId)
       .in("tipo", ["sello", "canje"])
-      .gte("creado_en", inicioMes)
+      .gte("creado_en", desde.toISOString())
+      .order("creado_en", { ascending: false })
       .limit(10000),
   ]);
-  const filas = (movimientos ?? []) as { tipo: string }[];
+  const filas = (movimientos ?? []) as { tipo: string; tarjeta_id: string; creado_en: string }[];
+  const delMes = filas.filter((m) => new Date(m.creado_en) >= inicioMes);
   return {
     tarjetasActivas: activas ?? 0,
-    sellosDelMes: filas.filter((m) => m.tipo === "sello").length,
-    canjesDelMes: filas.filter((m) => m.tipo === "canje").length,
+    sellosDelMes: delMes.filter((m) => m.tipo === "sello").length,
+    canjesDelMes: delMes.filter((m) => m.tipo === "canje").length,
+    sellosRecientes: filas
+      .filter((m) => m.tipo === "sello" && new Date(m.creado_en) >= inicioSemanas)
+      .map(({ tarjeta_id, creado_en }) => ({ tarjeta_id, creado_en })),
   };
 }
 
@@ -109,6 +132,14 @@ export async function emitirTarjeta(clienteId: string): Promise<EstadoTarjeta> {
   const { data, error } = await supabase.rpc("emitir_tarjeta_lealtad", { p_cliente_id: clienteId });
   if (error) throw error;
   return data as EstadoTarjeta;
+}
+
+/** «Cambiar codigo» del QR del mostrador: los carteles impresos dejan de servir. */
+export async function regenerarCodigoAlta(tenantId: string): Promise<string> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("regenerar_codigo_alta_lealtad", { p_tenant_id: tenantId });
+  if (error) throw error;
+  return data as string;
 }
 
 export async function ajustarSellos(tarjetaId: string, cantidad: number, nota: string): Promise<EstadoTarjeta> {

@@ -282,7 +282,34 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   (`/api/tarjeta/[codigo]/manifest`) para «Agregar a pantalla de inicio». QR con `qrcode` (SVG).
 - **Correo:** `POST /api/lealtad/enviar-tarjeta` (`sales.create`, 20/h por usuario, no en demo); el destino sale de
   la base, nunca de la petición.
-- **Pendiente:** Google Wallet y Apple Wallet (requieren cuentas de emisor) y lealtad con terminal Mercado Pago.
+- **Personalización (migración 120, 2026-10-16):** `programas_lealtad.icono_sello` (dibujo del sello lleno; la lista
+  `ICONOS_SELLO` de `features/lealtad/lealtad.ts` es la misma que el CHECK: si cambia una, cambia la otra, lo vigila
+  `lealtad.test.ts`) y `color_fondo` (NULL = paleta clara/oscura; con fondo propio, `paletaDeTarjeta` saca el texto del
+  fondo y corrige el acento si no contrasta). `tarjeta_publica` devuelve las dos.
+- **Panel** (`panelLealtad`, sin migración): a un sello, premios por canjear, días promedio entre visitas, sin venir
+  30 días (`esInactiva`) y sellos por semana (8, `grafica-sellos.tsx` con `next/dynamic`). Las métricas filtran la
+  lista. Una "visita" = un sello.
+- **Tarjeta pública viva** (`tarjeta-viva.tsx`): recuerda en `localStorage` (`symvora-tarjeta:<codigo>`) los sellos
+  vistos; los nuevos rebotan y al completar hay confeti (`cambioDeTarjeta`). Se actualiza con el botón o al volver a
+  la pestaña (máx. una vez cada 10 s). `prefers-reduced-motion`: solo destello.
+- **Registro con QR del local (migración 121, 2026-10-16):** el cliente escanea un cartel del mostrador
+  (`/[locale]/tarjeta/unirse/<codigo_alta>`, público por estar bajo `/tarjeta/`), deja nombre y celular y obtiene su
+  tarjeta. Es la PRIMERA escritura anónima sobre datos de un negocio:
+  - `alta_publica_lealtad` es **solo de `service_role`**; la única puerta es `POST /api/lealtad/unirse`, que valida
+    rate limit (10/10 min por IP) y **Turnstile en el servidor** (`lib/turnstile.server.ts`, `TURNSTILE_SECRET_KEY`;
+    sin la llave no hay altas: 503). No darle `EXECUTE` a `anon`.
+  - Un celular que ya existe en el negocio (últimos 10 dígitos) NO recibe tarjeta ni la suya (`ya_registrado`): así
+    nadie se queda con el código y el premio de otro. Tope de 100 altas con QR por negocio y día (CDMX), con el
+    programa bloqueado. Revisa `acceso_tenant` a mano (el trigger 096 deja pasar a service_role) y rechaza demos.
+  - `programas_lealtad.alta_publica` (interruptor en la configuración), `codigo_alta` (lo genera un trigger al
+    activar; solo cambia con `regenerar_codigo_alta_lealtad`, que invalida los carteles) y `aviso_privacidad_url`
+    opcional del negocio. `tarjetas_lealtad.origen` ('equipo'|'qr') y `acepto_aviso_en` (evidencia LFPDPPP; el
+    negocio es responsable, SYMVORA encargado, sección 4 del aviso).
+  - `programa_alta_publica` (anon) solo da lo que pinta la página. Aviso `lealtad_alta` en la campana (sin actor,
+    agrupado por día, permiso `sales.create`). Cartel PDF carta en `features/lealtad/cartel-pdf.ts`; «QR para tu
+    mostrador» en la pestaña (`qr-mostrador.tsx`); insignia «QR» y filtro en la lista. El celular guarda en
+    `localStorage` (`symvora-mis-tarjetas`) las tarjetas que sacó, para ofrecer «Abrir mi tarjeta».
+- **Pendiente:** lealtad con terminal Mercado Pago.
 
 ## Lotes por sucursal (116) e insumos por servicio (117), 2026-10-12
 - **Regla central:** la existencia sigue siendo `stock_sucursal.cantidad`. Los lotes la REPARTEN:
@@ -405,9 +432,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (1114 tests al 2026-10-15) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1152 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 119; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 121; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
@@ -442,6 +469,11 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] Poner `WHATSAPP_TOKEN` y `WHATSAPP_PHONE_NUMBER_ID` (opcional `WHATSAPP_API_VERSION`) en Vercel.
       El token permanente se saca con un usuario del sistema en Meta Business.
 - [ ] Con plan Pro de Vercel: cambiar el cron `/api/cron/seguimiento-whatsapp` a cada hora (`"0 * * * *"`).
+
+## Registro con QR de la tarjeta de lealtad
+- [ ] Poner `TURNSTILE_SECRET_KEY` (la secreta del mismo sitio de Turnstile del login) en `.env.local` y en Vercel
+      (Production) y hacer redeploy. Sin ella, `/api/lealtad/unirse` responde 503 y nadie se registra con el cartel.
+      En local sirven las llaves de prueba de Cloudflare (siempre aprueban).
 
 ## Aviso de Privacidad
 - [ ] Al hacer deploy, privacidad v1.4-2026-10-15 (SMS/Twilio y edad opcional) y términos v1.3-2026-10-06 (mayoría de edad) vuelven a mostrar el aviso de cambios.
