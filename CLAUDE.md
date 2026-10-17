@@ -303,7 +303,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     programa bloqueado. Revisa `acceso_tenant` a mano (el trigger 096 deja pasar a service_role) y rechaza demos.
   - `programas_lealtad.alta_publica` (interruptor en la configuración), `codigo_alta` (lo genera un trigger al
     activar; solo cambia con `regenerar_codigo_alta_lealtad`, que invalida los carteles) y `aviso_privacidad_url`
-    opcional del negocio. `tarjetas_lealtad.origen` ('equipo'|'qr') y `acepto_aviso_en` (evidencia LFPDPPP; el
+    opcional del negocio. La 122 hizo `SECURITY DEFINER` ese trigger: corría como quien guarda y authenticated no
+    tiene el generador (`permission denied for function _codigo_alta_lealtad`). **Probar las migraciones también
+    como usuario** (`set local role authenticated` + `request.jwt.claims`), no solo como postgres. `tarjetas_lealtad.origen` ('equipo'|'qr') y `acepto_aviso_en` (evidencia LFPDPPP; el
     negocio es responsable, SYMVORA encargado, sección 4 del aviso).
   - `programa_alta_publica` (anon) solo da lo que pinta la página. Aviso `lealtad_alta` en la campana (sin actor,
     agrupado por día, permiso `sales.create`). Cartel PDF carta en `features/lealtad/cartel-pdf.ts`; «QR para tu
@@ -432,9 +434,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   "Miscelanea Symvora", id `ab77a437-4493-4312-a8f1-8504d93f76d9`); las credenciales están en CONTEXT.md.
   Nunca escribir contraseñas ni resolver CAPTCHAs: Turnstile bloquea el login por script.
 - **Verificación:**
-  - `npx tsc --noEmit`, `npx vitest run` (1152 tests al 2026-10-16) y ESLint sobre los archivos tocados.
+  - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 121; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 122; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

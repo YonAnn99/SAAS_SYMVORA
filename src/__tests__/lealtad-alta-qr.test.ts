@@ -116,6 +116,13 @@ describe("contrato de la migracion 121", () => {
     expect(SQL).toMatch(/GRANT EXECUTE ON FUNCTION public\.programa_alta_publica\(text\) TO anon, authenticated;/);
   });
 
+  it("el trigger del codigo corre como su dueño (122): authenticated no tiene el generador", () => {
+    const fix = readFileSync(join(process.cwd(), "supabase/migrations/122_fix_codigo_alta_permiso.sql"), "utf8");
+    const funcion = fix.slice(fix.indexOf("CREATE OR REPLACE FUNCTION public._programas_lealtad_codigo_alta()"));
+    expect(funcion.slice(0, funcion.indexOf("AS $$"))).toMatch(/SECURITY DEFINER/);
+    expect(SQL).toMatch(/REVOKE ALL ON FUNCTION public\._codigo_alta_lealtad\(\) FROM PUBLIC, anon, authenticated;/);
+  });
+
   it("el codigo del cartel no se escribe a mano", () => {
     expect(cuerpoDe("_programas_lealtad_codigo_alta")).toMatch(/NEW\.codigo_alta := CASE WHEN TG_OP = 'UPDATE' THEN OLD\.codigo_alta/);
   });
