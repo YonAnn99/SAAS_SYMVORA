@@ -25,7 +25,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useCustomers, CreditPaymentDialog, EditCustomerDialog, deleteCustomer } from "@/features/customers";
+import {
+  useCustomers,
+  CreditPaymentDialog,
+  CustomerSwipeList,
+  EditCustomerDialog,
+  deleteCustomer,
+} from "@/features/customers";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Cliente } from "@/lib/types/database";
@@ -69,7 +75,8 @@ export default function CustomersPage() {
 
   // Eliminar: misma regla que editar. Con saldo pendiente se bloquea en la
   // fila; con ventas, la base lo impide y `deleteCustomer` lo explica.
-  const eliminarCliente = async (cliente: Cliente) => {
+  // `false` si no se pudo: en celular la pastilla reaparece.
+  const eliminarCliente = async (cliente: Cliente): Promise<boolean> => {
     const teniaTarjeta = Boolean(tarjetaDe(cliente.id));
     try {
       await deleteCustomer(cliente.id);
@@ -83,8 +90,10 @@ export default function CustomersPage() {
       void refresh();
       // Su tarjeta de lealtad se borro en cascada.
       if (teniaTarjeta) void lealtad.refrescar();
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo eliminar el cliente");
+      return false;
     }
   };
 
@@ -212,7 +221,23 @@ export default function CustomersPage() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                {/* Celular: una pastilla por cliente; tocar edita. */}
+                <div className="md:hidden">
+                  <CustomerSwipeList
+                    clientes={filtered}
+                    puedeEditar={puedeEditarClientes}
+                    sellosDe={(id) => (programaActivo ? (tarjetaDe(id)?.sellos ?? null) : null)}
+                    metaSellos={programaActivo && lealtad.programa ? lealtad.programa.sellos_meta : null}
+                    onEditar={setEditando}
+                    onAbonar={setPaymentDialogFor}
+                    onEliminar={eliminarCliente}
+                    onVerTarjeta={(c) => {
+                      if (emitiendo !== c.id) void abrirTarjeta(c.id);
+                    }}
+                  />
+                </div>
+                <div className="hidden overflow-x-auto md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -285,7 +310,7 @@ export default function CustomersPage() {
                                           ? "También se borra su tarjeta de lealtad. No se puede deshacer"
                                           : "No se puede deshacer"
                                     }
-                                    onEliminar={() => eliminarCliente(c)}
+                                    onEliminar={async () => void (await eliminarCliente(c))}
                                   />
                                 )}
                                 {programaActivo && (
@@ -318,6 +343,7 @@ export default function CustomersPage() {
                     </TableBody>
                   </Table>
                 </div>
+                </>
               )}
             </CardContent>
           </Card>
