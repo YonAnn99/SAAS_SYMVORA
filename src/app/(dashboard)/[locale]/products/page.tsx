@@ -216,6 +216,12 @@ export default function ProductsPage() {
   const requestedTab = searchParams.get("tab");
   // Sube con "Actualizar": vuelve a cargar tambien la pestaña Archivados.
   const [actualizaciones, setActualizaciones] = useState(0);
+  // "Actualizar" del catalogo: productos, variantes y (con `actualizaciones`)
+  // lo que depende de ellos.
+  const actualizarCatalogo = async () => {
+    setActualizaciones((v) => v + 1);
+    await Promise.all([refetch(), variantes.refetch()]);
+  };
   const [activeTab, setActiveTab] = useState(
     requestedTab && ["lots", "adjustments", "archived"].includes(requestedTab)
       ? requestedTab
@@ -289,31 +295,22 @@ export default function ProductsPage() {
             descripcion="Gestiona tu catálogo de productos"
           />
         </div>
-        {/* En celular, cuadricula de 2x2 con los cuatro del mismo tamaño:
-            arriba sucursal y Agregar producto (lo del dia), abajo Importar y
-            Lista de precios. El orden visual sale de `order-*`; desde `sm`
-            vuelve a ser una fila con el orden de siempre. */}
+        {/* En celular, cuadricula de 2 columnas: arriba Agregar producto (lo
+            del dia) e Importar, abajo Lista de precios y la sucursal. El orden
+            visual sale de `order-*`; desde `sm` vuelve a ser una fila con el
+            orden de siempre. "Actualizar" va junto a la busqueda de cada
+            pestaña, no aqui. */}
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           {/* Con varias sucursales, la columna de existencias es la del local
               elegido aqui. No se dibuja en un negocio de un solo local. */}
-          <SucursalSelector className="order-1 h-8 w-full sm:order-none sm:w-auto" />
-          {/* Catalogo y Archivados. Lotes y Ajustes llevan el suyo en su barra. */}
-          {(currentTab === "catalog" || currentTab === "archived") && (
-            <BotonActualizar
-              className="order-5 col-span-2 w-full sm:order-none sm:col-span-1 sm:w-auto"
-              onActualizar={async () => {
-                setActualizaciones((v) => v + 1);
-                await Promise.all([refetch(), variantes.refetch()]);
-              }}
-            />
-          )}
+          <SucursalSelector className="order-4 h-8 w-full sm:order-none sm:w-auto" />
           {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
               Va el primero porque es lo que menos se usa a diario; los dos de
               la derecha son los del trabajo del día. */}
           {canManageInventory && (
             <SpecularActionButton
               tone="money"
-              className="order-4 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
+              className="order-3 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
               onClick={() => router.push("/products/price-lists")}
             >
               Lista de precios
@@ -321,20 +318,20 @@ export default function ProductsPage() {
           )}
           {canImport && (
             <SpecularActionButton
-              tone="add"
-              className="order-3 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
+              tone="contorno"
+              className="order-2 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
               onClick={() => setShowImportDialog(true)}
             >
               {t("products.import.title")}
             </SpecularActionButton>
           )}
-          <span id="tutorial-add-product-btn" className="order-2 flex sm:order-none">
+          <span id="tutorial-add-product-btn" className="order-1 flex sm:order-none">
             {ofrecerVariante ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
                     <SpecularActionButton
-                      tone="add"
+                      tone="principal"
                       className="h-8 w-full gap-1.5 active:scale-[0.98] transition-transform"
                     />
                   }
@@ -371,7 +368,7 @@ export default function ProductsPage() {
               </DropdownMenu>
             ) : (
               <SpecularActionButton
-                tone="add"
+                tone="principal"
                 className="h-8 w-full active:scale-[0.98] transition-transform"
                 onClick={openCreateDialog}
               >
@@ -424,6 +421,7 @@ export default function ProductsPage() {
           categories={categories}
           sinCategoriaCount={sinCategoriaCount}
           placeholderBusqueda={t("common.search")}
+          actualizar={<BotonActualizar soloIcono onActualizar={actualizarCatalogo} />}
           exportar={
             <DataTableToolbar
               data={filteredProducts}
@@ -464,6 +462,7 @@ export default function ProductsPage() {
             </span>
           )}
         </Button>
+        <BotonActualizar soloIcono onActualizar={actualizarCatalogo} />
         <DataTableToolbar
           data={filteredProducts}
           columns={exportColumns}

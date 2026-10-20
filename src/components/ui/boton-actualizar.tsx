@@ -18,9 +18,12 @@ const GIRO_MINIMO_MS = 400;
  */
 export function BotonActualizar({
   onActualizar,
+  soloIcono = false,
   className,
 }: {
   onActualizar: () => unknown | Promise<unknown>;
+  /** Cuadrado y sin texto, para ir junto a una barra de busqueda. */
+  soloIcono?: boolean;
   className?: string;
 }) {
   const [cargando, setCargando] = useState(false);
@@ -48,14 +51,14 @@ export function BotonActualizar({
       type="button"
       variant="outline"
       size="sm"
-      className={cn("h-8 gap-1.5", className)}
+      className={cn(soloIcono ? "h-8 w-8 shrink-0 p-0" : "h-8 gap-1.5", className)}
       onClick={() => void actualizar()}
       disabled={cargando}
       aria-label="Actualizar datos"
       title="Actualizar datos"
     >
       <RefreshCw className={cn("h-3.5 w-3.5", cargando && "animate-spin")} aria-hidden="true" />
-      <span className="hidden sm:inline">{cargando ? "Actualizando…" : "Actualizar"}</span>
+      {!soloIcono && <span className="hidden sm:inline">{cargando ? "Actualizando…" : "Actualizar"}</span>}
     </Button>
   );
 }

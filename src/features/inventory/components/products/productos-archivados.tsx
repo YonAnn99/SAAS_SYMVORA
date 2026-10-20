@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Archive, Layers, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -202,14 +203,17 @@ export function ProductosArchivadosSeccion({
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre, código o SKU..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="h-8 pl-8 text-sm"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre, código o SKU..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="h-8 pl-8 text-sm"
+          />
+        </div>
+        <BotonActualizar soloIcono onActualizar={cargar} />
       </div>
 
       <Card className="animate-fade-in-up">

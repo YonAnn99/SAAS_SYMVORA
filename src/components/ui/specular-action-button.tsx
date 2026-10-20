@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  * solo CSS. El nombre se conserva para no tocar sus ~70 usos.
  */
 
-export type SpecularActionTone = "money" | "add" | "destructive" | "neutral";
+export type SpecularActionTone = "money" | "add" | "principal" | "contorno" | "destructive" | "neutral";
 
 const TONOS: Record<SpecularActionTone, string> = {
   // Agregar/crear. Como el CTA principal de la landing: negro que se llena del
@@ -22,6 +22,17 @@ const TONOS: Record<SpecularActionTone, string> = {
   add:
     "bg-primary text-white border-transparent shadow-md hover:shadow-lg " +
     "[--llenado:#1e3a8a] [--llenado-texto:#FFFFFF] dark:[--llenado:#FFFFFF] dark:[--llenado-texto:#1E3A8A]",
+  // La accion principal de un modulo (p. ej. "Agregar producto"): el azul
+  // SYMVORA en claro Y en oscuro, para que destaque sobre los demas. `add` en
+  // claro sale casi negro (`bg-primary`).
+  principal:
+    "bg-[#1E3A8A] text-white border-transparent shadow-md hover:shadow-lg " +
+    "[--llenado:#0F172A] [--llenado-texto:#FFFFFF] dark:[--llenado:#FFFFFF] dark:[--llenado-texto:#1E3A8A]",
+  // Secundaria sin color: transparente como `money`, pero se llena de negro en
+  // claro y de blanco en oscuro.
+  contorno:
+    "bg-transparent text-foreground border-neutral-200 dark:border-neutral-700 hover:border-[#111111] dark:hover:border-white " +
+    "[--llenado:#111111] [--llenado-texto:#FFFFFF] dark:[--llenado:#FFFFFF] dark:[--llenado-texto:#111111]",
   // Dinero: ventas, cobros, pagos. Como "Hablar por WhatsApp" de la landing:
   // transparente con borde y se llena del verde.
   money:

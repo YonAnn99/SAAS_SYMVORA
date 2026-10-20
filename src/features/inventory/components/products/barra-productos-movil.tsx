@@ -4,7 +4,7 @@
  * Busqueda y filtros del catalogo en celular, en dos renglones que caben:
  *
  *   [Buscar producto...        ] [Filtros] [CSV] [PDF]
- *   [Stock bajo x  Favoritos x                    ]   <- Multi Select de beUI
+ *   [Stock bajo x  Favoritos x               ] [↻]   <- Multi Select de beUI + Actualizar
  *
  * La barra de escritorio ponia todo en un renglon de ~970 px que no se partia
  * y desbordaba la pantalla. Los filtros son el mismo `ProductFilters` de los
@@ -59,6 +59,8 @@ interface BarraProductosMovilProps {
   placeholderBusqueda: string;
   /** CSV/PDF (`DataTableToolbar`): en pantalla chica ya va solo con icono. */
   exportar: ReactNode;
+  /** `BotonActualizar` cuadrado, a la derecha de los filtros. */
+  actualizar?: ReactNode;
 }
 
 function Opcion({
@@ -96,6 +98,7 @@ export function BarraProductosMovil({
   sinCategoriaCount,
   placeholderBusqueda,
   exportar,
+  actualizar,
 }: BarraProductosMovilProps) {
   const etiquetas = filtrosAEtiquetas(filters);
 
@@ -133,6 +136,8 @@ export function BarraProductosMovil({
         <div className="shrink-0">{exportar}</div>
       </div>
 
+      <div className="flex items-stretch gap-2">
+      <div className="min-w-0 flex-1">
       <MultiSelect
         value={etiquetas}
         onValueChange={(siguientes) =>
@@ -189,6 +194,10 @@ export function BarraProductosMovil({
           </MultiSelectList>
         </MultiSelectContent>
       </MultiSelect>
+      </div>
+      {/* Mismo alto que el campo de filtros (crece con las etiquetas). */}
+      {actualizar && <div className="flex shrink-0 [&>button]:h-auto [&>button]:min-h-9 [&>button]:w-10">{actualizar}</div>}
+      </div>
     </div>
   );
 }
