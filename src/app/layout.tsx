@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "./providers";
 import { JsonLd } from "@/components/marketing/json-ld";
@@ -156,6 +157,7 @@ export default function RootLayout({
             Speed Insights. Mide el plan de rendimiento; script del propio
             dominio (/_vercel), la CSP no cambia. */}
         <SpeedInsights />
+        <Analytics />
         <script
           type="application/ld+json"
           id="ld-organization"
