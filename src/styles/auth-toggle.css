@@ -1469,3 +1469,34 @@
     white-space: nowrap;
   }
 }
+
+/* ── Celular alto: sin huecos blancos ──
+   La cabecera azul absorbe el alto que sobra y la hoja blanca mide lo que su
+   contenido (antes la hoja se estiraba y el formulario quedaba centrado entre
+   huecos). En un telefono chico la cabecera baja a su minimo y, si no cabe,
+   solo la hoja se desplaza. */
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+  .auth-mobile-header {
+    flex: 1 0 auto;
+    height: auto;
+    min-height: clamp(96px, 17dvh, 200px);
+  }
+
+  .auth-mobile-logo {
+    width: clamp(44px, 8dvh, 88px);
+    height: clamp(44px, 8dvh, 88px);
+  }
+
+  .auth-form-container {
+    flex: 0 1 auto;
+  }
+
+  .auth-container .auth-form-container > form {
+    min-height: 0;
+  }
+
+  .auth-sign-in form,
+  .auth-form-scroll {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
