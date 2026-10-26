@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, type ReactNode } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
@@ -28,7 +28,7 @@ import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
 import { TituloCinetico } from "./titulo-cinetico";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft } from "lucide-react";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
 import { armarNombre } from "@/lib/nombre-usuario";
@@ -71,13 +71,88 @@ function MicrosoftIcon() {
 
 type AuthMode = "login" | "signup" | "forgot" | "key";
 
+/**
+ * Campo con su etiqueta sobre el borde (diseño de celular). En escritorio la
+ * etiqueta no se muestra y el campo se ve como siempre (solo el placeholder).
+ * `sinPista`: en celular oculta el placeholder cuando repite la etiqueta.
+ */
+function Campo({
+  etiqueta,
+  sinPista = false,
+  children,
+}: {
+  etiqueta: string;
+  sinPista?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`auth-campo${sinPista ? " auth-campo-sin-pista" : ""}`}>
+      <span className="auth-campo-etiqueta" aria-hidden="true">
+        {etiqueta}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+/** Formas y esferas azules de la cabecera y la bienvenida en celular. */
+function FormasMovil({ alto }: { alto: number }) {
+  return (
+    <svg
+      className="auth-mobile-formas"
+      viewBox={`0 0 390 ${alto}`}
+      preserveAspectRatio="xMidYMin slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id={`esferaClara${alto}`} cx="35%" cy="30%" r="75%">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.55" stopColor="#C7D2FE" />
+          <stop offset="1" stopColor="#6D83D9" />
+        </radialGradient>
+        <radialGradient id={`esferaOscura${alto}`} cx="35%" cy="30%" r="75%">
+          <stop offset="0" stopColor="#3B5BDB" />
+          <stop offset="0.6" stopColor="#1E3A8A" />
+          <stop offset="1" stopColor="#0B1440" />
+        </radialGradient>
+      </defs>
+      {alto > 400 ? (
+        <>
+          <path d="M200 0 H390 V340 C340 310 300 260 290 196 C280 126 228 82 200 0Z" fill="#2B4BC0" />
+          <path d="M248 0 C236 58 262 112 322 122 C368 130 390 168 390 204 V0Z" fill="#FFFFFF" opacity="0.88" />
+          <path d="M0 300 C84 276 126 358 114 452 C102 548 172 606 252 646 C322 680 362 742 390 764 V844 H0Z" fill="#0F172A" opacity="0.55" />
+          <path d="M0 520 C60 500 96 560 92 620 C88 690 40 730 0 744Z" fill="#2B4BC0" opacity="0.7" />
+          <circle cx="40" cy="58" r="72" fill={`url(#esferaOscura${alto})`} />
+          <circle cx="300" cy="206" r="42" fill={`url(#esferaClara${alto})`} />
+          <circle cx="52" cy="560" r="26" fill={`url(#esferaClara${alto})`} />
+          <circle cx="150" cy="706" r="62" fill={`url(#esferaOscura${alto})`} />
+        </>
+      ) : (
+        <>
+          <path d="M210 0 H390 V230 H300 C296 170 260 130 236 92 C214 58 210 30 210 0Z" fill="#2B4BC0" />
+          <path d="M250 0 C240 52 268 98 324 108 C366 116 390 146 390 176 V0Z" fill="#FFFFFF" opacity="0.88" />
+          <path d="M0 150 C60 130 110 170 130 230 H0Z" fill="#0F172A" opacity="0.45" />
+          <circle cx="44" cy="54" r="70" fill={`url(#esferaOscura${alto})`} />
+          <circle cx="300" cy="182" r="40" fill={`url(#esferaClara${alto})`} />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function AuthForms({
   initialMode = "login",
   referralCode = null,
   referrerBusinessName = null,
   initialGiro,
   destino = null,
+  bienvenida: bienvenidaInicial = false,
 }: {
+  /**
+   * Celular: abrir en la pantalla de bienvenida (Iniciar sesión / Crear
+   * cuenta). En escritorio no se muestra.
+   */
+  bienvenida?: boolean;
   initialMode?: AuthMode;
   referralCode?: string | null;
   referrerBusinessName?: string | null;
@@ -95,6 +170,12 @@ export function AuthForms({
   const despuesDeEntrar = destino ?? `/${locale}/dashboard`;
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  // Celular: pantalla de bienvenida antes del formulario (ver `bienvenida`).
+  const [enBienvenida, setEnBienvenida] = useState(bienvenidaInicial);
+  const irA = (siguiente: AuthMode) => {
+    setMode(siguiente);
+    setEnBienvenida(false);
+  };
 
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState("");
@@ -558,44 +639,43 @@ export function AuthForms({
     <div
       className={`auth-container ${mode === "signup" ? "active" : ""} ${
         mode === "forgot" ? "forgot" : ""
-      }`}
+      } ${enBienvenida ? "con-bienvenida" : ""}`}
       id="authContainer"
     >
-      {/* ── MOBILE-ONLY: curved logo header ── */}
-      <div className="auth-mobile-header">
-        <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-mobile-logo" />
-        <span className="auth-mobile-brand">SYMVORA</span>
-      </div>
+      {/* ── CELULAR: bienvenida (Iniciar sesión / Crear cuenta abajo) ── */}
+      {enBienvenida && (
+        <div className="auth-bienvenida">
+          <FormasMovil alto={844} />
+          <div className="auth-bienvenida-contenido">
+            <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-bienvenida-logo" />
+            <h1 className="auth-bienvenida-titulo">
+              {t("auth.bienvenidaTitulo")
+                .split("|")
+                .map((linea) => (
+                  <span key={linea}>{linea}</span>
+                ))}
+            </h1>
+            <p className="auth-bienvenida-texto">{t("auth.bienvenidaTexto")}</p>
+          </div>
+          <nav className="auth-bienvenida-pestanas" aria-label={`${t("auth.login")} / ${t("auth.signup")}`}>
+            <button type="button" onClick={() => irA("login")}>
+              {t("auth.login")}
+            </button>
+            <button type="button" className="auth-bienvenida-crear" onClick={() => irA("signup")}>
+              {t("auth.signup")}
+            </button>
+          </nav>
+        </div>
+      )}
 
-      {/* ── MOBILE-ONLY: pill toggle (replaces the desktop toggle panel on small screens) ── */}
-      <div className="auth-mobile-pill-toggle" role="tablist" aria-label={`${t("auth.login")} / ${t("auth.signup")} / ${t("auth.keyLogin")}`}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "login"}
-          className={mode === "login" ? "active" : ""}
-          onClick={() => setMode("login")}
-        >
-          {t("auth.login")}
+      {/* ── CELULAR: cabecera azul con formas, la "S" blanca y Volver ── */}
+      <div className="auth-mobile-header">
+        <FormasMovil alto={230} />
+        <button type="button" className="auth-mobile-volver" onClick={() => setEnBienvenida(true)}>
+          <ChevronLeft aria-hidden="true" />
+          {t("common.back")}
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "signup"}
-          className={mode === "signup" ? "active" : ""}
-          onClick={() => setMode("signup")}
-        >
-          {t("auth.signup")}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "key"}
-          className={mode === "key" ? "active" : ""}
-          onClick={() => setMode("key")}
-        >
-          {t("auth.keyLogin")}
-        </button>
+        <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-mobile-logo" />
       </div>
 
       {/* ── SIGN UP FORM ── */}
@@ -624,36 +704,42 @@ export function AuthForms({
             <Accordion defaultIndex={0}>
               <AccordionItem title={t("auth.personalData") || "Datos personales"} index={0}>
                 <div className="auth-grid-2">
-                  <input
-                    type="text"
-                    placeholder={t("auth.firstName") + " *"}
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    onBlur={guardarBorradorActual}
-                    autoComplete="given-name"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder={t("auth.lastNameSingle") + " *"}
-                    value={apellido}
-                    onChange={(e) => setApellido(e.target.value)}
-                    onBlur={guardarBorradorActual}
-                    autoComplete="family-name"
-                    required
-                  />
+                  <Campo etiqueta={t("auth.firstName") + " *"} sinPista>
+                    <input
+                      type="text"
+                      placeholder={t("auth.firstName") + " *"}
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      onBlur={guardarBorradorActual}
+                      autoComplete="given-name"
+                      required
+                    />
+                  </Campo>
+                  <Campo etiqueta={t("auth.lastNameSingle") + " *"} sinPista>
+                    <input
+                      type="text"
+                      placeholder={t("auth.lastNameSingle") + " *"}
+                      value={apellido}
+                      onChange={(e) => setApellido(e.target.value)}
+                      onBlur={guardarBorradorActual}
+                      autoComplete="family-name"
+                      required
+                    />
+                  </Campo>
                 </div>
                 <div className="auth-field-block">
-                  <TelefonoInput
-                    variante="auth"
-                    pais={paisTelefono}
-                    numero={telefono}
-                    onPaisChange={setPaisTelefono}
-                    onNumeroChange={setTelefono}
-                    onBlur={guardarBorradorActual}
-                    placeholder={t("auth.phone") + " *"}
-                    required
-                  />
+                  <Campo etiqueta={t("auth.phone") + " *"} sinPista>
+                    <TelefonoInput
+                      variante="auth"
+                      pais={paisTelefono}
+                      numero={telefono}
+                      onPaisChange={setPaisTelefono}
+                      onNumeroChange={setTelefono}
+                      onBlur={guardarBorradorActual}
+                      placeholder={t("auth.phone") + " *"}
+                      required
+                    />
+                  </Campo>
                 </div>
                 {/* Campo trampa: fuera de la vista y del teclado; un bot lo llena. */}
                 <input
@@ -669,15 +755,17 @@ export function AuthForms({
               </AccordionItem>
 
               <AccordionItem title={t("auth.business") || "Empresa"} index={1}>
-                <input
-                  type="text"
-                  placeholder={t("auth.businessName") + " *"}
-                  value={nombreEstablecimiento}
-                  onChange={(e) => setNombreEstablecimiento(e.target.value)}
-                  onBlur={guardarBorradorActual}
-                  required
-                  style={inputStyle}
-                />
+                <Campo etiqueta={t("auth.businessName") + " *"} sinPista>
+                  <input
+                    type="text"
+                    placeholder={t("auth.businessName") + " *"}
+                    value={nombreEstablecimiento}
+                    onChange={(e) => setNombreEstablecimiento(e.target.value)}
+                    onBlur={guardarBorradorActual}
+                    required
+                    style={inputStyle}
+                  />
+                </Campo>
                 <div className="auth-field-block">
                   <GiroSelect
                     value={giro}
@@ -725,31 +813,37 @@ export function AuthForms({
               </AccordionItem>
 
               <AccordionItem title={t("auth.security") || "Seguridad"} index={2}>
-                <input
-                  type="email"
-                  placeholder={t("auth.email") + " *"}
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  onBlur={guardarBorradorActual}
-                  required
-                  style={inputStyle}
-                />
-                <div style={{ width: "100%", marginBottom: "6px" }}>
-                  <PasswordInput
-                    placeholder={t("auth.password") + " *"}
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    showChecklist
+                <Campo etiqueta={t("auth.email") + " *"} sinPista>
+                  <input
+                    type="email"
+                    placeholder={t("auth.email") + " *"}
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    onBlur={guardarBorradorActual}
                     required
+                    style={inputStyle}
                   />
+                </Campo>
+                <div style={{ width: "100%", marginBottom: "6px" }}>
+                  <Campo etiqueta={t("auth.labelPassword") + " *"} sinPista>
+                    <PasswordInput
+                      placeholder={t("auth.password") + " *"}
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      showChecklist
+                      required
+                    />
+                  </Campo>
                 </div>
                 <div style={{ width: "100%", marginBottom: "6px" }}>
-                  <PasswordInput
-                    placeholder={t("auth.confirmPasswordLabel") + " *"}
-                    value={passwordConfirm}
-                    onChange={(e) => setPasswordConfirm(e.target.value)}
-                    required
-                  />
+                  <Campo etiqueta={t("auth.confirmPasswordLabel") + " *"} sinPista>
+                    <PasswordInput
+                      placeholder={t("auth.confirmPasswordLabel") + " *"}
+                      value={passwordConfirm}
+                      onChange={(e) => setPasswordConfirm(e.target.value)}
+                      required
+                    />
+                  </Campo>
                 </div>
               </AccordionItem>
             </Accordion>
@@ -771,15 +865,17 @@ export function AuthForms({
                   {t("auth.promoHaveCode")}
                 </button>
               ) : (
-                <input
-                  type="text"
-                  placeholder={t("auth.promoPlaceholder")}
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                  maxLength={40}
-                  autoComplete="off"
-                  style={{ ...inputStyle, marginBottom: 0 }}
-                />
+                <Campo etiqueta={t("auth.promoPlaceholder")} sinPista>
+                  <input
+                    type="text"
+                    placeholder={t("auth.promoPlaceholder")}
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    maxLength={40}
+                    autoComplete="off"
+                    style={{ ...inputStyle, marginBottom: 0 }}
+                  />
+                </Campo>
               )}
             </div>
 
@@ -902,13 +998,15 @@ export function AuthForms({
               </div>
             ) : (
               <>
-                <input
-                  type="email"
-                  placeholder={t("auth.emailPlaceholder")}
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  required
-                />
+                <Campo etiqueta={t("auth.email")}>
+                  <input
+                    type="email"
+                    placeholder={t("auth.emailPlaceholder")}
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                  />
+                </Campo>
 
                 {turnstileSiteKey && (
                   <div style={{ width: "100%", marginBottom: "12px" }}>
@@ -960,13 +1058,15 @@ export function AuthForms({
               </div>
             )}
 
-            <input
-              type="email"
-              placeholder={t("auth.emailPlaceholder")}
-              value={keyEmail}
-              onChange={(e) => setKeyEmail(e.target.value)}
-              required
-            />
+            <Campo etiqueta={t("auth.email")}>
+              <input
+                type="email"
+                placeholder={t("auth.emailPlaceholder")}
+                value={keyEmail}
+                onChange={(e) => setKeyEmail(e.target.value)}
+                required
+              />
+            </Campo>
             <CampoClaveInvitacion
               value={keyValue}
               onChange={(clave) => {
@@ -1058,20 +1158,24 @@ export function AuthForms({
             <span>{t("auth.orContinueWith")}</span>
           </div>
 
-          <input
-            type="email"
-            placeholder={t("auth.emailPlaceholder")}
-            value={loginEmail}
-            onChange={(e) => setLoginEmail(e.target.value)}
-            required
-          />
-          <PasswordInput
-            placeholder={t("auth.passwordPlaceholder")}
-            value={loginPassword}
-            onChange={(e) => setLoginPassword(e.target.value)}
-            required
-            className="auth-password-input"
-          />
+          <Campo etiqueta={t("auth.email")}>
+            <input
+              type="email"
+              placeholder={t("auth.emailPlaceholder")}
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              required
+            />
+          </Campo>
+          <Campo etiqueta={t("auth.labelPassword")}>
+            <PasswordInput
+              placeholder={t("auth.passwordPlaceholder")}
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              required
+              className="auth-password-input"
+            />
+          </Campo>
 
           <div className="auth-login-row">
             <button

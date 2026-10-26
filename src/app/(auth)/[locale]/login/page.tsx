@@ -11,9 +11,13 @@ export default async function LoginPage({
   const { locale } = await params;
   const { next } = await searchParams;
   // El destino se conserva: sin el, quien venia de un enlace (p. ej. /billing)
-  // acababa en el dashboard.
+  // acababa en el dashboard. Con destino se va directo al formulario.
   const destino = rutaDeRegresoSegura(next);
-  redirect(
-    `/${locale}/auth?mode=login${destino ? `&next=${encodeURIComponent(destino)}` : ""}`
-  );
+  if (destino) {
+    redirect(`/${locale}/auth?mode=login&next=${encodeURIComponent(destino)}`);
+  }
+  // Sin destino ("Iniciar sesion" de la landing, cerrar sesion): `/auth` sin
+  // `mode`. En celular abre la bienvenida (Iniciar sesion / Crear cuenta); en
+  // escritorio, el login de siempre.
+  redirect(`/${locale}/auth`);
 }

@@ -31,6 +31,10 @@ export default async function AuthPage({
         referrerBusinessName={referrerBusinessName}
         initialGiro={initialGiro}
         destino={destino}
+        // En celular, la pantalla de bienvenida solo cuando se llega sin un
+        // destino concreto: quien pidio entrar, registrarse, viene de un
+        // referido o de una sesion vencida va directo a su formulario.
+        bienvenida={!mode && !destino && !referralCode && !initialGiro}
       />
     </Suspense>
   );

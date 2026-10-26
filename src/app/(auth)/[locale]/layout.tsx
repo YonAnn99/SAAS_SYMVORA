@@ -46,16 +46,10 @@ export default async function AuthLayout({
              o "restablecer contrasena" el fondo de la suya. */
           background: #0c0c0c;
         }
-        /* El login/registro ocupa toda la pantalla: sin margen. */
+        /* El login/registro ocupa toda la pantalla, en escritorio y en
+           celular: sin margen. */
         .auth-page-wrapper:has(.auth-container:not(.auth-completar)) {
           padding: 0;
-        }
-        /* En celular sigue la tarjeta con margen (misma consulta que
-           auth-toggle.css). */
-        @media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
-          .auth-page-wrapper:has(.auth-container:not(.auth-completar)) {
-            padding: 1rem;
-          }
         }
         .auth-page-wrapper > * {
           position: relative;

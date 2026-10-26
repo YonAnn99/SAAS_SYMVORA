@@ -172,7 +172,12 @@
 .auth-accordion-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1e3a8a;
+}
+
+/* La flecha trae `text-gray-500` (accordion.tsx): esta regla le gana. */
+.auth-container .auth-accordion-chevron {
+  color: #1e3a8a;
 }
 
 .auth-field-block {
@@ -235,9 +240,14 @@
 
 .auth-container .auth-inline-link,
 .auth-inline-link {
-  color: #1a1a1a;
+  color: #1e3a8a;
   font-weight: 600;
   text-decoration: underline;
+}
+
+.auth-container .auth-inline-link:hover,
+.auth-inline-link:hover {
+  color: #0f172a;
 }
 
 .auth-privacy-note {
@@ -695,7 +705,7 @@
 .auth-form-link button {
   background: none;
   border: none;
-  color: #1a1a1a;
+  color: #1e3a8a;
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
@@ -707,7 +717,7 @@
 }
 
 .auth-form-link button:hover {
-  color: #000;
+  color: #0f172a;
 }
 
 .auth-grid-2 {
@@ -723,7 +733,17 @@
    default so they never render on desktop, where the toggle panel
    already handles switching between login/signup. */
 .auth-mobile-header,
-.auth-mobile-pill-toggle {
+.auth-bienvenida {
+  display: none;
+}
+
+/* Campo con etiqueta sobre el borde (`Campo` en auth-forms.tsx): la etiqueta
+   solo se muestra en celular; en escritorio queda el placeholder de siempre. */
+.auth-campo {
+  width: 100%;
+}
+
+.auth-campo-etiqueta {
   display: none;
 }
 
@@ -812,7 +832,8 @@
 .auth-forgot-link {
   align-self: flex-start;
   margin: 5px 0 15px;
-  color: #333;
+  color: #1e3a8a;
+  font-weight: 600;
   font-size: 13px;
   background: none;
   border: none;
@@ -915,23 +936,19 @@
   }
 
   .auth-container form {
-    padding: 20px;
+    padding: 28px 24px 32px;
   }
 
   .auth-sign-in form {
-    padding: 20px;
+    padding: 28px 24px 32px;
   }
 
   .auth-form-scroll {
-    padding: 20px;
+    padding: 28px 24px 32px;
   }
 
   .auth-form-center {
     margin-bottom: 4px;
-  }
-
-  .auth-form-center h1 {
-    font-size: 18px;
   }
 
   .auth-toggle-panel h1 {
@@ -948,7 +965,8 @@
   }
 
   .auth-grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .auth-social-btn {
@@ -956,108 +974,174 @@
     padding: 10px 12px;
   }
 
-  /* ── Dark, floating-card redesign for mobile only ──
-     Reuses the same dark-theme tokens already defined for the rest of
-     the app (see the .dark block in globals.css) instead of inventing
-     a new palette, so this stays visually consistent with the product. */
+  /* ── Celular: formas azules arriba y hoja blanca con el formulario ──
+     (diseño aprobado "Login móvil SYMVORA"). Bienvenida con Iniciar sesión /
+     Crear cuenta abajo; campos con la etiqueta sobre el borde (`Campo`). */
   body {
-    background: #0C0C0C;
+    background: #1e3a8a;
   }
 
   .auth-container {
-    --background: #0C0C0C;
-    --foreground: #F0EFED;
-    --card: #151515;
-    --card-foreground: #F0EFED;
-    --border: rgba(255, 255, 255, 0.12);
-    --input: rgba(255, 255, 255, 0.08);
-    --muted-foreground: rgba(240, 239, 237, 0.55);
-    --ring: rgba(240, 239, 237, 0.35);
+    --foreground: #111827;
+    --muted-foreground: #4b5563;
+    --border: #e5e7eb;
+    --input: #ffffff;
+    --card: #ffffff;
 
-    background: #141414;
-    margin: 12px;
-    border-radius: 32px;
+    background: #1e3a8a;
+    margin: 0;
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.6);
+    box-shadow: none;
   }
 
-  /* Curved white cap holding the logo, like a phone notch shelf */
-  .auth-mobile-header {
+  .auth-container:not(.auth-completar) {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    min-height: 100dvh;
+  }
+
+  /* "Completar registro" sigue siendo una tarjeta blanca. */
+  .auth-container.auth-completar {
+    background: #ffffff;
+    border-radius: 24px;
+  }
+
+  /* Cabecera azul: formas, la "S" blanca centrada y Volver */
+  .auth-mobile-header {
+    display: flex;
     align-items: center;
-    gap: 8px;
-    background: #fff;
-    padding: 28px 0 44px;
-    border-radius: 32px 32px 50% 50% / 32px 32px 24px 24px;
-    margin-bottom: -12px;
+    justify-content: center;
     position: relative;
-    z-index: 2;
+    height: 200px;
+    flex-shrink: 0;
+  }
+
+  .auth-mobile-formas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
   }
 
   .auth-mobile-logo {
-    width: 56px;
-    height: 56px;
-    object-fit: contain;
-  }
-
-  .auth-mobile-brand {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: #111;
-  }
-
-  /* Pill toggle replacing the desktop sliding panel.
-     margin-top 20px: con el cap en -12px, el pill empieza 8px por debajo
-     del punto más bajo de la curva — sin solapamiento en centro ni bordes. */
-  .auth-mobile-pill-toggle {
-    display: flex;
     position: relative;
-    z-index: 1;
-    margin: 20px 24px 20px;
-    padding: 4px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
+    width: 64px;
+    height: 64px;
+    margin-top: 8px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
   }
 
-  .auth-mobile-pill-toggle button {
-    flex: 1;
-    padding: 10px 0;
-    border-radius: 999px;
+  .auth-mobile-volver {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 10px;
     border: none;
     background: transparent;
-    color: rgba(240, 239, 237, 0.55);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
   }
 
-  .auth-mobile-pill-toggle button.active {
-    background: #F0EFED;
-    color: #111;
+  .auth-mobile-volver svg {
+    width: 20px;
+    height: 20px;
   }
 
-  /* The bottom text-link switch is redundant now that the pill
-     toggle above does the same job — keep it for desktop only. */
-  .auth-form-link {
-    display: none;
+  /* Hoja blanca con esquinas redondeadas */
+  .auth-form-container {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 32px 32px 0 0;
   }
 
-  .auth-form-title-text,
+  .auth-container form {
+    background-color: transparent;
+  }
+
   .auth-container .auth-form-title-text {
-    font-size: 22px;
+    font-family: var(--font-outfit), "Outfit", sans-serif;
+    font-size: 28px;
     font-weight: 700;
     margin-bottom: 4px;
-    color: var(--foreground);
+    color: #1e3a8a;
   }
 
   .auth-form-subtitle-text {
-    color: var(--muted-foreground);
-    font-size: 13px;
+    color: #4b5563;
+    font-size: 14px;
+  }
+
+  /* Campos: borde gris, esquinas de 14 px y la etiqueta sobre el borde */
+  .auth-campo {
+    position: relative;
+    margin: 12px 0 8px;
+  }
+
+  .auth-container .auth-campo-etiqueta {
+    display: block;
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    z-index: 2;
+    max-width: calc(100% - 24px);
+    padding: 0 5px;
+    overflow: hidden;
+    background: #ffffff;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+
+  .auth-container .auth-campo input {
+    height: 52px;
+    margin: 0;
+    padding: 0 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background-color: #ffffff;
+    color: #111827;
+    font-size: 16px;
+  }
+
+  .auth-container .auth-campo input:focus {
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+    outline: none;
+  }
+
+  .auth-container .auth-campo .auth-select-trigger {
+    height: 52px;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background-color: #f9fafb;
+  }
+
+  .auth-container input::placeholder {
+    color: #9ca3af;
+  }
+
+  /* La etiqueta ya dice lo mismo que el placeholder: se oculta. */
+  .auth-container .auth-campo-sin-pista input::placeholder {
+    color: transparent;
+  }
+
+  .auth-container input[type="checkbox"] {
+    accent-color: #1e3a8a;
   }
 
   .auth-login-row {
@@ -1068,30 +1152,9 @@
 
   .auth-forgot-link {
     margin: 5px 0 15px;
-    color: var(--muted-foreground);
-    font-size: 13px;
-  }
-
-  .auth-container input::placeholder {
-    color: var(--muted-foreground);
-  }
-
-  .auth-container input:focus {
-    background-color: var(--input);
-    outline: none;
-  }
-
-  .auth-container input[type="checkbox"] {
-    accent-color: var(--foreground);
-  }
-
-  .auth-container form {
-    background-color: transparent;
-  }
-
-  .auth-container input {
-    background-color: var(--input);
-    color: var(--foreground);
+    color: #1e3a8a;
+    font-size: 14px;
+    font-weight: 600;
   }
 
   .auth-accordion-item {
@@ -1100,19 +1163,7 @@
   }
 
   .auth-accordion-item[data-unida] {
-    border-top-color: color-mix(in oklab, var(--border) 50%, transparent) !important;
-  }
-
-  .auth-accordion-title {
-    color: var(--foreground) !important;
-  }
-
-  .auth-accordion-chevron {
-    color: var(--foreground) !important;
-  }
-
-  .auth-field-label {
-    color: var(--foreground) !important;
+    border-top-color: var(--border) !important;
   }
 
   .auth-select-trigger {
@@ -1122,112 +1173,126 @@
   }
 
   .auth-logo-select-btn {
-    background-color: var(--input);
+    background-color: #f9fafb;
     border: 1px solid var(--border);
     color: var(--muted-foreground);
   }
 
-  .auth-logo-preview-img {
-    border-color: var(--border);
-  }
-
-  .auth-logo-remove-btn {
-    color: #f87171;
-  }
-
   .auth-terms-label {
-    color: var(--foreground) !important;
+    color: #4b5563 !important;
   }
 
   .auth-inline-link {
-    color: var(--foreground) !important;
+    color: #1e3a8a !important;
   }
 
   .auth-privacy-note {
-    color: var(--muted-foreground);
-    background-color: rgba(255, 255, 255, 0.05);
+    color: #6b7280;
+    background-color: #f9fafb;
   }
 
-  /* Light pill CTA button, inverted from the dark desktop version */
-  .auth-container button.auth-btn {
-    background-color: #F0EFED;
-    color: #111;
-    border-radius: 999px;
+  /* Enlaces del pie del formulario: ya no hay pildoras arriba */
+  .auth-form-link {
+    display: block;
+    font-size: 14px;
+    color: #4b5563;
   }
 
-  .auth-social-btn {
-    background-color: transparent;
-    border-color: var(--border);
-    color: var(--foreground);
+  .auth-form-link button {
+    color: #1e3a8a;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
   }
 
-  .auth-divider span {
-    color: var(--muted-foreground);
+  .auth-form-link button.auth-key-login-link {
+    font-weight: 600;
+    text-decoration: underline;
   }
 
-  .auth-divider::before,
-  .auth-divider::after {
-    background: var(--border);
+  /* ── Bienvenida ── */
+  .auth-container.con-bienvenida > :not(.auth-bienvenida) {
+    display: none !important;
   }
 
-  /* Remember-me toggle */
-  .auth-remember-me {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 10px;
-    font-size: 13px;
-    color: var(--foreground);
-    cursor: pointer;
-  }
-
-  .auth-remember-me span {
-    color: var(--foreground);
-  }
-
-  .auth-remember-me input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .auth-remember-switch {
+  .auth-bienvenida {
     position: relative;
-    width: 40px;
-    height: 22px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.15);
-    transition: background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 100dvh;
+    overflow: hidden;
+    background: #1e3a8a;
+  }
+
+  .auth-bienvenida-contenido {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 32px 32px 24px;
+    text-align: center;
+  }
+
+  .auth-bienvenida-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  .auth-container .auth-bienvenida-titulo {
+    margin: 0;
+    font-family: var(--font-outfit), "Outfit", sans-serif;
+    font-weight: 800;
+    font-size: 40px;
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: #ffffff;
+  }
+
+  .auth-container .auth-bienvenida-titulo span {
+    display: block;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  .auth-container p.auth-bienvenida-texto {
+    margin: 0;
+    max-width: 280px;
+    font-size: 16px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .auth-bienvenida-pestanas {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     flex-shrink: 0;
   }
 
-  .auth-remember-switch::before {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #fff;
-    transition: transform 0.2s ease;
+  .auth-bienvenida-pestanas button {
+    min-height: 76px;
+    padding-bottom: env(safe-area-inset-bottom);
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-family: var(--font-outfit), "Outfit", sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
   }
 
-  .auth-remember-me input:checked + .auth-remember-switch {
-    background: #F0EFED;
-  }
-
-  .auth-remember-me input:checked + .auth-remember-switch::before {
-    transform: translateX(18px);
-    background: #111;
-  }
-
-  /* Signup/forgot readability on the dark card (inline dark text) */
-  .auth-container label,
-  .auth-container a {
-    color: var(--foreground) !important;
+  .auth-bienvenida-pestanas button.auth-bienvenida-crear {
+    background: #ffffff;
+    color: #1e3a8a;
+    font-weight: 700;
+    border-top-left-radius: 32px;
   }
 }
 
