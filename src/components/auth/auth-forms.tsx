@@ -27,6 +27,8 @@ import { loginSchema, signupSchema } from "@/lib/validations/schemas";
 import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
+import { TituloCinetico } from "./titulo-cinetico";
+import { ArrowRight } from "lucide-react";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
 import { armarNombre } from "@/lib/nombre-usuario";
@@ -600,6 +602,10 @@ export function AuthForms({
       <div className="auth-form-container auth-sign-up">
         <div className="auth-form-scroll">
           <form onSubmit={handleSignup} style={{ alignItems: "stretch" }}>
+            <div className="auth-form-center">
+              <h1 className="auth-form-title-text">{t("auth.signupTitle")}</h1>
+            </div>
+
             {signupError && (
               <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive text-center">
                 {signupError}
@@ -837,8 +843,15 @@ export function AuthForms({
               </div>
             )}
 
-            <button type="submit" className="auth-btn" disabled={signupLoading || !acceptTerms} style={{ width: "100%", marginTop: "16px" }}>
-              {signupLoading ? t("common.loading") : t("auth.signup")}
+            <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={signupLoading || !acceptTerms} style={{ width: "100%", marginTop: "16px" }}>
+              {signupLoading ? (
+                t("common.loading")
+              ) : (
+                <>
+                  {t("auth.signup")}
+                  <ArrowRight className="auth-btn-flecha" aria-hidden="true" />
+                </>
+              )}
             </button>
 
             <div className="auth-privacy-note">
@@ -910,8 +923,15 @@ export function AuthForms({
                   </div>
                 )}
 
-                <button type="submit" className="auth-btn" disabled={forgotLoading} style={{ width: "100%" }}>
-                  {forgotLoading ? t("common.loading") : t("auth.sendResetLink")}
+                <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={forgotLoading} style={{ width: "100%" }}>
+                  {forgotLoading ? (
+                    t("common.loading")
+                  ) : (
+                    <>
+                      {t("auth.sendResetLink")}
+                      <ArrowRight className="auth-btn-flecha" aria-hidden="true" />
+                    </>
+                  )}
                 </button>
               </>
             )}
@@ -986,8 +1006,15 @@ export function AuthForms({
               </div>
             )}
 
-            <button type="submit" className="auth-btn" disabled={keyLoading} style={{ width: "100%", marginTop: "12px" }}>
-              {keyLoading ? t("common.loading") : t("auth.enterWithKey")}
+            <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={keyLoading} style={{ width: "100%", marginTop: "12px" }}>
+              {keyLoading ? (
+                t("common.loading")
+              ) : (
+                <>
+                  {t("auth.enterWithKey")}
+                  <ArrowRight className="auth-btn-flecha" aria-hidden="true" />
+                </>
+              )}
             </button>
 
             <div className="auth-form-link">
@@ -1079,8 +1106,15 @@ export function AuthForms({
             </div>
           )}
 
-          <button type="submit" className="auth-btn" disabled={loginLoading} style={{ width: "100%" }}>
-            {loginLoading ? t("common.loading") : t("auth.login")}
+          <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={loginLoading} style={{ width: "100%" }}>
+            {loginLoading ? (
+              t("common.loading")
+            ) : (
+              <>
+                {t("auth.login")}
+                <ArrowRight className="auth-btn-flecha" aria-hidden="true" />
+              </>
+            )}
           </button>
 
           <div className="auth-form-link">
@@ -1107,10 +1141,17 @@ export function AuthForms({
       {mode !== "forgot" && (
       <div className="auth-toggle-container">
         <div className="auth-toggle">
+          {/* Texto animado: solo se reproduce en el panel visible; el de
+              registro espera al deslizamiento (0.6 s). Renglones separados
+              por "|" en los mensajes. */}
           <div className="auth-toggle-panel auth-toggle-left">
-            <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-logo" />
-            <h1>{t("auth.signupTitle")}</h1>
-            <p>{t("auth.signupSubtitle")}</p>
+            <TituloCinetico
+              activo={mode === "signup"}
+              retraso={250}
+              lineas={t("auth.panelSignup").split("|")}
+              subtitulo={t("auth.panelSignupSub")}
+              logo={<img src="/symvora-logo.webp" alt="SYMVORA" className="auth-logo" />}
+            />
             <button
               type="button"
               className="auth-btn hidden"
@@ -1121,9 +1162,12 @@ export function AuthForms({
           </div>
 
           <div className="auth-toggle-panel auth-toggle-right">
-            <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-logo" />
-            <h1>{t("auth.loginTitle")}</h1>
-            <p>{t("auth.loginSubtitle")}</p>
+            <TituloCinetico
+              activo={mode !== "signup"}
+              lineas={t("auth.panelLogin").split("|")}
+              subtitulo={t("auth.panelLoginSub")}
+              logo={<img src="/symvora-logo.webp" alt="SYMVORA" className="auth-logo" />}
+            />
             <button
               type="button"
               className="auth-btn hidden"

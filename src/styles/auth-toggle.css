@@ -12,8 +12,21 @@
   font-family: 'Montserrat', sans-serif;
 }
 
+/* El login/registro ocupa toda la pantalla ("completar registro" sigue siendo
+   tarjeta). Con poca altura no se corta: la pagina hace scroll. */
+.auth-container:not(.auth-completar) {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  min-height: 680px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Titulos en Outfit, como los encabezados de la landing; el resto en Montserrat. */
 .auth-container h1 {
   color: #1a1a1a;
+  font-family: var(--font-outfit), "Outfit", sans-serif;
 }
 
 .auth-container p {
@@ -58,6 +71,56 @@
 
 .auth-container button.auth-btn:hover {
   background-color: #333;
+}
+
+/* Botones de envio con el estilo del CTA de la landing ("Prueba 14 dias
+   gratis ->", `marketing/boton-capsula.ts`): capsula azul SYMVORA con flecha y
+   el llenado de `.btn-llenado` (globals.css). Mas especifica que la regla de
+   arriba y que la del celular. */
+.auth-container button.auth-btn.auth-btn-principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 32px;
+  border: none;
+  border-radius: 999px;
+  background-color: #1e3a8a;
+  color: #fff;
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --llenado: #0f172a;
+  --llenado-texto: #fff;
+  transition-property: color, background-color, box-shadow, transform;
+  transition-duration: 0.6s;
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.auth-container button.auth-btn.auth-btn-principal:hover {
+  background-color: #1e3a8a;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.auth-container button.auth-btn.auth-btn-principal:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+.auth-btn-flecha {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  transition: translate 0.3s ease;
+}
+
+.auth-btn-principal:not(:disabled):hover .auth-btn-flecha {
+  translate: 4px 0;
 }
 
 .auth-container button.auth-btn.hidden {
@@ -295,7 +358,7 @@
   min-height: 0;
   height: 100%;
   overflow-y: auto;
-  padding: 20px 35px;
+  padding: 20px max(35px, calc((100% - 460px) / 2));
   scrollbar-width: thin;
   scrollbar-color: #ccc transparent;
   /* Opaco a proposito: el login sigue DEBAJO del registro (z-index) y, cuando
@@ -311,8 +374,10 @@
   margin-bottom: 8px;
 }
 
+/* A pantalla completa cada formulario mide media pantalla: el padding lo centra
+   con un ancho comodo (420 px) en vez de estirar los campos. */
 .auth-sign-in form {
-  padding: 20px 40px;
+  padding: 20px max(40px, calc((100% - 420px) / 2));
 }
 
 @keyframes authMove {
@@ -421,17 +486,20 @@
   height: 100%;
   overflow: hidden;
   transition: all 0.6s ease-in-out;
-  border-radius: 20px;
+  /* Curvo hacia el formulario; la curva se invierte al deslizarse (la
+     transicion `all` tambien anima el radio). */
+  border-radius: 150px 0 0 100px;
   z-index: 1000;
 }
 
 .auth-container.active .auth-toggle-container {
   transform: translateX(-100%);
-  border-radius: 20px;
+  border-radius: 0 150px 100px 0;
 }
 
+/* Azul SYMVORA: respaldo detras de los paneles mientras se deslizan. */
 .auth-toggle {
-  background-color: #1a1a1a;
+  background-color: #1e3a8a;
   height: 100%;
   color: #fff;
   position: relative;
@@ -446,7 +514,9 @@
   transform: translateX(50%);
 }
 
+/* Azul SYMVORA solido. */
 .auth-toggle-panel {
+  background-color: #1e3a8a;
   position: absolute;
   width: 50%;
   height: 100%;
@@ -454,7 +524,7 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  padding: 0 40px;
+  padding: 0 clamp(40px, 5vw, 96px);
   text-align: center;
   top: 0;
   transform: translateX(0);
@@ -474,16 +544,21 @@
   transform: translateX(0);
 }
 
+/* A pantalla completa el logo y los textos crecen con el ancho (`clamp`),
+   sin pasarse en monitores grandes. */
 .auth-toggle-panel h1 {
-  font-size: 26px;
+  font-size: clamp(34px, 3.2vw, 56px);
+  line-height: 1.1;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: clamp(12px, 1.2vw, 20px);
   color: #fff;
 }
 
 .auth-toggle-panel p {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: clamp(16px, 1.35vw, 22px);
+  line-height: 1.45;
+  max-width: 40ch;
+  margin-inline: auto;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -495,9 +570,119 @@
   object-fit: contain;
 }
 
+/* La "S" en blanco y sin recuadro, como en la landing (`brightness-0 invert`). */
 .auth-toggle-panel .auth-logo {
-  background-color: #fff;
-  padding: 8px;
+  width: clamp(88px, 7vw, 132px);
+  height: clamp(88px, 7vw, 132px);
+  margin-bottom: clamp(16px, 1.6vw, 28px);
+  border-radius: 0;
+  filter: brightness(0) invert(1);
+}
+
+/* ── Texto animado del panel (`titulo-cinetico.tsx`) ──
+   Renglones en mayusculas alineados a la izquierda; cada letra aparece en su
+   turno (`--aparece`) separada `--i * 0.32em` y el renglon se junta en
+   `--junta`. Solo anima el panel visible (`data-activo`); sin animar, todo
+   queda en su estado final. */
+.auth-cinetico {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.auth-toggle-panel .auth-cinetico .auth-logo {
+  width: clamp(52px, 4.4vw, 72px);
+  height: clamp(52px, 4.4vw, 72px);
+  margin-bottom: clamp(16px, 1.6vw, 28px);
+}
+
+.auth-toggle-panel .auth-cinetico-titulo {
+  margin: 0;
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+  font-weight: 800;
+  font-size: clamp(40px, 4.2vw, 76px);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+/* `.auth-container span` (12 px gris) no debe alcanzar a las letras. */
+.auth-toggle-panel .auth-cinetico-titulo span {
+  font-size: inherit;
+  color: inherit;
+}
+
+.auth-cinetico-linea {
+  display: block;
+  white-space: nowrap;
+}
+
+.auth-cinetico-letra {
+  display: inline-block;
+}
+
+.auth-toggle-panel .auth-cinetico-sub {
+  margin: clamp(16px, 1.6vw, 28px) 0 0;
+  max-width: none;
+  font-size: clamp(16px, 1.35vw, 22px);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@keyframes auth-cinetico-aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-cinetico-juntar {
+  from {
+    transform: translateX(calc(var(--i) * 0.32em));
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes auth-cinetico-subir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* El estado final es el estilo normal (letra visible y en su lugar): las
+   animaciones solo cubren la entrada (`backwards`) y se quitan al terminar
+   (`data-terminado`). Antes la letra solo se veia si una animacion de 1 ms
+   terminaba bien, y a veces se quedaban letras ocultas ("CUENT"). */
+.auth-cinetico[data-activo="true"]:not([data-terminado="true"]) .auth-logo {
+  animation: auth-cinetico-aparecer 400ms ease-out backwards;
+}
+
+.auth-cinetico[data-activo="true"]:not([data-terminado="true"]) .auth-cinetico-letra {
+  animation:
+    auth-cinetico-aparecer 90ms linear var(--aparece) backwards,
+    auth-cinetico-juntar 380ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--junta) backwards;
+}
+
+.auth-cinetico[data-activo="true"]:not([data-terminado="true"]) .auth-cinetico-sub {
+  animation: auth-cinetico-subir 450ms ease-out var(--aparece) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-cinetico .auth-logo,
+  .auth-cinetico .auth-cinetico-letra,
+  .auth-cinetico .auth-cinetico-sub {
+    animation: none !important;
+  }
 }
 
 .auth-form-link {
@@ -606,11 +791,17 @@
 
 /* Desktop baseline for elements whose inline styles moved to CSS so the
    mobile media query can restyle them without touching desktop. */
+/* Azul SYMVORA en escritorio; en celular (tarjeta oscura) sigue claro. */
 .auth-form-title-text {
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 4px;
-  color: #1a1a1a;
+  color: #1e3a8a;
+}
+
+/* `.auth-container h1` (gris oscuro) le ganaba al color de arriba. */
+.auth-container .auth-form-title-text {
+  color: #1e3a8a;
 }
 
 .auth-form-subtitle-text {
@@ -684,6 +875,12 @@
     min-height: 100vh;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  /* Sin el alto fijo de escritorio: la tarjeta crece con su contenido. */
+  .auth-container:not(.auth-completar) {
+    height: auto;
+    min-height: 100vh;
   }
 
   .auth-toggle-container {
@@ -850,7 +1047,8 @@
     display: none;
   }
 
-  .auth-form-title-text {
+  .auth-form-title-text,
+  .auth-container .auth-form-title-text {
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 4px;

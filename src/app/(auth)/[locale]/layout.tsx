@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
-import { GradientWaves } from "@/components/auth/gradient-waves";
 
 export const metadata: Metadata = {
   robots: {
@@ -32,8 +31,6 @@ export default async function AuthLayout({
     <NextIntlClientProvider locale={locale} messages={messages}>
       <IdiomaHtml locale={locale} />
       <div className="auth-page-wrapper">
-        <GradientWaves className="auth-gradient-waves" />
-        <div className="auth-noise-overlay" />
         {children}
       </div>
       <style>{`
@@ -44,24 +41,23 @@ export default async function AuthLayout({
           justify-content: center;
           padding: 1rem;
           position: relative;
-          background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 30%, #a3a3a3 60%, #1a1a1a 100%);
+          /* El mismo oscuro del celular: en escritorio el login lo tapa todo;
+             en celular es el margen de la tarjeta, y en "completar registro"
+             o "restablecer contrasena" el fondo de la suya. */
+          background: #0c0c0c;
         }
-        .auth-gradient-waves {
-          position: fixed;
-          inset: 0;
-          z-index: 0;
+        /* El login/registro ocupa toda la pantalla: sin margen. */
+        .auth-page-wrapper:has(.auth-container:not(.auth-completar)) {
+          padding: 0;
         }
-        .auth-noise-overlay {
-          position: fixed;
-          inset: 0;
-          opacity: 0.035;
-          pointer-events: none;
-          z-index: 1;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-          background-repeat: repeat;
-          background-size: 256px 256px;
+        /* En celular sigue la tarjeta con margen (misma consulta que
+           auth-toggle.css). */
+        @media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+          .auth-page-wrapper:has(.auth-container:not(.auth-completar)) {
+            padding: 1rem;
+          }
         }
-        .auth-page-wrapper > *:not(.auth-noise-overlay):not(.auth-gradient-waves) {
+        .auth-page-wrapper > * {
           position: relative;
           z-index: 2;
         }
