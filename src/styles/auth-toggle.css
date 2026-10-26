@@ -737,6 +737,12 @@
   display: none;
 }
 
+/* Recordarme + ¿Olvidaste tu contraseña?: en escritorio, dos renglones como
+   siempre (el envoltorio no existe para el layout); en celular, uno solo. */
+.auth-fila-sesion {
+  display: contents;
+}
+
 /* Campo con etiqueta sobre el borde (`Campo` en auth-forms.tsx): la etiqueta
    solo se muestra en celular; en escritorio queda el placeholder de siempre. */
 .auth-campo {
@@ -898,10 +904,12 @@
     box-shadow: none;
   }
 
-  /* Sin el alto fijo de escritorio: la tarjeta crece con su contenido. */
+  /* Pantalla fija del alto VISIBLE (dvh, no vh): sin scroll de pagina. Si
+     algo no cabe, se desplaza solo la hoja blanca (ver el final). */
   .auth-container:not(.auth-completar) {
-    height: auto;
-    min-height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .auth-toggle-container {
@@ -998,7 +1006,6 @@
   .auth-container:not(.auth-completar) {
     display: flex;
     flex-direction: column;
-    min-height: 100dvh;
   }
 
   /* "Completar registro" sigue siendo una tarjeta blanca. */
@@ -1013,7 +1020,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    height: 200px;
+    height: clamp(96px, 17dvh, 200px);
     flex-shrink: 0;
   }
 
@@ -1220,7 +1227,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 100dvh;
+    min-height: 0;
     overflow: hidden;
     background: #1e3a8a;
   }
@@ -1315,5 +1322,150 @@
   /* En celular el formulario fluye desde arriba, bajo el encabezado. */
   .auth-sign-up form {
     justify-content: flex-start;
+  }
+}
+
+/* ── Celular: que todo quepa en la pantalla ──
+   La cabecera se encoge con el alto visible; la hoja blanca ocupa el resto y,
+   si algo no cabe (el registro en un telefono chico), solo ella se desplaza. */
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+  .auth-form-container {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* El centrado vertical (en linea) nunca corta el inicio: el form crece. */
+  .auth-container .auth-form-container > form {
+    height: auto;
+    min-height: 100%;
+  }
+
+  /* En el registro el scroll es el de la hoja, no uno propio. */
+  .auth-form-scroll {
+    height: auto;
+    overflow: visible;
+  }
+
+  .auth-container form,
+  .auth-sign-in form,
+  .auth-form-scroll {
+    padding: 18px 20px 20px;
+  }
+
+  /* El form del registro va dentro de `.auth-form-scroll`: sin padding doble. */
+  .auth-container .auth-sign-up .auth-form-scroll > form {
+    padding: 0;
+  }
+
+  .auth-mobile-logo {
+    width: clamp(44px, 7dvh, 64px);
+    height: clamp(44px, 7dvh, 64px);
+    margin-top: 0;
+  }
+
+  .auth-mobile-volver {
+    top: 6px;
+  }
+
+  .auth-container .auth-form-title-text {
+    font-size: 26px;
+  }
+
+  .auth-campo {
+    margin: 10px 0 4px;
+  }
+
+  .auth-container .auth-campo input,
+  .auth-container .auth-campo .auth-select-trigger {
+    height: 48px;
+  }
+
+  .auth-social-btn {
+    min-height: 44px;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 14px;
+  }
+
+  .auth-divider {
+    margin: 8px 0 2px;
+  }
+
+  .auth-container button.auth-btn.auth-btn-principal {
+    height: 50px;
+    margin-top: 8px;
+  }
+
+  .auth-form-link {
+    margin-top: 10px;
+  }
+
+  /* Login: Recordarme | ¿Olvidaste tu contraseña? en un renglón */
+  .auth-fila-sesion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    margin: 6px 0 10px;
+  }
+
+  .auth-fila-sesion .auth-remember-me {
+    order: -1;
+    width: auto;
+    margin: 0;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  .auth-fila-sesion .auth-login-row {
+    width: auto;
+  }
+
+  .auth-fila-sesion .auth-forgot-link {
+    margin: 0;
+  }
+
+  .auth-divider-clave {
+    display: none;
+  }
+
+  /* Registro (los margenes en linea necesitan !important) */
+  .auth-promo {
+    margin-top: 10px !important;
+  }
+
+  .auth-container .auth-terms-label {
+    margin-top: 12px !important;
+    padding-top: 0 !important;
+  }
+
+  .auth-privacy-note {
+    margin-top: 8px;
+    padding: 6px 10px;
+  }
+
+  /* Bienvenida: se encoge con el alto; las pestañas siempre a la vista */
+  .auth-bienvenida-contenido {
+    gap: clamp(10px, 2dvh, 16px);
+    padding: 24px;
+  }
+
+  .auth-container .auth-bienvenida-titulo {
+    font-size: clamp(32px, 6dvh, 40px);
+  }
+
+  .auth-bienvenida-pestanas button {
+    min-height: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+  /* En 360 px "¿Olvidaste tu contraseña?" se partia en dos renglones. */
+  .auth-fila-sesion .auth-forgot-link,
+  .auth-fila-sesion .auth-remember-me {
+    font-size: 13px;
+    white-space: nowrap;
   }
 }

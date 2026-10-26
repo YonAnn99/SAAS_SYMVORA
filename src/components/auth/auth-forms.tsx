@@ -72,6 +72,13 @@ function MicrosoftIcon() {
 type AuthMode = "login" | "signup" | "forgot" | "key";
 
 /**
+ * Turnstile solo se muestra si Cloudflare necesita que la persona interactúe;
+ * la verificación corre igual. El recuadro fijo de ~70 px ("Success!") no
+ * dejaba que el login cupiera en la pantalla del celular.
+ */
+const OPCIONES_TURNSTILE = { appearance: "interaction-only" } as const;
+
+/**
  * Campo con su etiqueta sobre el borde (diseño de celular). En escritorio la
  * etiqueta no se muestra y el campo se ve como siempre (solo el placeholder).
  * `sinPista`: en celular oculta el placeholder cuando repite la etiqueta.
@@ -848,7 +855,7 @@ export function AuthForms({
               </AccordionItem>
             </Accordion>
 
-            <div style={{ marginTop: "20px", textAlign: "left" }}>
+            <div className="auth-promo" style={{ marginTop: "20px", textAlign: "left" }}>
               {!showPromoInput ? (
                 <button
                   type="button"
@@ -931,6 +938,7 @@ export function AuthForms({
                 <Turnstile
                   id="cf-turnstile-signup"
                   siteKey={turnstileSiteKey}
+                  options={OPCIONES_TURNSTILE}
                   onSuccess={setSignupCaptchaToken}
                   onError={() => setSignupCaptchaToken(null)}
                   onExpire={() => setSignupCaptchaToken(null)}
@@ -1013,6 +1021,7 @@ export function AuthForms({
                     <Turnstile
                       id="cf-turnstile-forgot"
                       siteKey={turnstileSiteKey}
+                      options={OPCIONES_TURNSTILE}
                       onSuccess={setForgotCaptchaToken}
                       onError={() => setForgotCaptchaToken(null)}
                       onExpire={() => setForgotCaptchaToken(null)}
@@ -1098,6 +1107,7 @@ export function AuthForms({
                 <Turnstile
                   id="cf-turnstile-key"
                   siteKey={turnstileSiteKey}
+                  options={OPCIONES_TURNSTILE}
                   onSuccess={setKeyCaptchaToken}
                   onError={() => setKeyCaptchaToken(null)}
                   onExpire={() => setKeyCaptchaToken(null)}
@@ -1177,31 +1187,36 @@ export function AuthForms({
             />
           </Campo>
 
-          <div className="auth-login-row">
-            <button
-              type="button"
-              onClick={() => setMode("forgot")}
-              className="auth-forgot-link"
-            >
-              {t("auth.forgotPassword")}
-            </button>
-          </div>
+          {/* En escritorio `display: contents` (dos renglones, como siempre); en
+              celular, un solo renglón: Recordarme | ¿Olvidaste tu contraseña? */}
+          <div className="auth-fila-sesion">
+            <div className="auth-login-row">
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="auth-forgot-link"
+              >
+                {t("auth.forgotPassword")}
+              </button>
+            </div>
 
-          <label className="auth-remember-me">
-            <span>{t("auth.rememberMe")}</span>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span className="auth-remember-switch" aria-hidden="true" />
-          </label>
+            <label className="auth-remember-me">
+              <span>{t("auth.rememberMe")}</span>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span className="auth-remember-switch" aria-hidden="true" />
+            </label>
+          </div>
 
           {turnstileSiteKey && (
             <div style={{ width: "100%", marginBottom: "12px" }}>
               <Turnstile
                 id="cf-turnstile-login"
                 siteKey={turnstileSiteKey}
+                options={OPCIONES_TURNSTILE}
                 onSuccess={setLoginCaptchaToken}
                 onError={() => setLoginCaptchaToken(null)}
                 onExpire={() => setLoginCaptchaToken(null)}
@@ -1228,7 +1243,7 @@ export function AuthForms({
             </button>
           </div>
 
-          <div className="auth-divider" style={{ marginTop: "16px" }}>
+          <div className="auth-divider auth-divider-clave" style={{ marginTop: "16px" }}>
             <span>{t("auth.or")}</span>
           </div>
 

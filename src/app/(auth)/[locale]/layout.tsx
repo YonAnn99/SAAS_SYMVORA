@@ -51,6 +51,17 @@ export default async function AuthLayout({
         .auth-page-wrapper:has(.auth-container:not(.auth-completar)) {
           padding: 0;
         }
+        /* Celular: el alto VISIBLE (dvh) y estirado. Con 100vh (que en Chrome
+           de Android cuenta la barra de direcciones) y centrado quedaban
+           bandas negras arriba o abajo del login (misma consulta que
+           auth-toggle.css). */
+        @media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+          .auth-page-wrapper:has(.auth-container:not(.auth-completar)) {
+            min-height: 100dvh;
+            align-items: stretch;
+            background: #1e3a8a;
+          }
+        }
         .auth-page-wrapper > * {
           position: relative;
           z-index: 2;
