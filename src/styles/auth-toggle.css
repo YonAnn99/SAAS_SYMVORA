@@ -1500,3 +1500,11 @@
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
 }
+
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+  /* Logo de la cabecera más contenido en teléfonos altos. */
+  .auth-mobile-logo {
+    width: clamp(44px, 7dvh, 72px);
+    height: clamp(44px, 7dvh, 72px);
+  }
+}

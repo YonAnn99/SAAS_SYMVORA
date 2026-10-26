@@ -102,47 +102,47 @@ function Campo({
   );
 }
 
-/** Formas y esferas azules de la cabecera y la bienvenida en celular. */
-function FormasMovil({ alto }: { alto: number }) {
+/**
+ * Formas y esferas azules de la cabecera y la bienvenida en celular: una sola
+ * composición alta (390×844) anclada arriba. Con `slice` la escala la pone el
+ * ancho, así que en una cabecera alta las formas no se agrandan (antes la
+ * cabecera usaba un dibujo de 390×230 que se estiraba ~1.7× en teléfonos
+ * altos); lo que sobra abajo se corta.
+ *
+ * `sufijo`: los `id` de los degradados deben ser únicos. Bienvenida y cabecera
+ * pueden estar a la vez en el DOM (una con `display: none`) y Chrome no pinta
+ * un degradado que vive en un SVG oculto.
+ */
+function FormasMovil({ sufijo }: { sufijo: string }) {
+  const clara = `esferaClara-${sufijo}`;
+  const oscura = `esferaOscura-${sufijo}`;
   return (
     <svg
       className="auth-mobile-formas"
-      viewBox={`0 0 390 ${alto}`}
+      viewBox="0 0 390 844"
       preserveAspectRatio="xMidYMin slice"
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id={`esferaClara${alto}`} cx="35%" cy="30%" r="75%">
+        <radialGradient id={clara} cx="35%" cy="30%" r="75%">
           <stop offset="0" stopColor="#FFFFFF" />
           <stop offset="0.55" stopColor="#C7D2FE" />
           <stop offset="1" stopColor="#6D83D9" />
         </radialGradient>
-        <radialGradient id={`esferaOscura${alto}`} cx="35%" cy="30%" r="75%">
+        <radialGradient id={oscura} cx="35%" cy="30%" r="75%">
           <stop offset="0" stopColor="#3B5BDB" />
           <stop offset="0.6" stopColor="#1E3A8A" />
           <stop offset="1" stopColor="#0B1440" />
         </radialGradient>
       </defs>
-      {alto > 400 ? (
-        <>
-          <path d="M200 0 H390 V340 C340 310 300 260 290 196 C280 126 228 82 200 0Z" fill="#2B4BC0" />
-          <path d="M248 0 C236 58 262 112 322 122 C368 130 390 168 390 204 V0Z" fill="#FFFFFF" opacity="0.88" />
-          <path d="M0 300 C84 276 126 358 114 452 C102 548 172 606 252 646 C322 680 362 742 390 764 V844 H0Z" fill="#0F172A" opacity="0.55" />
-          <path d="M0 520 C60 500 96 560 92 620 C88 690 40 730 0 744Z" fill="#2B4BC0" opacity="0.7" />
-          <circle cx="40" cy="58" r="72" fill={`url(#esferaOscura${alto})`} />
-          <circle cx="300" cy="206" r="42" fill={`url(#esferaClara${alto})`} />
-          <circle cx="52" cy="560" r="26" fill={`url(#esferaClara${alto})`} />
-          <circle cx="150" cy="706" r="62" fill={`url(#esferaOscura${alto})`} />
-        </>
-      ) : (
-        <>
-          <path d="M210 0 H390 V230 H300 C296 170 260 130 236 92 C214 58 210 30 210 0Z" fill="#2B4BC0" />
-          <path d="M250 0 C240 52 268 98 324 108 C366 116 390 146 390 176 V0Z" fill="#FFFFFF" opacity="0.88" />
-          <path d="M0 150 C60 130 110 170 130 230 H0Z" fill="#0F172A" opacity="0.45" />
-          <circle cx="44" cy="54" r="70" fill={`url(#esferaOscura${alto})`} />
-          <circle cx="300" cy="182" r="40" fill={`url(#esferaClara${alto})`} />
-        </>
-      )}
+      <path d="M200 0 H390 V340 C340 310 300 260 290 196 C280 126 228 82 200 0Z" fill="#2B4BC0" />
+      <path d="M248 0 C236 58 262 112 322 122 C368 130 390 168 390 204 V0Z" fill="#FFFFFF" opacity="0.88" />
+      <path d="M0 300 C84 276 126 358 114 452 C102 548 172 606 252 646 C322 680 362 742 390 764 V844 H0Z" fill="#0F172A" opacity="0.55" />
+      <path d="M0 520 C60 500 96 560 92 620 C88 690 40 730 0 744Z" fill="#2B4BC0" opacity="0.7" />
+      <circle cx="40" cy="58" r="72" fill={`url(#${oscura})`} />
+      <circle cx="300" cy="206" r="42" fill={`url(#${clara})`} />
+      <circle cx="52" cy="560" r="26" fill={`url(#${clara})`} />
+      <circle cx="150" cy="706" r="62" fill={`url(#${oscura})`} />
     </svg>
   );
 }
@@ -652,7 +652,7 @@ export function AuthForms({
       {/* ── CELULAR: bienvenida (Iniciar sesión / Crear cuenta abajo) ── */}
       {enBienvenida && (
         <div className="auth-bienvenida">
-          <FormasMovil alto={844} />
+          <FormasMovil sufijo="bienvenida" />
           <div className="auth-bienvenida-contenido">
             <img src="/symvora-logo.webp" alt="SYMVORA" className="auth-bienvenida-logo" />
             <h1 className="auth-bienvenida-titulo">
@@ -677,7 +677,7 @@ export function AuthForms({
 
       {/* ── CELULAR: cabecera azul con formas, la "S" blanca y Volver ── */}
       <div className="auth-mobile-header">
-        <FormasMovil alto={230} />
+        <FormasMovil sufijo="cabecera" />
         <button type="button" className="auth-mobile-volver" onClick={() => setEnBienvenida(true)}>
           <ChevronLeft aria-hidden="true" />
           {t("common.back")}
