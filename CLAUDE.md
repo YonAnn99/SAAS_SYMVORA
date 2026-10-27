@@ -393,6 +393,15 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Cron de respaldo `/api/cron/avisos-stock` (8:00 CDMX): manda lo que haya quedado pendiente y borra
     notificaciones de más de 30 días.
 
+## Alertas internas a hola@ (migración 123, 2026-10-26)
+- **Aviso al momento:** `/api/email/welcome` (lo llama `crearNegocio`, registro con correo y con Google), con `after()`,
+  manda «Nuevo negocio: …» a `HELLO_EMAIL`. Una vez por negocio (`consumirRateLimit("aviso-alta:<tenant>", 1, 30 días)`).
+- **Resumen diario:** cron `/api/cron/resumen-interno` (13:00 UTC = 7:00 CDMX, `?dry=1` sin enviar). Datos de
+  `resumen_interno_diario()` (solo `service_role`): nuevos 24 h, incompletos 3 días (borradores + usuarios sin
+  negocio, p. ej. Google), sin productos (>2 días), inactivos (7 días sin vender o nunca tras 3), pruebas por vencer
+  (3 días), pagos y vencidos/cancelados 24 h. Excluye demos, incluido el compartido viejo (miembro `is_demo`).
+- Contenido en `lib/resumen-interno.ts` (puro, `__tests__/resumen-interno.test.ts`); envío `sendCorreoInterno`.
+
 ## Celular del cliente y avisos (2026-10-01/02)
 - **Captura del celular:**
   - Obligatorio en el signup, con lada (MX +52 por defecto): `lib/telefono.ts`,
@@ -436,7 +445,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 122; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 123; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

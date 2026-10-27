@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/limpiar-demos",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/resumen-interno",
+      "schedule": "0 13 * * *"
     }
   ]
 }

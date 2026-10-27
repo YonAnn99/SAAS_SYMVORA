@@ -1428,6 +1428,36 @@ export async function sendAvisoStockEmail(params: {
 }
 
 /**
+ * Correo interno para el equipo de SYMVORA (hola@): aviso de negocio nuevo y
+ * resumen diario. El contenido lo arma `lib/resumen-interno.ts`.
+ */
+export async function sendCorreoInterno(contenido: {
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite correo interno");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const resend = new Resend(resendApiKey);
+  try {
+    await deliver(resend, {
+      from: getFromAddress(),
+      to: HELLO_EMAIL,
+      subject: contenido.subject,
+      html: contenido.html,
+      text: contenido.text,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el correo interno:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
  * Tarjeta de lealtad para el cliente final del negocio (migracion 115): se la
  * manda el negocio desde Clientes. El remitente es SYMVORA, pero el correo
  * habla del negocio; todo lo que escribio el negocio va escapado.

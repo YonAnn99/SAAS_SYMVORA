@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
+import { consumirRateLimit } from "@/lib/rate-limit";
+import { nombreCompleto } from "@/lib/nombre-usuario";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -40,13 +42,44 @@ export async function POST(request: Request) {
     const supabase = createSupabaseServiceRoleClient();
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("nombre_comercial, codigo_referido")
+      .select("nombre_comercial, codigo_referido, giro_comercial, creado_en")
       .eq("id", tenant_id)
       .single();
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     }
+
+    // Aviso interno a hola@ de que hay un negocio nuevo. Despues de responder
+    // (`after`): nunca demora ni rompe el alta del cliente. Una vez por negocio
+    // aunque la ruta se vuelva a llamar.
+    after(async () => {
+      try {
+        const limite = await consumirRateLimit(`aviso-alta:${tenant_id}`, 1, 30 * 24 * 60 * 60);
+        if (!limite.permitido) return;
+        const { data: contacto } = await supabase
+          .from("contacto_usuarios")
+          .select("telefono")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const { construirCorreoNuevoNegocio } = await import("@/lib/resumen-interno");
+        const { sendCorreoInterno } = await import("@/lib/email");
+        const envio = await sendCorreoInterno(
+          construirCorreoNuevoNegocio({
+            negocio: tenant.nombre_comercial || "Sin nombre",
+            giro: tenant.giro_comercial ?? null,
+            dueno: nombreCompleto(user.user_metadata) || null,
+            correo: user.email ?? null,
+            celular: contacto?.telefono ?? null,
+            origen: (user.app_metadata?.provider as string | undefined) ?? null,
+            creado_en: tenant.creado_en ?? new Date().toISOString(),
+          })
+        );
+        if (!envio.ok) console.error("[email/welcome] aviso interno no enviado:", envio.error);
+      } catch (err) {
+        console.error("[email/welcome] aviso interno falló:", err);
+      }
+    });
 
     const { sendWelcomeEmail } = await import("@/lib/email");
     const result = await sendWelcomeEmail({
