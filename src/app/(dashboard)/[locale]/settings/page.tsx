@@ -32,6 +32,9 @@ import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
 const PESTANAS = ["general", "modules", "payments", "printer"];
 
+/** Pestaña de Configuración: en celular, menos relleno para que las cuatro quepan. */
+const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-list:px-1.5";
+
 export default function SettingsPage() {
   // La pestaña sale de `?tab=`: asi /settings/payments (que redirige con
   // ?tab=payments) abre directo la de Mercado Pago, y al recargar se queda en
@@ -273,24 +276,29 @@ export default function SettingsPage() {
         onValueChange={cambiarPestana}
         className="w-full animate-fade-in-up stagger-2"
       >
-        <TabsList>
-          <TabsTrigger value="general" className="gap-1.5 text-xs">
-            <Building2 className="h-3.5 w-3.5" />
+        {/* En celular: a todo el ancho, sin íconos, con menos relleno y
+            «Mercado Pago» corto (como Productos y Reportes). Con íconos y
+            «Mercado Pago Point» la lista medía más que la pantalla y toda la
+            página se desplazaba de lado. */}
+        <TabsList className="w-full sm:w-fit">
+          <TabsTrigger value="general" className={CLASE_PESTANA}>
+            <Building2 className="h-3.5 w-3.5 max-sm:hidden" />
             {t("settings.general")}
           </TabsTrigger>
-          <TabsTrigger id="settings-tab-modules" value="modules" className="gap-1.5 text-xs">
-            <Puzzle className="h-3.5 w-3.5" />
+          <TabsTrigger id="settings-tab-modules" value="modules" className={CLASE_PESTANA}>
+            <Puzzle className="h-3.5 w-3.5 max-sm:hidden" />
             {t("settings.modules")}
           </TabsTrigger>
           {/* Antes era el modulo "Metodos de pago" del menu (/settings/payments,
               que ahora redirige aqui). */}
-          <TabsTrigger value="payments" className="gap-1.5 text-xs">
-            <Smartphone className="h-3.5 w-3.5" />
-            {t("settings.mercadoPagoPoint")}
+          <TabsTrigger value="payments" className={CLASE_PESTANA}>
+            <Smartphone className="h-3.5 w-3.5 max-sm:hidden" />
+            <span className="sm:hidden">Mercado Pago</span>
+            <span className="max-sm:hidden">{t("settings.mercadoPagoPoint")}</span>
           </TabsTrigger>
           {/* Antes era un boton en la barra del Punto de venta. */}
-          <TabsTrigger value="printer" className="gap-1.5 text-xs">
-            <Printer className="h-3.5 w-3.5" />
+          <TabsTrigger value="printer" className={CLASE_PESTANA}>
+            <Printer className="h-3.5 w-3.5 max-sm:hidden" />
             Impresora
           </TabsTrigger>
         </TabsList>
@@ -395,13 +403,14 @@ export default function SettingsPage() {
                     <div key={key}>
                       {i > 0 && <Separator />}
                       <div className="flex items-center justify-between gap-4 py-3">
-                        <div className="space-y-0.5">
+                        <div className="min-w-0 space-y-0.5">
                           <Label className="text-xs">{INFO_MODULO[key].nombre}</Label>
                           <p className="text-[11px] text-muted-foreground">
                             {INFO_MODULO[key].efecto}
                           </p>
                         </div>
                         <Switch
+                          className="shrink-0"
                           checked={activo}
                           onCheckedChange={(checked) => handleToggleModule(key, checked)}
                         />

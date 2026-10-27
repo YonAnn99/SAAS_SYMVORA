@@ -92,6 +92,8 @@
     "bienvenidaTitulo": "Bienvenido|a SYMVORA.",
     "bienvenidaTexto": "Punto de venta, inventario y finanzas para tu negocio.",
     "labelPassword": "Contraseña",
+    "verificando": "Verificando…",
+    "captchaError": "No se pudo completar la verificación de seguridad. Recarga la página.",
     "noAccount": "¿No tienes cuenta?",
     "hasAccount": "¿Ya tienes cuenta?",
     "orContinueWith": "O continúa con email",

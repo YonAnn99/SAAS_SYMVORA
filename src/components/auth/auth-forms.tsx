@@ -28,7 +28,7 @@ import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
 import { TituloCinetico } from "./titulo-cinetico";
-import { ArrowRight, ChevronLeft } from "lucide-react";
+import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
 import { armarNombre } from "@/lib/nombre-usuario";
@@ -642,6 +642,14 @@ export function AuthForms({
       sitioWeb,
     });
 
+  // Turnstile es invisible (`interaction-only`): mientras verifica, el botón de
+  // cada formulario dice «Verificando…» y no se puede pulsar. Antes, quien
+  // pulsaba en ese segundo veía «Resuelve el captcha» sin nada que resolver.
+  const loginVerificando = Boolean(turnstileSiteKey) && !loginCaptchaToken;
+  const signupVerificando = Boolean(turnstileSiteKey) && !signupCaptchaToken;
+  const forgotVerificando = Boolean(turnstileSiteKey) && !forgotCaptchaToken;
+  const keyVerificando = Boolean(turnstileSiteKey) && !keyCaptchaToken;
+
   return (
     <div
       className={`auth-container ${mode === "signup" ? "active" : ""} ${
@@ -940,16 +948,24 @@ export function AuthForms({
                   siteKey={turnstileSiteKey}
                   options={OPCIONES_TURNSTILE}
                   onSuccess={setSignupCaptchaToken}
-                  onError={() => setSignupCaptchaToken(null)}
+                  onError={() => {
+                    setSignupCaptchaToken(null);
+                    setSignupError(t("auth.captchaError"));
+                  }}
                   onExpire={() => setSignupCaptchaToken(null)}
                   ref={turnstileSignupRef}
                 />
               </div>
             )}
 
-            <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={signupLoading || !acceptTerms} style={{ width: "100%", marginTop: "16px" }}>
+            <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={signupLoading || signupVerificando || !acceptTerms} style={{ width: "100%", marginTop: "16px" }}>
               {signupLoading ? (
                 t("common.loading")
+              ) : signupVerificando ? (
+                <>
+                  <Loader2 className="auth-btn-flecha animate-spin" aria-hidden="true" />
+                  {t("auth.verificando")}
+                </>
               ) : (
                 <>
                   {t("auth.signup")}
@@ -1023,16 +1039,24 @@ export function AuthForms({
                       siteKey={turnstileSiteKey}
                       options={OPCIONES_TURNSTILE}
                       onSuccess={setForgotCaptchaToken}
-                      onError={() => setForgotCaptchaToken(null)}
+                      onError={() => {
+                        setForgotCaptchaToken(null);
+                        setForgotError(t("auth.captchaError"));
+                      }}
                       onExpire={() => setForgotCaptchaToken(null)}
                       ref={turnstileForgotRef}
                     />
                   </div>
                 )}
 
-                <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={forgotLoading} style={{ width: "100%" }}>
+                <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={forgotLoading || forgotVerificando} style={{ width: "100%" }}>
                   {forgotLoading ? (
                     t("common.loading")
+                  ) : forgotVerificando ? (
+                    <>
+                      <Loader2 className="auth-btn-flecha animate-spin" aria-hidden="true" />
+                      {t("auth.verificando")}
+                    </>
                   ) : (
                     <>
                       {t("auth.sendResetLink")}
@@ -1109,16 +1133,24 @@ export function AuthForms({
                   siteKey={turnstileSiteKey}
                   options={OPCIONES_TURNSTILE}
                   onSuccess={setKeyCaptchaToken}
-                  onError={() => setKeyCaptchaToken(null)}
+                  onError={() => {
+                    setKeyCaptchaToken(null);
+                    setKeyError(t("auth.captchaError"));
+                  }}
                   onExpire={() => setKeyCaptchaToken(null)}
                   ref={turnstileKeyRef}
                 />
               </div>
             )}
 
-            <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={keyLoading} style={{ width: "100%", marginTop: "12px" }}>
+            <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={keyLoading || keyVerificando} style={{ width: "100%", marginTop: "12px" }}>
               {keyLoading ? (
                 t("common.loading")
+              ) : keyVerificando ? (
+                <>
+                  <Loader2 className="auth-btn-flecha animate-spin" aria-hidden="true" />
+                  {t("auth.verificando")}
+                </>
               ) : (
                 <>
                   {t("auth.enterWithKey")}
@@ -1218,16 +1250,24 @@ export function AuthForms({
                 siteKey={turnstileSiteKey}
                 options={OPCIONES_TURNSTILE}
                 onSuccess={setLoginCaptchaToken}
-                onError={() => setLoginCaptchaToken(null)}
+                onError={() => {
+                  setLoginCaptchaToken(null);
+                  setLoginError(t("auth.captchaError"));
+                }}
                 onExpire={() => setLoginCaptchaToken(null)}
                 ref={turnstileLoginRef}
               />
             </div>
           )}
 
-          <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={loginLoading} style={{ width: "100%" }}>
+          <button type="submit" className="auth-btn auth-btn-principal btn-llenado" disabled={loginLoading || loginVerificando} style={{ width: "100%" }}>
             {loginLoading ? (
               t("common.loading")
+            ) : loginVerificando ? (
+              <>
+                <Loader2 className="auth-btn-flecha animate-spin" aria-hidden="true" />
+                {t("auth.verificando")}
+              </>
             ) : (
               <>
                 {t("auth.login")}

@@ -11,13 +11,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { normalizarDetalles } from "@/features/activity/format-details";
+import { SelectSimple } from "@/components/ui/select-simple";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -139,6 +139,8 @@ export default function ActivityPage() {
   const [entityFilter, setEntityFilter] = useState("all");
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Celular: el registro que se abrió tocando su pastilla.
+  const [seleccionado, setSeleccionado] = useState<ActivityLog | null>(null);
 
   const fetchLogs = useCallback(async (offset = 0) => {
     if (!tenantId) return;
@@ -161,11 +163,13 @@ export default function ActivityPage() {
     setLoadingMore(false);
   }, [tenantId]);
 
+  // `loading` ya nace en true. La carga va diferida, como en el resto del
+  // proyecto: un setState síncrono dentro del efecto encadena renders
+  // (react-hooks/set-state-in-effect).
   useEffect(() => {
-    if (!tenantLoading && tenantId) {
-      setLoading(true);
-      void fetchLogs(0);
-    }
+    if (tenantLoading || !tenantId) return;
+    const timeout = window.setTimeout(() => void fetchLogs(0), 0);
+    return () => window.clearTimeout(timeout);
   }, [tenantLoading, tenantId, fetchLogs]);
 
   const handleLoadMore = useCallback(() => {
@@ -223,6 +227,41 @@ export default function ActivityPage() {
     ));
   };
 
+  // Con `items` (vía SelectSimple) el botón muestra «Todos», no el valor crudo
+  // «all»: el Select de Base UI pinta el valor si no tiene el mapa.
+  const opcionesFiltro = [
+    { value: "all", label: t("common.all") },
+    { value: "producto", label: t("common.product") },
+    { value: "venta", label: t("common.sale") },
+    { value: "compra", label: t("common.purchase") },
+    { value: "cliente", label: t("common.customer") },
+    { value: "proveedor", label: t("common.supplier") },
+    { value: "usuario", label: t("common.user") },
+    { value: "caja", label: t("common.cashRegister") },
+    { value: "orden_compra", label: t("common.ordenCompra") },
+    { value: "movimiento_caja", label: t("common.movimientoCaja") },
+    { value: "traspaso", label: t("common.traspaso") },
+  ];
+
+  // Lo mismo en la tabla, la pastilla y la ventana de detalle.
+  const insigniaAccion = (log: ActivityLog) => {
+    const ActionIcon = ACTION_ICONS[log.action] || Plus;
+    return (
+      <Badge
+        variant="secondary"
+        className={`text-[10px] px-1.5 py-0 gap-1 shrink-0 ${ACTION_COLORS[log.action] || ""}`}
+      >
+        <ActionIcon className="h-3 w-3" />
+        {t(ACTION_KEYS[log.action] || "common.action")}
+      </Badge>
+    );
+  };
+
+  const nombreEntidad = (log: ActivityLog) =>
+    ENTITY_KEYS[log.entity] ? t(ENTITY_KEYS[log.entity]) : log.entity;
+
+  const detallesDe = seleccionado ? normalizarDetalles(seleccionado.details) : null;
+
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
@@ -232,24 +271,14 @@ export default function ActivityPage() {
             descripcion={t("common.activityDescription")}
           />
         </div>
-        <Select value={entityFilter} onValueChange={(v) => setEntityFilter(v || "all")}>
-          <SelectTrigger className="w-full sm:w-[160px] h-8">
-            <SelectValue placeholder={t("common.filter")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common.all")}</SelectItem>
-            <SelectItem value="producto">{t("common.product")}</SelectItem>
-            <SelectItem value="venta">{t("common.sale")}</SelectItem>
-            <SelectItem value="compra">{t("common.purchase")}</SelectItem>
-            <SelectItem value="cliente">{t("common.customer")}</SelectItem>
-            <SelectItem value="proveedor">{t("common.supplier")}</SelectItem>
-            <SelectItem value="usuario">{t("common.user")}</SelectItem>
-            <SelectItem value="caja">{t("common.cashRegister")}</SelectItem>
-            <SelectItem value="orden_compra">{t("common.ordenCompra")}</SelectItem>
-            <SelectItem value="movimiento_caja">{t("common.movimientoCaja")}</SelectItem>
-            <SelectItem value="traspaso">{t("common.traspaso")}</SelectItem>
-          </SelectContent>
-        </Select>
+        <SelectSimple
+          value={entityFilter}
+          onChange={(v) => setEntityFilter(v || "all")}
+          opciones={opcionesFiltro}
+          placeholder={t("common.filter")}
+          ariaLabel={t("common.filter")}
+          className="h-8 sm:w-[160px]"
+        />
         <BotonActualizar className="self-start sm:self-auto" onActualizar={() => fetchLogs(0)} />
       </div>
 
@@ -279,6 +308,37 @@ export default function ActivityPage() {
             </div>
           ) : (
             <>
+              {/* Celular: una pastilla por registro (usuario, acción y entidad);
+                  al tocarla se abre la ventana con todo. Sin deslizar. */}
+              <ul className="space-y-2 md:hidden">
+                {filteredLogs.map((log) => {
+                  const EntityIcon = ENTITY_ICONS[log.entity] || Package;
+                  return (
+                    <li key={log.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSeleccionado(log)}
+                        className="w-full rounded-xl border bg-card p-3 text-left transition-transform active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="min-w-0 truncate text-sm font-medium">{log.user_email}</span>
+                          {insigniaAccion(log)}
+                        </div>
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-sm">
+                          <EntityIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="shrink-0">{nombreEntidad(log)}</span>
+                          {log.entity_name && (
+                            <span className="min-w-0 truncate text-muted-foreground">— {log.entity_name}</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{formatDate(log.created_at)}</p>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -302,7 +362,6 @@ export default function ActivityPage() {
                 <TableBody>
                   {filteredLogs.map((log) => {
                     const EntityIcon = ENTITY_ICONS[log.entity] || Package;
-                    const ActionIcon = ACTION_ICONS[log.action] || Plus;
 
                     return (
                       <TableRow key={log.id}>
@@ -312,19 +371,11 @@ export default function ActivityPage() {
                         <TableCell className="text-sm">
                           {log.user_email}
                         </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] px-1.5 py-0 gap-1 ${ACTION_COLORS[log.action] || ""}`}
-                          >
-                            <ActionIcon className="h-3 w-3" />
-                            {t(ACTION_KEYS[log.action] || "common.action")}
-                          </Badge>
-                        </TableCell>
+                        <TableCell>{insigniaAccion(log)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm">
                             <EntityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span>{ENTITY_KEYS[log.entity] ? t(ENTITY_KEYS[log.entity]) : log.entity}</span>
+                            <span>{nombreEntidad(log)}</span>
                             {log.entity_name && (
                               <span className="text-muted-foreground">
                                 — {log.entity_name}
@@ -342,6 +393,7 @@ export default function ActivityPage() {
                   })}
                 </TableBody>
               </Table>
+              </div>
               {hasMore && entityFilter === "all" && (
                 <div className="flex justify-center mt-4">
                   <Button
@@ -358,6 +410,63 @@ export default function ActivityPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Detalle completo de un registro (celular: al tocar su pastilla). */}
+      <Dialog open={!!seleccionado} onOpenChange={(abierto) => !abierto && setSeleccionado(null)}>
+        <DialogContent className="max-w-md">
+          {seleccionado && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {t(ACTION_KEYS[seleccionado.action] || "common.action")} · {nombreEntidad(seleccionado)}
+                </DialogTitle>
+              </DialogHeader>
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("common.date")}</dt>
+                  <dd className="font-medium">{formatDate(seleccionado.created_at)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("common.user")}</dt>
+                  <dd className="font-medium break-all">{seleccionado.user_email}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("common.action")}</dt>
+                  <dd className="mt-0.5">{insigniaAccion(seleccionado)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("common.entity")}</dt>
+                  <dd className="font-medium">
+                    {nombreEntidad(seleccionado)}
+                    {seleccionado.entity_name && (
+                      <span className="text-muted-foreground"> — {seleccionado.entity_name}</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("common.details")}</dt>
+                  <dd className="mt-0.5">
+                    {!detallesDe || detallesDe.tipo === "vacio" ? (
+                      "-"
+                    ) : detallesDe.tipo === "texto" ? (
+                      <span className="font-medium break-words">{detallesDe.texto}</span>
+                    ) : (
+                      <ul className="space-y-1">
+                        {detallesDe.pares.map(({ clave, etiqueta, valor }) => (
+                          <li key={clave} className="flex flex-wrap gap-x-1">
+                            <span className="text-muted-foreground">{etiqueta}:</span>
+                            <span className="font-medium break-words">{valor}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

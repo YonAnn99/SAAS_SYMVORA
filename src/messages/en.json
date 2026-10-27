@@ -92,6 +92,8 @@
     "bienvenidaTitulo": "Welcome|to SYMVORA.",
     "bienvenidaTexto": "Point of sale, inventory and finances for your business.",
     "labelPassword": "Password",
+    "verificando": "Verifying…",
+    "captchaError": "The security check could not be completed. Please reload the page.",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "orContinueWith": "Or continue with email",
