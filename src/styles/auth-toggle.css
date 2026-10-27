@@ -1065,11 +1065,11 @@
     height: 20px;
   }
 
-  /* Hoja blanca con esquinas redondeadas */
+  /* Hoja blanca: curva grande solo arriba a la izquierda; la derecha recta. */
   .auth-form-container {
     flex: 1;
     background: #ffffff;
-    border-radius: 32px 32px 0 0;
+    border-radius: clamp(56px, 18vw, 88px) 0 0 0;
   }
 
   .auth-container form {
@@ -1506,5 +1506,87 @@
   .auth-mobile-logo {
     width: clamp(44px, 7dvh, 72px);
     height: clamp(44px, 7dvh, 72px);
+  }
+}
+
+/* ── Celular: la hoja blanca ocupa la pantalla y reparte el contenido ──
+   Antes la cabecera crecía sin límite (`flex: 1`) y el formulario quedaba
+   apretado abajo en teléfonos altos. Ahora la cabecera mide lo que sobra tras
+   reservar el alto del formulario (tope 240 px), la hoja ocupa el resto y el
+   espacio libre se reparte parejo entre sus bloques (`space-evenly`). */
+@media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+  .auth-mobile-header {
+    flex: 0 0 auto;
+    height: clamp(96px, calc(100dvh - 560px), 240px);
+    min-height: 0;
+  }
+
+  /* El registro es más largo: reserva más para el formulario. */
+  .auth-container.active .auth-mobile-header {
+    height: clamp(96px, calc(100dvh - 740px), 240px);
+  }
+
+  .auth-form-container {
+    flex: 1 1 auto;
+  }
+
+  /* `!important`: el login trae `justifyContent: "center"` en línea. */
+  .auth-container .auth-form-container > form {
+    min-height: 100%;
+    justify-content: space-evenly !important;
+  }
+
+  .auth-form-scroll {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .auth-container .auth-sign-up .auth-form-scroll > form {
+    flex: 1;
+    justify-content: space-evenly;
+  }
+
+  /* Tamaños que crecen un poco con el alto, sin pasarse. */
+  .auth-container .auth-campo input,
+  .auth-container .auth-campo .auth-select-trigger {
+    height: clamp(48px, 6dvh, 56px);
+  }
+
+  .auth-container button.auth-btn.auth-btn-principal {
+    height: clamp(50px, 6.5dvh, 58px);
+  }
+
+  .auth-social-btn {
+    min-height: clamp(44px, 5.5dvh, 52px);
+  }
+
+  .auth-container .auth-form-title-text {
+    font-size: clamp(26px, 3.6dvh, 32px);
+  }
+
+  /* Login: la cabecera cede lo que el contenido REAL necesite. Una reserva fija
+     no se entera del recuadro de Cloudflare (Turnstile `interaction-only` solo
+     aparece si pide interacción) ni de un mensaje de error: en el Galaxy A55
+     el formulario se desbordaba. Parte de 240 px y baja hasta 96 px; la hoja
+     nunca mide menos que su contenido y crece con lo que sobre. */
+  .auth-container:not(.active) .auth-mobile-header {
+    flex: 0 1 240px;
+    height: auto;
+    min-height: 96px;
+  }
+
+  .auth-container:not(.active) .auth-form-container {
+    flex: 1 0 auto;
+  }
+
+  /* Último recurso (pantalla muy chica): se desplaza todo, sin cortar nada. */
+  .auth-container:not(.active):not(.auth-completar) {
+    overflow-y: auto;
+  }
+
+  /* En 360 px el enlace de la clave se partía en dos renglones. */
+  .auth-form-link button.auth-key-login-link {
+    font-size: clamp(12px, 3.5vw, 14px);
   }
 }
