@@ -34,7 +34,6 @@ const features: FeatureItem[] = [
   { key: "inventory" },
   { key: "priceLists" },
   { key: "cloudAccess" },
-  { key: "cfdi" },
   { key: "catalogImport" },
   { key: "reports" },
   { key: "support" },
