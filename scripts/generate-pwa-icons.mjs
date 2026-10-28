@@ -4,20 +4,22 @@
  * Fuente: `scripts/assets/symvora-app-icon.png` (S blanca sobre azul a sangre,
  * 1254×1254). Su azul (#153188) no es exactamente el de la marca, así que no se
  * reescala tal cual: se usa su luminancia como máscara de la S (el azul queda en
- * 0, el blanco en 255) y se pinta en blanco sobre `BRAND_BG`. Así el fondo es el
- * azul exacto y los bordes conservan su antialiasing.
+ * 0, el blanco en 255) y se pinta en blanco. Así los bordes conservan su
+ * antialiasing y el fondo, cuando lo hay, es el azul exacto.
  *
- *   - Iconos `any` y `maskable`: iguales, opacos y a sangre. El logo ocupa del
- *     25% al 75% del lienzo, dentro de la zona segura de Android (circulo del
- *     80%), así que el mismo dibujo sirve para los dos propósitos.
- *   - `apple-touch-icon.png` (180×180): iOS no respeta transparencia.
+ *   - Iconos `any`: S blanca sobre fondo TRANSPARENTE, al 80% del lienzo. Android
+ *     arma el arranque pintando este icono sobre `background_color`; con fondo
+ *     opaco, aunque sea del mismo azul, el escalado deja una orilla visible y se
+ *     ve un cuadrado contorneado alrededor de la S.
+ *   - Iconos `maskable` y `apple-touch-icon.png` (180×180): opacos, S blanca
+ *     sobre `BRAND_BG` a sangre. La S ocupa del 25% al 75% del lienzo, dentro de
+ *     la zona segura de Android (círculo del 80%); iOS no respeta transparencia.
  *   - Pantallas de arranque de iOS (`public/splash/*.png`): se regeneran desde sí
  *     mismas con el mismo método (su luminancia es la máscara de la S y de
  *     «SYMVORA»). Funciona sobre el fondo que tengan, así que repetir el script
  *     no las degrada.
  *
- * `BRAND_BG` es el mismo valor que `background_color` en src/app/manifest.ts:
- * Android pinta el arranque con ese color y el icono encima.
+ * `BRAND_BG` es el mismo valor que `background_color` en src/app/manifest.ts.
  *
  * Uso:  node scripts/generate-pwa-icons.mjs
  */
@@ -34,6 +36,10 @@ const SPLASH_DIR = join(root, "public/splash");
 
 const BRAND_BG = "#1E3A8A";
 const LOGO_COLOR = { r: 255, g: 255, b: 255 };
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
+
+/** Proporción del lienzo que ocupa la S en los iconos `any`. */
+const RATIO_ANY = 0.8;
 
 /**
  * Margen sobre el fondo antes de considerar un pixel parte del logo: absorbe el
@@ -43,11 +49,11 @@ const UMBRAL_FONDO = 12;
 const BLANCO = 235;
 
 /**
- * Compone el logo de `input` (claro sobre un fondo liso más oscuro) en blanco
- * sobre `BRAND_BG`, al tamaño pedido. El fondo se mide en la esquina superior
+ * Logo de `input` (claro sobre un fondo liso más oscuro) en blanco con
+ * transparencia, al tamaño pedido. El fondo se mide en la esquina superior
  * izquierda de la imagen.
  */
-async function recolorear(input, width, height) {
+async function logoBlanco(input, width, height) {
   const { data, info } = await sharp(input)
     .resize(width, height, { fit: "fill" })
     .greyscale()
@@ -62,37 +68,56 @@ async function recolorear(input, width, height) {
     alfa[i] = Math.max(0, Math.min(255, Math.round(v)));
   }
 
-  const logo = await sharp({
-    create: { width, height, channels: 3, background: LOGO_COLOR },
-  })
+  return sharp({ create: { width, height, channels: 3, background: LOGO_COLOR } })
     .joinChannel(alfa, { raw: { width, height, channels: 1 } })
     .png()
     .toBuffer();
+}
 
+/** El logo de `input` en blanco sobre `BRAND_BG`, mismo encuadre. */
+async function sobreAzul(input, width, height) {
   return sharp({ create: { width, height, channels: 3, background: BRAND_BG } })
-    .composite([{ input: logo }])
+    .composite([{ input: await logoBlanco(input, width, height) }])
     .png({ compressionLevel: 9 })
     .toBuffer();
 }
 
-async function writeIcon(size, file) {
-  await sharp(await recolorear(SOURCE, size, size)).toFile(join(ICONS_DIR, file));
-  console.log(`  ✓ ${file} (${size}px)`);
+/** La S recortada a su caja, en blanco y transparente, a resolución completa. */
+async function sRecortada() {
+  const { width, height } = await sharp(SOURCE).metadata();
+  return sharp(await logoBlanco(SOURCE, width, height)).trim().png().toBuffer();
 }
 
-console.log(`Iconos desde symvora-app-icon.png, fondo ${BRAND_BG}:`);
-await writeIcon(192, "icon-192.png");
-await writeIcon(512, "icon-512.png");
-await writeIcon(192, "icon-maskable-192.png");
-await writeIcon(512, "icon-maskable-512.png");
-await writeIcon(180, "apple-touch-icon.png");
+async function writeAny(s, size, file) {
+  const lado = Math.round(size * RATIO_ANY);
+  const logo = await sharp(s).resize(lado, lado, { fit: "contain", background: TRANSPARENT }).toBuffer();
+  const offset = Math.round((size - lado) / 2);
+  await sharp({ create: { width: size, height: size, channels: 4, background: TRANSPARENT } })
+    .composite([{ input: logo, top: offset, left: offset }])
+    .png({ compressionLevel: 9 })
+    .toFile(join(ICONS_DIR, file));
+  console.log(`  ✓ ${file} (${size}px, transparente, S al ${Math.round(RATIO_ANY * 100)}%)`);
+}
+
+async function writeOpaco(size, file) {
+  await sharp(await sobreAzul(SOURCE, size, size)).toFile(join(ICONS_DIR, file));
+  console.log(`  ✓ ${file} (${size}px, fondo ${BRAND_BG})`);
+}
+
+console.log("Iconos desde symvora-app-icon.png:");
+const s = await sRecortada();
+await writeAny(s, 192, "icon-192.png");
+await writeAny(s, 512, "icon-512.png");
+await writeOpaco(192, "icon-maskable-192.png");
+await writeOpaco(512, "icon-maskable-512.png");
+await writeOpaco(180, "apple-touch-icon.png");
 
 console.log(`\nPantallas de arranque de iOS, fondo ${BRAND_BG}:`);
 for (const file of (await readdir(SPLASH_DIR)).filter((f) => f.endsWith(".png")).sort()) {
   const ruta = join(SPLASH_DIR, file);
   const { width, height } = await sharp(ruta).metadata();
   // Se lee a memoria antes de escribir: entrada y salida son el mismo archivo.
-  const salida = await recolorear(await sharp(ruta).toBuffer(), width, height);
+  const salida = await sobreAzul(await sharp(ruta).toBuffer(), width, height);
   await sharp(salida).toFile(ruta);
   console.log(`  ✓ ${file}`);
 }
