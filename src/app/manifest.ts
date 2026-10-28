@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
       "Punto de venta, inventario y finanzas para PyMEs mexicanas.",
     start_url: "/es/dashboard",
     display: "standalone",
-    background_color: "#0A0A0A",
+    background_color: "#1E3A8A",
     theme_color: "#0A0A0A",
     icons: [
       {
