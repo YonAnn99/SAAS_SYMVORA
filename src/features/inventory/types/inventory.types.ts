@@ -76,8 +76,6 @@ export interface ProductFormData {
   categoria: string;
   permite_lotes: boolean;
   permite_variantes: boolean;
-  /** Catálogo en línea (migración 124): la columna guarda lo contrario, `oculto_en_catalogo`. */
-  mostrar_en_catalogo: boolean;
 }
 
 export const defaultProductFormData: ProductFormData = {
@@ -101,7 +99,6 @@ export const defaultProductFormData: ProductFormData = {
   categoria: "",
   permite_lotes: false,
   permite_variantes: false,
-  mostrar_en_catalogo: true,
 };
 
 export interface VarianteFormData {

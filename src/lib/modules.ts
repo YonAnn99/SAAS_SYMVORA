@@ -134,6 +134,17 @@ export const MODULES: ModuleDefinition[] = [
     grantable: true,
   },
   {
+    // Catalogo en linea (migraciones 124-125): la pagina publica del negocio,
+    // que productos salen, destacados, precio especial y personalizacion.
+    // Concedible: el dueño se lo puede dar al cajero que lleva las redes.
+    key: "onlineCatalog",
+    label: "Catálogo en línea",
+    description: "Página pública de productos con pedidos por WhatsApp",
+    paths: ["/online-catalog"],
+    permission: "catalog.manage",
+    grantable: true,
+  },
+  {
     key: "settings",
     label: "Configuración",
     description: "Datos del negocio y módulos activos",

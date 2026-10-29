@@ -150,7 +150,6 @@ export function ProductDialog({
         categoria: product.categoria || "",
         permite_lotes: product.permite_lotes,
         permite_variantes: product.permite_variantes,
-        mostrar_en_catalogo: !product.oculto_en_catalogo,
       });
     } else {
       setFormData(defaultProductFormData);
@@ -413,7 +412,6 @@ export function ProductDialog({
       permite_lotes: formData.permite_lotes,
       permite_variantes: formData.permite_variantes,
       imagen_url,
-      oculto_en_catalogo: !formData.mostrar_en_catalogo,
     });
   };
 
@@ -571,20 +569,6 @@ export function ProductDialog({
               }
             />
           )}
-          {/* Catálogo en línea (migración 124): solo visual, no toca venta ni stock. */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={formData.mostrar_en_catalogo}
-                onCheckedChange={(v) => updateField("mostrar_en_catalogo", v)}
-              />
-              <Label className="text-xs">Mostrar en el catálogo en línea</Label>
-            </div>
-            <p className="ml-11 text-[11px] text-muted-foreground">
-              Si publicas tu catálogo (Configuración → Catálogo en línea), apágalo para que este producto no
-              aparezca ahí. En el punto de venta se sigue vendiendo igual.
-            </p>
-          </div>
             </div>
           </AccordionItem>
           <AccordionItem title="Precio y costo" index={1} resumen={resumenPrecio}>

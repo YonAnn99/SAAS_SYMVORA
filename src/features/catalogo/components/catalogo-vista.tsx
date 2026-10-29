@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
-import { Loader2, MapPin, Minus, Package, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
+import { Loader2, MapPin, Minus, Package, Plus, Search, ShoppingBag, Sparkles, Star, Trash2, X } from "lucide-react";
 import { abreviatura, esFraccionable, normalizarCantidad, textoContenido } from "@/lib/unidades";
 import { urlWhatsApp } from "@/lib/whatsapp";
 import {
   conteoPedido,
   formatearPrecio,
   mensajePedido,
+  precioDeLinea,
   reducirPedido,
   textoPrecio,
   totalEstimado,
@@ -47,29 +48,61 @@ function leerCarrito(slug: string): LineaPedido[] {
 
 const suscribirNada = () => () => {};
 
+/** Búsqueda y "Cargar más": la API pública o, en la vista previa, el RPC del equipo. */
+export type FuenteCatalogo = (
+  busqueda: string,
+  categoria: string | null,
+  offset: number,
+  signal: AbortSignal
+) => Promise<CatalogoPagina | { error: string }>;
+
+function fuentePublica(slug: string): FuenteCatalogo {
+  return async (busqueda, categoria, offset, signal) => {
+    const params = new URLSearchParams();
+    if (busqueda.trim()) params.set("q", busqueda.trim());
+    if (categoria) params.set("categoria", categoria);
+    if (offset) params.set("offset", String(offset));
+    const res = await fetch(`/api/catalogo/${slug}/productos?${params}`, { signal });
+    if (!res.ok) {
+      return { error: res.status === 429 ? "Demasiadas búsquedas seguidas. Espera un momento." : "No se pudo cargar el catálogo." };
+    }
+    return (await res.json()) as CatalogoPagina;
+  };
+}
+
 export function CatalogoVista({
   encabezado,
   paginaInicial,
+  fuente,
+  vistaPrevia = false,
 }: {
   encabezado: CatalogoEncabezado;
   paginaInicial: CatalogoPagina;
+  /** Por defecto, la API pública del catálogo. */
+  fuente?: FuenteCatalogo;
+  /** Dentro del módulo: no guarda el carrito ni abre WhatsApp. */
+  vistaPrevia?: boolean;
 }) {
   const color = encabezado.color && /^#[0-9a-f]{6}$/i.test(encabezado.color) ? encabezado.color : AZUL_SYMVORA;
   const tinta = textoSobre(color);
-  const whatsapp = encabezado.whatsapp.replace(/\D/g, "");
+  const whatsapp = (encabezado.whatsapp ?? "").replace(/\D/g, "");
+  const slug = encabezado.slug ?? "";
+  const consultarFuente = fuente ?? fuentePublica(slug);
+  const destacados = encabezado.destacados ?? [];
 
   // En el servidor no hay carrito: lo que depende de él se pinta ya montado.
   const montado = useSyncExternalStore(suscribirNada, () => true, () => false);
-  const [lineas, despachar] = useReducer(reducirPedido, encabezado.slug, (slug) =>
-    typeof window === "undefined" ? [] : leerCarrito(slug)
+  const [lineas, despachar] = useReducer(reducirPedido, slug, (clave) =>
+    typeof window === "undefined" || vistaPrevia ? [] : leerCarrito(clave)
   );
   useEffect(() => {
+    if (vistaPrevia || !slug) return;
     try {
-      window.localStorage.setItem(claveGuardado(encabezado.slug), JSON.stringify(lineas));
+      window.localStorage.setItem(claveGuardado(slug), JSON.stringify(lineas));
     } catch {
       // Navegación privada o almacenamiento lleno: el carrito vive solo en la pestaña.
     }
-  }, [encabezado.slug, lineas]);
+  }, [slug, lineas, vistaPrevia]);
 
   const [productos, setProductos] = useState(paginaInicial.productos);
   const [total, setTotal] = useState(paginaInicial.total);
@@ -89,16 +122,12 @@ export function CatalogoVista({
     setCargando(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
-      if (cat) params.set("categoria", cat);
-      if (offset) params.set("offset", String(offset));
-      const res = await fetch(`/api/catalogo/${encabezado.slug}/productos?${params}`, { signal: control.signal });
-      if (!res.ok) {
-        setError(res.status === 429 ? "Demasiadas búsquedas seguidas. Espera un momento." : "No se pudo cargar el catálogo.");
+      const pagina = await consultarFuente(q, cat, offset, control.signal);
+      if (control.signal.aborted) return;
+      if ("error" in pagina) {
+        setError(pagina.error);
         return;
       }
-      const pagina = (await res.json()) as CatalogoPagina;
       setTotal(pagina.total);
       setProductos((previos) => (offset ? [...previos, ...pagina.productos] : pagina.productos));
     } catch (e) {
@@ -121,7 +150,7 @@ export function CatalogoVista({
 
   function agregar(producto: CatalogoProducto, variante: CatalogoVariante | null, cantidad = 1) {
     const unidad = variante?.unidad_medida ?? producto.unidad_medida;
-    const precio = variante ? (variante.precio ?? null) : producto.precio_min;
+    const precio = precioDeLinea(producto, variante);
     despachar({
       tipo: "agregar",
       cantidad,
@@ -145,11 +174,41 @@ export function CatalogoVista({
   const conteo = montado ? conteoPedido(lineas) : 0;
   const estimado = totalEstimado(lineas);
 
+  const elegir = (p: CatalogoProducto) => {
+    if (p.variantes.length > 0 || esFraccionable(p.unidad_medida)) setElegido(p);
+    else agregar(p, null);
+  };
+
   return (
-    <div className="min-h-dvh bg-slate-50 text-slate-900">
-      {/* Encabezado con la marca del negocio */}
-      <header style={{ backgroundColor: color, color: tinta }}>
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 pt-6 pb-5 sm:gap-4">
+    <div className={`${vistaPrevia ? "min-h-full" : "min-h-dvh"} bg-slate-50 text-slate-900`}>
+      {/* Encabezado con la marca del negocio; con portada, la imagen detrás de un velo del color. */}
+      <header
+        className="relative overflow-hidden"
+        style={{ backgroundColor: color, color: encabezado.portada_url ? "#ffffff" : tinta }}
+      >
+        {encabezado.portada_url && (
+          <>
+            <Image
+              src={encabezado.portada_url}
+              alt=""
+              fill
+              unoptimized
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to top, ${color}f2 0%, ${color}99 45%, ${color}33 100%)` }}
+              aria-hidden="true"
+            />
+          </>
+        )}
+        <div
+          className={`relative mx-auto flex max-w-5xl items-center gap-3 px-4 pb-5 sm:gap-4 ${
+            encabezado.portada_url ? "pt-28 sm:pt-36" : "pt-6"
+          }`}
+        >
           {encabezado.logo_url ? (
             <Image
               src={encabezado.logo_url}
@@ -178,7 +237,7 @@ export function CatalogoVista({
           </div>
         </div>
         {encabezado.mensaje && (
-          <p className="mx-auto max-w-5xl px-4 pb-5 text-sm opacity-90">{encabezado.mensaje}</p>
+          <p className="relative mx-auto max-w-5xl px-4 pb-5 text-sm opacity-90">{encabezado.mensaje}</p>
         )}
       </header>
 
@@ -223,6 +282,28 @@ export function CatalogoVista({
       <main className="mx-auto max-w-5xl px-4 pt-4 pb-32">
         {error && <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{error}</p>}
 
+        {destacados.length > 0 && !busqueda && !categoria && (
+          <section className="mb-6" aria-label="Destacados">
+            <h2 className="mb-2 flex items-center gap-1.5 text-base font-semibold">
+              <Star className="h-4 w-4" style={{ color, fill: color }} aria-hidden="true" />
+              Destacados
+            </h2>
+            <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+              {destacados.map((p) => (
+                <li key={p.id} className="w-40 shrink-0 snap-start sm:w-48">
+                  <TarjetaProducto
+                    producto={p}
+                    color={color}
+                    tinta={tinta}
+                    enCarrito={montado ? (enCarrito.get(p.id) ?? 0) : 0}
+                    onElegir={() => elegir(p)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {productos.length === 0 && !cargando ? (
           <div className="py-16 text-center text-slate-500">
             <Package className="mx-auto mb-2 h-10 w-10 text-slate-300" aria-hidden="true" />
@@ -237,10 +318,7 @@ export function CatalogoVista({
                   color={color}
                   tinta={tinta}
                   enCarrito={montado ? (enCarrito.get(p.id) ?? 0) : 0}
-                  onElegir={() => {
-                    if (p.variantes.length > 0 || esFraccionable(p.unidad_medida)) setElegido(p);
-                    else agregar(p, null);
-                  }}
+                  onElegir={() => elegir(p)}
                 />
               </li>
             ))}
@@ -305,6 +383,7 @@ export function CatalogoVista({
         <HojaCarrito
           negocio={encabezado.negocio}
           whatsapp={whatsapp}
+          vistaPrevia={vistaPrevia}
           lineas={lineas}
           despachar={despachar}
           onCerrar={() => setCarritoAbierto(false)}
@@ -374,7 +453,11 @@ function TarjetaProducto({
   enCarrito: number;
   onElegir: () => void;
 }) {
-  const precio = textoPrecio(producto.precio_min, producto.precio_max, producto.unidad_medida);
+  const especial = producto.precio_especial ?? null;
+  const precio = especial != null
+    ? textoPrecio(especial, especial, producto.unidad_medida)
+    : textoPrecio(producto.precio_min, producto.precio_max, producto.unidad_medida);
+  const anterior = especial != null && producto.precio_min != null ? formatearPrecio(producto.precio_min) : null;
   const contenido = textoContenido(producto);
   const conVariantes = producto.variantes.length > 0;
   return (
@@ -390,13 +473,20 @@ function TarjetaProducto({
             Agotado
           </span>
         )}
-        {enCarrito > 0 && (
+        {enCarrito > 0 ? (
           <span
             style={{ backgroundColor: color, color: tinta }}
             className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-semibold"
           >
             En tu pedido
           </span>
+        ) : (
+          especial != null && (
+            <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-amber-950">
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Precio en línea
+            </span>
+          )
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
@@ -408,7 +498,14 @@ function TarjetaProducto({
           </p>
         )}
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-          {precio ? <p className="text-sm font-semibold">{precio}</p> : <span />}
+          {precio ? (
+            <p className="text-sm leading-tight font-semibold">
+              {precio}
+              {anterior && <span className="block text-xs font-normal text-slate-400 line-through">{anterior}</span>}
+            </p>
+          ) : (
+            <span />
+          )}
           <button
             type="button"
             disabled={!producto.disponible}
@@ -487,7 +584,7 @@ function HojaEleccion({
   const granel = esFraccionable(unidad);
   const [cantidadTexto, setCantidadTexto] = useState("1");
   const cantidad = normalizarCantidad(cantidadTexto, unidad);
-  const precioUnitario = variante ? (variante.precio ?? null) : producto.precio_min;
+  const precioUnitario = precioDeLinea(producto, variante);
   const foto = variante?.imagen_url ?? producto.imagen_url;
   const conVariantes = producto.variantes.length > 0;
   const listo = cantidad != null && (!conVariantes || variante?.disponible);
@@ -571,19 +668,22 @@ function HojaEleccion({
 function HojaCarrito({
   negocio,
   whatsapp,
+  vistaPrevia,
   lineas,
   despachar,
   onCerrar,
 }: {
   negocio: string;
   whatsapp: string;
+  vistaPrevia: boolean;
   lineas: LineaPedido[];
   despachar: React.Dispatch<Parameters<typeof reducirPedido>[1]>;
   onCerrar: () => void;
 }) {
   const [nombre, setNombre] = useState("");
   const estimado = totalEstimado(lineas);
-  const enlace = urlWhatsApp(whatsapp, mensajePedido(negocio, lineas, nombre));
+  const mensaje = mensajePedido(negocio, lineas, nombre);
+  const enlace = whatsapp ? urlWhatsApp(whatsapp, mensaje) : null;
 
   return (
     <Hoja
@@ -598,18 +698,34 @@ function HojaCarrito({
                 <span>{formatearPrecio(estimado)}</span>
               </p>
             )}
-            <a
-              href={enlace}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ backgroundColor: "#16a34a" }}
-              className="flex h-12 w-full items-center justify-center rounded-2xl text-base font-semibold text-white"
-            >
-              Enviar pedido por WhatsApp
-            </a>
-            <p className="text-center text-xs text-slate-500">
-              Se abre WhatsApp con tu pedido escrito. {negocio} te confirma precio y disponibilidad.
-            </p>
+            {vistaPrevia || !enlace ? (
+              <>
+                <div className="flex h-12 w-full items-center justify-center rounded-2xl bg-slate-200 text-sm font-semibold text-slate-500">
+                  Enviar pedido por WhatsApp
+                </div>
+                <details className="text-xs text-slate-500">
+                  <summary className="cursor-pointer text-center">
+                    {vistaPrevia ? "Vista previa: así le llegaría el mensaje" : "Falta el WhatsApp del negocio"}
+                  </summary>
+                  <pre className="mt-2 rounded-lg bg-slate-50 p-3 font-sans whitespace-pre-wrap text-slate-700">{mensaje}</pre>
+                </details>
+              </>
+            ) : (
+              <>
+                <a
+                  href={enlace}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ backgroundColor: "#16a34a" }}
+                  className="flex h-12 w-full items-center justify-center rounded-2xl text-base font-semibold text-white"
+                >
+                  Enviar pedido por WhatsApp
+                </a>
+                <p className="text-center text-xs text-slate-500">
+                  Se abre WhatsApp con tu pedido escrito. {negocio} te confirma precio y disponibilidad.
+                </p>
+              </>
+            )}
           </div>
         ) : undefined
       }

@@ -34,6 +34,7 @@ describe("orden del menú", () => {
       "/pos",
       "/products",
       "/customers",
+      "/online-catalog",
       "/finances",
       "/reports",
       "/purchases",

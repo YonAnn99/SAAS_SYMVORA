@@ -127,3 +127,73 @@ describe("carrito del catálogo", () => {
     expect(textoPrecio(null, null, "PIEZA")).toBeNull();
   });
 });
+
+import {
+  aplicarAccion,
+  conteosCatalogo,
+  filtrarFilas,
+  precioEspecialCapturado,
+  type FilaCatalogo,
+} from "@/features/catalogo/seleccion";
+import { precioDeLinea } from "@/features/catalogo/pedido";
+
+const fila = (extra: Partial<FilaCatalogo>): FilaCatalogo => ({
+  id: "x",
+  nombre: "Producto",
+  categoria: null,
+  imagen_url: null,
+  precio_venta: 20,
+  unidad_medida: "PIEZA",
+  tieneVariantes: false,
+  oculto: false,
+  destacado: false,
+  precio_especial: null,
+  ...extra,
+});
+
+describe("módulo catálogo: selección de productos", () => {
+  const filas = [
+    fila({ id: "1", nombre: "Martillo", categoria: "Herramienta" }),
+    fila({ id: "2", nombre: "Clavo", categoria: "Ferretería", oculto: true }),
+    fila({ id: "3", nombre: "Pinzas", categoria: "Herramienta", destacado: true }),
+    fila({ id: "4", nombre: "Taladro", destacado: true, oculto: true }),
+  ];
+
+  it("filtra por estado, categoría y búsqueda sin acentos", () => {
+    const ids = (f: FilaCatalogo[]) => f.map((x) => x.id);
+    expect(ids(filtrarFilas(filas, { busqueda: "", categoria: null, filtro: "publicados" }))).toEqual(["1", "3"]);
+    expect(ids(filtrarFilas(filas, { busqueda: "", categoria: null, filtro: "ocultos" }))).toEqual(["2", "4"]);
+    // Un destacado oculto no sale en el catálogo: no cuenta como destacado.
+    expect(ids(filtrarFilas(filas, { busqueda: "", categoria: null, filtro: "destacados" }))).toEqual(["3"]);
+    expect(ids(filtrarFilas(filas, { busqueda: "", categoria: "Herramienta", filtro: "todos" }))).toEqual(["1", "3"]);
+    expect(ids(filtrarFilas(filas, { busqueda: "ferreteria", categoria: null, filtro: "todos" }))).toEqual(["2"]);
+  });
+
+  it("conteos de los filtros", () => {
+    expect(conteosCatalogo(filas)).toEqual({ todos: 4, publicados: 2, ocultos: 2, destacados: 1 });
+  });
+
+  it("destacar algo oculto también lo publica", () => {
+    expect(aplicarAccion({ oculto: true, destacado: false, precio_especial: null }, "destacar")).toEqual({
+      oculto: false,
+      destacado: true,
+      precio_especial: null,
+    });
+    expect(aplicarAccion({ oculto: false, destacado: true, precio_especial: 5 }, "ocultar").oculto).toBe(true);
+  });
+
+  it("precio especial capturado", () => {
+    expect(precioEspecialCapturado("", 20)).toEqual({ ok: true, valor: null });
+    expect(precioEspecialCapturado("$15,5", 20)).toEqual({ ok: true, valor: 15.5 });
+    expect(precioEspecialCapturado("20", 20)).toEqual({ ok: true, valor: null });
+    expect(precioEspecialCapturado("0", 20).ok).toBe(false);
+    expect(precioEspecialCapturado("abc", 20).ok).toBe(false);
+  });
+
+  it("el pedido usa el precio especial, salvo que se elija una variante", () => {
+    expect(precioDeLinea({ precio_min: 20, precio_especial: 15 }, null)).toBe(15);
+    expect(precioDeLinea({ precio_min: 20 }, null)).toBe(20);
+    expect(precioDeLinea({ precio_min: 20, precio_especial: 15 }, { precio: 30 })).toBe(30);
+    expect(precioDeLinea({ precio_min: null }, null)).toBeNull();
+  });
+});

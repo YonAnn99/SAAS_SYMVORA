@@ -140,7 +140,6 @@ export type Database = {
           creado_en: string;
           actualizado_en: string;
           archivado_en: string | null;
-          oculto_en_catalogo: boolean;
         };
         Insert: {
           id?: string;
@@ -168,7 +167,6 @@ export type Database = {
           creado_en?: string;
           actualizado_en?: string;
           archivado_en?: string | null;
-          oculto_en_catalogo?: boolean;
         };
         Update: {
           id?: string;
@@ -196,7 +194,6 @@ export type Database = {
           creado_en?: string;
           actualizado_en?: string;
           archivado_en?: string | null;
-          oculto_en_catalogo?: boolean;
         };
       };
       productos_favoritos: {

@@ -353,26 +353,42 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - El costo unitario del lote es solo informativo: la ganancia usa el costo del producto o variante.
 - Pendiente: expediente clínico.
 
-## Catálogo en línea (migración 124, 2026-10-28)
+## Catálogo en línea (migraciones 124-125, 2026-10-28)
 - **Qué es:** página pública por negocio, `www.symvora.com.mx/es/catalogo/<slug>` (indexable), con productos, precio
   y disponibilidad. El cliente arma un carrito y lo manda al WhatsApp del negocio. **No cobra, no guarda pedidos y no
   mueve inventario**: no hay ninguna escritura anónima. Incluido en el plan.
-- **Se enciende en Configuración → Catálogo en línea** (`?tab=catalogo`, `features/catalogo/components/catalogo-config.tsx`):
-  enlace (slug), WhatsApp (obligatorio para activar, CHECK), mostrar precios, mostrar agotados y mensaje. Comparte con
-  enlace, QR y WhatsApp.
-- **Modelo:** `catalogos_en_linea` (uno por negocio; slug único con el mismo patrón que `slugValido` de
-  `features/catalogo/slug.ts`: si cambia uno, cambia el otro). RLS: SELECT del negocio; INSERT/UPDATE con
-  `authorize('org.manage_settings')`; trigger de solo lectura (096).
-- **Ocultar productos:** `productos.oculto_en_catalogo` (default false), interruptor «Mostrar en el catálogo en línea»
-  en Datos del producto. Solo visual.
-- **Lectura pública:** `catalogo_publico(slug)` y `catalogo_publico_productos(slug, busqueda, categoria, offset, limite≤60)`
-  son las ÚNICAS para `anon`. Devuelven NULL si el catálogo está apagado, el negocio es demo o está en solo lectura. Nada
-  de costos, códigos ni existencias exactas. Internas (`_catalogo_*`) sin EXECUTE para nadie.
-- **Página:** `app/[locale]/catalogo/[slug]` (`/catalogo` está en `MARKETING_SEGMENTS`: en www y sin sesión).
+- **Módulo propio `/online-catalog`** (menú, después de Clientes; excepción pedida por el usuario a «funciones dentro
+  de módulos existentes»). Permiso `catalog.manage`: SUPER_ADMIN y ORG_ADMIN, concedible a un cajero (CHECK de la 125;
+  la ruta está en `ADMIN_ONLY_PATHS` del middleware).
+  - Arriba: interruptor Publicar + compartir (enlace, QR, WhatsApp).
+  - Pestañas:
+    - **Productos:** ocultar, destacar y precio especial; acciones en grupo.
+    - **Personalizar:** color, portada, enlace, WhatsApp, mensaje, mostrar precios y agotados.
+    - **Vista previa:** `CatalogoVista` en un marco con `transform` para que lo `fixed` quede dentro.
+  - En `localhost` el enlace apunta al servidor local (`useBaseCatalogo`).
+- **Modelo:**
+  - `catalogos_en_linea`: uno por negocio. Slug único con el patrón de `slugValido` (si cambia uno, cambia el otro).
+    Columnas `color` y `portada_url` (la portada va en `product-images/<tenant>/catalogo/`).
+  - `catalogo_productos` (125): sin fila = publicado, sin destacar y a precio normal. Columnas `oculto`, `destacado`
+    y `precio_especial`, este solo para productos sin variantes; **el POS cobra el normal**.
+  - Va aparte de `productos` para no disparar los avisos de «editó N productos» ni exigir `inventory.manage`.
+  - RLS con `authorize('catalog.manage')` y un `EXISTS` de producto del mismo negocio; trigger 096.
+- **TRANSICIÓN PENDIENTE:** `productos.oculto_en_catalogo` (124) se desplegó en el formulario de producto, que la
+  manda en cada guardado.
+  - La 125 la conserva, con los triggers `trg_productos_oculto_a_catalogo(_upd)` que copian sus cambios a
+    `catalogo_productos`.
+  - Ya nada la lee. Después del deploy del módulo, otra migración quita los triggers y la columna.
+- **Lectura pública:** `catalogo_publico(slug)` y `catalogo_publico_productos(...)` son las ÚNICAS funciones para `anon`.
+  - Envuelven `_catalogo_encabezado` y `_catalogo_pagina`, que son internas.
+  - Devuelven NULL si el catálogo está apagado, el negocio es demo o está en solo lectura.
+  - Nada de costos, códigos ni existencias exactas.
+  - Vista previa: `catalogo_vista_previa*` (authenticated, `catalog.manage`, aunque el catálogo esté apagado).
+- **Página pública:** `app/[locale]/catalogo/[slug]` (`/catalogo` está en `MARKETING_SEGMENTS`: en www y sin sesión).
   - Carga con `catalogo-publico.server.ts`: cliente anónimo y rate limit `catalogo:<ip>` 120/min.
   - Búsqueda y «Cargar más» por `GET /api/catalogo/[slug]/productos`.
-  - Carrito puro en `features/catalogo/pedido.ts` (mensaje de WhatsApp con «precios sujetos a confirmación»), guardado en
-    `localStorage` (`symvora-catalogo:<slug>`).
+  - Arriba, la fila «Destacados».
+  - Precio especial con el normal tachado.
+  - Carrito puro en `pedido.ts` (`precioDeLinea` usa el especial), guardado en `localStorage` (`symvora-catalogo:<slug>`).
   - El sitemap incluye los catálogos activos (`revalidate` diario).
 
 ## Notificaciones (migraciones 108-109, 2026-10-05)
@@ -467,7 +483,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 124; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 125; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

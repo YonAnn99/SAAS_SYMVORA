@@ -16,11 +16,10 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Printer, Puzzle, Smartphone, Store } from "lucide-react";
+import { Building2, Printer, Puzzle, Smartphone } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { MercadoPagoPointSettings } from "@/features/payments/components/mercado-pago-point-settings";
 import { ImpresoraConfig } from "@/features/pos/components/impresora-config";
-import { CatalogoConfigPanel } from "@/features/catalogo/components/catalogo-config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -31,9 +30,9 @@ import { subirLogoNegocio } from "@/lib/logo-negocio";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 
-const PESTANAS = ["general", "modules", "payments", "printer", "catalogo"];
+const PESTANAS = ["general", "modules", "payments", "printer"];
 
-/** Pestaña de Configuración: en celular, menos relleno para que las cinco quepan. */
+/** Pestaña de Configuración: en celular, menos relleno para que las cuatro quepan. */
 const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-list:px-1.5";
 
 export default function SettingsPage() {
@@ -302,12 +301,6 @@ export default function SettingsPage() {
             <Printer className="h-3.5 w-3.5 max-sm:hidden" />
             Impresora
           </TabsTrigger>
-          {/* Catálogo en línea (migración 124): la página pública del negocio. */}
-          <TabsTrigger value="catalogo" className={CLASE_PESTANA}>
-            <Store className="h-3.5 w-3.5 max-sm:hidden" />
-            <span className="sm:hidden">Catálogo</span>
-            <span className="max-sm:hidden">Catálogo en línea</span>
-          </TabsTrigger>
         </TabsList>
 
         {/* General settings */}
@@ -454,10 +447,6 @@ export default function SettingsPage() {
 
         <TabsContent value="printer">
           {pestana === "printer" && <ImpresoraConfig />}
-        </TabsContent>
-
-        <TabsContent value="catalogo">
-          {pestana === "catalogo" && <CatalogoConfigPanel />}
         </TabsContent>
       </Tabs>
     </div>

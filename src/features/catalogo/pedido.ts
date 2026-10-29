@@ -117,6 +117,18 @@ export function mensajePedido(negocio: string, lineas: LineaPedido[], nombreClie
   ].join("\n");
 }
 
+/**
+ * Precio unitario de un renglón del pedido: el de la variante elegida, o el
+ * especial del catálogo si lo tiene, o el normal. null si no se muestran precios.
+ */
+export function precioDeLinea(
+  producto: { precio_min: number | null; precio_especial?: number | null },
+  variante: { precio?: number } | null
+): number | null {
+  if (variante) return variante.precio ?? null;
+  return producto.precio_especial ?? producto.precio_min;
+}
+
 /** Texto del precio en la tarjeta: "$26.00", "desde $18.00", "$180.00 por kg". */
 export function textoPrecio(
   min: number | null,

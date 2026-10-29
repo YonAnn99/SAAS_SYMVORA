@@ -20,8 +20,6 @@ export interface ProductInput {
   permite_lotes: boolean;
   permite_variantes: boolean;
   imagen_url: string | null;
-  /** Catálogo en línea (migración 124). Opcional: la importación no lo manda (queda publicado). */
-  oculto_en_catalogo?: boolean;
 }
 
 export async function generateNextBarcode(tenantId: string): Promise<string> {

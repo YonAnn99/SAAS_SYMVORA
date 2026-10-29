@@ -32,11 +32,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: titulo,
     description: descripcion,
-    alternates: { canonical: urlCatalogo(encabezado.slug, locale) },
+    alternates: { canonical: urlCatalogo(encabezado.slug ?? slug, locale) },
     openGraph: {
       title: titulo,
       description: descripcion,
-      url: urlCatalogo(encabezado.slug, locale),
+      url: urlCatalogo(encabezado.slug ?? slug, locale),
       type: "website",
       ...(imagen ? { images: [{ url: imagen }] } : {}),
     },
