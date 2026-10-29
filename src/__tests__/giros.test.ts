@@ -89,8 +89,8 @@ describe("enlaces de cada giro", () => {
     expect(GIROS_REGISTRO.at(-1)?.slug).toBe("tiendas");
   });
 
-  it("el sitemap incluye todas las páginas de giro", () => {
-    const urls = sitemap().map((e) => e.url);
+  it("el sitemap incluye todas las páginas de giro", async () => {
+    const urls = (await sitemap()).map((e) => e.url);
     for (const g of GIROS) {
       expect(urls.some((u) => u.endsWith(rutaGiro(g.slug))), g.slug).toBe(true);
     }

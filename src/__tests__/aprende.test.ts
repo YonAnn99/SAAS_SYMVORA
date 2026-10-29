@@ -128,8 +128,8 @@ describe("enlace «Aprende» desde el sistema", () => {
 });
 
 describe("publicación", () => {
-  it("el sitemap incluye el índice y todas las guías", () => {
-    const urls = sitemap().map((e) => e.url);
+  it("el sitemap incluye el índice y todas las guías", async () => {
+    const urls = (await sitemap()).map((e) => e.url);
     expect(urls.some((u) => u.endsWith("/es/aprende"))).toBe(true);
     for (const g of GUIAS) expect(urls.some((u) => u.endsWith(rutaGuia(g.slug))), g.slug).toBe(true);
   });

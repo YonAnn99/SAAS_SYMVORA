@@ -353,6 +353,28 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - El costo unitario del lote es solo informativo: la ganancia usa el costo del producto o variante.
 - Pendiente: expediente clínico.
 
+## Catálogo en línea (migración 124, 2026-10-28)
+- **Qué es:** página pública por negocio, `www.symvora.com.mx/es/catalogo/<slug>` (indexable), con productos, precio
+  y disponibilidad. El cliente arma un carrito y lo manda al WhatsApp del negocio. **No cobra, no guarda pedidos y no
+  mueve inventario**: no hay ninguna escritura anónima. Incluido en el plan.
+- **Se enciende en Configuración → Catálogo en línea** (`?tab=catalogo`, `features/catalogo/components/catalogo-config.tsx`):
+  enlace (slug), WhatsApp (obligatorio para activar, CHECK), mostrar precios, mostrar agotados y mensaje. Comparte con
+  enlace, QR y WhatsApp.
+- **Modelo:** `catalogos_en_linea` (uno por negocio; slug único con el mismo patrón que `slugValido` de
+  `features/catalogo/slug.ts`: si cambia uno, cambia el otro). RLS: SELECT del negocio; INSERT/UPDATE con
+  `authorize('org.manage_settings')`; trigger de solo lectura (096).
+- **Ocultar productos:** `productos.oculto_en_catalogo` (default false), interruptor «Mostrar en el catálogo en línea»
+  en Datos del producto. Solo visual.
+- **Lectura pública:** `catalogo_publico(slug)` y `catalogo_publico_productos(slug, busqueda, categoria, offset, limite≤60)`
+  son las ÚNICAS para `anon`. Devuelven NULL si el catálogo está apagado, el negocio es demo o está en solo lectura. Nada
+  de costos, códigos ni existencias exactas. Internas (`_catalogo_*`) sin EXECUTE para nadie.
+- **Página:** `app/[locale]/catalogo/[slug]` (`/catalogo` está en `MARKETING_SEGMENTS`: en www y sin sesión).
+  - Carga con `catalogo-publico.server.ts`: cliente anónimo y rate limit `catalogo:<ip>` 120/min.
+  - Búsqueda y «Cargar más» por `GET /api/catalogo/[slug]/productos`.
+  - Carrito puro en `features/catalogo/pedido.ts` (mensaje de WhatsApp con «precios sujetos a confirmación»), guardado en
+    `localStorage` (`symvora-catalogo:<slug>`).
+  - El sitemap incluye los catálogos activos (`revalidate` diario).
+
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
@@ -445,7 +467,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 123; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 124; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

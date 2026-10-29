@@ -1,10 +1,38 @@
 import type { MetadataRoute } from "next";
 import { GIROS, rutaGiro } from "@/features/marketing/giros";
 import { GUIAS, rutaGuia } from "@/features/marketing/aprende";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 
 const BASE_URL = "https://www.symvora.com.mx";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Los catálogos en línea se encienden y apagan cualquier día: se regenera a
+// diario en lugar de quedar fijo hasta el siguiente despliegue.
+export const revalidate = 86400;
+
+/**
+ * Catálogos en línea activos (migración 124), sin negocios demo. Si la consulta
+ * falla, el sitemap sale sin ellos: nunca se rompe por esto.
+ */
+async function catalogosActivos(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const { data, error } = await createSupabaseServiceRoleClient()
+      .from("catalogos_en_linea")
+      .select("slug, actualizado_en, tenants!inner(demo_expira_en)")
+      .eq("activo", true)
+      .is("tenants.demo_expira_en", null);
+    if (error || !data) return [];
+    return data.map((c) => ({
+      url: `${BASE_URL}/es/catalogo/${c.slug}`,
+      lastModified: new Date(c.actualizado_en),
+      changeFrequency: "daily" as const,
+      priority: 0.4,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const languageAlternates = {
     es: `${BASE_URL}/es`,
     en: `${BASE_URL}/en`,
@@ -88,5 +116,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.5,
     })),
+    ...(await catalogosActivos()),
   ];
 }

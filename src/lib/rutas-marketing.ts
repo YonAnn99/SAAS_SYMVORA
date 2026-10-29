@@ -20,6 +20,9 @@ export const MARKETING_SEGMENTS = [
   "/aprende",
   // Quienes somos (/es/nosotros): identidad, mision, valores. Publica.
   "/nosotros",
+  // Catalogo en linea de cada negocio (/es/catalogo/<slug>, migracion 124):
+  // publico, en www y sin sesion; lo comparte el negocio con sus clientes.
+  "/catalogo",
 ];
 
 export function stripLocale(path: string): string {
