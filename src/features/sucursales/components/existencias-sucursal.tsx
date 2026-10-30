@@ -23,6 +23,7 @@ import {
   establecerStockSucursal,
   fetchStockSucursal,
 } from "@/features/sucursales/services/stock-sucursal-service";
+import { CLASE_PASTILLA } from "@/components/ui/fila-deslizable";
 
 interface ProductoLocal {
   id: string;
@@ -141,6 +142,29 @@ export function ExistenciasSucursal({
     }
   }
 
+  // Existencias de un producto: campo editable, cifra o «—» si es servicio.
+  // La misma pieza en la tabla y en la pastilla del celular.
+  const cantidad = (p: ProductoLocal, clase: string) =>
+    p.es_servicio ? (
+      <span className="text-xs text-muted-foreground">—</span>
+    ) : puedeEditar ? (
+      <Input
+        type="number"
+        min="0"
+        inputMode="decimal"
+        aria-label={`Existencias de ${p.nombre}`}
+        value={borradores[p.id] ?? String(p.stock_actual)}
+        onChange={(e) => setBorradores((b) => ({ ...b, [p.id]: e.target.value }))}
+        onBlur={() => void guardarCantidad(p)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        className={`text-right font-mono ${clase}`}
+      />
+    ) : (
+      <span className="font-mono text-xs tabular-nums">{p.stock_actual}</span>
+    );
+
   if (!seleccionada) {
     return (
       <Card>
@@ -163,7 +187,7 @@ export function ExistenciasSucursal({
           <span className="font-medium">Traspasos</span>: así no se crean ni se pierden unidades.
           Apagar «Se vende aquí» oculta el producto en el punto de venta de este local.
         </p>
-        <div className="relative max-w-xs">
+        <div className="relative sm:max-w-xs">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busqueda}
@@ -173,56 +197,66 @@ export function ExistenciasSucursal({
           />
         </div>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Producto</TableHead>
-              <TableHead className="w-[140px] text-right">Existencias</TableHead>
-              <TableHead className="w-[130px] text-center">Se vende aquí</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {visibles.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="text-xs">
-                  <span className="font-medium">{p.nombre}</span>
-                  {p.sku && <span className="ml-2 font-mono text-muted-foreground">{p.sku}</span>}
-                </TableCell>
-                <TableCell className="text-right">
-                  {p.es_servicio ? (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  ) : puedeEditar ? (
-                    <Input
-                      type="number"
-                      min="0"
-                      aria-label={`Existencias de ${p.nombre}`}
-                      value={borradores[p.id] ?? String(p.stock_actual)}
-                      onChange={(e) =>
-                        setBorradores((b) => ({ ...b, [p.id]: e.target.value }))
-                      }
-                      onBlur={() => void guardarCantidad(p)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                      }}
-                      className="ml-auto h-7 w-24 text-right font-mono text-xs"
-                    />
-                  ) : (
-                    <span className="font-mono text-xs tabular-nums">{p.stock_actual}</span>
+      <CardContent>
+        {/* Celular: una pastilla por producto, sin deslizar (lleva campo e
+            interruptor). Misma lógica que la tabla. */}
+        <ul className="space-y-2 md:hidden">
+          {visibles.map((p) => (
+            <li key={p.id} className={`${CLASE_PASTILLA} px-4 py-3`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{p.nombre}</p>
+                  {p.sku && (
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">{p.sku}</p>
                   )}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Switch
-                    checked={p.se_vende}
-                    disabled={!puedeEditar}
-                    onCheckedChange={(v) => void alternarSeVende(p, v)}
-                    aria-label={`Se vende ${p.nombre} en ${nombre}`}
-                  />
-                </TableCell>
+                </div>
+                <div className="shrink-0">{cantidad(p, "h-9 w-20 text-sm")}</div>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 border-t border-border/60 pt-2">
+                <span className="text-xs text-muted-foreground">Se vende aquí</span>
+                <Switch
+                  checked={p.se_vende}
+                  disabled={!puedeEditar}
+                  onCheckedChange={(v) => void alternarSeVende(p, v)}
+                  aria-label={`Se vende ${p.nombre} en ${nombre}`}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Producto</TableHead>
+                <TableHead className="w-[140px] text-right">Existencias</TableHead>
+                <TableHead className="w-[130px] text-center">Se vende aquí</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {visibles.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="text-xs">
+                    <span className="font-medium">{p.nombre}</span>
+                    {p.sku && <span className="ml-2 font-mono text-muted-foreground">{p.sku}</span>}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {cantidad(p, "ml-auto h-7 w-24 text-xs")}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch
+                      checked={p.se_vende}
+                      disabled={!puedeEditar}
+                      onCheckedChange={(v) => void alternarSeVende(p, v)}
+                      aria-label={`Se vende ${p.nombre} en ${nombre}`}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
         {cargando && (
           <p className="pt-3 text-center text-xs text-muted-foreground">Cargando…</p>
         )}

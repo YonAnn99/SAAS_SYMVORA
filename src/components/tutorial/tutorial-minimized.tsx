@@ -4,17 +4,30 @@ import { useTranslations } from "next-intl";
 import { useTutorialContext } from "./tutorial-provider";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
+import { usePathname } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
+import { stripLocale } from "@/lib/navigation";
 
 export function TutorialMinimized() {
   const t = useTranslations();
   const { minimized, currentStep, totalSteps, resume, completed, isActive } = useTutorialContext();
+  // Por debajo de lg se apila encima del botón flotante "+" del dock
+  // (`BOTON_MAS` en dock-movil.tsx: 56 px de alto), que en el POS va más arriba.
+  const enPos = stripLocale(usePathname()) === "/pos";
 
   if (completed || isActive || !minimized) return null;
 
   const nextStep = currentStep + 1;
 
   return (
-    <div className="fixed bottom-24 lg:bottom-20 right-6 z-[997] animate-in fade-in-0 slide-in-from-bottom-4 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
+    <div
+      className={cn(
+        "fixed right-4 z-[997] animate-in fade-in-0 slide-in-from-bottom-4 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] lg:bottom-20 lg:right-6",
+        enPos
+          ? "bottom-[calc(4rem+env(safe-area-inset-bottom)+9.25rem)]"
+          : "bottom-[calc(4rem+env(safe-area-inset-bottom)+5.25rem)]"
+      )}
+    >
       <Button
         onClick={resume}
         size="sm"

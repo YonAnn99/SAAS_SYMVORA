@@ -19,16 +19,18 @@ import { filterNavigation, navegacionDock, stripLocale } from "@/lib/navigation"
 /**
  * Dock de celular y tablet (< lg), pegado al borde inferior. Reemplaza al
  * menú lateral: 4 módulos fijos (`navegacionDock`, mismos permisos que el
- * menú) y un "+" que abre un panel con el resto, el negocio, Perfil y Cerrar
- * sesión. Al abrirlo el "+" gira 45° y queda como la "X" de cerrar, en un
- * círculo claro (referencia: el botón "Crear" de Spotify).
+ * menú) y, aparte, un botón flotante "+" en la esquina derecha, arriba del
+ * dock, que abre un panel con el resto, el negocio, Perfil y Cerrar sesión. Al
+ * abrirlo el "+" gira 45° y queda como la "X" de cerrar, en un círculo claro
+ * (referencia: el botón "Crear" de Spotify). En el POS el botón sube para no
+ * tapar "Ver carrito" (`mobile-cart-bar.tsx`, 56 px justo encima del dock).
  *
  * La opción activa se resalta con una pastilla del color de la pantalla que
  * viaja con la misma animación elástica del menú lateral y de la barra
  * Catálogo/Lotes/Ajustes (`rubber-bordes.ts`), aquí en horizontal.
  *
- * Capas: fondo del panel `z-[43]`, panel `z-[44]` y dock `z-[45]`, para que
- * la "X" siga encima y se pueda tocar. Los diálogos (perfil, confirmaciones)
+ * Capas: fondo del panel `z-[43]`, panel `z-[44]`, dock `z-[45]` y botón
+ * flotante `z-[46]`, para que la "X" siga encima y se pueda tocar. Los diálogos (perfil, confirmaciones)
  * van en `z-50`, por encima de todo.
  *
  * ⚠️ Su alto (64 px + safe area) está descontado en el relleno inferior de
@@ -43,6 +45,37 @@ const ETIQUETA_CORTA: Record<string, string> = {
   "/pos": "layout.posCorto",
   "/purchase-orders": "layout.purchaseOrdersCorto",
 };
+
+/**
+ * Altura del botón flotante y del panel de "Más" sobre el dock (64 px + safe
+ * area). En el POS, 64 px más: "Ver carrito" (56) y un respiro (8). Literales
+ * para que Tailwind genere las clases. `tutorial-minimized.tsx` se apila
+ * encima del botón con la misma cuenta.
+ */
+const BOTON_MAS = {
+  normal: "bottom-[calc(4rem+env(safe-area-inset-bottom)+0.75rem)]",
+  pos: "bottom-[calc(4rem+env(safe-area-inset-bottom)+4.75rem)]",
+};
+/**
+ * El panel termina a la altura del CENTRO del botón (1.75rem sobre su borde
+ * inferior) y con su mismo borde derecho: abierto, el botón cuelga de la
+ * esquina, mitad dentro y mitad fuera, del mismo color, y se ven como una sola
+ * pieza. `pb-11` deja libre la mitad que entra; esa esquina va sin redondeo
+ * (`rounded-br-none`) para que el borde derecho baje recto hasta el botón.
+ */
+const PANEL_MAS = {
+  normal:
+    "bottom-[calc(4rem+env(safe-area-inset-bottom)+2.5rem)] max-h-[calc(100dvh-9.25rem-env(safe-area-inset-bottom))]",
+  pos: "bottom-[calc(4rem+env(safe-area-inset-bottom)+6.5rem)] max-h-[calc(100dvh-13.25rem-env(safe-area-inset-bottom))]",
+};
+
+/**
+ * El panel nace del botón (container transform): un círculo del tamaño del
+ * botón (radio 28), centrado en él, que crece hasta cubrir el panel. Al cerrar
+ * se recoge igual. Mismas unidades en los dos extremos para que se interpole.
+ */
+const RECORTE_BOTON = "circle(28px at calc(100% - 28px) 100%)";
+const RECORTE_ABIERTO = "circle(1000px at calc(100% - 28px) 100%)";
 
 export function DockMovil() {
   const t = useTranslations();
@@ -67,6 +100,7 @@ export function DockMovil() {
   const { fijos, resto } = cargando ? { fijos: [], resto: [] } : navegacionDock(filterNavigation(role, can));
   const ruta = stripLocale(pathname);
   const enMas = resto.some((i) => i.href === ruta);
+  const enPos = ruta === "/pos";
 
   // Pastilla elástica: misma técnica que el menú lateral, en motion values.
   const barraRef = useRef<HTMLDivElement>(null);
@@ -155,84 +189,105 @@ export function DockMovil() {
               ref={panelRef}
               role="dialog"
               aria-label="Más módulos"
-              className="fixed inset-x-3 bottom-[calc(4rem+env(safe-area-inset-bottom)+0.5rem)] z-[44] flex max-h-[calc(100dvh-7rem-env(safe-area-inset-bottom))] origin-bottom flex-col overflow-y-auto rounded-3xl bg-popover p-3 text-popover-foreground shadow-xl lg:hidden"
-              initial={{ opacity: 0, y: 16, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: [0.23, 1, 0.32, 1] } }}
-              exit={{ opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] } }}
+              className={cn(
+                "fixed left-3 right-4 z-[44] flex flex-col overflow-y-auto rounded-3xl rounded-br-none bg-popover p-3 pb-11 text-popover-foreground lg:hidden",
+                enPos ? PANEL_MAS.pos : PANEL_MAS.normal
+              )}
+              initial={reduce ? { opacity: 0 } : { clipPath: RECORTE_BOTON }}
+              animate={
+                reduce
+                  ? { opacity: 1, transition: { duration: 0.15 } }
+                  : { clipPath: RECORTE_ABIERTO, transition: { duration: 0.38, ease: [0.23, 1, 0.32, 1] } }
+              }
+              exit={
+                reduce
+                  ? { opacity: 0, transition: { duration: 0.12 } }
+                  : { clipPath: RECORTE_BOTON, transition: { duration: 0.24, ease: [0.23, 1, 0.32, 1] } }
+              }
             >
-              <div className="flex flex-col gap-0.5">
-                {resto.map((item) => {
-                  const Icon = item.icon;
-                  const activo = item.href === ruta;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMasAbierto(false)}
-                      aria-current={activo ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 rounded-2xl px-2 py-1.5 text-sm font-semibold outline-none transition-colors active:bg-muted focus-visible:bg-muted",
-                        activo && "bg-muted"
-                      )}
-                    >
-                      <span
+              {/* Primero se ve crecer la forma; luego aparece lo de adentro. */}
+              <motion.div
+                className="flex flex-col"
+                initial={reduce ? false : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0, transition: { duration: 0.22, delay: 0.08, ease: [0.23, 1, 0.32, 1] } }}
+                exit={reduce ? undefined : { opacity: 0, transition: { duration: 0.1 } }}
+              >
+                {/* Cuadricula de 3 (menu de apps): los ~11 modulos del dueño caben
+                    sin desplazar. Con 4 columnas «Catálogo en línea» no se leia. */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {resto.map((item) => {
+                    const Icon = item.icon;
+                    const activo = item.href === ruta;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMasAbierto(false)}
+                        aria-current={activo ? "page" : undefined}
                         className={cn(
-                          "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
-                          activo ? "bg-[var(--nav-bg)] text-white" : "bg-muted text-foreground"
+                          "flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 pb-2 pt-2.5 text-center outline-none transition-colors active:bg-muted focus-visible:bg-muted",
+                          activo && "bg-muted"
                         )}
                       >
-                        <Icon className="h-[18px] w-[18px]" />
-                      </span>
-                      <span className="truncate">{t(item.name)}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* El negocio y la cuenta: lo que en escritorio va al pie del menú. */}
-              <div className="mt-3 flex items-center gap-3 rounded-2xl bg-muted/60 p-3">
-                {tenantLogo ? (
-                  <Image
-                    src={tenantLogo}
-                    alt={tenantName || ""}
-                    width={44}
-                    height={44}
-                    className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[var(--nav-bg)] text-base font-semibold text-white">
-                    {tenantName?.charAt(0).toUpperCase() || "N"}
-                  </div>
-                )}
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm font-semibold">{tenantName || "Negocio"}</span>
-                  <span className="truncate text-[11px] text-muted-foreground">{user?.email || "cargando..."}</span>
+                        <span
+                          className={cn(
+                            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
+                            activo ? "bg-[var(--nav-bg)] text-white" : "bg-muted text-foreground"
+                          )}
+                        >
+                          <Icon className="h-[18px] w-[18px]" />
+                        </span>
+                        <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{t(item.name)}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMasAbierto(false);
-                    setPerfilAbierto(true);
-                  }}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-background transition-colors active:bg-muted"
-                  aria-label="Mi perfil"
-                  title="Mi perfil"
-                >
-                  <UserIcon className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMasAbierto(false);
-                    void salir({ confirmar: true });
-                  }}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-background text-red-500 transition-colors active:bg-muted"
-                  aria-label="Cerrar sesión"
-                  title="Cerrar sesión"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
+
+                {/* El negocio y la cuenta: lo que en escritorio va al pie del menú. */}
+                <div className="mt-3 flex items-center gap-3 rounded-2xl bg-muted/60 p-3">
+                  {tenantLogo ? (
+                    <Image
+                      src={tenantLogo}
+                      alt={tenantName || ""}
+                      width={44}
+                      height={44}
+                      className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[var(--nav-bg)] text-base font-semibold text-white">
+                      {tenantName?.charAt(0).toUpperCase() || "N"}
+                    </div>
+                  )}
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-semibold">{tenantName || "Negocio"}</span>
+                    <span className="truncate text-[11px] text-muted-foreground">{user?.email || "cargando..."}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMasAbierto(false);
+                      setPerfilAbierto(true);
+                    }}
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-background transition-colors active:bg-muted"
+                    aria-label="Mi perfil"
+                    title="Mi perfil"
+                  >
+                    <UserIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMasAbierto(false);
+                      void salir({ confirmar: true });
+                    }}
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-background text-red-500 transition-colors active:bg-muted"
+                    aria-label="Cerrar sesión"
+                    title="Cerrar sesión"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
           </>
         )}
@@ -251,7 +306,7 @@ export function DockMovil() {
             style={{ x: inicio, width: ancho, opacity: opacidad }}
           />
           {cargando
-            ? Array.from({ length: 5 }).map((_, i) => (
+            ? Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex flex-1 items-center justify-center">
                   <div className="h-8 w-8 animate-pulse rounded-full bg-white/10" />
                 </div>
@@ -273,43 +328,41 @@ export function DockMovil() {
                   </Link>
                 );
               })}
-          {!cargando && (
-            <button
-              ref={botonMasRef}
-              type="button"
-              data-activo={enMas}
-              aria-expanded={masAbierto}
-              aria-label={masAbierto ? "Cerrar" : "Más módulos"}
-              onClick={() => (masAbierto ? cerrarMas() : setMasAbierto(true))}
-              className={cn(ranura, enMas || masAbierto ? "text-foreground" : "text-white/70 active:text-white")}
-            >
-              {/* El "+" girado 45° ES la "X": no se cambia de icono, se gira.
-                  Abierto, el círculo se rellena, crece y baja al centro de la
-                  ranura mientras la etiqueta se desvanece. Solo transform,
-                  color y opacidad. */}
-              <span
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full transition-[transform,background-color,color] duration-[250ms]",
-                  masAbierto ? "translate-y-[6px] scale-[1.35] bg-background text-foreground" : "bg-transparent"
-                )}
-                style={{ transitionTimingFunction: curva }}
-              >
-                <Plus
-                  className={cn("h-5 w-5 transition-transform duration-[250ms]", masAbierto && "rotate-45")}
-                  style={{ transitionTimingFunction: curva }}
-                  strokeWidth={masAbierto ? 2.25 : 2}
-                />
-              </span>
-              <span
-                aria-hidden
-                className={cn("transition-opacity duration-150", masAbierto && "opacity-0")}
-              >
-                Más
-              </span>
-            </button>
-          )}
         </div>
       </nav>
+
+      {!cargando && (
+        <button
+          ref={botonMasRef}
+          type="button"
+          aria-expanded={masAbierto}
+          aria-label={masAbierto ? "Cerrar" : "Más módulos"}
+          aria-current={enMas && !masAbierto ? "page" : undefined}
+          onClick={() => (masAbierto ? cerrarMas() : setMasAbierto(true))}
+          className={cn(
+            "fixed right-4 z-[46] flex h-14 w-14 items-center justify-center rounded-full ring-1 transition-[transform,background-color,color,box-shadow,bottom] duration-[250ms] active:scale-95 lg:hidden",
+            enPos ? BOTON_MAS.pos : BOTON_MAS.normal,
+            // Abierto, del color del panel y sin sombra ni anillo: es su
+            // esquina. En una página de "Más" (como hacía la pastilla), relleno
+            // del color de la pantalla.
+            masAbierto
+              ? "bg-popover text-popover-foreground ring-transparent"
+              : cn(
+                  "shadow-[0_6px_24px_rgba(0,0,0,0.28)]",
+                  enMas ? "bg-background text-foreground ring-border" : "bg-[var(--nav-bg)] text-white ring-white/15"
+                )
+          )}
+          style={{ transitionTimingFunction: curva }}
+        >
+          {/* El "+" girado 45° ES la "X": no se cambia de icono, se gira.
+              Solo transform, color y opacidad. */}
+          <Plus
+            className={cn("h-6 w-6 transition-transform duration-[250ms]", masAbierto && "rotate-45")}
+            style={{ transitionTimingFunction: curva }}
+            strokeWidth={masAbierto ? 2.25 : 2}
+          />
+        </button>
+      )}
 
       <ProfileDialog open={perfilAbierto} onOpenChange={setPerfilAbierto} />
       {avisoCajaAbierta}

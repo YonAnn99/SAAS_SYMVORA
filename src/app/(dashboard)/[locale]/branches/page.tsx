@@ -16,6 +16,10 @@ import { TraspasosSucursal } from "@/features/sucursales/components/traspasos-su
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
+// En celular: sin íconos y con menos relleno, como Configuración. Con íconos la
+// lista medía más que la pantalla y toda la página se desplazaba de lado.
+const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-list:px-1.5";
+
 /**
  * Modulo de Sucursales.
  *
@@ -80,7 +84,9 @@ export default function BranchesPage() {
             }}
           />
           {/* Con un solo local no hay nada que elegir. */}
-          {hayVarias && <SucursalSelector />}
+          {hayVarias && (
+            <SucursalSelector className="h-9 min-w-0 flex-1 sm:w-auto sm:min-w-[190px] sm:max-w-[280px] sm:flex-none" />
+          )}
         </div>
       </div>
 
@@ -121,22 +127,23 @@ export default function BranchesPage() {
           onValueChange={(v) => setPestana(String(v))}
           className="w-full animate-fade-in-up stagger-2"
         >
-          <TabsList>
-            <TabsTrigger value="resumen" className="gap-1.5 text-xs">
-              <BarChart3 className="h-3.5 w-3.5" />
+          <TabsList className="w-full sm:w-fit">
+            <TabsTrigger value="resumen" className={CLASE_PESTANA}>
+              <BarChart3 className="h-3.5 w-3.5 max-sm:hidden" />
               Resumen
             </TabsTrigger>
-            <TabsTrigger value="existencias" className="gap-1.5 text-xs">
-              <Warehouse className="h-3.5 w-3.5" />
+            <TabsTrigger value="existencias" className={CLASE_PESTANA}>
+              <Warehouse className="h-3.5 w-3.5 max-sm:hidden" />
               Existencias
             </TabsTrigger>
-            <TabsTrigger value="traspasos" className="gap-1.5 text-xs">
-              <ArrowLeftRight className="h-3.5 w-3.5" />
+            <TabsTrigger value="traspasos" className={CLASE_PESTANA}>
+              <ArrowLeftRight className="h-3.5 w-3.5 max-sm:hidden" />
               Traspasos
             </TabsTrigger>
-            <TabsTrigger value="locales" className="gap-1.5 text-xs">
-              <Store className="h-3.5 w-3.5" />
-              Alta y cierre
+            <TabsTrigger value="locales" className={CLASE_PESTANA}>
+              <Store className="h-3.5 w-3.5 max-sm:hidden" />
+              <span className="sm:hidden">Locales</span>
+              <span className="max-sm:hidden">Alta y cierre</span>
             </TabsTrigger>
           </TabsList>
 

@@ -1017,9 +1017,26 @@ export function AuthForms({
             )}
 
             {forgotSent ? (
-              <div className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700 text-center">
-                {t("auth.forgotSent")}
-              </div>
+              // No dice si el correo tiene cuenta (Supabase responde igual en
+              // los dos casos): muestra lo tecleado para notar un error de dedo.
+              <>
+                <div className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700 text-center break-words">
+                  {t.rich("auth.forgotSent", {
+                    correo: forgotEmail,
+                    b: (texto) => <strong>{texto}</strong>,
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className="text-xs font-semibold underline"
+                  onClick={() => {
+                    setForgotSent(false);
+                    setForgotCaptchaToken(null);
+                  }}
+                >
+                  {t("auth.forgotOtroCorreo")}
+                </button>
+              </>
             ) : (
               <>
                 <Campo etiqueta={t("auth.email")}>

@@ -29,6 +29,7 @@ import {
   type VentaResumen,
 } from "@/features/sucursales/resumen";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
+import { CLASE_PASTILLA } from "@/components/ui/fila-deslizable";
 
 /**
  * Comparativa de locales del mes en curso: ventas, existencias y caja.
@@ -149,6 +150,37 @@ export function ResumenSucursales({
     </>
   );
 
+  // Celular: las cifras de la fila en una cuadricula de 3, con su etiqueta.
+  const cifras = (f: FilaResumen) => (
+    <dl className="mt-2 grid grid-cols-3 gap-x-3 gap-y-2 text-left">
+      {[
+        { etiqueta: "Tickets", valor: f.tickets.toLocaleString("es-MX") },
+        { etiqueta: "Ticket prom.", valor: formatMXN(f.ticketPromedio), mono: true },
+        { etiqueta: "Unidades", valor: f.unidades.toLocaleString("es-MX") },
+        { etiqueta: "Cajas abiertas", valor: String(f.cajasAbiertas) },
+        {
+          etiqueta: "Dif. en cortes",
+          valor: formatMXN(f.diferenciaCortes),
+          mono: true,
+          rojo: f.diferenciaCortes < 0,
+        },
+      ].map((c) => (
+        <div key={c.etiqueta} className="min-w-0">
+          <dt className="truncate text-[10px] text-muted-foreground">{c.etiqueta}</dt>
+          <dd
+            className={cn(
+              "truncate text-xs tabular-nums",
+              c.mono && "font-mono",
+              c.rojo && "text-red-600 dark:text-red-400"
+            )}
+          >
+            {c.valor}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+
   return (
     <div className="space-y-4">
       <Card>
@@ -160,60 +192,117 @@ export function ResumenSucursales({
           <p className="text-xs text-muted-foreground">
             Ventas completadas del mes, existencias actuales y cortes de caja. La
             última fila es la suma de todos los locales.
+            <span className="md:hidden"> Toca un local para verlo en todo el panel.</span>
           </p>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sucursal</TableHead>
-                <TableHead className="text-right">Ventas</TableHead>
-                <TableHead className="text-right">Tickets</TableHead>
-                <TableHead className="text-right">Ticket prom.</TableHead>
-                <TableHead className="text-right">Unidades</TableHead>
-                <TableHead className="text-right">Cajas abiertas</TableHead>
-                <TableHead className="text-right" title="Sobrante (+) o faltante (−) acumulado en los cortes del mes">
-                  Dif. en cortes
-                </TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filas.map((f) => (
-                <TableRow
-                  key={f.sucursalId ?? "sin-sucursal"}
-                  className={f.sucursalId && f.sucursalId === seleccionada ? "bg-muted/50" : ""}
-                >
-                  <TableCell className="text-xs font-medium">
-                    {f.nombre}
-                    {!f.activa && (
-                      <span className="ml-1.5 text-[10px] text-muted-foreground">(cerrada)</span>
+        <CardContent>
+          {/* Celular: una pastilla por local. Tocarla hace lo mismo que «Ver». */}
+          <ul className="space-y-2 md:hidden">
+            {filas.map((f) => {
+              const elegida = Boolean(f.sucursalId) && f.sucursalId === seleccionada;
+              return (
+                <li key={f.sucursalId ?? "sin-sucursal"}>
+                  <button
+                    type="button"
+                    className={cn(
+                      CLASE_PASTILLA,
+                      "w-full px-4 py-3 text-left transition-colors disabled:cursor-default",
+                      elegida && "ring-2 ring-primary/60"
                     )}
-                  </TableCell>
-                  {celdas(f)}
-                  <TableCell className="text-right">
-                    {f.sucursalId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={() => setSeleccionada(f.sucursalId)}
-                        disabled={f.sucursalId === seleccionada}
-                      >
-                        <Eye className="h-3 w-3" aria-hidden="true" />
-                        Ver
-                      </Button>
-                    )}
-                  </TableCell>
+                    onClick={() => f.sucursalId && setSeleccionada(f.sucursalId)}
+                    disabled={!f.sucursalId || elegida}
+                    aria-pressed={elegida}
+                    aria-label={`Ver ${f.nombre} en todo el panel`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{f.nombre}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {elegida ? (
+                            <span className="inline-flex items-center gap-1 font-medium text-primary">
+                              <Eye className="h-3 w-3" aria-hidden="true" />
+                              Viendo
+                            </span>
+                          ) : !f.activa ? (
+                            "Cerrada"
+                          ) : f.sucursalId ? (
+                            "Toca para ver"
+                          ) : null}
+                        </p>
+                      </div>
+                      <span className="shrink-0 font-mono text-base font-semibold tabular-nums">
+                        {formatMXN(f.ventas)}
+                      </span>
+                    </div>
+                    {cifras(f)}
+                  </button>
+                </li>
+              );
+            })}
+            <li className="rounded-[14px] border-2 border-border px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold">{total.nombre}</p>
+                <span className="shrink-0 font-mono text-base font-semibold tabular-nums">
+                  {formatMXN(total.ventas)}
+                </span>
+              </div>
+              {cifras(total)}
+            </li>
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sucursal</TableHead>
+                  <TableHead className="text-right">Ventas</TableHead>
+                  <TableHead className="text-right">Tickets</TableHead>
+                  <TableHead className="text-right">Ticket prom.</TableHead>
+                  <TableHead className="text-right">Unidades</TableHead>
+                  <TableHead className="text-right">Cajas abiertas</TableHead>
+                  <TableHead className="text-right" title="Sobrante (+) o faltante (−) acumulado en los cortes del mes">
+                    Dif. en cortes
+                  </TableHead>
+                  <TableHead />
                 </TableRow>
-              ))}
-              <TableRow className="border-t-2 font-semibold">
-                <TableCell className="text-xs">{total.nombre}</TableCell>
-                {celdas(total)}
-                <TableCell />
-              </TableRow>
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filas.map((f) => (
+                  <TableRow
+                    key={f.sucursalId ?? "sin-sucursal"}
+                    className={f.sucursalId && f.sucursalId === seleccionada ? "bg-muted/50" : ""}
+                  >
+                    <TableCell className="text-xs font-medium">
+                      {f.nombre}
+                      {!f.activa && (
+                        <span className="ml-1.5 text-[10px] text-muted-foreground">(cerrada)</span>
+                      )}
+                    </TableCell>
+                    {celdas(f)}
+                    <TableCell className="text-right">
+                      {f.sucursalId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 text-xs"
+                          onClick={() => setSeleccionada(f.sucursalId)}
+                          disabled={f.sucursalId === seleccionada}
+                        >
+                          <Eye className="h-3 w-3" aria-hidden="true" />
+                          Ver
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="border-t-2 font-semibold">
+                  <TableCell className="text-xs">{total.nombre}</TableCell>
+                  {celdas(total)}
+                  <TableCell />
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
           {cargando && (
             <p className="pt-3 text-center text-xs text-muted-foreground">Cargando…</p>
           )}

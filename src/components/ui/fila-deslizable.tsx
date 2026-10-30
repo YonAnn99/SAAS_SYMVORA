@@ -23,6 +23,13 @@ export const COLOR_EDITAR = "#2563EB";
 /** Archivar (deslizar a la derecha en productos y variantes). */
 export const COLOR_ARCHIVAR = "#d97706";
 
+/**
+ * La misma pastilla, quieta: para filas en celular que llevan un campo o un
+ * interruptor, donde el gesto de deslizar estorbaria. Colores y radio iguales
+ * a `colorFila` y `radius` de `FilaDeslizable`.
+ */
+export const CLASE_PASTILLA = "rounded-[14px] bg-[#f4f4f5] dark:bg-[#1c1c1f]";
+
 export interface AccionFila {
   id: string;
   etiqueta: string;

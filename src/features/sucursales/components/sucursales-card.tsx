@@ -143,7 +143,7 @@ export function SucursalesCard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 gap-1.5 text-xs shrink-0"
+                  className="h-9 gap-1.5 text-xs shrink-0 sm:h-7"
                   onClick={() => void alternar(s.id, s.activa, s.nombre)}
                 >
                   {s.activa ? (
@@ -190,7 +190,7 @@ export function SucursalesCard() {
           </div>
           <SpecularActionButton
             tone="add"
-            className="h-8 gap-1.5"
+            className="h-9 gap-1.5 sm:h-8"
             disabled={guardando || !nombre.trim()}
             onClick={() => void agregar()}
           >
