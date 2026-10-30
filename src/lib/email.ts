@@ -25,8 +25,9 @@ async function deliver(resend: Resend, payload: EmailPayload) {
   return withTimeout(resend.emails.send(payload), TIMEOUTS.resend, "Resend");
 }
 
-// Identidad de marca SYMVORA (misma paleta que web/login: negro tinta,
-// blanco hueso, zinc para texto secundario).
+// Identidad de marca SYMVORA. El logo es el ícono azul (288 px, se muestra a
+// 72): lo genera scripts/generate-pwa-icons.mjs. Paleta: negro tinta,
+// blanco hueso, zinc para texto secundario (como web/login).
 const BRAND = {
   logo: "https://www.symvora.com.mx/symvora-logo-email.png",
   siteUrl: "https://www.symvora.com.mx",
@@ -166,7 +167,7 @@ function buildEmailHtml(params: {
               <!-- Header -->
               <tr>
                 <td style="background:${BRAND.surface};padding:28px;text-align:center;">
-                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="72" height="72" style="display:inline-block;border:0;" />
                 </td>
               </tr>
               <!-- Body -->
@@ -295,7 +296,7 @@ export async function sendInviteKeyEmail(params: {
               <!-- Header -->
               <tr>
                 <td style="background:${BRAND.surface};padding:28px;text-align:center;">
-                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="72" height="72" style="display:inline-block;border:0;" />
                 </td>
               </tr>
               <!-- Body -->
@@ -422,7 +423,7 @@ export async function sendSuggestionEmail(params: {
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
               <tr>
                 <td style="background:${BRAND.surface};padding:28px;text-align:center;">
-                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="72" height="72" style="display:inline-block;border:0;" />
                 </td>
               </tr>
               <tr>
@@ -516,7 +517,7 @@ export async function sendCancellationEmail(params: {
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
               <tr>
                 <td style="background:${BRAND.surface};padding:28px;text-align:center;">
-                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="72" height="72" style="display:inline-block;border:0;" />
                 </td>
               </tr>
               <tr>
@@ -614,7 +615,7 @@ export async function sendCancellationFeedbackEmail(params: {
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
               <tr>
                 <td style="background:${BRAND.surface};padding:28px;text-align:center;">
-                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="72" height="72" style="display:inline-block;border:0;" />
                 </td>
               </tr>
               <tr>
@@ -733,7 +734,7 @@ function buildNoticeHtml(params: {
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};">
               <tr>
                 <td style="background:${BRAND.surface};padding:28px;text-align:center;">
-                  <img src="${BRAND.logo}" alt="SYMVORA" width="140" style="display:inline-block;border:0;" />
+                  <img src="${BRAND.logo}" alt="SYMVORA" width="72" height="72" style="display:inline-block;border:0;" />
                 </td>
               </tr>
               <tr>

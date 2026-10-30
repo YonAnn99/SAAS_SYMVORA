@@ -21,6 +21,23 @@ function isValidPassword(password: string): boolean {
 
 type Status = "loading" | "ready" | "invalid" | "success";
 
+type ClienteSupabase = ReturnType<typeof createSupabaseBrowserClient>;
+
+// Un token solo se canjea una vez. En desarrollo React monta el efecto dos
+// veces: las dos esperan el mismo canje en lugar de gastar el token dos veces.
+const canjes = new Map<string, Promise<boolean>>();
+
+function canjearToken(supabase: ClienteSupabase, tokenHash: string): Promise<boolean> {
+  let canje = canjes.get(tokenHash);
+  if (!canje) {
+    canje = supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type: "recovery" })
+      .then(({ data, error }) => !error && Boolean(data.session));
+    canjes.set(tokenHash, canje);
+  }
+  return canje;
+}
+
 export default function ResetPasswordPage() {
   const t = useTranslations();
   const locale = useLocale();
@@ -45,13 +62,28 @@ export default function ResetPasswordPage() {
     });
 
     const tryRecover = async () => {
+      // Enlace del correo con `token_hash` (plantilla en
+      // supabase/templates/recuperar-contrasena.html). A diferencia del
+      // `?code=` de PKCE, funciona aunque se abra en otro navegador o equipo.
+      // Se canjea aqui, con JS, para que los antivirus que abren el enlace
+      // por adelantado no gasten el token.
+      const url = new URL(window.location.href);
+      const tokenHash = url.searchParams.get("token_hash");
+      if (tokenHash && url.searchParams.get("type") === "recovery") {
+        const ok = await canjearToken(supabase, tokenHash);
+        if (!active) return;
+        window.history.replaceState(null, "", url.pathname);
+        setStatus(ok ? "ready" : "invalid");
+        return;
+      }
+
       const { data } = await supabase.auth.getSession();
       if (!active) return;
       if (data.session) {
         setStatus("ready");
         return;
       }
-      const code = new URL(window.location.href).searchParams.get("code");
+      const code = url.searchParams.get("code");
       if (code) {
         const { data: exchanged, error } =
           await supabase.auth.exchangeCodeForSession(code);
@@ -61,10 +93,13 @@ export default function ResetPasswordPage() {
       }
     };
 
+    // Con `token_hash`, `verifyOtp` decide el estado; el plazo es solo para
+    // los enlaces de antes (`?code=` o sesion en la URL).
+    const conTokenHash = new URL(window.location.href).searchParams.has("token_hash");
     tryRecover();
 
     const timer = window.setTimeout(() => {
-      if (active) {
+      if (active && !conTokenHash) {
         setStatus((current) => (current === "loading" ? "invalid" : current));
       }
     }, 4000);

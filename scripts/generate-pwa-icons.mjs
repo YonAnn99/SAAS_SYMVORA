@@ -14,6 +14,10 @@
  *   - Iconos `maskable` y `apple-touch-icon.png` (180×180): opacos, S blanca
  *     sobre `BRAND_BG` a sangre. La S ocupa del 25% al 75% del lienzo, dentro de
  *     la zona segura de Android (círculo del 80%); iOS no respeta transparencia.
+ *   - Logo de los correos (`public/symvora-logo-email.png`, 288×288): el mismo
+ *     icono opaco con esquinas redondeadas (las de un ícono de app). Lo usan
+ *     `BRAND.logo` de src/lib/email.ts y las plantillas de Supabase
+ *     (`supabase/templates/`); los correos lo muestran a 72 px.
  *   - Pantallas de arranque de iOS (`public/splash/*.png`): se regeneran desde sí
  *     mismas con el mismo método (su luminancia es la máscara de la S y de
  *     «SYMVORA»). Funciona sobre el fondo que tengan, así que repetir el script
@@ -104,6 +108,19 @@ async function writeOpaco(size, file) {
   console.log(`  ✓ ${file} (${size}px, fondo ${BRAND_BG})`);
 }
 
+async function writeCorreo(size, file) {
+  const radio = Math.round(size * 0.22);
+  const esquinas = Buffer.from(
+    `<svg width="${size}" height="${size}"><rect width="${size}" height="${size}" rx="${radio}" ry="${radio}"/></svg>`
+  );
+  await sharp(await sobreAzul(SOURCE, size, size))
+    .ensureAlpha()
+    .composite([{ input: esquinas, blend: "dest-in" }])
+    .png({ compressionLevel: 9 })
+    .toFile(join(root, "public", file));
+  console.log(`  ✓ ${file} (${size}px, esquinas redondeadas)`);
+}
+
 console.log("Iconos desde symvora-app-icon.png:");
 const s = await sRecortada();
 await writeAny(s, 192, "icon-192.png");
@@ -111,6 +128,7 @@ await writeAny(s, 512, "icon-512.png");
 await writeOpaco(192, "icon-maskable-192.png");
 await writeOpaco(512, "icon-maskable-512.png");
 await writeOpaco(180, "apple-touch-icon.png");
+await writeCorreo(288, "symvora-logo-email.png");
 
 console.log(`\nPantallas de arranque de iOS, fondo ${BRAND_BG}:`);
 for (const file of (await readdir(SPLASH_DIR)).filter((f) => f.endsWith(".png")).sort()) {
