@@ -13,6 +13,7 @@ import { PolicyUpdateBanner } from "@/components/compliance/policy-update-banner
 import { AvisoEstadoPago } from "@/features/payments/components/aviso-estado-pago";
 import { DemoBanner } from "@/components/demo/demo-banner";
 import { OpenRegisterPrompt } from "@/features/cash-register/components/open-register-prompt";
+import { VentanaNovedad } from "@/features/novedades/ventana-novedad";
 import { TenantProvider } from "@/contexts/tenant-context";
 import { SucursalProvider } from "@/contexts/sucursal-context";
 import { ConfirmarProvider } from "@/components/ui/confirmar";
@@ -91,6 +92,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <CommandMenu open={searchOpen} setOpen={setSearchOpen} />
           <TutorialDialog />
           <TutorialMinimized />
+          <VentanaNovedad />
         </div>
       </ConfirmarProvider>
       </TutorialProvider>

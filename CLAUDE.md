@@ -391,6 +391,22 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Carrito puro en `pedido.ts` (`precioDeLinea` usa el especial), guardado en `localStorage` (`symvora-catalogo:<slug>`).
   - El sitemap incluye los catálogos activos (`revalidate` diario).
 
+## Novedades del producto (2026-10-30)
+- **Fuente única** `lib/novedades.ts` (`NOVEDADES`: id, ruta, permiso, `desde`/`hasta` en días CDMX). Hoy: el Catálogo en
+  línea. Solo la ve quien tiene el permiso del módulo; nunca en demo.
+- **Cuatro vías:**
+  - **Etiqueta «Nuevo»** en el menú lateral, en el panel «Más» y un punto en el botón (+) del dock
+    (`features/novedades/`: `use-novedades.ts`, `etiqueta-nuevo.tsx`). Se quita al abrir el módulo.
+  - **Ventana** `ventana-novedad.tsx` (en `dashboard-shell`): sale una vez, pero no durante el tutorial ni en el POS.
+  - Lo visto se guarda en `localStorage` `symvora-novedades:<userId>` (cortesía, sin tabla).
+  - **Campana:** tipo `novedad`. La **migración 126** suma el tipo al CHECK y siembra un aviso por negocio real
+    (`permiso = 'catalog.manage'`). Aplicada el 2026-10-30.
+  - **Correo** a los dueños: `/api/cron/anuncio-novedad`. Fuera de `vercel.json`, se corre a mano. Sin parámetros es
+    simulacro; `?enviar=1` manda, una vez por persona (`consumirRateLimit`). Destinatarios en
+    `lib/anuncio-novedad.ts`: sin demos, sin solo lectura y sin quien ya tiene catálogo.
+- Para una novedad futura: agrégala a `NOVEDADES`; para la campana y el correo, haz una migración y una plantilla
+  nuevas.
+
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
@@ -483,7 +499,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 125; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 126; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

@@ -15,6 +15,8 @@ import { filterNavigation, stripLocale } from "@/lib/navigation";
 import type { User } from "@supabase/supabase-js";
 import { ProfileDialog } from "@/components/profile/profile-dialog";
 import { useCerrarSesion } from "@/components/layout/cerrar-sesion";
+import { useNovedades } from "@/features/novedades/use-novedades";
+import { EtiquetaNuevo, PuntoNuevo } from "@/features/novedades/etiqueta-nuevo";
 
 /** Radio de la pestaña activa: la mitad del alto de una opción (40 px). */
 const RADIO_PESTANA = 20;
@@ -46,6 +48,7 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
   const [user, setUser] = useState<User | null>(null);
   const { tenantName, tenantLogo, role, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
+  const { esNuevo } = useNovedades();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -211,6 +214,12 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
                         Beta
                       </span>
                     )}
+                    {esNuevo(item.href) &&
+                      (collapsed ? (
+                        <PuntoNuevo className="right-1.5 top-1.5 ring-2 ring-[var(--nav-bg)]" />
+                      ) : (
+                        <EtiquetaNuevo />
+                      ))}
                   </Link>
                 );
               })}
@@ -234,6 +243,7 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
                           Beta
                         </span>
                       )}
+                      {!collapsed && esNuevo(item.href) && <EtiquetaNuevo />}
                     </div>
                   );
                 })}

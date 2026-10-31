@@ -15,6 +15,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { filterNavigation, navegacionDock, stripLocale } from "@/lib/navigation";
+import { useNovedades } from "@/features/novedades/use-novedades";
+import { EtiquetaNuevo, PuntoNuevo } from "@/features/novedades/etiqueta-nuevo";
 
 /**
  * Dock de celular y tablet (< lg), pegado al borde inferior. Reemplaza al
@@ -86,6 +88,7 @@ export function DockMovil() {
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const { salir, avisoCajaAbierta } = useCerrarSesion();
+  const { esNuevo } = useNovedades();
 
   useEffect(() => {
     // Solo para mostrar el correo: sesion local, sin ida a la red.
@@ -101,6 +104,9 @@ export function DockMovil() {
   const ruta = stripLocale(pathname);
   const enMas = resto.some((i) => i.href === ruta);
   const enPos = ruta === "/pos";
+  // Un módulo nuevo dentro de «Más»: el botón lleva un punto para que se note
+  // sin tener que abrirlo.
+  const hayNuevoEnMas = resto.some((i) => esNuevo(i.href));
 
   // Pastilla elástica: misma técnica que el menú lateral, en motion values.
   const barraRef = useRef<HTMLDivElement>(null);
@@ -231,11 +237,14 @@ export function DockMovil() {
                       >
                         <span
                           className={cn(
-                            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
+                            "relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
                             activo ? "bg-[var(--nav-bg)] text-white" : "bg-muted text-foreground"
                           )}
                         >
                           <Icon className="h-[18px] w-[18px]" />
+                          {esNuevo(item.href) && (
+                            <EtiquetaNuevo className="absolute -right-4 -top-1.5 ring-2 ring-popover" />
+                          )}
                         </span>
                         <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{t(item.name)}</span>
                       </Link>
@@ -323,7 +332,10 @@ export function DockMovil() {
                     onClick={() => setMasAbierto(false)}
                     className={cn(ranura, activo ? "text-foreground" : "text-white/70 active:text-white")}
                   >
-                    <Icon className="h-5 w-5" />
+                    <span className="relative">
+                      <Icon className="h-5 w-5" />
+                      {esNuevo(item.href) && <PuntoNuevo className="-right-1 -top-1 ring-2 ring-[var(--nav-bg)]" />}
+                    </span>
                     <span className="max-w-full truncate px-1">{t(ETIQUETA_CORTA[item.href] ?? item.name)}</span>
                   </Link>
                 );
@@ -336,7 +348,7 @@ export function DockMovil() {
           ref={botonMasRef}
           type="button"
           aria-expanded={masAbierto}
-          aria-label={masAbierto ? "Cerrar" : "Más módulos"}
+          aria-label={masAbierto ? "Cerrar" : hayNuevoEnMas ? "Más módulos (hay uno nuevo)" : "Más módulos"}
           aria-current={enMas && !masAbierto ? "page" : undefined}
           onClick={() => (masAbierto ? cerrarMas() : setMasAbierto(true))}
           className={cn(
@@ -361,6 +373,9 @@ export function DockMovil() {
             style={{ transitionTimingFunction: curva }}
             strokeWidth={masAbierto ? 2.25 : 2}
           />
+          {hayNuevoEnMas && !masAbierto && (
+            <PuntoNuevo className="right-0.5 top-0.5 h-3 w-3 ring-2 ring-background" />
+          )}
         </button>
       )}
 

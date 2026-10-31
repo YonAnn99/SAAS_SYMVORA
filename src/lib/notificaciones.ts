@@ -22,7 +22,9 @@ export type TipoNotificacion =
   | "lote"
   | "insumo_faltante"
   // 121: un cliente se unio a la tarjeta de lealtad con el QR del local
-  | "lealtad_alta";
+  | "lealtad_alta"
+  // 126: un modulo nuevo de SYMVORA (`lib/novedades.ts`)
+  | "novedad";
 
 /** Todos los tipos: la campana tiene que saber pintar cada uno. */
 export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
@@ -39,6 +41,7 @@ export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
   "lote",
   "insumo_faltante",
   "lealtad_alta",
+  "novedad",
 ];
 
 export interface Notificacion {

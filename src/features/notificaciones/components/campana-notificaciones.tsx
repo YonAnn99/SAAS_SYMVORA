@@ -13,6 +13,7 @@ import {
   PackageX,
   ShoppingCart,
   SlidersHorizontal,
+  Sparkles,
   Stamp,
   Trash2,
   TriangleAlert,
@@ -47,6 +48,7 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
   lote: { icono: Boxes, clase: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
   insumo_faltante: { icono: FlaskConical, clase: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
   lealtad_alta: { icono: Stamp, clase: "bg-pink-500/15 text-pink-600 dark:text-pink-400" },
+  novedad: { icono: Sparkles, clase: "bg-primary/15 text-primary" },
 };
 
 /** Icono del tipo, con el punto de "nueva" en su esquina. */

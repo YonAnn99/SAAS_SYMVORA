@@ -708,8 +708,10 @@ function buildNoticeHtml(params: {
    * caja sobra, asi que esos correos la apagan.
    */
   mostrarBeneficios?: boolean;
+  /** Línea extra arriba del pie (p. ej. por qué le llega este correo). */
+  pie?: string;
 }): string {
-  const { preheader, heading, intro, highlight, ctaLabel, ctaHref } = params;
+  const { preheader, heading, intro, highlight, ctaLabel, ctaHref, pie } = params;
   const mostrarBeneficios = params.mostrarBeneficios ?? true;
 
   const highlightBox = highlight
@@ -762,7 +764,7 @@ function buildNoticeHtml(params: {
               <tr>
                 <td style="padding:0 32px 28px;">
                   <p style="font-size:13px;color:${BRAND.muted};margin:0;border-top:1px solid ${BRAND.border};padding-top:16px;line-height:1.6;">
-                    Si tienes dudas, escríbenos a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.ink};text-decoration:none;">${CONTACT_EMAIL}</a>.<br />
+                    ${pie ? `${pie}<br />` : ""}Si tienes dudas, escríbenos a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.ink};text-decoration:none;">${CONTACT_EMAIL}</a>.<br />
                     <a href="${BRAND.siteUrl}/es/terminos" style="color:${BRAND.muted};text-decoration:underline;">Términos y condiciones</a> &middot;
                     <a href="${BRAND.siteUrl}/es/aviso-privacidad" style="color:${BRAND.muted};text-decoration:underline;">Aviso de privacidad</a>
                   </p>
@@ -778,6 +780,61 @@ function buildNoticeHtml(params: {
     </body>
     </html>
   `;
+}
+
+/**
+ * Anuncio del Catálogo en línea a los dueños (`/api/cron/anuncio-novedad`, se
+ * corre a mano una vez). Separado del envío para que el simulacro muestre el
+ * correo exacto sin mandarlo.
+ */
+export function construirCorreoNovedadCatalogo(params: {
+  nombre: string;
+  negocio: string;
+}): { subject: string; html: string } {
+  const saludo = params.nombre ? `Hola, ${esc(params.nombre)}` : "Hola";
+  const punto = (texto: string) =>
+    `<tr><td style="padding:5px 0;font-size:14px;color:${BRAND.ink};line-height:1.6;">&#10003;&nbsp; ${texto}</td></tr>`;
+  const html = buildNoticeHtml({
+    preheader: "Tus clientes ven tus productos y te mandan su pedido por WhatsApp.",
+    heading: `${saludo}: ya tienes catálogo en línea`,
+    intro: `Agregamos a SYMVORA una página con los productos de <strong>${esc(params.negocio)}</strong> para que la compartas por WhatsApp, en tus redes o con un QR en tu mostrador. La activas en un minuto desde el módulo <strong>Catálogo en línea</strong>.`,
+    highlight: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${punto("Tus clientes ven tus productos, precios y lo que está agotado.")}
+      ${punto("Arman su pedido y te llega a tu WhatsApp, listo para confirmar.")}
+      ${punto("Tú eliges qué se muestra, qué destacas y tu precio en línea.")}
+      ${punto("<strong>Ya viene incluido en tu plan</strong>, sin costo extra.")}
+    </table>`,
+    ctaLabel: "Activar mi catálogo",
+    ctaHref: `${BRAND.appUrl}/es/online-catalog`,
+    mostrarBeneficios: false,
+    pie: "Recibes este correo porque tienes una cuenta en SYMVORA. Si no quieres avisos de novedades, respóndenos y te sacamos de la lista.",
+  });
+  return { subject: "Nuevo en SYMVORA: tu catálogo en línea", html };
+}
+
+export async function sendNovedadCatalogoEmail(params: {
+  to: string;
+  nombre: string;
+  negocio: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resendApiKey) {
+    console.warn("[email] RESEND_API_KEY no configurada; se omite el anuncio de novedad");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+  const { subject, html } = construirCorreoNovedadCatalogo(params);
+  try {
+    await deliver(new Resend(resendApiKey), {
+      from: getFromAddress(),
+      to: params.to,
+      replyTo: CONTACT_EMAIL,
+      subject,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[email] Falló el anuncio de novedad:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 /**
