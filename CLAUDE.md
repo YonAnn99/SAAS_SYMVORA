@@ -431,6 +431,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     (`lib/app-android.ts`, `features/app-android/`). Con ella `/billing` oculta precios y pagos, y
     `aviso-estado-pago.tsx` no invita a pagar ni menciona la oferta.
   - `manifest.ts` lleva `id` fijo (`/es/dashboard`, igual al calculado: no cambia las PWA instaladas).
+  - Proyecto Android FUERA del repo: `~/Documentos/symvora-android` (keystore `android.keystore,symvora android`, alias
+    `symvora`; `minSdkVersion` 24, `splashScreenFadeOutDuration` 900). El splash (logo chico como el de iOS) sale de
+    `node scripts/generate-android-splash.mjs ~/Documentos/symvora-android`: repetirlo tras cada `bubblewrap update`,
+    que lo regenera desde el ícono. En la app NO hay botón para pagar en el navegador: la política de pagos de Play
+    lo prohíbe en México (solo programas de EE. UU., UE, Japón, Brasil…).
 - **Eliminar cuenta** (lo exige Play): «Eliminar mi cuenta» en Mi perfil (`features/cuenta/eliminar-cuenta.tsx`) y
   página pública `/es/eliminar-cuenta` (en `MARKETING_SEGMENTS`).
   - `POST /api/cuenta/eliminar` → `solicitar_baja` (30 días para arrepentirse; si es el dueño, cancela hoy la
