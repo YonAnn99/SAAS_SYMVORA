@@ -265,7 +265,8 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     fecha. Al aplicarla, todo usuario existente ve una vez el aviso y su aceptación queda guardada.
     `/api/legal/accept` solo registra las versiones vigentes (409 si no). RLS: cada quien ve e inserta solo
     las suyas; nadie modifica ni borra.
-  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.4-2026-10-15` (edad opcional); términos en `v1.3-2026-10-06`
+  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.5-2026-10-31` (eliminar cuenta, conservar nombre y celular
+    para comunicaciones comerciales, app de Android); términos en `v1.3-2026-10-06`
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
     Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba; la **edad** es opcional y se captura en Mi perfil (`user_metadata.edad`, 18-120).
 
@@ -419,6 +420,32 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - Para una novedad futura: agrégala a `NOVEDADES`; para la campana y el correo, haz una migración y una plantilla
   nuevas.
 
+## App de Android en Google Play (TWA) y eliminar cuenta (migración 128, 2026-10-31)
+- **La app es una TWA** (Trusted Web Activity, con Bubblewrap): abre `app.symvora.com.mx` en Chrome a pantalla completa.
+  No es Capacitor/WebView: ahí no funcionan el login con Google ni las impresoras WebUSB/Bluetooth. Cada deploy
+  actualiza la app; Play solo se resube si cambia el contenedor. `output: 'export'` NO sirve (API, proxy, sesiones).
+  - `/.well-known/assetlinks.json` (`src/app/.well-known/assetlinks.json/route.ts`) con `ANDROID_APP_PACKAGE`
+    (default `com.symvora.app`) y `ANDROID_APP_SHA256` (huella de la firma de Play App Signing; coma si hay varias).
+  - **Cobro:** Google Play exige su facturación para lo que se vende DENTRO de la app. La app no vende: se reconoce
+    con `?app=android` en el start URL o el referrer `android-app://` → cookie `symvora_app=android`
+    (`lib/app-android.ts`, `features/app-android/`). Con ella `/billing` oculta precios y pagos, y
+    `aviso-estado-pago.tsx` no invita a pagar ni menciona la oferta.
+  - `manifest.ts` lleva `id` fijo (`/es/dashboard`, igual al calculado: no cambia las PWA instaladas).
+- **Eliminar cuenta** (lo exige Play): «Eliminar mi cuenta» en Mi perfil (`features/cuenta/eliminar-cuenta.tsx`) y
+  página pública `/es/eliminar-cuenta` (en `MARKETING_SEGMENTS`).
+  - `POST /api/cuenta/eliminar` → `solicitar_baja` (30 días para arrepentirse; si es el dueño, cancela hoy la
+    suscripción en Conekta) y avisa a hola@. `DELETE` → `cancelar_baja`. El panel queda tapado por
+    `BajaPendiente` (el dueño puede descargar sus datos ahí).
+  - Cron `/api/cron/ejecutar-bajas` (9:30 UTC, `?dry=1`): borra los archivos del negocio en Storage
+    (`archivos_de_negocio`) y llama `ejecutar_baja`. Para el dueño se borra el negocio con la secuencia de
+    `_borrar_negocio_demo` y las cuentas que solo vivían ahí. Un colaborador sale y su cuenta se cierra.
+    `_cerrar_usuario` borra de `auth.users` o, si lo apuntan ventas/compras/cajas de otro negocio, anonimiza.
+    `ejecutar_baja` limpia `request.jwt.claims`: si no, la Bitácora registra la cascada contra un negocio borrado y
+    falla la llave.
+  - **Se conserva** (aviso de privacidad v1.5): nombre y celular para comunicaciones comerciales salvo que el
+    titular marque que no → `interno.contactos_conservados` (salen en `interno.cartera_clientes` como
+    «Cuenta cerrada»); los pagos de la suscripción → `interno.bajas`.
+
 ## Notificaciones (migraciones 108-109, 2026-10-05)
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
@@ -511,7 +538,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 127; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 128; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
@@ -553,9 +580,20 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
       En local sirven las llaves de prueba de Cloudflare (siempre aprueban).
 
 ## Aviso de Privacidad
-- [ ] Al hacer deploy, privacidad v1.4-2026-10-15 (SMS/Twilio y edad opcional) y términos v1.3-2026-10-06 (mayoría de edad) vuelven a mostrar el aviso de cambios.
+- [ ] Al hacer deploy, privacidad v1.5-2026-10-31 (eliminar cuenta y conservación de nombre/celular) y términos v1.3-2026-10-06 (mayoría de edad) vuelven a mostrar el aviso de cambios.
       El aviso promete 15 días de anticipación para cambios.
 - [ ] Reemplazar `[Domicilio del responsable]`, que sigue sin datos.
+
+## App de Android (Google Play)
+- [ ] Cuenta de Play Console PERSONAL (aún sin RFC de empresa para el D-U-N-S): exige una prueba cerrada con ≥12 testers
+      dentro 14 días seguidos antes de pedir producción (usar 15-20: clientes actuales + conocidos, con Grupo de Google).
+      Con RFC: cuenta de organización y transferir la app (conserva paquete, reseñas e instalaciones).
+- [ ] Bubblewrap: `npx @bubblewrap/cli init --manifest https://app.symvora.com.mx/manifest.webmanifest`, paquete
+      `com.symvora.app`, start URL `/es/dashboard?app=android`. Respaldar el keystore de subida fuera de git.
+- [ ] Poner `ANDROID_APP_SHA256` (Play Console → Integridad de la app) en Vercel y redeploy; revisar
+      `https://app.symvora.com.mx/.well-known/assetlinks.json` y el de `www.`.
+- [ ] Ficha: política de privacidad, URL de eliminación `https://www.symvora.com.mx/es/eliminar-cuenta`,
+      «Seguridad de los datos», cuenta de prueba (negocio de pruebas) en «Acceso a la app».
 
 ## Seguridad
 - [x] `log_activity` ya no confía en el cliente (migración 106, 2026-10-04): con sesión exige

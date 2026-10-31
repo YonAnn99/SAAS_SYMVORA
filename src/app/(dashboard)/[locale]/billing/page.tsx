@@ -44,6 +44,7 @@ import {
 } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
+import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
@@ -92,6 +93,9 @@ export default function BillingPage() {
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const isDemo = useIsDemo();
   const accesoCuenta = useAccesoCuenta();
+  // Dentro de la app de Android no se vende nada (politica de pagos de Google
+  // Play, `lib/app-android.ts`): sin precios ni botones de pago.
+  const enAppAndroid = useEsAppAndroid();
   const motivo = useSearchParams().get("motivo");
 const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
@@ -453,7 +457,11 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
           role="status"
           className="animate-fade-in-up rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-900 dark:text-red-200"
         >
-          <strong className="font-medium">Para volver a vender y registrar cambios, reactiva tu plan.</strong>{" "}
+          <strong className="font-medium">
+            {enAppAndroid
+              ? "Tu plan no está activo: por ahora solo puedes consultar tu información."
+              : "Para volver a vender y registrar cambios, reactiva tu plan."}
+          </strong>{" "}
           Tu información sigue intacta: productos, ventas, clientes e inventario te
           esperan tal como los dejaste.
         </div>
@@ -570,158 +578,184 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
           </CardContent>
         </Card>
 
-        <Card className="animate-fade-in-up stagger-3">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
-              {t("billing.paymentMethod")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {t("billing.plan")}:
-              </span>
-              <span className="flex items-center gap-1.5 text-sm font-medium">
-                SYMVORA Basico -{" "}
-                {/* El mismo numero que anuncia la landing. Si aqui apareciera
-                    $399 despues de haber visto $199 en la portada, el checkout
-                    se abandonaria antes de empezar. */}
-                {promoEnCheckout ? (
-                  <>
-                    <span className="text-muted-foreground line-through">
-                      ${precioListaMXN("monthly")}
-                    </span>
-                    <span className="font-semibold text-red-600 dark:text-red-400">
-                      ${PRECIO_PROMO_MXN}
-                    </span>
-                  </>
-                ) : selectedPeriod === "yearly" ? (
-                  t("landing.cta.priceYearly")
-                ) : (
-                  t("landing.cta.priceMonthly")
-                )}
-              </span>
-            </div>
-
-            {promoEnCheckout && (
-              <p className="-mt-2 text-xs text-red-600 dark:text-red-400">
-                {ofertaRegreso
-                  ? `Oferta de regreso: tu primer mes a $${PRECIO_PROMO_MXN}, después $${precioListaMXN("monthly")} al mes. Válida hasta el ${new Date(
-                      subscription!.oferta_regreso_hasta as string
-                    ).toLocaleDateString("es-MX", { day: "numeric", month: "long" })}.`
-                  : t("landing.cta.promoNota", {
-                      meses: PROMO_LANZAMIENTO.cobros,
-                      normal: `$${precioListaMXN("monthly")}`,
-                    })}
+        {enAppAndroid ? (
+          <Card className="animate-fade-in-up stagger-3">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">{t("billing.paymentMethod")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Los pagos de la suscripción no se hacen desde la app de Android.
               </p>
-            )}
-
-            <div
-              role="radiogroup"
-              aria-label="Periodo de facturación"
-              className="inline-flex items-center bg-muted rounded-full p-1 border"
-            >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={selectedPeriod === "monthly"}
-                onClick={() => setSelectedPeriod("monthly")}
-                disabled={processing}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  selectedPeriod === "monthly"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t("landing.cta.monthly")}
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={selectedPeriod === "yearly"}
-                onClick={() => setSelectedPeriod("yearly")}
-                disabled={processing}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  selectedPeriod === "yearly"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t("landing.cta.yearly")}
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                  {t("landing.cta.saveBadge")}
+              {subscription?.status !== "canceled" && (
+                <>
+                  <Separator />
+                  <SpecularActionButton
+                    tone="destructive"
+                    onClick={() => setShowCancelDialog(true)}
+                    disabled={processing}
+                    className="w-full h-8"
+                  >
+                    {t("billing.cancelSubscription")}
+                  </SpecularActionButton>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="animate-fade-in-up stagger-3">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">
+                {t("billing.paymentMethod")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {t("billing.plan")}:
                 </span>
-              </button>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div className="flex flex-col gap-4">
-                <div className="space-y-1.5">
-                  <SpecularActionButton
-                    tone="money"
-                    onClick={handleAddCard}
-                    disabled={processing || !tenantId}
-                    className="w-full h-9"
-                  >
-                    {t("billing.addCard")}
-                  </SpecularActionButton>
-                  <p className="text-xs text-muted-foreground">{t("billing.addCardNote")}</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <SpecularActionButton
-                    tone="money"
-                    onClick={handlePagoUnico}
-                    disabled={processing || !tenantId}
-                    className="w-full h-9"
-                  >
-                    {t("billing.payCash")}
-                  </SpecularActionButton>
-                  <p className="text-xs text-muted-foreground">{t("billing.payCashNote")}</p>
-                </div>
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  SYMVORA Basico -{" "}
+                  {/* El mismo numero que anuncia la landing. Si aqui apareciera
+                      $399 despues de haber visto $199 en la portada, el checkout
+                      se abandonaria antes de empezar. */}
+                  {promoEnCheckout ? (
+                    <>
+                      <span className="text-muted-foreground line-through">
+                        ${precioListaMXN("monthly")}
+                      </span>
+                      <span className="font-semibold text-red-600 dark:text-red-400">
+                        ${PRECIO_PROMO_MXN}
+                      </span>
+                    </>
+                  ) : selectedPeriod === "yearly" ? (
+                    t("landing.cta.priceYearly")
+                  ) : (
+                    t("landing.cta.priceMonthly")
+                  )}
+                </span>
               </div>
 
-              {subscription?.status !== "active" && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder={t("billing.promoPlaceholder")}
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    maxLength={40}
-                    autoComplete="off"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
-                  <Button
-                    onClick={handleApplyPromo}
-                    disabled={promoApplying || !promoCode.trim()}
-                    className="shrink-0"
-                    variant="outline"
-                    size="sm"
-                  >
-                    {promoApplying ? t("common.loading") : t("billing.promoApply")}
-                  </Button>
-                </div>
+              {promoEnCheckout && (
+                <p className="-mt-2 text-xs text-red-600 dark:text-red-400">
+                  {ofertaRegreso
+                    ? `Oferta de regreso: tu primer mes a $${PRECIO_PROMO_MXN}, después $${precioListaMXN("monthly")} al mes. Válida hasta el ${new Date(
+                        subscription!.oferta_regreso_hasta as string
+                      ).toLocaleDateString("es-MX", { day: "numeric", month: "long" })}.`
+                    : t("landing.cta.promoNota", {
+                        meses: PROMO_LANZAMIENTO.cobros,
+                        normal: `$${precioListaMXN("monthly")}`,
+                      })}
+                </p>
               )}
-            </div>
 
-            {subscription?.status !== "canceled" && (
-              <>
-                <Separator />
-                <SpecularActionButton
-                  tone="destructive"
-                  onClick={() => setShowCancelDialog(true)}
+              <div
+                role="radiogroup"
+                aria-label="Periodo de facturación"
+                className="inline-flex items-center bg-muted rounded-full p-1 border"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedPeriod === "monthly"}
+                  onClick={() => setSelectedPeriod("monthly")}
                   disabled={processing}
-                  className="w-full h-8"
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedPeriod === "monthly"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  {t("billing.cancelSubscription")}
-                </SpecularActionButton>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  {t("landing.cta.monthly")}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedPeriod === "yearly"}
+                  onClick={() => setSelectedPeriod("yearly")}
+                  disabled={processing}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedPeriod === "yearly"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t("landing.cta.yearly")}
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                    {t("landing.cta.saveBadge")}
+                  </span>
+                </button>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex flex-col gap-4">
+                  <div className="space-y-1.5">
+                    <SpecularActionButton
+                      tone="money"
+                      onClick={handleAddCard}
+                      disabled={processing || !tenantId}
+                      className="w-full h-9"
+                    >
+                      {t("billing.addCard")}
+                    </SpecularActionButton>
+                    <p className="text-xs text-muted-foreground">{t("billing.addCardNote")}</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <SpecularActionButton
+                      tone="money"
+                      onClick={handlePagoUnico}
+                      disabled={processing || !tenantId}
+                      className="w-full h-9"
+                    >
+                      {t("billing.payCash")}
+                    </SpecularActionButton>
+                    <p className="text-xs text-muted-foreground">{t("billing.payCashNote")}</p>
+                  </div>
+                </div>
+
+                {subscription?.status !== "active" && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder={t("billing.promoPlaceholder")}
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      maxLength={40}
+                      autoComplete="off"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                    <Button
+                      onClick={handleApplyPromo}
+                      disabled={promoApplying || !promoCode.trim()}
+                      className="shrink-0"
+                      variant="outline"
+                      size="sm"
+                    >
+                      {promoApplying ? t("common.loading") : t("billing.promoApply")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {subscription?.status !== "canceled" && (
+                <>
+                  <Separator />
+                  <SpecularActionButton
+                    tone="destructive"
+                    onClick={() => setShowCancelDialog(true)}
+                    disabled={processing}
+                    className="w-full h-8"
+                  >
+                    {t("billing.cancelSubscription")}
+                  </SpecularActionButton>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Periodo de gracia de los Terminos (seccion 6): una cuenta vencida o

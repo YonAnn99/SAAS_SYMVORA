@@ -14,6 +14,7 @@ import { AvisoEstadoPago } from "@/features/payments/components/aviso-estado-pag
 import { DemoBanner } from "@/components/demo/demo-banner";
 import { OpenRegisterPrompt } from "@/features/cash-register/components/open-register-prompt";
 import { VentanaNovedad } from "@/features/novedades/ventana-novedad";
+import { BajaPendiente } from "@/features/cuenta/baja-pendiente";
 import { TenantProvider } from "@/contexts/tenant-context";
 import { SucursalProvider } from "@/contexts/sucursal-context";
 import { ConfirmarProvider } from "@/components/ui/confirmar";
@@ -93,6 +94,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TutorialDialog />
           <TutorialMinimized />
           <VentanaNovedad />
+          <BajaPendiente />
         </div>
       </ConfirmarProvider>
       </TutorialProvider>

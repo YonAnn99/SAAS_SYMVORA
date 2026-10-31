@@ -21,6 +21,7 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 import { PRECIO_PROMO_MXN, precioListaMXN } from "@/features/payments/promocion";
+import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 
 const fechaLarga = (d: Date) =>
   d.toLocaleDateString("es-MX", { day: "numeric", month: "long" });
@@ -30,6 +31,7 @@ export function AvisoEstadoPago() {
   const { tenantId } = useCurrentTenant();
   const { can } = usePermissions();
   const pathname = usePathname();
+  const enAppAndroid = useEsAppAndroid();
   const { loading, acceso, estado, diasGracia, limiteDatos, ofertaRegresoHasta, prueba } =
     useAccesoCuenta();
   const [guardado, setGuardado] = useState<{ productos: number; ventas: number } | null>(null);
@@ -57,7 +59,19 @@ export function AvisoEstadoPago() {
   // En /billing ya esta todo esto con mas detalle.
   if (loading || pathname.startsWith("/billing")) return null;
 
-  const puedePagar = can("subscription.manage");
+  // En la app de Android no se invita a pagar ni se mencionan precios (politica
+  // de pagos de Google Play, `lib/app-android.ts`): el dueño ve el aviso y un
+  // enlace neutro a su suscripcion.
+  const esDueno = can("subscription.manage");
+  const puedePagar = esDueno && !enAppAndroid;
+  const enlaceNeutro = (
+    <Link
+      href="/billing"
+      className="shrink-0 rounded-md border border-current/30 px-3 py-1.5 text-xs font-medium hover:opacity-90"
+    >
+      Ver mi suscripción
+    </Link>
+  );
 
   // Prueba gratis en sus ultimos dias: recordatorio para quien entra a diario
   // (los correos solo salen 2 dias antes y al vencer).
@@ -88,6 +102,8 @@ export function AvisoEstadoPago() {
             >
               Elegir plan
             </Link>
+          ) : esDueno ? (
+            enlaceNeutro
           ) : (
             <span className="shrink-0 text-xs opacity-80">Avísale al dueño de la cuenta.</span>
           )}
@@ -102,6 +118,8 @@ export function AvisoEstadoPago() {
     >
       {soloLectura ? "Reactivar mi plan" : "Pagar ahora"}
     </Link>
+  ) : esDueno ? (
+    enlaceNeutro
   ) : (
     <span className="shrink-0 text-xs opacity-80">Avísale al dueño de la cuenta.</span>
   );
@@ -119,9 +137,13 @@ export function AvisoEstadoPago() {
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
               <strong className="font-medium">{titulo}</strong>{" "}
-              {diasGracia > 0
-                ? `Tienes ${diasGracia} ${diasGracia === 1 ? "día" : "días"} para pagar sin perder el acceso.`
-                : "Paga hoy para no perder el acceso."}
+              {enAppAndroid
+                ? diasGracia > 0
+                  ? `Tu acceso sigue ${diasGracia} ${diasGracia === 1 ? "día" : "días"} más.`
+                  : "Hoy es el último día de acceso."
+                : diasGracia > 0
+                  ? `Tienes ${diasGracia} ${diasGracia === 1 ? "día" : "días"} para pagar sin perder el acceso.`
+                  : "Paga hoy para no perder el acceso."}
             </span>
           </p>
           {accion}
@@ -147,9 +169,9 @@ export function AvisoEstadoPago() {
               {guardado
                 ? `Todo sigue intacto: ${miles(guardado.productos)} productos y ${miles(guardado.ventas)} ventas. `
                 : "Todo sigue intacto. "}
-              Reactiva tu plan y continúas donde te quedaste
+              {enAppAndroid ? "Al reactivar tu plan continúas donde te quedaste" : "Reactiva tu plan y continúas donde te quedaste"}
               {limiteDatos ? ` (tus datos se conservan hasta el ${fechaLarga(limiteDatos)})` : ""}.
-              {ofertaRegresoHasta && (
+              {ofertaRegresoHasta && !enAppAndroid && (
                 <>
                   {" "}
                   <strong className="font-medium">

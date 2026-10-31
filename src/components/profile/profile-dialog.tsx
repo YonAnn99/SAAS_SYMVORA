@@ -29,6 +29,7 @@ import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { CelularPerfil } from "./celular-perfil";
+import { EliminarCuenta } from "@/features/cuenta/eliminar-cuenta";
 import {
   Dialog,
   DialogContent,
@@ -416,6 +417,10 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
           </form>
         </>
       )}
+
+      {/* Google Play exige poder pedir la eliminacion desde la app (migracion 128). */}
+      <Separator className="my-2" />
+      <EliminarCuenta />
     </div>
   );
 

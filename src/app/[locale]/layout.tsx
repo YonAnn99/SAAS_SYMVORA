@@ -5,6 +5,7 @@ import { routing } from "@/i18n/routing";
 import { CookieConsent } from "@/components/compliance/cookie-consent";
 import { IdiomaHtml } from "@/components/idioma-html";
 import { Movimiento } from "@/components/marketing/movimiento";
+import { MarcaAppAndroid } from "@/features/app-android/marca-app-android";
 
 const ESPACIOS_CLIENTE = ["landing", "cookies", "notFound", "common"] as const;
 
@@ -43,6 +44,7 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <IdiomaHtml locale={locale} />
+      <MarcaAppAndroid />
       <Movimiento>{children}</Movimiento>
       <CookieConsent />
     </NextIntlClientProvider>

@@ -23,6 +23,9 @@ export const MARKETING_SEGMENTS = [
   // Catalogo en linea de cada negocio (/es/catalogo/<slug>, migracion 124):
   // publico, en www y sin sesion; lo comparte el negocio con sus clientes.
   "/catalogo",
+  // Como pedir la eliminacion de la cuenta (migracion 128): Google Play exige
+  // una pagina publica, sin sesion, para su ficha.
+  "/eliminar-cuenta",
 ];
 
 export function stripLocale(path: string): string {

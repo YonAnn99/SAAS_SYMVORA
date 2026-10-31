@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LegalShell } from "@/components/marketing/legal-shell";
 import { PRIVACY_EMAIL } from "@/lib/contact";
 
@@ -12,7 +13,7 @@ export const metadata = {
 
 export default function AvisoPrivacidadPage() {
   return (
-    <LegalShell title="Aviso de Privacidad Integral" updatedAt="15 de octubre de 2026">
+    <LegalShell title="Aviso de Privacidad Integral" updatedAt="31 de octubre de 2026">
       <p>
         SYMVORA (&quot;la Plataforma&quot;, &quot;nosotros&quot;), con domicilio en [Domicilio del responsable],
         pone a disposición de sus usuarios el presente Aviso de Privacidad Integral, en
@@ -74,7 +75,10 @@ export default function AvisoPrivacidadPage() {
         incluidos mensajes por WhatsApp para ayudarle a terminar su registro, empezar
         a usar la Plataforma o completar un pago que dejó pendiente. Si deja su número
         en el formulario de registro sin terminarlo, lo conservamos un máximo de 30
-        días con esta única finalidad.
+        días con esta única finalidad. Si cierra su cuenta, conservaremos su nombre y su
+        número de celular para enviarle comunicaciones comerciales sobre la Plataforma
+        (novedades y ofertas); puede negarse al pedir la eliminación de su cuenta, con la
+        casilla que se muestra para ello, o después, con la solicitud que se indica abajo.
         En todo caso, usted puede oponerse al uso de sus datos con fines secundarios o
         revocar su consentimiento enviando una solicitud a <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">{PRIVACY_EMAIL}</a>.
       </p>
@@ -142,6 +146,17 @@ export default function AvisoPrivacidadPage() {
         cumplir las finalidades descritas, incluyendo el plazo que exija la
         normatividad fiscal aplicable. Al término del plazo, los datos serán suprimidos, salvo que
         exista una obligación legal que exija su conservación.
+      </p>
+      <p>
+        Puede pedir la eliminación de su cuenta desde «Mi perfil» en la Plataforma o en
+        su aplicación para Android, o como se explica en{" "}
+        <Link href="/es/eliminar-cuenta" className="underline">symvora.com.mx/es/eliminar-cuenta</Link>.
+        La cuenta queda bloqueada desde la solicitud y se elimina a los treinta (30) días
+        naturales, plazo durante el cual puede cancelarla. Si es titular de un negocio, se
+        eliminan también los datos del negocio y las cuentas de su equipo. Después de la
+        eliminación conservamos únicamente su nombre y celular para la finalidad secundaria
+        descrita en la sección 3, salvo que se haya opuesto, y el registro de los pagos de
+        su suscripción por el plazo que exige la normatividad fiscal.
       </p>
 
       <h2>8. Derechos ARCO</h2>
