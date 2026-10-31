@@ -6,6 +6,7 @@ import { ArrowRight, ChevronRight, Lightbulb } from "lucide-react";
 import { AppFrame } from "@/components/ui/app-frame";
 import Footer from "@/components/ui/footer";
 import { JsonLd } from "@/components/marketing/json-ld";
+import { VideoGuia, type VideoYoutube } from "@/components/marketing/video-guia";
 import {
   GUIAS,
   guiaPorSlug,
@@ -59,7 +60,10 @@ export default async function GuiaPage({ params }: { params: Params }) {
 
   const Icono = guia.icono;
   const siteUrl = getSiteUrl();
-  const video = idYoutube(guia.videoYoutube);
+  const videos: VideoYoutube[] = (guia.videos ?? []).flatMap((v) => {
+    const id = idYoutube(v.url);
+    return id ? [{ titulo: v.titulo, id }] : [];
+  });
   const relacionadas = guia.relacionadas
     .map((s) => guiaPorSlug(s))
     .filter((g): g is NonNullable<typeof g> => Boolean(g));
@@ -111,18 +115,7 @@ export default async function GuiaPage({ params }: { params: Params }) {
             </aside>
 
             <div className="min-w-0 space-y-14">
-              {video && (
-                <div className="aspect-video w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-black">
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${video}`}
-                    title={`Video: ${guia.titulo}`}
-                    loading="lazy"
-                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="h-full w-full"
-                  />
-                </div>
-              )}
+              {videos.length > 0 && <VideoGuia videos={videos} guia={guia.titulo} />}
 
               {guia.secciones.map((s, i) => (
                 <section key={s.id} id={s.id} className="scroll-mt-28">
@@ -141,9 +134,11 @@ export default async function GuiaPage({ params }: { params: Params }) {
                               {p.titulo}
                             </h3>
                             <p className="mt-1.5 text-neutral-600 dark:text-neutral-300 leading-relaxed">{p.texto}</p>
+                            {/* Computadora en pantalla ancha y celular en la angosta;
+                                con una sola, esa en las dos. La oculta (display:none)
+                                es lazy y no se descarga. Una pantalla completa ocupa
+                                el ancho; una ventana pequeña va a su tamaño real. */}
                             {p.captura && (
-                              // Una pantalla completa ocupa el ancho; una ventana
-                              // pequeña va a su tamaño real, sin estirarse.
                               <Image
                                 src={p.captura.src}
                                 alt={`${guia.titulo}: ${p.titulo}`}
@@ -151,7 +146,21 @@ export default async function GuiaPage({ params }: { params: Params }) {
                                 height={p.captura.alto}
                                 className={cn(
                                   "mt-4 h-auto max-w-full rounded-xl border border-neutral-200 dark:border-neutral-800",
-                                  p.captura.ancho >= 1000 && "w-full"
+                                  p.captura.ancho >= 1000 && "w-full",
+                                  p.capturaMovil && "hidden md:block"
+                                )}
+                              />
+                            )}
+                            {p.capturaMovil && (
+                              <Image
+                                src={p.capturaMovil.src}
+                                alt={`${guia.titulo}: ${p.titulo} (celular)`}
+                                width={p.capturaMovil.ancho}
+                                height={p.capturaMovil.alto}
+                                sizes="360px"
+                                className={cn(
+                                  "mx-auto mt-4 h-auto w-full max-w-[360px] rounded-2xl border border-neutral-200 dark:border-neutral-800",
+                                  p.captura && "md:hidden"
                                 )}
                               />
                             )}

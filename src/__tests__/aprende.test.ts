@@ -43,14 +43,27 @@ describe("contenido de las guías", () => {
     }
   });
 
-  it("las capturas existen en /public y traen su tamaño", () => {
+  it("las capturas (computadora y celular) existen en /public, son WebP y traen su tamaño", () => {
     for (const g of GUIAS)
       for (const s of g.secciones)
-        for (const p of s.pasos) {
-          if (!p.captura) continue;
-          expect(existsSync(join(process.cwd(), "public", p.captura.src)), p.captura.src).toBe(true);
-          expect(p.captura.ancho > 0 && p.captura.alto > 0, p.captura.src).toBe(true);
-        }
+        for (const p of s.pasos)
+          for (const c of [p.captura, p.capturaMovil]) {
+            if (!c) continue;
+            expect(c.src, c.src).toMatch(new RegExp(`^/aprende/${g.slug}/[a-z0-9-]+\\.webp$`));
+            expect(existsSync(join(process.cwd(), "public", c.src)), c.src).toBe(true);
+            expect(c.ancho > 0 && c.alto > 0, c.src).toBe(true);
+          }
+  });
+
+  it("los videos son de YouTube y no se repiten dentro de una guía", () => {
+    for (const g of GUIAS) {
+      const videos = g.videos ?? [];
+      for (const v of videos) expect(idYoutube(v.url), `${g.slug}: ${v.titulo}`).not.toBeNull();
+      expect(new Set(videos.map((v) => v.titulo)).size, g.slug).toBe(videos.length);
+      expect(new Set(videos.map((v) => idYoutube(v.url))).size, g.slug).toBe(videos.length);
+    }
+    // Compras y Órdenes de compra: dos videos en pestañas.
+    expect(guiaPorSlug("compras-y-ordenes")?.videos).toHaveLength(2);
   });
 
   it("no documenta lo que el sistema no hace", () => {
@@ -141,5 +154,7 @@ describe("publicación", () => {
     // Nosotros también es pública: sin esto, en producción pediría sesión.
     expect(isMarketingPath("/es/nosotros")).toBe(true);
     expect(leer("next.config.ts")).toMatch(/frame-src[^"]*https:\/\/www\.youtube-nocookie\.com/);
+    // La portada del video es la miniatura de YouTube.
+    expect(leer("next.config.ts")).toMatch(/img-src[^"]*https:\/\/i\.ytimg\.com/);
   });
 });

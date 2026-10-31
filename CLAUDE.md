@@ -244,6 +244,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Landing:**
   - Header: Precios · Aprende · Nosotros · Contáctanos (`components/ui/app-frame.tsx`).
   - Secciones: Scroll Stack de módulos, guías en `/aprende`, página Nosotros con carrusel.
+  - **Aprende** (`features/marketing/aprende.ts`): cada guía lleva `videos` (YouTube; portada ligera
+    `video-guia.tsx`, que carga el iframe solo al dar play, con pestañas si hay varios) y, por paso, `captura`
+    (computadora) y `capturaMovil` (celular), que la página alterna por ancho de pantalla. Las capturas son WebP
+    generadas con `node scripts/capturas-aprende.mjs` desde `~/Imágenes/MODULOS`: la lista vive en el script.
+    No publicar capturas con correos, celulares, nombres del equipo, claves o el precio promocional.
   - Footer: `components/ui/footer.tsx`, con enlaces legales con locale.
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**

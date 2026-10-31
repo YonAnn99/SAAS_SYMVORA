@@ -31,14 +31,17 @@ import {
  * Las etiquetas entre «» son las que ve el usuario en pantalla: si cambian en
  * el sistema, cambian aqui (revision completa del 2026-10-12).
  *
- * VIDEO: pega en `videoYoutube` la URL tal cual la copias de YouTube (watch,
- * youtu.be, shorts o embed). `idYoutube` la entiende; si no es valida, la guia
- * se muestra sin video.
+ * VIDEOS: en `videos` va cada URL tal cual la copias de YouTube (watch,
+ * youtu.be, shorts o embed) con su titulo; con dos o mas salen en pestañas.
+ * `idYoutube` la entiende; si no es valida, ese video no se muestra. La pagina
+ * pinta una portada y solo carga YouTube al darle play (`video-guia.tsx`).
  *
- * CAPTURAS: `captura.src` es la ruta dentro de /public (por ejemplo
- * "/aprende/punto-de-venta/cobrar.webp"), con su tamaño real en pixeles: una
- * ventana pequeña se muestra a su tamaño, sin estirarse. Si no hay, el paso va
- * sin imagen. Una captura que ya no coincide con la pantalla se quita.
+ * CAPTURAS: WebP dentro de /public/aprende/<guia>/, con su tamaño real en
+ * pixeles: una ventana pequeña se muestra a su tamaño, sin estirarse.
+ * `captura` es la de computadora y `capturaMovil` la del celular; la pagina
+ * enseña la que toca segun el ancho de la pantalla (si solo hay una, esa). Las
+ * nuevas salen de `scripts/capturas-aprende.mjs`. Si no hay, el paso va sin
+ * imagen. Una captura que ya no coincide con la pantalla se quita.
  */
 
 export interface CapturaGuia {
@@ -50,7 +53,16 @@ export interface CapturaGuia {
 export interface PasoGuia {
   titulo: string;
   texto: string;
+  /** Computadora (y tablet). */
   captura?: CapturaGuia;
+  /** Celular. */
+  capturaMovil?: CapturaGuia;
+}
+
+export interface VideoGuia {
+  /** Nombre de la pestaña cuando la guia tiene mas de un video. */
+  titulo: string;
+  url: string;
 }
 
 export interface SeccionGuia {
@@ -66,7 +78,7 @@ export interface Guia {
   resumen: string;
   /** Pantallas del sistema que cubre: desde ahi, "Aprende" abre esta guia. */
   rutasApp: string[];
-  videoYoutube?: string;
+  videos?: VideoGuia[];
   secciones: SeccionGuia[];
   consejos?: string[];
   relacionadas: string[];
@@ -142,17 +154,32 @@ export const GUIAS: Guia[] = [
     icono: ShoppingCart,
     resumen: "Cobra rápido con lector o con la cámara, variantes, granel, descuentos, listas de precios, crédito y varios métodos de pago.",
     rutasApp: ["/pos"],
+    videos: [{ titulo: "Punto de venta", url: "https://youtu.be/LEdJoGmnSnI" }],
     secciones: [
       {
         id: "armar-venta",
         titulo: "Arma la venta",
         pasos: [
-          { titulo: "Escanea o busca", texto: "Con un lector de código de barras el producto entra directo al carrito. Sin lector, escribe el nombre o el código en el buscador, o usa «Escanear productos» para leer el código con la cámara del celular o la tablet. También puedes filtrar por categoría o por tus favoritos." },
+          {
+            titulo: "Escanea o busca",
+            texto: "Con un lector de código de barras el producto entra directo al carrito. Sin lector, escribe el nombre o el código en el buscador, o usa «Escanear productos» para leer el código con la cámara del celular o la tablet. También puedes filtrar por categoría o por tus favoritos.",
+            captura: { src: "/aprende/punto-de-venta/escanear.webp", ancho: 1600, alto: 765 },
+            capturaMovil: { src: "/aprende/punto-de-venta/escanear-movil.webp", ancho: 372, alto: 829 },
+          },
           { titulo: "Productos con variantes", texto: "En la vista «Agrupado», al elegir el producto se abre la selección de variante; en «Desglosado», cada variante aparece como su propia tarjeta. Cada una tiene su propio precio y stock." },
           { titulo: "Productos por peso o medida", texto: "Si el producto se vende por kilo, litro o metro, al agregarlo se abre «¿Cuánto?»: escribe la cantidad (por ejemplo 0.750) o el importe que pide el cliente (por ejemplo $50), o usa los atajos ¼, ½, 1 y 2, y ves el importe antes de agregarlo." },
-          { titulo: "Cantidades y quitar productos", texto: "En el carrito toca la cantidad para escribirla (sirve también para 24 piezas) o usa + y −. Con el bote de basura quitas el producto. El total se actualiza al momento." },
+          {
+            titulo: "Cantidades y quitar productos",
+            texto: "En el carrito toca la cantidad para escribirla (sirve también para 24 piezas) o usa + y −. Con el bote de basura quitas el producto. El total se actualiza al momento.",
+            captura: { src: "/aprende/punto-de-venta/carrito.webp", ancho: 1600, alto: 766 },
+            capturaMovil: { src: "/aprende/punto-de-venta/carrito-movil.webp", ancho: 367, alto: 830 },
+          },
           { titulo: "Servicios con insumos", texto: "Si un servicio usa materiales (por ejemplo una vacuna o un tinte), en su línea del carrito ves «Usa: …». Tócalo para ajustar lo que se usó en esta venta; al cobrar se descuenta del inventario." },
-          { titulo: "Precios de mayoreo", texto: "Si tienes listas de precios, elige la lista antes de cobrar y se aplica a los productos que incluye. Al terminar la venta vuelve a «Precios normales», para que el siguiente cliente no se lleve el precio de mayoreo por error." },
+          {
+            titulo: "Precios de mayoreo",
+            texto: "Si tienes listas de precios, elige la lista antes de cobrar y se aplica a los productos que incluye. Al terminar la venta vuelve a «Precios normales», para que el siguiente cliente no se lleve el precio de mayoreo por error.",
+            captura: { src: "/aprende/punto-de-venta/lista-de-precios.webp", ancho: 1600, alto: 769 },
+          },
           { titulo: "Descuento e IVA", texto: "Con «Agregar descuento» das un descuento a toda la compra, en porcentaje o en monto fijo. Un cajero puede descontar hasta el 10 % del ticket; el dueño y los administradores, sin tope. Marca «Incluir IVA» si quieres desglosarlo en la venta." },
         ],
       },
@@ -160,19 +187,37 @@ export const GUIAS: Guia[] = [
         id: "cobrar",
         titulo: "Cobra",
         pasos: [
-          { titulo: "Elige el método de pago", texto: "Efectivo, Tarjeta, Transferencia, Crédito / Fiado o Tarjeta (terminal). En efectivo captura con cuánto te pagan o toca un monto rápido («Exacto», $100, $200…) y el sistema calcula el cambio." },
+          {
+            titulo: "Elige el método de pago",
+            texto: "Efectivo, Tarjeta, Transferencia, Crédito / Fiado o Tarjeta (terminal). En efectivo captura con cuánto te pagan o toca un monto rápido («Exacto», $100, $200…) y el sistema calcula el cambio.",
+            captura: { src: "/aprende/punto-de-venta/metodo-de-pago.webp", ancho: 1600, alto: 766 },
+            capturaMovil: { src: "/aprende/punto-de-venta/metodo-de-pago-movil.webp", ancho: 369, alto: 830 },
+          },
           { titulo: "Pagos con tarjeta", texto: "«Tarjeta» registra un cobro que hiciste en tu propia terminal (Banco, Clip, Getnet…): se habilita cuando declaras tu terminal en Configuración. «Tarjeta (terminal)» manda el cobro a una terminal de Mercado Pago Point conectada, y la venta se completa cuando la terminal lo confirma." },
           { titulo: "Venta a crédito", texto: "Elige al cliente y el método «Crédito / Fiado». El importe se suma a su saldo; los abonos se registran después en Clientes." },
           { titulo: "Desliza para cobrar", texto: "Revisa el resumen del carrito y desliza «Desliza para cobrar» hasta el final. Si el deslizador está bloqueado, te dice por qué: «Agrega productos», «Elige un método de pago», «Captura el monto recibido» o «Tarjeta sin terminal». Con Tarjeta (terminal) es un botón: «Cobrar en terminal»." },
-          { titulo: "Entrega el ticket", texto: "Al cobrar se descuenta el inventario, el dinero entra a tu caja y ves el ticket para imprimirlo. Con una impresora de tickets conectada (Configuración → Impresora), sale solo." },
+          {
+            titulo: "Entrega el ticket",
+            texto: "Al cobrar se descuenta el inventario, el dinero entra a tu caja y ves el ticket para imprimirlo. Con una impresora de tickets conectada (Configuración → Impresora), sale solo.",
+            captura: { src: "/aprende/punto-de-venta/ticket.webp", ancho: 767, alto: 921 },
+            capturaMovil: { src: "/aprende/punto-de-venta/ticket-movil.webp", ancho: 373, alto: 832 },
+          },
         ],
       },
       {
         id: "celular",
         titulo: "En el celular",
         pasos: [
-          { titulo: "Ajustes del mostrador", texto: "El botón junto al buscador abre «Ajustes del mostrador»: ahí eliges la sucursal, la lista de precios y la vista de productos con variantes (Agrupado o Desglosado)." },
-          { titulo: "El carrito abajo", texto: "Toca un producto para agregarlo: su tarjeta muestra «×2» con lo que ya llevas, y la barra azul de abajo el número de artículos y el total. Toca «Ver carrito» para revisar y cobrar." },
+          {
+            titulo: "Ajustes del mostrador",
+            texto: "El botón junto al buscador abre «Ajustes del mostrador»: ahí eliges la sucursal, la lista de precios y la vista de productos con variantes (Agrupado o Desglosado).",
+            capturaMovil: { src: "/aprende/punto-de-venta/ajustes-mostrador-movil.webp", ancho: 371, alto: 826 },
+          },
+          {
+            titulo: "El carrito abajo",
+            texto: "Toca un producto para agregarlo: su tarjeta muestra «×2» con lo que ya llevas, y la barra azul de abajo el número de artículos y el total. Toca «Ver carrito» para revisar y cobrar.",
+            capturaMovil: { src: "/aprende/punto-de-venta/barra-carrito-movil.webp", ancho: 373, alto: 829 },
+          },
           { titulo: "Quitar con un gesto", texto: "En el carrito, desliza una línea a la izquierda para quitarla." },
           { titulo: "Si se recarga la página", texto: "El carrito se conserva al recargar o al volver a la pestaña; se vacía al cobrar o al cerrar sesión." },
         ],
@@ -181,7 +226,12 @@ export const GUIAS: Guia[] = [
         id: "sucursal",
         titulo: "Cobrar en otra sucursal (dueño)",
         pasos: [
-          { titulo: "Cambia de sucursal", texto: "Si tu negocio tiene varias sucursales, el dueño ve un selector de sucursal en el punto de venta. Al elegir otra, el POS muestra las existencias de ese local." },
+          {
+            titulo: "Cambia de sucursal",
+            texto: "Si tu negocio tiene varias sucursales, el dueño ve un selector de sucursal en el punto de venta. Al elegir otra, el POS muestra las existencias de ese local.",
+            captura: { src: "/aprende/punto-de-venta/cambiar-sucursal.webp", ancho: 1600, alto: 767 },
+            capturaMovil: { src: "/aprende/punto-de-venta/cambiar-sucursal-movil.webp", ancho: 720, alto: 1605 },
+          },
           { titulo: "Abre tu caja ahí", texto: "Si no tienes caja abierta en esa sucursal, el sistema te pide abrirla en ese momento. Cada venta entra en la caja del local donde cobras, así cada corte cuadra por separado." },
         ],
       },
@@ -199,15 +249,36 @@ export const GUIAS: Guia[] = [
     icono: Package,
     resumen: "Da de alta tu catálogo con fotos, variantes y precios, importa desde Excel, ajusta existencias y archiva lo que ya no vendes.",
     rutasApp: ["/products"],
+    videos: [{ titulo: "Productos", url: "https://youtu.be/Gdi5sQyDSb8" }],
     secciones: [
       {
         id: "alta",
         titulo: "Alta de productos",
         pasos: [
-          { titulo: "Agregar producto", texto: "En Productos pulsa «Agregar producto». Si usas variantes, elige «Producto único» (un solo precio y existencia) o «Producto variante». Captura nombre, precio de venta, costo de compra, stock actual, stock mínimo y código de barras. Con el costo, el sistema calcula tu ganancia por unidad." },
-          { titulo: "¿Cómo se vende?", texto: "Elige «Pieza» (o caja, paquete, par, docena) para lo que se vende cerrado, o kilogramo, gramo, litro, mililitro o metro para lo que se vende suelto: en ese caso el punto de venta pregunta «¿Cuánto?». Lo que trae el envase (600 ml, 2.5 L, 45 g) va en «Contenido (opcional)»: solo se muestra, no cambia cómo se cobra." },
-          { titulo: "Foto del producto", texto: "Sube una foto o, en el celular, pulsa «Tomar foto». Con «Quitar fondo» el producto queda sobre fondo blanco; si no te gusta, «Restaurar original»." },
-          { titulo: "Servicios", texto: "Si activaste los servicios, marca «Es servicio»: se cobra pero no descuenta existencias (copias, reparaciones, consultas). Un servicio puede descontar los insumos que usa." },
+          {
+            titulo: "Agregar producto",
+            texto: "En Productos pulsa «Agregar producto». Si usas variantes, elige «Producto único» (un solo precio y existencia) o «Producto variante». Captura nombre, precio de venta, costo de compra, stock actual, stock mínimo y código de barras. Con el costo, el sistema calcula tu ganancia por unidad.",
+            captura: { src: "/aprende/productos-e-inventario/agregar-producto.webp", ancho: 1600, alto: 767 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/agregar-producto-movil.webp", ancho: 374, alto: 829 },
+          },
+          {
+            titulo: "¿Cómo se vende?",
+            texto: "Elige «Pieza» (o caja, paquete, par, docena) para lo que se vende cerrado, o kilogramo, gramo, litro, mililitro o metro para lo que se vende suelto: en ese caso el punto de venta pregunta «¿Cuánto?». Lo que trae el envase (600 ml, 2.5 L, 45 g) va en «Contenido (opcional)»: solo se muestra, no cambia cómo se cobra.",
+            captura: { src: "/aprende/productos-e-inventario/como-se-vende.webp", ancho: 768, alto: 918 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/como-se-vende-movil.webp", ancho: 371, alto: 822 },
+          },
+          {
+            titulo: "Foto del producto",
+            texto: "Sube una foto o, en el celular, pulsa «Tomar foto». Con «Quitar fondo» el producto queda sobre fondo blanco; si no te gusta, «Restaurar original».",
+            captura: { src: "/aprende/productos-e-inventario/foto-producto.webp", ancho: 767, alto: 920 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/foto-producto-movil.webp", ancho: 373, alto: 830 },
+          },
+          {
+            titulo: "Servicios",
+            texto: "Si activaste los servicios, marca «Es servicio»: se cobra pero no descuenta existencias (copias, reparaciones, consultas). Un servicio puede descontar los insumos que usa.",
+            captura: { src: "/aprende/productos-e-inventario/inventario-y-servicio.webp", ancho: 767, alto: 919 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/inventario-y-servicio-movil.webp", ancho: 373, alto: 829 },
+          },
           { titulo: "Stock mínimo y favoritos", texto: "Cuando un producto llega a su mínimo aparece como «Stock bajo» y te llega un aviso, para que lo resurtas a tiempo. Con la estrella lo marcas como favorito." },
         ],
       },
@@ -215,7 +286,12 @@ export const GUIAS: Guia[] = [
         id: "variantes-lotes",
         titulo: "Variantes, lotes y granel",
         pasos: [
-          { titulo: "Producto con variantes", texto: "Con «Producto variante» escribes el nombre general (por ejemplo Coca Cola) y agregas una tarjeta por variante. En cada una eliges el «Tipo de atributo» y su «Valor» (talla, color, sabor, presentación…) y capturas su precio, costo, stock, stock mínimo, códigos y foto propios." },
+          {
+            titulo: "Producto con variantes",
+            texto: "Con «Producto variante» escribes el nombre general (por ejemplo Coca Cola) y agregas una tarjeta por variante. En cada una eliges el «Tipo de atributo» y su «Valor» (talla, color, sabor, presentación…) y capturas su precio, costo, stock, stock mínimo, códigos y foto propios.",
+            captura: { src: "/aprende/productos-e-inventario/producto-con-variantes.webp", ancho: 767, alto: 919 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/producto-con-variantes-movil.webp", ancho: 372, alto: 826 },
+          },
           { titulo: "Agregar variantes después", texto: "En la fila del producto pulsa «+ Agregar variante» para sumarle más. En el punto de venta, el producto general nunca se vende solo: se elige una de sus variantes." },
           { titulo: "Lotes y caducidades", texto: "Con el módulo de lotes encendido, marca «Maneja lotes y fecha de caducidad» en el producto y registra sus lotes en la pestaña «Lotes»: al vender sale primero el que caduca antes. Todo el detalle está en la guía de lotes." },
           { titulo: "Venta por peso o medida", texto: "Con el módulo «Venta por peso o medida» encendido, elige como unidad kilogramo, gramo, litro, mililitro o metro. En el punto de venta, al agregar el producto capturas la cantidad (por ejemplo 0.750 kg o 3.5 m) o el importe, y el sistema calcula lo demás." },
@@ -225,7 +301,12 @@ export const GUIAS: Guia[] = [
         id: "importar",
         titulo: "Importar desde Excel",
         pasos: [
-          { titulo: "Sube tu archivo", texto: "En Productos pulsa «Importar catálogo» y sube tu lista en CSV o Excel." },
+          {
+            titulo: "Sube tu archivo",
+            texto: "En Productos pulsa «Importar catálogo» y sube tu lista en CSV o Excel.",
+            captura: { src: "/aprende/productos-e-inventario/importar.webp", ancho: 766, alto: 918 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/importar-movil.webp", ancho: 373, alto: 828 },
+          },
           { titulo: "Asigna las columnas", texto: "Indica qué columna es el nombre, el precio, el costo, el código, etc. El sistema detecta los códigos de barras repetidos y te deja omitir, actualizar o generar uno nuevo." },
         ],
       },
@@ -233,7 +314,12 @@ export const GUIAS: Guia[] = [
         id: "precios",
         titulo: "Listas de precios",
         pasos: [
-          { titulo: "Precios de mayoreo o especiales", texto: "Con el botón «Lista de precios» crea listas con otros precios (mayoreo, distribuidores) para elegirlas al cobrar en el punto de venta." },
+          {
+            titulo: "Precios de mayoreo o especiales",
+            texto: "Con el botón «Lista de precios» crea listas con otros precios (mayoreo, distribuidores) para elegirlas al cobrar en el punto de venta.",
+            captura: { src: "/aprende/productos-e-inventario/lista-de-precios.webp", ancho: 767, alto: 922 },
+            capturaMovil: { src: "/aprende/productos-e-inventario/lista-de-precios-movil.webp", ancho: 371, alto: 830 },
+          },
         ],
       },
       {
@@ -280,7 +366,11 @@ export const GUIAS: Guia[] = [
         id: "registrar",
         titulo: "Registra un lote",
         pasos: [
-          { titulo: "Registrar lote", texto: "En Productos → Lotes pulsa «Registrar lote». Elige el producto (y la variante, si tiene), escribe el número de lote, la cantidad, la sucursal donde está y su fecha de caducidad. El costo unitario es opcional e informativo." },
+          {
+            titulo: "Registrar lote",
+            texto: "En Productos → Lotes pulsa «Registrar lote». Elige el producto (y la variante, si tiene), escribe el número de lote, la cantidad, la sucursal donde está y su fecha de caducidad. El costo unitario es opcional e informativo.",
+            capturaMovil: { src: "/aprende/lotes-caducidades-e-insumos/registrar-lote-movil.webp", ancho: 370, alto: 830 },
+          },
           { titulo: "¿De dónde salen estas piezas?", texto: "«Ya están en mi inventario» solo les pone número de lote y caducidad a piezas que ya contaste. «Es mercancía nueva» además las suma a tus existencias." },
           { titulo: "Al comprar", texto: "En «Nueva compra» y al recibir una orden de compra («Recibir mercancía»), cada renglón tiene «Lote» y «Caducidad» opcionales: la mercancía entra directo con su lote." },
         ],
@@ -318,13 +408,23 @@ export const GUIAS: Guia[] = [
     icono: Users,
     resumen: "Registra a tus clientes, vende a crédito y lleva sus abonos y saldos.",
     rutasApp: ["/customers"],
+    videos: [{ titulo: "Clientes", url: "https://youtu.be/4N9z8AHhMis" }],
     secciones: [
       {
         id: "clientes",
         titulo: "Tus clientes",
         pasos: [
-          { titulo: "Alta de cliente", texto: "En Clientes pulsa «Agregar cliente» y captura su nombre, teléfono y correo (opcional). También puedes darlo de alta desde el punto de venta con «Nuevo cliente» al cobrar." },
-          { titulo: "Consulta su saldo", texto: "En la tabla de Clientes ves el saldo pendiente de cada uno." },
+          {
+            titulo: "Alta de cliente",
+            texto: "En Clientes pulsa «Agregar cliente» y captura su nombre, teléfono y correo (opcional). También puedes darlo de alta desde el punto de venta con «Nuevo cliente» al cobrar.",
+            captura: { src: "/aprende/clientes-y-credito/nuevo-cliente.webp", ancho: 767, alto: 923 },
+          },
+          {
+            titulo: "Consulta su saldo",
+            texto: "En la tabla de Clientes ves el saldo pendiente de cada uno.",
+            captura: { src: "/aprende/clientes-y-credito/clientes.webp", ancho: 1600, alto: 769 },
+            capturaMovil: { src: "/aprende/clientes-y-credito/clientes-movil.webp", ancho: 720, alto: 1614 },
+          },
         ],
       },
       {
@@ -333,7 +433,12 @@ export const GUIAS: Guia[] = [
         pasos: [
           { titulo: "Activa el crédito", texto: "En Configuración → Módulos enciende «Ventas a crédito / fiado»." },
           { titulo: "Vende a crédito", texto: "En el punto de venta elige al cliente y el método «Crédito / Fiado». El importe se suma a su saldo." },
-          { titulo: "Registra abonos", texto: "Cuando el cliente paga, pulsa «Registrar abono» en su fila y captura el monto y el método de pago: su saldo baja al momento." },
+          {
+            titulo: "Registra abonos",
+            texto: "Cuando el cliente paga, pulsa «Registrar abono» en su fila y captura el monto y el método de pago: su saldo baja al momento.",
+            captura: { src: "/aprende/clientes-y-credito/abono.webp", ancho: 767, alto: 920 },
+            capturaMovil: { src: "/aprende/clientes-y-credito/abono-movil.webp", ancho: 720, alto: 1614 },
+          },
         ],
       },
       {
@@ -362,7 +467,12 @@ export const GUIAS: Guia[] = [
         titulo: "Crea tu programa",
         pasos: [
           { titulo: "Actívalo", texto: "En Clientes abre la pestaña «Tarjetas de lealtad» y pulsa «Activar programa»." },
-          { titulo: "Define el premio", texto: "Ponle nombre al programa, elige cuántos sellos se necesitan (de 2 a 50) y el premio: «Producto gratis», «$ de descuento» o «% de descuento». Mientras lo configuras, «Así lo verá tu cliente» te muestra la tarjeta." },
+          {
+            titulo: "Define el premio",
+            texto: "Ponle nombre al programa, elige cuántos sellos se necesitan (de 2 a 50) y el premio: «Producto gratis», «$ de descuento» o «% de descuento». Mientras lo configuras, «Así lo verá tu cliente» te muestra la tarjeta.",
+            captura: { src: "/aprende/tarjetas-de-lealtad/programa.webp", ancho: 1600, alto: 765 },
+            capturaMovil: { src: "/aprende/tarjetas-de-lealtad/programa-movil.webp", ancho: 720, alto: 1614 },
+          },
           { titulo: "Reglas opcionales", texto: "Con «Compra mínima para sumar sello» evitas sellos por compras muy pequeñas. Elige la «Paleta de la tarjeta» (Clara u Oscura). Con «Programa activo» lo pausas o lo reanudas cuando quieras." },
         ],
       },
@@ -371,7 +481,12 @@ export const GUIAS: Guia[] = [
         titulo: "Entrega la tarjeta",
         pasos: [
           { titulo: "Crea la tarjeta del cliente", texto: "Pulsa «Nueva tarjeta» y elige al cliente, o usa «Crear tarjeta» en su fila de la tabla de Clientes." },
-          { titulo: "Compártela", texto: "En la tarjeta usa «Copiar enlace», «Compartir» (por WhatsApp, por ejemplo), «Abrir» o «Por correo», si el cliente tiene correo. Es una página con su QR y sus sellos; no necesita descargar ninguna app." },
+          {
+            titulo: "Compártela",
+            texto: "En la tarjeta usa «Copiar enlace», «Compartir» (por WhatsApp, por ejemplo), «Abrir» o «Por correo», si el cliente tiene correo. Es una página con su QR y sus sellos; no necesita descargar ninguna app.",
+            captura: { src: "/aprende/tarjetas-de-lealtad/compartir-tarjeta.webp", ancho: 766, alto: 919 },
+            capturaMovil: { src: "/aprende/tarjetas-de-lealtad/compartir-tarjeta-movil.webp", ancho: 720, alto: 1614 },
+          },
           { titulo: "El cliente la guarda", texto: "En su tarjeta, «Guárdala en tu celular» le explica cómo agregarla a la pantalla de inicio de su Android o iPhone." },
         ],
       },
@@ -379,7 +494,12 @@ export const GUIAS: Guia[] = [
         id: "sellos",
         titulo: "Sellos y premios al cobrar",
         pasos: [
-          { titulo: "Adjunta la tarjeta", texto: "En el punto de venta escanea el QR del cliente con «Escanear tarjeta de lealtad», escribe el código en el buscador, o simplemente elige al cliente: su tarjeta se adjunta sola." },
+          {
+            titulo: "Adjunta la tarjeta",
+            texto: "En el punto de venta escanea el QR del cliente con «Escanear tarjeta de lealtad», escribe el código en el buscador, o simplemente elige al cliente: su tarjeta se adjunta sola.",
+            captura: { src: "/aprende/tarjetas-de-lealtad/escanear-tarjeta.webp", ancho: 1600, alto: 768 },
+            capturaMovil: { src: "/aprende/tarjetas-de-lealtad/escanear-tarjeta-movil.webp", ancho: 371, alto: 829 },
+          },
           { titulo: "Se suma el sello", texto: "Abajo del cliente ves sus sellos y si esta compra suma uno («Esta compra suma 1 sello») o cuánto le falta para la compra mínima. Al cobrar se suma un sello por venta, y el ticket imprime los sellos que lleva." },
           { titulo: "Canjea el premio", texto: "Cuando completa sus sellos aparece «Tiene premio»: pulsa «Aplicar» (o «Agregar y aplicar», si el premio es un producto que aún no está en el carrito). El sistema calcula el descuento y descuenta de la tarjeta los sellos del premio." },
         ],
@@ -389,7 +509,12 @@ export const GUIAS: Guia[] = [
         titulo: "Ajustes y resumen",
         pasos: [
           { titulo: "Ajustar sellos", texto: "Si te equivocaste o quieres regalar sellos, usa «Ajustar sellos» en la tarjeta: escribe cuántos sumar o quitar y el motivo." },
-          { titulo: "Cómo va tu programa", texto: "Arriba de la pestaña ves las tarjetas activas, los sellos y los premios del mes." },
+          {
+            titulo: "Cómo va tu programa",
+            texto: "Arriba de la pestaña ves las tarjetas activas, los sellos y los premios del mes.",
+            captura: { src: "/aprende/tarjetas-de-lealtad/panel.webp", ancho: 1600, alto: 769 },
+            capturaMovil: { src: "/aprende/tarjetas-de-lealtad/panel-movil.webp", ancho: 720, alto: 1614 },
+          },
         ],
       },
     ],
@@ -406,19 +531,30 @@ export const GUIAS: Guia[] = [
     icono: Truck,
     resumen: "Registra proveedores, compras directas y órdenes que suben tu inventario al recibirlas.",
     rutasApp: ["/purchases", "/purchase-orders"],
+    videos: [{ titulo: "Compras", url: "https://youtu.be/U1XqWmgDVcA" }, { titulo: "Órdenes de compra", url: "https://youtu.be/0O1eZN7aIPc" }],
     secciones: [
       {
         id: "proveedores",
         titulo: "Proveedores",
         pasos: [
-          { titulo: "Alta de proveedor", texto: "En Compras → Proveedor pulsa «Agregar proveedor» y captura su nombre y su celular. Sin proveedor no se pueden registrar compras." },
+          {
+            titulo: "Alta de proveedor",
+            texto: "En Compras → Proveedor pulsa «Agregar proveedor» y captura su nombre y su celular. Sin proveedor no se pueden registrar compras.",
+            captura: { src: "/aprende/compras-y-ordenes/agregar-proveedor.webp", ancho: 767, alto: 920 },
+            capturaMovil: { src: "/aprende/compras-y-ordenes/agregar-proveedor-movil.webp", ancho: 372, alto: 828 },
+          },
         ],
       },
       {
         id: "compra-directa",
         titulo: "Compra directa",
         pasos: [
-          { titulo: "Registra lo que te llegó", texto: "En Compras pulsa «Nueva compra», elige el proveedor y agrega los productos con cantidad y costo. Al guardar, el stock sube y el costo del producto se actualiza." },
+          {
+            titulo: "Registra lo que te llegó",
+            texto: "En Compras pulsa «Nueva compra», elige el proveedor y agrega los productos con cantidad y costo. Al guardar, el stock sube y el costo del producto se actualiza.",
+            captura: { src: "/aprende/compras-y-ordenes/nueva-compra.webp", ancho: 767, alto: 920 },
+            capturaMovil: { src: "/aprende/compras-y-ordenes/nueva-compra-movil.webp", ancho: 720, alto: 1564 },
+          },
           { titulo: "Lotes y caducidades", texto: "Si el producto maneja lotes, cada renglón tiene «Lote» y «Caducidad» opcionales: la mercancía entra con su lote." },
           { titulo: "Pagada con la caja", texto: "Si le pagas al proveedor con dinero del cajón, marca «Pagada con efectivo de la caja»: se registra la salida en tu caja abierta y tu corte cuadra." },
           { titulo: "Con varias sucursales", texto: "Elige a qué sucursal llega la mercancía; el stock sube solo en esa." },
@@ -429,8 +565,18 @@ export const GUIAS: Guia[] = [
         id: "ordenes",
         titulo: "Órdenes de compra",
         pasos: [
-          { titulo: "Crea la orden", texto: "En Órdenes de Compra arma el pedido a tu proveedor. Si tiene celular, puedes mandarle el pedido por WhatsApp con el mensaje ya escrito." },
-          { titulo: "Recibe la mercancía", texto: "Cuando llegue, abre «Recibir mercancía» y captura lo que realmente llegó (con lote y caducidad, si aplica). En ese momento sube el inventario. También puedes marcarla como pagada con la caja." },
+          {
+            titulo: "Crea la orden",
+            texto: "En Órdenes de Compra arma el pedido a tu proveedor. Si tiene celular, puedes mandarle el pedido por WhatsApp con el mensaje ya escrito.",
+            captura: { src: "/aprende/compras-y-ordenes/nueva-orden.webp", ancho: 767, alto: 919 },
+            capturaMovil: { src: "/aprende/compras-y-ordenes/nueva-orden-movil.webp", ancho: 720, alto: 1691 },
+          },
+          {
+            titulo: "Recibe la mercancía",
+            texto: "Cuando llegue, abre «Recibir mercancía» y captura lo que realmente llegó (con lote y caducidad, si aplica). En ese momento sube el inventario. También puedes marcarla como pagada con la caja.",
+            captura: { src: "/aprende/compras-y-ordenes/recibir-mercancia.webp", ancho: 766, alto: 919 },
+            capturaMovil: { src: "/aprende/compras-y-ordenes/recibir-mercancia-movil.webp", ancho: 720, alto: 1691 },
+          },
         ],
       },
     ],
@@ -443,19 +589,30 @@ export const GUIAS: Guia[] = [
     icono: Wallet,
     resumen: "Abre caja, registra entradas y salidas, haz tu corte y entiende el cierre automático.",
     rutasApp: ["/finances"],
+    videos: [{ titulo: "Finanzas", url: "https://youtu.be/5UKCgH2GJDE" }],
     secciones: [
       {
         id: "abrir",
         titulo: "Abre la caja",
         pasos: [
-          { titulo: "Fondo inicial", texto: "En Finanzas pulsa «Abrir caja» y captura el efectivo con el que empiezas. Con varias sucursales, elige en cuál abres: todas las ventas del turno se cuentan en esa sucursal." },
+          {
+            titulo: "Fondo inicial",
+            texto: "En Finanzas pulsa «Abrir caja» y captura el efectivo con el que empiezas. Con varias sucursales, elige en cuál abres: todas las ventas del turno se cuentan en esa sucursal.",
+            captura: { src: "/aprende/caja-y-finanzas/abrir-caja.webp", ancho: 768, alto: 920 },
+            capturaMovil: { src: "/aprende/caja-y-finanzas/abrir-caja-movil.webp", ancho: 720, alto: 1564 },
+          },
         ],
       },
       {
         id: "movimientos",
         titulo: "Entradas y salidas",
         pasos: [
-          { titulo: "Registra movimientos", texto: "Pulsa «Agregar movimiento» para registrar dinero que entra (un cambio que te traen) o que sale (un gasto) con su descripción." },
+          {
+            titulo: "Registra movimientos",
+            texto: "Pulsa «Agregar movimiento» para registrar dinero que entra (un cambio que te traen) o que sale (un gasto) con su descripción.",
+            captura: { src: "/aprende/caja-y-finanzas/movimiento.webp", ancho: 766, alto: 919 },
+            capturaMovil: { src: "/aprende/caja-y-finanzas/movimiento-movil.webp", ancho: 720, alto: 1564 },
+          },
           { titulo: "Pagos a proveedores", texto: "Si al registrar una compra marcas «Pagada con efectivo de la caja», la salida se registra sola en tu caja: no la captures dos veces." },
         ],
       },
@@ -463,7 +620,12 @@ export const GUIAS: Guia[] = [
         id: "corte",
         titulo: "Corte de caja",
         pasos: [
-          { titulo: "Cierra la caja", texto: "Al terminar tu turno pulsa «Cerrar caja». Verás el fondo inicial, las ventas, las entradas, las salidas y el saldo esperado." },
+          {
+            titulo: "Cierra la caja",
+            texto: "Al terminar tu turno pulsa «Cerrar caja». Verás el fondo inicial, las ventas, las entradas, las salidas y el saldo esperado.",
+            captura: { src: "/aprende/caja-y-finanzas/cerrar-caja.webp", ancho: 767, alto: 921 },
+            capturaMovil: { src: "/aprende/caja-y-finanzas/cerrar-caja-movil.webp", ancho: 720, alto: 1564 },
+          },
           { titulo: "Cuenta y captura el saldo real", texto: "Cuenta el efectivo y captúralo. El sistema muestra la diferencia: si cuadra, si falta o si sobra. Puedes dejar una nota." },
           { titulo: "Aviso al dueño", texto: "Si quien cierra es un cajero o un administrador, al dueño le llega un correo con el corte completo y, si hay varias sucursales, de cuál fue. También lo ve en la campana de notificaciones." },
         ],
@@ -490,25 +652,59 @@ export const GUIAS: Guia[] = [
         id: "dashboard",
         titulo: "Dashboard",
         pasos: [
-          { titulo: "Tus cifras del día y del mes", texto: "Al entrar ves las ventas de hoy y del mes, la ganancia del mes con su margen, el ticket promedio, los clientes atendidos, los productos vendidos y las ventas del mes anterior, con gráficas de ventas recientes, productos más vendidos y métodos de pago." },
-          { titulo: "Por sucursal", texto: "Con varias sucursales, usa el filtro junto a «Actualizar» para ver un local o todos juntos." },
+          {
+            titulo: "Tus cifras del día y del mes",
+            texto: "Al entrar ves las ventas de hoy y del mes, la ganancia del mes con su margen, el ticket promedio, los clientes atendidos, los productos vendidos y las ventas del mes anterior, con gráficas de ventas recientes, productos más vendidos y métodos de pago.",
+            captura: { src: "/aprende/reportes-y-dashboard/dashboard.webp", ancho: 1600, alto: 767 },
+            capturaMovil: { src: "/aprende/reportes-y-dashboard/dashboard-movil.webp", ancho: 720, alto: 1691 },
+          },
+          {
+            titulo: "Por sucursal",
+            texto: "Con varias sucursales, usa el filtro junto a «Actualizar» para ver un local o todos juntos.",
+            captura: { src: "/aprende/reportes-y-dashboard/dashboard-sucursal.webp", ancho: 1600, alto: 769 },
+          },
         ],
       },
       {
         id: "reportes",
         titulo: "Reportes",
         pasos: [
-          { titulo: "Elige el periodo", texto: "En Reportes elige «Última semana», «Este mes», «Último trimestre», «Último año» o un «Día específico». Ves el total de ventas, las transacciones, el ticket promedio y los productos vendidos." },
-          { titulo: "Ganancia sobre productos", texto: "Ves los ingresos sin IVA, el costo de lo vendido y la ganancia, y los productos que más te dejan. Es margen bruto: no descuenta renta, sueldos ni otros gastos. Los productos sin costo capturado no entran en el cálculo." },
-          { titulo: "Gráficas", texto: "Ingresos contra ganancia, ventas por periodo comparadas con el periodo anterior, métodos de pago, ventas por hora y por día de la semana, los 10 productos más vendidos y las categorías que más venden. También ves las compras del periodo y tus clientes más frecuentes." },
-          { titulo: "Exporta tu reporte", texto: "Con «Exportar» descargas en Excel o PDF el periodo y la sucursal que estás viendo: el resumen, la ganancia, los productos, los clientes y la lista de ventas una por una. El reporte se divide en pestañas (Resumen, Ventas, Productos, Clientes e Historial) para ver una parte a la vez." },
+          {
+            titulo: "Elige el periodo",
+            texto: "En Reportes elige «Última semana», «Este mes», «Último trimestre», «Último año» o un «Día específico». Ves el total de ventas, las transacciones, el ticket promedio y los productos vendidos.",
+            captura: { src: "/aprende/reportes-y-dashboard/periodo.webp", ancho: 493, alto: 241 },
+            capturaMovil: { src: "/aprende/reportes-y-dashboard/periodo-movil.webp", ancho: 720, alto: 1692 },
+          },
+          {
+            titulo: "Ganancia sobre productos",
+            texto: "Ves los ingresos sin IVA, el costo de lo vendido y la ganancia, y los productos que más te dejan. Es margen bruto: no descuenta renta, sueldos ni otros gastos. Los productos sin costo capturado no entran en el cálculo.",
+            captura: { src: "/aprende/reportes-y-dashboard/productos.webp", ancho: 1600, alto: 766 },
+            capturaMovil: { src: "/aprende/reportes-y-dashboard/productos-movil.webp", ancho: 720, alto: 1691 },
+          },
+          {
+            titulo: "Gráficas",
+            texto: "Ingresos contra ganancia, ventas por periodo comparadas con el periodo anterior, métodos de pago, ventas por hora y por día de la semana, los 10 productos más vendidos y las categorías que más venden. También ves las compras del periodo y tus clientes más frecuentes.",
+            captura: { src: "/aprende/reportes-y-dashboard/graficas.webp", ancho: 1600, alto: 768 },
+            capturaMovil: { src: "/aprende/reportes-y-dashboard/graficas-movil.webp", ancho: 720, alto: 1691 },
+          },
+          {
+            titulo: "Exporta tu reporte",
+            texto: "Con «Exportar» descargas en Excel o PDF el periodo y la sucursal que estás viendo: el resumen, la ganancia, los productos, los clientes y la lista de ventas una por una. El reporte se divide en pestañas (Resumen, Ventas, Productos, Clientes e Historial) para ver una parte a la vez.",
+            captura: { src: "/aprende/reportes-y-dashboard/exportar.webp", ancho: 483, alto: 151 },
+            capturaMovil: { src: "/aprende/reportes-y-dashboard/exportar-movil.webp", ancho: 720, alto: 1692 },
+          },
         ],
       },
       {
         id: "ventas",
         titulo: "Ventas del periodo",
         pasos: [
-          { titulo: "Historial de ventas", texto: "Al final de Reportes, «Ventas del periodo» lista cada venta con fecha, quién atendió, cliente, forma de pago y total. Puedes filtrar por cajero." },
+          {
+            titulo: "Historial de ventas",
+            texto: "Al final de Reportes, «Ventas del periodo» lista cada venta con fecha, quién atendió, cliente, forma de pago y total. Puedes filtrar por cajero.",
+            captura: { src: "/aprende/reportes-y-dashboard/historial.webp", ancho: 1600, alto: 767 },
+            capturaMovil: { src: "/aprende/reportes-y-dashboard/historial-movil.webp", ancho: 720, alto: 1691 },
+          },
           { titulo: "Detalle y reimpresión", texto: "Abre una venta para ver sus productos, descuento, IVA, lo recibido y el cambio; si maneja lotes o insumos, también de qué lote salió cada cosa. Con «Reimprimir ticket» lo vuelves a imprimir." },
         ],
       },
@@ -525,13 +721,24 @@ export const GUIAS: Guia[] = [
     icono: ArrowRightLeft,
     resumen: "Da de alta tus locales, lleva existencias por sucursal y traspasa mercancía entre ellos.",
     rutasApp: ["/branches"],
+    videos: [{ titulo: "Sucursales", url: "https://youtu.be/rqCSZRZlMpQ" }],
     secciones: [
       {
         id: "alta",
         titulo: "Alta de sucursales",
         pasos: [
-          { titulo: "Tu segunda sucursal", texto: "El módulo Sucursales siempre está en el menú. Con un solo local te invita a dar de alta el segundo; con dos o más muestra la comparación entre locales, las existencias de cada uno y los traspasos." },
-          { titulo: "Cerrar un local", texto: "Una sucursal cerrada deja de ofrecerse para vender, pero su historial se conserva." },
+          {
+            titulo: "Tu segunda sucursal",
+            texto: "El módulo Sucursales siempre está en el menú. Con un solo local te invita a dar de alta el segundo; con dos o más muestra la comparación entre locales, las existencias de cada uno y los traspasos.",
+            captura: { src: "/aprende/sucursales/alta.webp", ancho: 1600, alto: 769 },
+            capturaMovil: { src: "/aprende/sucursales/alta-movil.webp", ancho: 720, alto: 1605 },
+          },
+          {
+            titulo: "Cerrar un local",
+            texto: "Una sucursal cerrada deja de ofrecerse para vender, pero su historial se conserva.",
+            captura: { src: "/aprende/sucursales/alta-y-cierre.webp", ancho: 1600, alto: 768 },
+            capturaMovil: { src: "/aprende/sucursales/alta-y-cierre-movil.webp", ancho: 720, alto: 1605 },
+          },
         ],
       },
       {
@@ -539,14 +746,24 @@ export const GUIAS: Guia[] = [
         titulo: "Existencias por sucursal",
         pasos: [
           { titulo: "El catálogo es común", texto: "Los productos son los mismos para todo el negocio; lo que cambia por sucursal es cuánto hay en cada una y si se vende ahí." },
-          { titulo: "Consulta y ajusta", texto: "En Productos elige la sucursal arriba para ver y editar sus existencias." },
+          {
+            titulo: "Consulta y ajusta",
+            texto: "En Productos elige la sucursal arriba para ver y editar sus existencias.",
+            captura: { src: "/aprende/sucursales/existencias.webp", ancho: 1600, alto: 768 },
+            capturaMovil: { src: "/aprende/sucursales/existencias-movil.webp", ancho: 720, alto: 1605 },
+          },
         ],
       },
       {
         id: "traspasos",
         titulo: "Traspasos",
         pasos: [
-          { titulo: "Mueve mercancía", texto: "En Sucursales → «Nuevo traspaso» elige origen, destino y productos, y pulsa «Registrar traspaso». O pasa todo o no pasa nada: si en el origen no alcanza, el sistema te dice de qué producto y cuánto queda." },
+          {
+            titulo: "Mueve mercancía",
+            texto: "En Sucursales → «Nuevo traspaso» elige origen, destino y productos, y pulsa «Registrar traspaso». O pasa todo o no pasa nada: si en el origen no alcanza, el sistema te dice de qué producto y cuánto queda.",
+            captura: { src: "/aprende/sucursales/traspasos.webp", ancho: 1600, alto: 772 },
+            capturaMovil: { src: "/aprende/sucursales/traspasos-movil.webp", ancho: 720, alto: 1605 },
+          },
           { titulo: "Con lotes", texto: "Si el producto maneja lotes, antes de registrar ves cuáles van a salir («Salen: lote … ×N»), primero los que caducan antes." },
         ],
       },
@@ -560,13 +777,24 @@ export const GUIAS: Guia[] = [
     icono: ClipboardList,
     resumen: "Invita a tu equipo con clave de empleado, asigna roles, permisos y sucursales.",
     rutasApp: ["/users"],
+    videos: [{ titulo: "Usuarios", url: "https://youtu.be/mAksJx-Rj8I" }],
     secciones: [
       {
         id: "invitar",
         titulo: "Invita a tu equipo",
         pasos: [
-          { titulo: "Agrega al usuario", texto: "En Usuarios pulsa «Agregar usuario» y captura su nombre, su apellido (opcional), su correo, el rol (Cajero o Administrador) y, si tienes varias sucursales, en cuáles trabajará. Se genera su clave de acceso, que ves en «Claves de acceso»." },
-          { titulo: "El empleado entra con su clave", texto: "En la pantalla de inicio de sesión elige «¿Eres empleado o colaborador? Ingresa tu clave»." },
+          {
+            titulo: "Agrega al usuario",
+            texto: "En Usuarios pulsa «Agregar usuario» y captura su nombre, su apellido (opcional), su correo, el rol (Cajero o Administrador) y, si tienes varias sucursales, en cuáles trabajará. Se genera su clave de acceso, que ves en «Claves de acceso».",
+            captura: { src: "/aprende/usuarios-y-permisos/agregar-usuario.webp", ancho: 766, alto: 919 },
+            capturaMovil: { src: "/aprende/usuarios-y-permisos/agregar-usuario-movil.webp", ancho: 720, alto: 1614 },
+          },
+          {
+            titulo: "El empleado entra con su clave",
+            texto: "En la pantalla de inicio de sesión elige «¿Eres empleado o colaborador? Ingresa tu clave».",
+            captura: { src: "/aprende/usuarios-y-permisos/acceso-con-clave.webp", ancho: 1600, alto: 766 },
+            capturaMovil: { src: "/aprende/usuarios-y-permisos/acceso-con-clave-movil.webp", ancho: 720, alto: 1614 },
+          },
           { titulo: "Corrige su nombre", texto: "El nombre aparece en Usuarios, en el historial de ventas y en su saludo. Si hay que corregirlo, usa «Editar nombre» en su fila (en el celular, desliza la fila y toca «Nombre»)." },
         ],
       },
@@ -574,7 +802,11 @@ export const GUIAS: Guia[] = [
         id: "roles",
         titulo: "Roles y permisos",
         pasos: [
-          { titulo: "Qué ve cada rol", texto: "De fábrica, el cajero usa Punto de Venta, Productos, Clientes, Compras, Órdenes de Compra y su propia caja en Finanzas. El administrador además ve reportes, configuración y bitácora." },
+          {
+            titulo: "Qué ve cada rol",
+            texto: "De fábrica, el cajero usa Punto de Venta, Productos, Clientes, Compras, Órdenes de Compra y su propia caja en Finanzas. El administrador además ve reportes, configuración y bitácora.",
+            capturaMovil: { src: "/aprende/usuarios-y-permisos/modulos-cajero-movil.webp", ancho: 720, alto: 1614 },
+          },
           { titulo: "Permisos por usuario", texto: "Con el botón de permisos de cada usuario enciendes o apagas módulos solo para esa persona, por ejemplo darle Reportes a un encargado. Son excepciones sobre lo que da su rol; «Restablecer» lo regresa a lo de fábrica." },
           { titulo: "Sucursales asignadas", texto: "Limita a cada usuario a las sucursales donde trabaja: solo opera y ve esas. Sin asignación, trabaja en todas." },
         ],
@@ -630,6 +862,7 @@ export const GUIAS: Guia[] = [
     icono: BookOpen,
     resumen: "Revisa quién creó, editó o eliminó qué y cuándo.",
     rutasApp: ["/activity"],
+    videos: [{ titulo: "Configuración y Bitácora", url: "https://youtu.be/BKcDHzczUQY" }],
     secciones: [
       {
         id: "consultar",
@@ -649,19 +882,30 @@ export const GUIAS: Guia[] = [
     icono: Settings,
     resumen: "Datos del negocio, logo, módulos que se activan, cobro con tarjeta, impresora de tickets y tu perfil.",
     rutasApp: ["/settings"],
+    videos: [{ titulo: "Configuración y Bitácora", url: "https://youtu.be/BKcDHzczUQY" }],
     secciones: [
       {
         id: "general",
         titulo: "General",
         pasos: [
-          { titulo: "Datos del negocio", texto: "En la pestaña «General»: nombre de la empresa, correo, teléfono, dirección y logo. Aparecen en tus tickets." },
+          {
+            titulo: "Datos del negocio",
+            texto: "En la pestaña «General»: nombre de la empresa, correo, teléfono, dirección y logo. Aparecen en tus tickets.",
+            captura: { src: "/aprende/configuracion/general.webp", ancho: 1600, alto: 765 },
+            capturaMovil: { src: "/aprende/configuracion/general-movil.webp", ancho: 720, alto: 1561 },
+          },
         ],
       },
       {
         id: "modulos",
         titulo: "Módulos",
         pasos: [
-          { titulo: "Enciende lo que necesitas", texto: "En la pestaña «Módulos»: «Venta por peso o medida», «Variantes de talla y color», «Lotes y caducidades», «Mermas», «Servicios» y «Ventas a crédito / fiado». Cada interruptor muestra u oculta sus opciones en todo el sistema (unidades, pestañas, métodos de pago). Apagar uno no borra nada: lo que ya lo usa sigue funcionando." },
+          {
+            titulo: "Enciende lo que necesitas",
+            texto: "En la pestaña «Módulos»: «Venta por peso o medida», «Variantes de talla y color», «Lotes y caducidades», «Mermas», «Servicios» y «Ventas a crédito / fiado». Cada interruptor muestra u oculta sus opciones en todo el sistema (unidades, pestañas, métodos de pago). Apagar uno no borra nada: lo que ya lo usa sigue funcionando.",
+            captura: { src: "/aprende/configuracion/modulos.webp", ancho: 1600, alto: 766 },
+            capturaMovil: { src: "/aprende/configuracion/modulos-movil.webp", ancho: 720, alto: 1561 },
+          },
         ],
       },
       {
@@ -669,14 +913,24 @@ export const GUIAS: Guia[] = [
         titulo: "Cobro con tarjeta",
         pasos: [
           { titulo: "Si ya tienes terminal", texto: "En la pestaña «Mercado Pago Point» enciende «Tengo una terminal de tarjeta externa» si cobras con la terminal de tu banco, Clip, Getnet u otra. Así se habilita el método «Tarjeta» en el punto de venta; sin terminal queda bloqueado." },
-          { titulo: "Terminal Mercado Pago Point", texto: "En la misma pestaña captura el Access Token y la clave del webhook de tu aplicación de Mercado Pago, pulsa «Probar conexión», elige la terminal y enciende «Habilitar terminal». Desde el punto de venta cobras con «Tarjeta (terminal)» y la venta se completa cuando la terminal confirma el pago. «Cómo configurarlo» te guía paso a paso." },
+          {
+            titulo: "Terminal Mercado Pago Point",
+            texto: "En la misma pestaña captura el Access Token y la clave del webhook de tu aplicación de Mercado Pago, pulsa «Probar conexión», elige la terminal y enciende «Habilitar terminal». Desde el punto de venta cobras con «Tarjeta (terminal)» y la venta se completa cuando la terminal confirma el pago. «Cómo configurarlo» te guía paso a paso.",
+            captura: { src: "/aprende/configuracion/mercado-pago.webp", ancho: 1600, alto: 767 },
+            capturaMovil: { src: "/aprende/configuracion/mercado-pago-movil.webp", ancho: 720, alto: 1561 },
+          },
         ],
       },
       {
         id: "impresora",
         titulo: "Impresora de tickets",
         pasos: [
-          { titulo: "Conecta tu impresora", texto: "En la pestaña «Impresora» elige cómo se conecta: Bluetooth, USB (cable) o puerto serie, y el ancho del papel (58 o 80 mm). Con «Imprimir al cobrar» el ticket sale solo al terminar cada venta. Prueba con «Imprimir prueba»." },
+          {
+            titulo: "Conecta tu impresora",
+            texto: "En la pestaña «Impresora» elige cómo se conecta: Bluetooth, USB (cable) o puerto serie, y el ancho del papel (58 o 80 mm). Con «Imprimir al cobrar» el ticket sale solo al terminar cada venta. Prueba con «Imprimir prueba».",
+            captura: { src: "/aprende/configuracion/impresora.webp", ancho: 1600, alto: 769 },
+            capturaMovil: { src: "/aprende/configuracion/impresora-movil.webp", ancho: 720, alto: 1561 },
+          },
           { titulo: "Se guarda en cada equipo", texto: "La impresora queda conectada en ese equipo: para la caja de un cajero, inicia sesión una vez en esa computadora o celular y conéctala ahí. Funciona en Chrome o Edge en Android y PC; en iPhone, iPad y Firefox se imprime con la ventana de impresión." },
         ],
       },
@@ -696,6 +950,7 @@ export const GUIAS: Guia[] = [
     icono: CreditCard,
     resumen: "Prueba gratuita, planes mensual y anual, pago con tarjeta o en efectivo, códigos promocionales y fechas de cobro.",
     rutasApp: ["/billing"],
+    videos: [{ titulo: "Suscripción", url: "https://youtu.be/-r-xVz-mmbg" }],
     secciones: [
       {
         id: "prueba",
