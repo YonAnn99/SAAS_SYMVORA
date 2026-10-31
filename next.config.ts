@@ -18,7 +18,12 @@ function securityHeaders() {
     "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com",
     "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://lh3.googleusercontent.com https://i.ytimg.com",
     "font-src 'self' data: https://unpkg.com https://fonts.gstatic.com",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.conekta.io https://*.conekta.io https://*.sentry.io https://challenges.cloudflare.com" +
+    // OJO: en produccion el service worker (serwist `defaultCache`, sw.ts)
+    // vuelve a pedir con fetch() las imagenes de otro dominio, y ese fetch se
+    // rige por connect-src, no por img-src. Toda imagen externa va en los dos:
+    // sin esto la miniatura de YouTube de /aprende salia rota (en dev el
+    // service worker esta apagado y no se notaba).
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.conekta.io https://*.conekta.io https://*.sentry.io https://challenges.cloudflare.com https://i.ytimg.com https://lh3.googleusercontent.com" +
       (isDev ? " ws://localhost:*" : ""),
     // youtube-nocookie: los videos de las guias de /es/aprende.
     "frame-src https://challenges.cloudflare.com https://*.conekta.io https://www.youtube-nocookie.com",

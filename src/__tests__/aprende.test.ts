@@ -156,5 +156,7 @@ describe("publicación", () => {
     expect(leer("next.config.ts")).toMatch(/frame-src[^"]*https:\/\/www\.youtube-nocookie\.com/);
     // La portada del video es la miniatura de YouTube.
     expect(leer("next.config.ts")).toMatch(/img-src[^"]*https:\/\/i\.ytimg\.com/);
+    // Y en connect-src: en producción la imagen pasa por el service worker.
+    expect(leer("next.config.ts")).toMatch(/connect-src[^"]*https:\/\/i\.ytimg\.com/);
   });
 });
