@@ -5,7 +5,7 @@ import { cookieAndroid, tieneCookieAndroid, vieneDeAppAndroid } from "@/lib/app-
 
 /**
  * Deja la cookie de la app de Android la primera vez que SYMVORA se abre
- * desde ella (`lib/app-android.ts`). Va en el layout de idioma: cubre el
+ * desde ella (`lib/app-android.ts`). Va en el layout raíz (`app/layout.tsx`): cubre el
  * login, el panel y la landing. No pinta nada.
  */
 export function MarcaAppAndroid() {

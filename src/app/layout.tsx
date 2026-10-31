@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "./providers";
+import { MarcaAppAndroid } from "@/features/app-android/marca-app-android";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
 import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
@@ -151,7 +152,12 @@ export default function RootLayout({
       >
         {/* Noise overlay - fixed, pointer-events-none */}
         <div className="noise-overlay" aria-hidden="true" />
-        <Providers>{children}</Providers>
+        <Providers>
+          {/* Aqui y no en [locale]/layout: el panel y el login son otros arboles
+              de rutas ((dashboard), (auth)) y la app de Android vive en ellos. */}
+          <MarcaAppAndroid />
+          {children}
+        </Providers>
         {/* Core Web Vitals reales por ruta (INP, LCP, TTFB) en Vercel →
             Speed Insights. Mide el plan de rendimiento; script del propio
             dominio (/_vercel), la CSP no cambia. */}
