@@ -25,6 +25,11 @@ interface CreateOrderRequest {
   cliente_id?: string | null;
   items: TerminalOrderItem[];
   lista_precio_id?: string | null;
+  /**
+   * El "Incluir IVA" del carrito. Una pestaña con el codigo anterior no lo
+   * manda: se cobra con IVA, como se hacia antes.
+   */
+  include_iva?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -77,32 +82,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const computed = await computeTerminalOrderTotal(
-      body.tenant_id,
-      body.items,
-      body.lista_precio_id ?? null
-    );
+    const includeIva = body.include_iva ?? true;
 
     // Tope del descuento manual (migracion 094). En el cobro con terminal se
-    // valida AQUI y no al confirmar el pago: `confirm_terminal_payment` corre
-    // sin sesion, y rechazar ahi dejaria cobrado en la terminal algo sin venta.
-    if (computed.descuento > 0) {
-      const sinTope = await tienePermisoEfectivo(
-        auth.userId,
-        auth.role,
-        "sales.discount_unlimited",
-        body.tenant_id
+    // valida AQUI, al cotizar, y no al confirmar el pago:
+    // `confirm_terminal_payment` corre sin sesion, y rechazar ahi dejaria
+    // cobrado en la terminal algo sin venta.
+    const sinTope = await tienePermisoEfectivo(
+      auth.userId,
+      auth.role,
+      "sales.discount_unlimited",
+      body.tenant_id
+    );
+
+    // Cotiza con la misma funcion que registra la venta (migracion 127): el
+    // monto de la terminal es el total del carrito, con variantes, sucursal
+    // e IVA. Un error (stock insuficiente, tope de descuento) se le muestra al
+    // cajero tal cual y no se crea la orden en Mercado Pago.
+    let computed;
+    try {
+      computed = await computeTerminalOrderTotal({
+        tenantId: body.tenant_id,
+        usuarioId: auth.userId,
+        clienteId: body.cliente_id ?? null,
+        items: body.items,
+        includeIva,
+        listaPrecioId: body.lista_precio_id ?? null,
+        topeDescuentoPct: sinTope ? null : TOPE_DESCUENTO_CAJERO_PCT,
+      });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "No se pudo calcular el cobro" },
+        { status: 400 }
       );
-      const maximo =
-        Math.round(computed.subtotal * TOPE_DESCUENTO_CAJERO_PCT) / 100;
-      if (!sinTope && computed.descuento > maximo) {
-        return NextResponse.json(
-          {
-            error: `El descuento supera el máximo permitido (${TOPE_DESCUENTO_CAJERO_PCT} % del ticket)`,
-          },
-          { status: 403 }
-        );
-      }
+    }
+
+    if (!(computed.total > 0)) {
+      return NextResponse.json(
+        { error: "El total a cobrar debe ser mayor a $0" },
+        { status: 400 }
+      );
     }
 
     const externalReference = crypto.randomUUID();
@@ -120,6 +139,8 @@ export async function POST(request: NextRequest) {
         // Viaja con el pago para que `confirm_terminal_payment` cree la
         // venta con la MISMA lista con la que se calculo el monto cobrado.
         lista_precio_id: body.lista_precio_id ?? null,
+        // Con el que se cotizo: la venta se registra igual (migracion 127).
+        include_iva: includeIva,
       })
       .select()
       .single();

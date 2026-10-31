@@ -1488,6 +1488,9 @@ export interface PagoTerminal {
   venta_id: string | null;
   creado_en: string;
   actualizado_en: string;
+  lista_precio_id: string | null;
+  /** Migracion 127: la venta se registra con el mismo IVA con que se cotizo. */
+  include_iva: boolean;
 }
 
 export interface TenantConfiguracion {

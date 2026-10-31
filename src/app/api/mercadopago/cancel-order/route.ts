@@ -3,6 +3,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { cancelOrder, getOrder } from "@/features/payments/services/mercadopago/orders";
+import { estadoTerminal } from "@/features/payments/services/mercadopago/webhook";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
@@ -66,23 +67,46 @@ export async function POST(request: NextRequest) {
     const config = await getMercadoPagoPointConfig(body.tenant_id);
     const secrets = await readMercadoPagoSecrets(body.tenant_id, config);
 
+    // Se intenta cancelar y, haya funcionado o no, se pregunta a Mercado Pago
+    // como quedo la orden: esa es la verdad, no la respuesta del cancel.
     let orderStatus = "unknown";
     if (secrets.accessToken) {
       try {
         await cancelOrder(secrets.accessToken, body.mp_order_id);
+      } catch (error) {
+        // Tipico: la orden ya llego a la terminal y solo se cancela ahi.
+        console.warn("Mercado Pago no cancelo la orden:", error);
+      }
+      try {
         const order = await getOrder(secrets.accessToken, body.mp_order_id);
         orderStatus = order.status ?? "unknown";
       } catch (error) {
-        console.error("Error cancelando orden Mercado Pago:", error);
+        console.error("Error consultando orden Mercado Pago:", error);
       }
     }
 
-    if (orderStatus === "processed" || orderStatus === "refunded") {
+    const estado = estadoTerminal(orderStatus);
+    if (estado === "PAGADA") {
       return NextResponse.json({
         success: true,
         pagado: true,
         message: "El pago ya fue procesado",
       });
+    }
+
+    // Sigue viva en la terminal (o no se pudo saber): NO se marca cancelada.
+    // Si se marcara y el cliente pagara despues, el punto de venta ya habria
+    // soltado el carrito. El cajero la cancela en la terminal y el webhook
+    // avisa.
+    if (estado === null && secrets.accessToken) {
+      return NextResponse.json(
+        {
+          error:
+            "La terminal ya tiene el cobro. Cancélalo en la terminal; aquí se actualiza solo.",
+          en_terminal: true,
+        },
+        { status: 409 }
+      );
     }
 
     // Update condicional: solo marca CANCELADA si el webhook NO confirmó
@@ -95,7 +119,10 @@ export async function POST(request: NextRequest) {
         actualizado_en: new Date().toISOString(),
       })
       .eq("id", pago.id)
-      .is("venta_id", null);
+      .is("venta_id", null)
+      // Sin `.select()` supabase-js devuelve `data = null`: "0 filas" parecia
+      // "el webhook ya la pago" y CADA cancelacion se mostraba como venta hecha.
+      .select("id");
 
     if (updateError) {
       console.error("Error cancelando pago_terminal:", updateError);

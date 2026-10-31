@@ -915,7 +915,7 @@ export const GUIAS: Guia[] = [
           { titulo: "Si ya tienes terminal", texto: "En la pestaña «Mercado Pago Point» enciende «Tengo una terminal de tarjeta externa» si cobras con la terminal de tu banco, Clip, Getnet u otra. Así se habilita el método «Tarjeta» en el punto de venta; sin terminal queda bloqueado." },
           {
             titulo: "Terminal Mercado Pago Point",
-            texto: "En la misma pestaña captura el Access Token y la clave del webhook de tu aplicación de Mercado Pago, pulsa «Probar conexión», elige la terminal y enciende «Habilitar terminal». Desde el punto de venta cobras con «Tarjeta (terminal)» y la venta se completa cuando la terminal confirma el pago. «Cómo configurarlo» te guía paso a paso.",
+            texto: "Crea una aplicación de «Pagos presenciales» en Mercado Pago Developers con la cuenta de tu terminal, copia el Access Token de producción y configura el webhook con la URL que te da SYMVORA (evento «Order (Mercado Pago)»). Pega el Access Token y la clave secreta en la pestaña «Mercado Pago Point», pulsa «Probar conexión», elige la terminal, vuelve a pulsar «Probar conexión» para pasarla a modo PDV y reiníciala. Enciende «Habilitar terminal» y cobra con «Tarjeta (terminal)»: el monto llega solo a la terminal, con o sin IVA según tu carrito. «Cómo configurarlo» te guía paso a paso.",
             captura: { src: "/aprende/configuracion/mercado-pago.webp", ancho: 1600, alto: 767 },
             capturaMovil: { src: "/aprende/configuracion/mercado-pago-movil.webp", ancho: 720, alto: 1561 },
           },

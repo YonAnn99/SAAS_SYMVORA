@@ -7,6 +7,7 @@ import {
   createTerminalOrder,
   getTerminalOrderStatus,
 } from "@/features/payments/services/mercadopago/browser";
+import { insumosParaRpc } from "@/features/inventory/insumos";
 import type { CartItem, TerminalOrderState, TerminalStatus } from "../types/pos.types";
 
 const POLL_INTERVAL_MS = 2500;
@@ -27,7 +28,8 @@ export interface CashDrawerState {
   startTerminalSale: (
     clienteId: string | null,
     items: CartItem[],
-    listaPrecioId?: string | null
+    listaPrecioId: string | null,
+    includeIva: boolean
   ) => Promise<void>;
   handleCancelTerminal: () => Promise<void>;
   closeTerminalDialog: () => Promise<void>;
@@ -157,7 +159,8 @@ export function useCashDrawer({
     async (
       clienteId: string | null,
       items: CartItem[],
-      listaPrecioId?: string | null
+      listaPrecioId: string | null,
+      includeIva: boolean
     ) => {
       if (!tenantId) return;
       try {
@@ -172,12 +175,18 @@ export function useCashDrawer({
         const order = await createTerminalOrder({
           tenantId,
           clienteId,
+          // Lo mismo que manda el cobro directo (`completeSale`): la variante
+          // y los insumos ajustados. El monto lo calcula el servidor con la
+          // misma funcion que registra la venta, con el IVA del carrito.
           items: items.map((item) => ({
             productId: item.productId,
+            varianteId: item.varianteId ?? null,
             cantidad: item.cantidad,
             descuento: item.descuento,
+            ...(item.insumos ? { insumos: insumosParaRpc(item.insumos) } : {}),
           })),
-          listaPrecioId: listaPrecioId ?? null,
+          listaPrecioId,
+          includeIva,
         });
         onTerminalStarted();
         setTerminalOrder({ mpOrderId: order.mp_order_id, monto: order.monto });
@@ -209,6 +218,12 @@ export function useCashDrawer({
         tenantId,
         terminalOrder.mpOrderId
       );
+      if (result.enTerminal) {
+        // El cobro ya esta en la terminal: se cancela ahi. Se sigue
+        // consultando, asi el aviso de Mercado Pago cierra esta ventana.
+        toast.info(result.message ?? "Cancela el cobro en la terminal");
+        return;
+      }
       stopPolling();
       if (result.pagado) {
         setTerminalStatus("pagado");

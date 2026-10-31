@@ -24,6 +24,7 @@ export async function createTerminalOrder(
       cliente_id: params.clienteId,
       items: params.items,
       lista_precio_id: params.listaPrecioId ?? null,
+      include_iva: params.includeIva,
     }),
   });
 
@@ -62,6 +63,9 @@ export async function cancelTerminalOrder(
     body: JSON.stringify({ tenant_id: tenantId, mp_order_id: mpOrderId }),
   });
   const data = await response.json();
+  if (response.status === 409 && data.en_terminal) {
+    return { success: false, pagado: false, enTerminal: true, message: data.error };
+  }
   if (!response.ok || !data.success) {
     throw new Error(data.error || "Error al cancelar el cobro");
   }

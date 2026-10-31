@@ -186,6 +186,13 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     se habilita con Mercado Pago Point lista (`mpReady`) o con una terminal externa declarada en Configuración →
     Métodos de pago (`configuracion_json.pos_config.terminal_externa`, leída en el store de `use-modulos.ts`).
     En el demo siempre está activo. `motivoBloqueoCobro` devuelve `"sin-terminal"` como defensa.
+  - **Cobro con terminal Mercado Pago Point** (migración 127, 2026-10-31): el monto lo calcula
+    `cotizar_venta_terminal`, que ensaya `_crear_venta_desde_items` y lo deshace (savepoint). Así variantes, stock por
+    sucursal, insumos, tope de descuento e IVA del carrito son los del cobro directo. `pagos_terminal.include_iva` guarda el IVA
+    con que se cotizó; `confirm_terminal_payment` registra con él y con `p_permitir_stock_negativo` (el cliente ya pagó:
+    si falta stock, `requiere_revision`). Antes la terminal no conocía variantes y cobraba SIEMPRE el 16 % de IVA.
+    El webhook traduce el status con `estadoTerminal` (solo estados finales). Cancelar: si Mercado Pago no deja (ya está
+    en la terminal), la ruta responde 409 `en_terminal` y el POS sigue esperando; nunca se marca pagada por error.
 - **Variantes:**
   - Atributos libres en `variantes_producto.atributos` jsonb (migración 097). `talla`/`color` se siguen
     llenando como resumen compatible.
@@ -504,7 +511,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 126; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 127; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

@@ -6,6 +6,7 @@ import {
   readMercadoPagoSecrets,
 } from "@/features/payments/services/mercadopago/secrets";
 import {
+  estadoTerminal,
   parseWebhookPayload,
   verifyMercadoPagoSignature,
 } from "@/features/payments/services/mercadopago/webhook";
@@ -89,12 +90,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Solo los estados finales tocan el pago; un aviso intermedio
+    // (`at_terminal`, `action_required`) no cambia nada.
+    const estado = paid ? "PAGADA" : estadoTerminal(status);
+    if (!estado) {
+      return NextResponse.json({ ok: true });
+    }
+
     const { error: rpcError } = await supabase.rpc(
       "confirm_terminal_payment",
       {
         p_mp_order_id: dataId,
         p_pagado: paid,
-        p_estado: paid ? "processed" : status === "unknown" ? null : status,
+        p_estado: estado,
       }
     );
 

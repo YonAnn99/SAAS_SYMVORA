@@ -646,7 +646,8 @@ export default function POSPage() {
       await startTerminalSale(
         selectedCustomer === "none" ? null : selectedCustomer,
         items,
-        selectedPriceList === SIN_LISTA ? null : selectedPriceList
+        selectedPriceList === SIN_LISTA ? null : selectedPriceList,
+        includeIva
       );
       return;
     }

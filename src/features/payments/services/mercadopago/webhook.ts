@@ -50,3 +50,29 @@ export function parseWebhookPayload(raw: unknown): MpWebhookPayload {
   if (typeof raw !== "object" || raw === null) return {};
   return raw as MpWebhookPayload;
 }
+export type EstadoTerminal = "PAGADA" | "CANCELADA" | "RECHAZADA";
+
+/**
+ * El `status` de una orden de Mercado Pago traducido a `pagos_terminal.estado`,
+ * que es lo que consulta el punto de venta. `null` = sigue en curso (`created`,
+ * `at_terminal`, `action_required`…) o no se sabe: no se toca nada.
+ *
+ * Antes el webhook guardaba el status crudo ("canceled", "at_terminal") y el
+ * POS, que busca CANCELADA/RECHAZADA, se quedaba "esperando" hasta el limite.
+ */
+export function estadoTerminal(status: string | null | undefined): EstadoTerminal | null {
+  switch ((status ?? "").toLowerCase()) {
+    case "processed":
+      return "PAGADA";
+    case "canceled":
+    case "cancelled":
+    case "expired":
+      return "CANCELADA";
+    case "failed":
+    case "rejected":
+    case "refunded":
+      return "RECHAZADA";
+    default:
+      return null;
+  }
+}

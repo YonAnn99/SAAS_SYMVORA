@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Smartphone, Key, Loader2, RefreshCw, CheckCircle2, Info } from "lucide-react";
+import { Smartphone, Key, Loader2, RefreshCw, CheckCircle2, Info, Copy } from "lucide-react";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { DemoRestrictedNotice } from "@/components/demo/demo-restricted-notice";
@@ -41,26 +41,59 @@ interface MpTerminalOption {
   description: string;
 }
 
-const INSTRUCTIONS = [
+/**
+ * A donde avisa Mercado Pago cuando se paga, cancela o vence un cobro. Siempre
+ * la de produccion: Mercado Pago no puede llegar a un `localhost`.
+ */
+const URL_WEBHOOK = "https://app.symvora.com.mx/api/mercadopago/webhook";
+
+/**
+ * Pasos para conectar la terminal, con los nombres de los menus de Mercado
+ * Pago. La version anterior no decia la URL del webhook ni que evento elegir,
+ * y pedia poner la terminal en modo PDV desde la app, cuando "Probar conexion"
+ * ya lo hace (`setTerminalOperatingMode` en /api/mercadopago/test-connection).
+ */
+const INSTRUCTIONS: { title: string; body: string; webhook?: boolean }[] = [
   {
     title: "Crea una aplicación en Mercado Pago",
-    body: "Entra a developers.mercadopago.com.mx y crea una aplicación con modalidad \u201cPagos en persona \u2192 Point Smart\u201d.",
+    body: "Entra a mercadopago.com.mx/developers con la MISMA cuenta a la que está vinculada tu terminal. Ve a «Tus integraciones» → «Crear aplicación». Ponle un nombre (por ejemplo «SYMVORA»), elige «Pagos presenciales» y, como producto, «Point».",
   },
   {
-    title: "Obtén el Access Token y la clave de webhook",
-    body: "En el panel de la aplicación copia el Access Token (llave de producción) y la Webhook Secret Key. Pégalos abajo; se guardan cifrados.",
+    title: "Copia el Access Token de producción",
+    body: "Dentro de tu aplicación abre «Credenciales de producción» y copia el «Access Token» (empieza con APP_USR-). Las credenciales de prueba no funcionan con una terminal real.",
   },
   {
-    title: "Configura la terminal en modo PDV",
-    body: "Con la app Mercado Pago Point del celular, pon la terminal en modo Punto de Venta (PDV), no Standalone.",
+    title: "Configura el webhook",
+    body: "En tu aplicación entra a «Webhooks» → «Configurar notificaciones», pestaña «Modo productivo». Pega esta URL, marca el evento «Order (Mercado Pago)» y guarda. Después copia la «Clave secreta» que aparece en esa misma pantalla.",
+    webhook: true,
   },
   {
-    title: "Prueba la conexión",
-    body: "Usa el botón \u201cProbar conexión\u201d para que detecte tus terminales y selecciona la que usarás en el punto de venta.",
+    title: "Pega las dos claves aquí y guarda",
+    body: "Access Token y Clave secreta van en los campos de arriba. Pulsa «Guardar»: se guardan cifradas.",
   },
   {
-    title: "Guarda y cobra",
-    body: "Activa el interruptor y guarda. En el punto de venta aparecerá \u201cTarjeta (terminal)\u201d como método de pago.",
+    title: "Elige tu terminal",
+    body: "Con la terminal encendida y con internet, pulsa «Probar conexión»: aparece en la lista. Elígela y pulsa «Probar conexión» otra vez; SYMVORA la pasa a modo Punto de Venta (PDV). Reinicia la terminal para que tome el cambio.",
+  },
+  {
+    title: "Activa y cobra",
+    body: "Prende «Habilitar terminal» y guarda. En el punto de venta elige «Tarjeta (terminal)»: el monto llega solo a la terminal. Si el cobro ya apareció en la terminal y quieres cancelarlo, cancélalo en la terminal.",
+  },
+];
+
+/** Lo que más se atora al conectarla. */
+const PROBLEMAS: { si: string; entonces: string }[] = [
+  {
+    si: "La terminal no aparece al probar la conexión",
+    entonces: "La aplicación se creó con otra cuenta de Mercado Pago, o la terminal está apagada o sin internet.",
+  },
+  {
+    si: "El punto de venta se queda «esperando» aunque ya pagaron",
+    entonces: "Falta el webhook o la Clave secreta no coincide: revisa el paso 3 y vuelve a pegar la clave.",
+  },
+  {
+    si: "La terminal no recibe el cobro",
+    entonces: "No está en modo PDV: repite el paso 5 y reiníciala.",
   },
 ];
 
@@ -256,14 +289,14 @@ export function MercadoPagoPointSettings() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="mp-webhook-secret" className="text-xs">
-                  Webhook Secret Key
+                  Clave secreta del webhook
                 </Label>
                 <Input
                   id="mp-webhook-secret"
                   type="password"
                   value={webhookSecret}
                   onChange={(e) => setWebhookSecret(e.target.value)}
-                  placeholder={webhookSecretSet ? "•••••••••••• (guardado)" : "Clave del webhook"}
+                  placeholder={webhookSecretSet ? "•••••••••••• (guardado)" : "Clave secreta (paso 3)"}
                   className="h-8 text-sm font-mono"
                   autoComplete="off"
                 />
@@ -355,15 +388,45 @@ export function MercadoPagoPointSettings() {
                   <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
                     {index + 1}
                   </span>
-                  <div className="space-y-0.5">
+                  <div className="min-w-0 space-y-0.5">
                     <p className="text-xs font-medium leading-snug">{step.title}</p>
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
                       {step.body}
                     </p>
+                    {step.webhook && (
+                      <div className="mt-1.5 flex items-center gap-1.5 rounded-md border border-border bg-muted/40 p-1.5">
+                        <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{URL_WEBHOOK}</code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 shrink-0 gap-1 text-[11px]"
+                          onClick={() => {
+                            navigator.clipboard
+                              .writeText(URL_WEBHOOK)
+                              .then(() => toast.success("URL del webhook copiada"))
+                              .catch(() => toast.error("No se pudo copiar; selecciónala a mano"));
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                          Copiar
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}
             </ol>
+
+            <Separator className="my-4" />
+            <p className="mb-2 text-xs font-medium">Si algo falla</p>
+            <ul className="space-y-2">
+              {PROBLEMAS.map((p) => (
+                <li key={p.si} className="text-[11px] leading-relaxed">
+                  <span className="font-medium">{p.si}.</span>{" "}
+                  <span className="text-muted-foreground">{p.entonces}</span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       </div>
