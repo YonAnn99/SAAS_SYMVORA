@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { cookieAndroid, tieneCookieAndroid, vieneDeAppAndroid } from "@/lib/app-android";
+import {
+  cookiesViejasParaBorrar,
+  esPestanaDeApp,
+  marcarSiVieneDeApp,
+  vieneDeAppAndroid,
+  type AlmacenSesion,
+} from "@/lib/app-android";
+
+function almacen(): AlmacenSesion & { datos: Map<string, string> } {
+  const datos = new Map<string, string>();
+  return { datos, getItem: (k) => datos.get(k) ?? null, setItem: (k, v) => void datos.set(k, v) };
+}
 import { GET } from "@/app/.well-known/assetlinks.json/route";
 
 describe("app de Android (TWA)", () => {
@@ -9,16 +20,25 @@ describe("app de Android (TWA)", () => {
     expect(vieneDeAppAndroid("https://app.symvora.com.mx/es/dashboard", "https://www.google.com/")).toBe(false);
   });
 
-  it("lee la cookie exacta, no una parecida", () => {
-    expect(tieneCookieAndroid("a=1; symvora_app=android; b=2")).toBe(true);
-    expect(tieneCookieAndroid("symvora_app=androidx")).toBe(false);
-    expect(tieneCookieAndroid("")).toBe(false);
+  it("marca SOLO la pestaña de la app (sessionStorage), nunca Chrome", () => {
+    const app = almacen();
+    expect(marcarSiVieneDeApp(app, "https://app.symvora.com.mx/es/dashboard?app=android", "")).toBe(true);
+    // Ya marcada, sigue marcada al navegar sin el parametro.
+    expect(marcarSiVieneDeApp(app, "https://app.symvora.com.mx/es/billing", "")).toBe(true);
+    expect(esPestanaDeApp(app)).toBe(true);
+
+    // Una pestaña de Chrome tiene su propio sessionStorage: sin marca, con cobro.
+    const chrome = almacen();
+    expect(marcarSiVieneDeApp(chrome, "https://app.symvora.com.mx/es/billing", "https://mail.google.com/")).toBe(false);
+    expect(esPestanaDeApp(chrome)).toBe(false);
   });
 
-  it("la cookie vale para www. y app. en producción, y sin dominio en localhost", () => {
-    expect(cookieAndroid("app.symvora.com.mx")).toContain("domain=.symvora.com.mx");
-    expect(cookieAndroid("app.symvora.com.mx")).toContain("Secure");
-    expect(cookieAndroid("localhost")).not.toContain("domain=");
+  it("borra la cookie de la primera versión, con y sin dominio", () => {
+    expect(cookiesViejasParaBorrar("app.symvora.com.mx")).toEqual([
+      "symvora_app=; path=/; max-age=0",
+      "symvora_app=; path=/; max-age=0; domain=.symvora.com.mx",
+    ]);
+    expect(cookiesViejasParaBorrar("localhost")).toEqual(["symvora_app=; path=/; max-age=0"]);
   });
 
   it("assetlinks.json: vacío sin huella; con huella, el paquete y la huella en mayúsculas", async () => {

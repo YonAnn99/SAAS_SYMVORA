@@ -1,6 +1,21 @@
 /**
- * Pantalla de arranque de la app de Android (TWA de Bubblewrap): S blanca y
- * «SYMVORA» pequeños y centrados, igual que las de iOS (`public/splash/`).
+ * Ajustes al proyecto Android (TWA de Bubblewrap) que Bubblewrap no ofrece y que
+ * `bubblewrap update` deshace: correr este script despues de cada update y
+ * antes de `bubblewrap build`.
+ *
+ *   node scripts/preparar-android.mjs ~/Documentos/symvora-android
+ *
+ * 1. SPLASH: S blanca y «SYMVORA» pequeños y centrados, igual que las de iOS
+ *    (`public/splash/`).
+ * 2. SIN APP LINK: quita del AndroidManifest el intent-filter VIEW con
+ *    `autoVerify` para app.symvora.com.mx. Con el, cualquier enlace a SYMVORA
+ *    (los correos de «Activar mi suscripcion», WhatsApp…) se abria en la APP,
+ *    donde no hay boton de pago (politica de pagos de Google Play). Sin el, la
+ *    app solo se abre desde su icono y los enlaces van a Chrome, donde si se
+ *    paga. La pantalla completa no depende de este filtro: la verifica Chrome
+ *    con assetlinks.json.
+ *
+ * --- Splash ---
  *
  * La TWA pinta `res/drawable-<densidad>/splash.png` (300 dp de lado) sobre
  * `backgroundColor` (#1E3A8A). Bubblewrap lo genera escalando el icono de 512,
@@ -10,14 +25,10 @@
  * convierte a blanco con transparencia con el mismo metodo que
  * `generate-pwa-icons.mjs` (luminancia como mascara: bordes suaves, sin orilla).
  *
- *   node scripts/generate-android-splash.mjs ~/Documentos/symvora-android
- *
- * ⚠️ `bubblewrap update` vuelve a generar el splash desde el icono: hay que
- * correr este script despues de cada update y antes de `bubblewrap build`.
  */
 
 import sharp from "sharp";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
@@ -85,7 +96,7 @@ async function logoBlanco(input, width, height) {
 
 const destino = process.argv[2] && resolve(process.argv[2]);
 if (!destino || !existsSync(join(destino, "app/src/main/res"))) {
-  console.error("Uso: node scripts/generate-android-splash.mjs <carpeta del proyecto Android>");
+  console.error("Uso: node scripts/preparar-android.mjs <carpeta del proyecto Android>");
   process.exit(1);
 }
 
@@ -102,4 +113,19 @@ for (const [densidad, lado] of Object.entries(DENSIDADES)) {
     .png({ compressionLevel: 9 })
     .toFile(salida);
   console.log(`${densidad}: ${lado}×${lado} (logo ${ancho}×${alto}) → ${salida}`);
+}
+
+// --- Sin App Link ---
+const manifiesto = join(destino, "app/src/main/AndroidManifest.xml");
+const xml = readFileSync(manifiesto, "utf8");
+const appLink = /\s*<intent-filter android:autoVerify="true">[\s\S]*?<\/intent-filter>/;
+if (appLink.test(xml)) {
+  const nuevo = xml.replace(appLink, "");
+  if (!nuevo.includes("android.intent.category.LAUNCHER")) {
+    throw new Error("El manifest se quedaría sin LAUNCHER: no se tocó");
+  }
+  writeFileSync(manifiesto, nuevo);
+  console.log("AndroidManifest: quitado el App Link (los enlaces abren en Chrome)");
+} else {
+  console.log("AndroidManifest: sin App Link, nada que quitar");
 }

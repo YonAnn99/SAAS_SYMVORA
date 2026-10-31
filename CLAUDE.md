@@ -427,14 +427,17 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - `/.well-known/assetlinks.json` (`src/app/.well-known/assetlinks.json/route.ts`) con `ANDROID_APP_PACKAGE`
     (default `com.symvora.app`) y `ANDROID_APP_SHA256` (huella de la firma de Play App Signing; coma si hay varias).
   - **Cobro:** Google Play exige su facturación para lo que se vende DENTRO de la app. La app no vende: se reconoce
-    con `?app=android` en el start URL o el referrer `android-app://` → cookie `symvora_app=android`
-    (`lib/app-android.ts`, `features/app-android/`). Con ella `/billing` oculta precios y pagos, y
-    `aviso-estado-pago.tsx` no invita a pagar ni menciona la oferta.
+    con `?app=android` en el start URL o el referrer `android-app://` → `sessionStorage` `symvora_app=android`
+    (`lib/app-android.ts`, `features/app-android/`, montado en el layout RAÍZ: el panel y el login son otros árboles
+    de rutas). NUNCA cookie: la TWA comparte el perfil de Chrome y Chrome también perdía los botones de pago. Con la
+    marca, `/billing` oculta precios y pagos, y `aviso-estado-pago.tsx` no invita a pagar. Se paga desde Chrome: los
+    correos de prueba y cobro llevan a `/es/billing`.
   - `manifest.ts` lleva `id` fijo (`/es/dashboard`, igual al calculado: no cambia las PWA instaladas).
   - Proyecto Android FUERA del repo: `~/Documentos/symvora-android` (keystore `android.keystore,symvora android`, alias
-    `symvora`; `minSdkVersion` 24, `splashScreenFadeOutDuration` 900). El splash (logo chico como el de iOS) sale de
-    `node scripts/generate-android-splash.mjs ~/Documentos/symvora-android`: repetirlo tras cada `bubblewrap update`,
-    que lo regenera desde el ícono. En la app NO hay botón para pagar en el navegador: la política de pagos de Play
+    `symvora`; `minSdkVersion` 24, `splashScreenFadeOutDuration` 900). Tras cada `bubblewrap update` correr
+    `node scripts/preparar-android.mjs ~/Documentos/symvora-android`: pone el splash chico (como el de iOS) y QUITA el
+    intent-filter App Link (`autoVerify`) del manifest, para que los enlaces (correos de pago, WhatsApp) abran Chrome
+    y no la app. En la app NO hay botón para pagar en el navegador: la política de pagos de Play
     lo prohíbe en México (solo programas de EE. UU., UE, Japón, Brasil…).
 - **Eliminar cuenta** (lo exige Play): «Eliminar mi cuenta» en Mi perfil (`features/cuenta/eliminar-cuenta.tsx`) y
   página pública `/es/eliminar-cuenta` (en `MARKETING_SEGMENTS`).

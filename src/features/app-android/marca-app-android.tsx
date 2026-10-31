@@ -1,23 +1,26 @@
 "use client";
 
 import { useEffect } from "react";
-import { cookieAndroid, tieneCookieAndroid, vieneDeAppAndroid } from "@/lib/app-android";
+import { CLAVE_APP, cookiesViejasParaBorrar, marcarSiVieneDeApp } from "@/lib/app-android";
 
 /**
- * Deja la cookie de la app de Android la primera vez que SYMVORA se abre
- * desde ella (`lib/app-android.ts`). Va en el layout raíz (`app/layout.tsx`): cubre el
+ * Marca la pestaña cuando SYMVORA se abre desde la app de Android
+ * (`lib/app-android.ts`). Va en el layout raíz (`app/layout.tsx`): cubre el
  * login, el panel y la landing. No pinta nada.
  */
 export function MarcaAppAndroid() {
   useEffect(() => {
     try {
-      if (tieneCookieAndroid(document.cookie)) return;
-      if (vieneDeAppAndroid(window.location.href, document.referrer)) {
-        document.cookie = cookieAndroid(window.location.hostname);
+      // La primera version usaba una cookie compartida con Chrome: fuera.
+      if (document.cookie.includes(`${CLAVE_APP}=`)) {
+        for (const c of cookiesViejasParaBorrar(window.location.hostname)) document.cookie = c;
+      }
+      const yaEstaba = window.sessionStorage.getItem(CLAVE_APP) !== null;
+      if (marcarSiVieneDeApp(window.sessionStorage, window.location.href, document.referrer) && !yaEstaba) {
         window.dispatchEvent(new Event("symvora:app-android"));
       }
     } catch {
-      // Cookies bloqueadas: el cobro se mostraria como en la web.
+      // Almacenamiento bloqueado: el cobro se muestra como en la web.
     }
   }, []);
   return null;
