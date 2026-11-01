@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { normalizarEstadoCuenta, type EstadoCuenta } from "../estado-cuenta";
 import type { Cliente, PagoCredito } from "@/lib/types/database";
 import type { CreditMetodoPago, NewCustomerForm } from "../types/customer.types";
 
@@ -115,4 +116,15 @@ export async function registerCreditPayment(
 
   if (error) throw error;
   return data as unknown as PagoCredito;
+}
+
+/**
+ * Estado de cuenta (migracion 129): saldo, ventas a credito y abonos del
+ * cliente. La visibilidad la decide el RPC, igual que el Historial.
+ */
+export async function fetchEstadoCuenta(clienteId: string): Promise<EstadoCuenta> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("estado_cuenta_cliente", { p_cliente_id: clienteId });
+  if (error) throw error;
+  return normalizarEstadoCuenta(data);
 }

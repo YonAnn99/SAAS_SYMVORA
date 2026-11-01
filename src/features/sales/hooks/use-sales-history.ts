@@ -32,7 +32,9 @@ export function useSalesHistory(
   tenantId: string | null,
   periodo: Periodo,
   fechaElegida: Date | null,
-  cajeroId: string | null
+  cajeroId: string | null,
+  /** Las compras de un cliente (migracion 129). `null` = todos. */
+  clienteId: string | null = null
 ) {
   const [ventas, setVentas] = useState<VentaEnHistorial[]>([]);
   const [total, setTotal] = useState(0);
@@ -52,7 +54,7 @@ export function useSalesHistory(
   useEffect(() => {
     const t = window.setTimeout(() => setPagina(0), 0);
     return () => window.clearTimeout(t);
-  }, [periodo, fechaElegida, cajeroId, sucursalId]);
+  }, [periodo, fechaElegida, cajeroId, sucursalId, clienteId]);
 
   const refetch = useCallback(async () => {
     if (!tenantId || !rango) {
@@ -67,6 +69,7 @@ export function useSalesHistory(
         hasta: rango.hasta,
         cajeroId,
         sucursalId,
+        clienteId,
         limite: VENTAS_POR_PAGINA,
         desplazamiento: pagina * VENTAS_POR_PAGINA,
       });
@@ -77,7 +80,7 @@ export function useSalesHistory(
     } finally {
       setCargando(false);
     }
-  }, [tenantId, rango, cajeroId, sucursalId, pagina]);
+  }, [tenantId, rango, cajeroId, sucursalId, clienteId, pagina]);
 
   // Diferido, convencion del repo: un setState sincrono dentro de un efecto
   // encadena renders y dispara `react-hooks/set-state-in-effect`.

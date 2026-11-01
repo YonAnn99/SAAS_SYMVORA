@@ -187,6 +187,9 @@ export async function updateSession(request: NextRequest) {
     // Tarjeta de lealtad del cliente final (migracion 115): la abre sin cuenta
     // desde el enlace que le compartio el negocio.
     stripLocale(request.nextUrl.pathname).startsWith("/tarjeta/") ||
+    // Instalar SYMVORA como app (PWA): publica y en el host de la APP, no en
+    // MARKETING_SEGMENTS (la mandaria a www, que es otro origen y otra app).
+    stripLocale(request.nextUrl.pathname) === "/instalar" ||
     isLegalRoute ||
     isMarketingPath(request.nextUrl.pathname) ||
     /^\/(es|en)$/.test(request.nextUrl.pathname);

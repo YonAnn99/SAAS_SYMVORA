@@ -47,6 +47,8 @@ export interface FiltrosHistorial {
   cajeroId?: string | null;
   /** `null` = todas las sucursales. Acota, no concede: el negocio ya se valida. */
   sucursalId?: string | null;
+  /** Las compras de un cliente (migracion 129). `null` = todos. */
+  clienteId?: string | null;
   limite?: number;
   desplazamiento?: number;
 }
@@ -67,6 +69,7 @@ export async function fetchHistorialVentas(
     p_limite: filtros.limite ?? VENTAS_POR_PAGINA,
     p_desplazamiento: filtros.desplazamiento ?? 0,
     p_sucursal_id: filtros.sucursalId ?? null,
+    p_cliente_id: filtros.clienteId ?? null,
   });
 
   if (error) throw error;

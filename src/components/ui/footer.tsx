@@ -61,6 +61,8 @@ export default function Footer({ locale = "es" }: { locale?: string }) {
             <Link href={`/${locale}/aviso-privacidad`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Aviso de Privacidad</Link>
             <Link href={`/${locale}/terminos`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos y Condiciones</Link>
             <Link href={`/${locale}/politica-cookies`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Política de Cookies</Link>
+            {/* En el host de la app: ahi se instala la PWA (ver `features/instalar-app`). */}
+            <a href="https://app.symvora.com.mx/es/instalar" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Instalar en tu computadora</a>
           </div>
         </div>
 

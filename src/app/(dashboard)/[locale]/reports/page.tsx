@@ -105,7 +105,9 @@ interface ReportData {
     lineasSinCosto: number;
     productosSinCosto: number;
     /** Ordenado por lo que más deja, no por lo que más factura. */
-    topPorGanancia: { nombre: string; ganancia: number; ingresos: number }[];
+    // `id`: dos productos pueden llamarse igual («Kong Correa» ×2); la llave de
+    // la lista no puede ser el nombre. Opcional por la cache de una version vieja.
+    topPorGanancia: { id?: string; nombre: string; ganancia: number; ingresos: number }[];
   };
 }
 
@@ -479,6 +481,7 @@ export default function ReportsPage() {
           lineasSinCosto: resumenGanancia.lineasSinCosto,
           productosSinCosto: resumenGanancia.productosSinCosto.length,
           topPorGanancia: rankingGanancia.slice(0, 5).map((r) => ({
+            id: r.productoId,
             nombre:
               productos.find((p) => p.id === r.productoId)?.nombre ||
               "Producto desconocido",
@@ -913,9 +916,9 @@ export default function ReportsPage() {
                 Lo que más deja
               </p>
               <div className="space-y-1.5">
-                {reportData.ganancia.topPorGanancia.map((p) => (
+                {reportData.ganancia.topPorGanancia.map((p, i) => (
                   <div
-                    key={p.nombre}
+                    key={p.id ?? `${p.nombre}-${i}`}
                     className="flex items-center justify-between gap-3 text-sm"
                   >
                     <span className="truncate">{p.nombre}</span>

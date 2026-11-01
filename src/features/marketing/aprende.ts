@@ -421,7 +421,7 @@ export const GUIAS: Guia[] = [
           },
           {
             titulo: "Consulta su saldo",
-            texto: "En la tabla de Clientes ves el saldo pendiente de cada uno.",
+            texto: "En la tabla de Clientes ves el saldo pendiente de cada uno. Pulsa «Estado de cuenta» (en el celular, desliza la tarjeta del cliente a la izquierda → «Cuenta») para ver de dónde viene: sus ventas a crédito, que puedes abrir para ver los productos y reimprimir el ticket, y sus abonos. En Reportes → Historial también puedes filtrar las ventas por cliente.",
             captura: { src: "/aprende/clientes-y-credito/clientes.webp", ancho: 1600, alto: 769 },
             capturaMovil: { src: "/aprende/clientes-y-credito/clientes-movil.webp", ancho: 720, alto: 1614 },
           },

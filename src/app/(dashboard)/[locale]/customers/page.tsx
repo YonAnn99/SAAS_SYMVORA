@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Contact, CreditCard, PauseCircle, Pencil, Search, Stamp } from "lucide-react";
+import { Contact, CreditCard, PauseCircle, Pencil, Receipt, Search, Stamp } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
+import { EstadoCuentaDialog } from "@/features/customers/components/estado-cuenta-dialog";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   useCustomers,
@@ -72,6 +73,8 @@ export default function CustomersPage() {
   // Editar: misma regla que la base (RLS de `clientes`: `inventory.manage`).
   const puedeEditarClientes = can("inventory.manage");
   const [editando, setEditando] = useState<Cliente | null>(null);
+  // Estado de cuenta (migracion 129): ventas a credito y abonos del cliente.
+  const [cuentaDe, setCuentaDe] = useState<Cliente | null>(null);
 
   // Eliminar: misma regla que editar. Con saldo pendiente se bloquea en la
   // fila; con ventas, la base lo impide y `deleteCustomer` lo explica.
@@ -231,6 +234,7 @@ export default function CustomersPage() {
                     metaSellos={programaActivo && lealtad.programa ? lealtad.programa.sellos_meta : null}
                     onEditar={setEditando}
                     onAbonar={setPaymentDialogFor}
+                    onEstadoCuenta={setCuentaDe}
                     onEliminar={eliminarCliente}
                     onVerTarjeta={(c) => {
                       if (emitiendo !== c.id) void abrirTarjeta(c.id);
@@ -329,6 +333,16 @@ export default function CustomersPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  className="h-7 gap-1 text-xs"
+                                  onClick={() => setCuentaDe(c)}
+                                  title="Ventas a crédito y abonos"
+                                >
+                                  <Receipt className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">Estado de cuenta</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="h-7 text-xs"
                                   disabled={c.saldo_pendiente <= 0}
                                   onClick={() => setPaymentDialogFor(c)}
@@ -377,6 +391,15 @@ export default function CustomersPage() {
           void refresh();
           // Su nombre y correo tambien se ven en su tarjeta de lealtad.
           if (tarjetaDe(actualizado.id)) void lealtad.refrescar();
+        }}
+      />
+
+      <EstadoCuentaDialog
+        cliente={cuentaDe}
+        onOpenChange={(open) => !open && setCuentaDe(null)}
+        onAbonar={(c) => {
+          setCuentaDe(null);
+          setPaymentDialogFor(c);
         }}
       />
 

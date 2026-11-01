@@ -4,16 +4,16 @@
  * Los clientes en celular: una pastilla por cliente en lugar de la tabla
  * (ver `components/ui/fila-deslizable.tsx`).
  *
- *   a la mitad  -> Eliminar | Abonar
+ *   a la mitad  -> Eliminar | Cuenta | Abonar
  *   completo    -> Eliminar (con confirmacion)
  *   a la derecha -> su tarjeta de lealtad (la crea si no tiene)
- *   tocar       -> Editar
+ *   tocar       -> Editar (o el estado de cuenta, si no puede editar)
  *
  * Con saldo pendiente no se elimina (igual que el boton deshabilitado de
  * escritorio): se avisa y la pastilla reaparece.
  */
 
-import { CreditCard, HandCoins, Trash2 } from "lucide-react";
+import { CreditCard, HandCoins, Receipt, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,6 +26,7 @@ import type { Cliente } from "@/lib/types/database";
 
 const COLOR_ABONO = "#10B981";
 const COLOR_TARJETA = "#8B5CF6";
+const COLOR_CUENTA = "#2563EB";
 
 interface CustomerSwipeListProps {
   clientes: Cliente[];
@@ -37,6 +38,8 @@ interface CustomerSwipeListProps {
   metaSellos: number | null;
   onEditar: (cliente: Cliente) => void;
   onAbonar: (cliente: Cliente) => void;
+  /** Estado de cuenta: ventas a credito y abonos (migracion 129). */
+  onEstadoCuenta: (cliente: Cliente) => void;
   /** `false` si no se pudo: la pastilla reaparece. */
   onEliminar: (cliente: Cliente) => Promise<boolean>;
   onVerTarjeta: (cliente: Cliente) => void;
@@ -49,6 +52,7 @@ export function CustomerSwipeList({
   metaSellos,
   onEditar,
   onAbonar,
+  onEstadoCuenta,
   onEliminar,
   onVerTarjeta,
 }: CustomerSwipeListProps) {
@@ -60,8 +64,8 @@ export function CustomerSwipeList({
       {verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
           {conTarjetas
-            ? "Desliza ← para eliminar o abonar, → para ver su tarjeta"
-            : "Desliza a la izquierda para eliminar o abonar"}
+            ? "Desliza ← para ver su cuenta o abonar, → para ver su tarjeta"
+            : "Desliza a la izquierda para ver su cuenta o abonar"}
         </p>
       )}
 
@@ -104,11 +108,20 @@ export function CustomerSwipeList({
           permanece: true,
         };
 
+        const cuenta: AccionFila = {
+          id: "cuenta",
+          etiqueta: "Cuenta",
+          color: COLOR_CUENTA,
+          icono: <Receipt size={18} strokeWidth={2} />,
+          alElegir: () => onEstadoCuenta(c),
+          permanece: true,
+        };
+
         return (
           <FilaDeslizable
             key={c.id}
             label={c.nombre}
-            acciones={puedeEditar ? [eliminar, abonar] : [abonar]}
+            acciones={puedeEditar ? [eliminar, cuenta, abonar] : [cuenta, abonar]}
             accionInicio={
               conTarjetas
                 ? {
@@ -120,7 +133,7 @@ export function CustomerSwipeList({
                   }
                 : undefined
             }
-            onTap={puedeEditar ? () => onEditar(c) : undefined}
+            onTap={puedeEditar ? () => onEditar(c) : () => onEstadoCuenta(c)}
             onOpenChange={alAbrir}
           >
             <div className="min-w-0 flex-1">

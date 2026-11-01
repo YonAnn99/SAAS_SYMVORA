@@ -48,6 +48,7 @@ import { useSalesHistory } from "../hooks/use-sales-history";
 import { SaleDetailDialog, EstadoVentaBadge } from "./sale-detail-dialog";
 
 const TODOS_LOS_CAJEROS = "todos";
+const TODOS_LOS_CLIENTES = "todos-los-clientes";
 
 interface SalesHistoryCardProps {
   tenantId: string | null;
@@ -88,6 +89,9 @@ export function SalesHistoryCard({
   const verSucursal = hayVarias && seleccionada === null;
 
   const [cajeroSel, setCajeroSel] = useState<string>(TODOS_LOS_CAJEROS);
+  // Las compras de un cliente (migracion 129): «¿qué me debe y de qué?».
+  const [clienteSel, setClienteSel] = useState<string>(TODOS_LOS_CLIENTES);
+  const [clientes, setClientes] = useState<{ id: string; nombre: string }[]>([]);
   const [cajeros, setCajeros] = useState<Cajero[]>([]);
   const [ventaAbierta, setVentaAbierta] = useState<string | null>(null);
 
@@ -104,7 +108,8 @@ export function SalesHistoryCard({
     tenantId,
     periodo,
     fechaElegida,
-    cajeroSel === TODOS_LOS_CAJEROS ? null : cajeroSel
+    cajeroSel === TODOS_LOS_CAJEROS ? null : cajeroSel,
+    clienteSel === TODOS_LOS_CLIENTES ? null : clienteSel
   );
 
   // "Actualizar" de la pagina (el 0 inicial no cuenta: la carga ya corre sola).
@@ -134,6 +139,21 @@ export function SalesHistoryCard({
     }, 0);
     return () => window.clearTimeout(t0);
   }, [tenantId, veTodas]);
+
+  // Los clientes del negocio, para el filtro. Sin clientes no hay selector.
+  useEffect(() => {
+    if (!tenantId) return;
+    const t0 = window.setTimeout(async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from("clientes")
+        .select("id, nombre")
+        .eq("tenant_id", tenantId)
+        .order("nombre");
+      setClientes((data ?? []) as { id: string; nombre: string }[]);
+    }, 0);
+    return () => window.clearTimeout(t0);
+  }, [tenantId]);
 
   const desde = pagina * 25 + 1;
   const hasta = Math.min((pagina + 1) * 25, total);
@@ -266,6 +286,29 @@ export function SalesHistoryCard({
             )}
           </CardTitle>
 
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {clientes.length > 0 && (
+            <Select value={clienteSel} onValueChange={(v) => v && setClienteSel(v)}>
+              <SelectTrigger className="h-8 w-full sm:w-56" aria-label="Filtrar por cliente">
+                <SelectValue>
+                  {(valor: unknown) =>
+                    valor === TODOS_LOS_CLIENTES
+                      ? "Todos los clientes"
+                      : clientes.find((c) => c.id === valor)?.nombre ?? "Todos los clientes"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS_LOS_CLIENTES}>Todos los clientes</SelectItem>
+                {clientes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {/* Sin `sales.view_all` no hay nada que filtrar: el servidor solo
               devuelve las ventas propias, así que el selector solo confundiría. */}
           {veTodas && cajeros.length > 1 && (
@@ -295,6 +338,7 @@ export function SalesHistoryCard({
               </SelectContent>
             </Select>
           )}
+          </div>
         </CardHeader>
 
         <CardContent className="p-0 sm:p-0">{cuerpo}</CardContent>

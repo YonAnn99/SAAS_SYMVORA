@@ -3,6 +3,7 @@ import { Outfit, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "./providers";
 import { MarcaAppAndroid } from "@/features/app-android/marca-app-android";
+import { CapturaInstalacion } from "@/features/instalar-app/captura-instalacion";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
 import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
@@ -156,6 +157,7 @@ export default function RootLayout({
           {/* Aqui y no en [locale]/layout: el panel y el login son otros arboles
               de rutas ((dashboard), (auth)) y la app de Android vive en ellos. */}
           <MarcaAppAndroid />
+          <CapturaInstalacion />
           {children}
         </Providers>
         {/* Core Web Vitals reales por ruta (INP, LCP, TTFB) en Vercel →

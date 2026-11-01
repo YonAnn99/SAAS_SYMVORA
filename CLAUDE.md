@@ -219,7 +219,12 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Compras:** compra directa que suma stock (`registrar_compra_directa`), cancelación que lo revierte,
   órdenes de compra con PDF.
 - **Reportes:** historial de ventas con reimpresión (la regla de visibilidad vive en los RPC
-  `listar_ventas`/`detalle_venta`), ganancia bruta.
+  `listar_ventas`/`detalle_venta`), ganancia bruta. Filtro por cliente (`p_cliente_id`, migración 129: la firma se
+  cambió con DROP + CREATE porque un parámetro nuevo crea un overload que PostgREST no sabe elegir).
+- **Estado de cuenta del cliente** (migración 129, sugerencia de un cliente real): botón en Clientes (en celular,
+  acción «Cuenta» del cajón; tocar la pastilla si no puede editar) → `estado-cuenta-dialog.tsx` con
+  `estado_cuenta_cliente`: saldo, ventas a crédito (abren `SaleDetailDialog`) y abonos de `pagos_credito`. Misma
+  visibilidad que el Historial (`sales.view_all` o solo las propias; avisa con `ventas_parciales`).
 - **Productos archivados** (migración 102): un producto con historial no se puede borrar (FKs `NO ACTION`
   desde ventas, compras, ajustes, órdenes y traspasos). Al intentarlo se ofrece **archivarlo**
   (`productos.archivado_en`): sale del catálogo, del POS y de los selectores. También se archiva a mano
@@ -256,6 +261,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     (computadora) y `capturaMovil` (celular), que la página alterna por ancho de pantalla. Las capturas son WebP
     generadas con `node scripts/capturas-aprende.mjs` desde `~/Imágenes/MODULOS`: la lista vive en el script.
     No publicar capturas con correos, celulares, nombres del equipo, claves o el precio promocional.
+  - **Instalar en la computadora** (PWA, sin .exe por decisión del usuario: Electron pedía firma de código, rompía el
+    login con Google y las impresoras): sección `instalar-computadora.tsx` antes del CTA y enlace en el footer →
+    `app.symvora.com.mx/es/instalar` (`(auth)/[locale]/instalar`, pública por `isPublicRoute`, NO en
+    `MARKETING_SEGMENTS`: instalada desde `www` sería otra app de otro origen). `CapturaInstalacion` (layout raíz)
+    guarda `beforeinstallprompt`; `useInstalarApp` lo usa; sin él, pasos por navegador (`plataforma.ts`).
   - Footer: `components/ui/footer.tsx`, con enlaces legales con locale.
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**
@@ -546,7 +556,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 128; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 129; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
