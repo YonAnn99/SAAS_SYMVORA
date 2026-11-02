@@ -26,14 +26,17 @@ async function deliver(resend: Resend, payload: EmailPayload) {
 }
 
 // Identidad de marca SYMVORA. El logo es el ícono azul (288 px, se muestra a
-// 72): lo genera scripts/generate-pwa-icons.mjs. Paleta: negro tinta,
-// blanco hueso, zinc para texto secundario (como web/login).
+// 72): lo genera scripts/generate-pwa-icons.mjs. Cabecera y botones en el azul
+// del logo (`azul`, el mismo `background_color` del manifest y de la plantilla
+// de Supabase `recuperar-contrasena.html`); antes iban en negro. Texto en negro
+// tinta, blanco hueso, zinc para lo secundario (como web/login).
 const BRAND = {
   logo: "https://www.symvora.com.mx/symvora-logo-email.png",
   siteUrl: "https://www.symvora.com.mx",
   appUrl: "https://app.symvora.com.mx",
   ink: "#111111",
-  surface: "#141414",
+  azul: "#1E3A8A",
+  surface: "#1E3A8A",
   bone: "#F0EFED",
   body: "#3f3f46",
   muted: "#a1a1aa",
@@ -144,7 +147,7 @@ function buildEmailHtml(params: {
               Comparte tu enlace con otros comercios. Cuando tu invitado pague su primer mes, tú y él reciben 1 mes gratis.
             </p>
             <a href="${referralUrl}"
-               style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;font-weight:600;">
+               style="display:inline-block;background:${BRAND.azul};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;font-weight:600;">
               Invitar y ganar un mes gratis
             </a>
             <p style="font-size:12px;color:${BRAND.muted};margin:12px 0 0;word-break:break-all;">
@@ -186,7 +189,7 @@ function buildEmailHtml(params: {
                     <tr>
                       <td align="center">
                         <a href="${ctaHref}"
-                           style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                           style="display:inline-block;background:${BRAND.azul};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
                           ${ctaLabel}
                         </a>
                       </td>
@@ -335,7 +338,7 @@ export async function sendInviteKeyEmail(params: {
                     <tr>
                       <td align="center">
                         <a href="${loginUrl}"
-                           style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                           style="display:inline-block;background:${BRAND.azul};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
                           Ir al inicio de sesión
                         </a>
                       </td>
@@ -541,7 +544,7 @@ export async function sendCancellationEmail(params: {
                     <tr>
                       <td align="center">
                         <a href="${BRAND.appUrl}/es/billing"
-                           style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                           style="display:inline-block;background:${BRAND.azul};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
                           Reactivar mi cuenta
                         </a>
                       </td>
@@ -748,7 +751,7 @@ function buildNoticeHtml(params: {
                     <tr>
                       <td align="center">
                         <a href="${ctaHref}"
-                           style="display:inline-block;background:${BRAND.ink};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                           style="display:inline-block;background:${BRAND.azul};color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
                           ${ctaLabel}
                         </a>
                       </td>
