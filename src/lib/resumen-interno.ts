@@ -69,7 +69,36 @@ export interface VencidoOCancelado extends Contacto {
   fecha: string;
 }
 
+/**
+ * Termometro de carga de las ultimas 24 h (migracion 130), sin demos. Sirve
+ * para ver venir el primer techo del plan de Supabase antes de llegar.
+ */
+export interface CargaSistema {
+  ventas_24h: number;
+  negocios_con_venta: number;
+  /** Mas ventas registradas dentro de un mismo minuto (todos los negocios). */
+  ventas_pico_minuto: number;
+  /** Mas usuarios distintos vendiendo dentro de una misma hora. */
+  cajeros_pico_hora: number;
+}
+
+/**
+ * Umbrales de alerta: ~30 % del primer techo estimado del plan Free (Nano,
+ * 200 conexiones de Realtime). Pasarlos = hora de revisar la instancia.
+ */
+export const UMBRAL_CARGA = { cajerosPicoHora: 50, ventasPicoMinuto: 60 } as const;
+
+export function cargaAlta(c: CargaSistema | undefined): boolean {
+  return (
+    !!c &&
+    (Number(c.cajeros_pico_hora) >= UMBRAL_CARGA.cajerosPicoHora ||
+      Number(c.ventas_pico_minuto) >= UMBRAL_CARGA.ventasPicoMinuto)
+  );
+}
+
 export interface ResumenInterno {
+  /** Opcional: antes de la migracion 130 la funcion no la devolvia. */
+  carga?: CargaSistema;
   nuevos: NegocioNuevo[];
   incompletos: RegistroIncompleto[];
   sin_productos: NegocioSinProductos[];
@@ -300,7 +329,45 @@ export function asuntoResumen(r: ResumenInterno, ahora: Date): string {
       plural(r.vencidos_cancelados.length, "vencido/cancelado", "vencidos/cancelados"),
   ].filter(Boolean);
   const fecha = fechaCorta(ahora.toISOString());
-  return `Resumen SYMVORA · ${fecha} · ${partes.length ? partes.join(" · ") : "sin novedades"}`;
+  const alerta = cargaAlta(r.carga) ? "⚠️ Carga alta · " : "";
+  return `${alerta}Resumen SYMVORA · ${fecha} · ${partes.length ? partes.join(" · ") : "sin novedades"}`;
+}
+
+function cifrasCarga(c: CargaSistema): [string, number][] {
+  return [
+    ["Ventas (24 h)", Number(c.ventas_24h)],
+    ["Negocios que vendieron", Number(c.negocios_con_venta)],
+    ["Pico de ventas en un minuto", Number(c.ventas_pico_minuto)],
+    ["Pico de cajeros en una hora", Number(c.cajeros_pico_hora)],
+  ];
+}
+
+const MENSAJE_CARGA_ALTA =
+  `Se pasó el umbral de alerta (${UMBRAL_CARGA.cajerosPicoHora} cajeros en una hora o ` +
+  `${UMBRAL_CARGA.ventasPicoMinuto} ventas en un minuto). Revisa el uso en Supabase y el tamaño de la instancia.`;
+
+function cargaHtml(c: CargaSistema): string {
+  const alta = cargaAlta(c);
+  const celdas = cifrasCarga(c)
+    .map(
+      ([titulo, valor]) =>
+        `<td valign="top" style="padding:8px;border:1px solid ${BORDE};"><div style="font-size:11px;color:${GRIS};">${esc(titulo)}</div><div style="font-size:18px;font-weight:700;color:${TINTA};">${valor.toLocaleString("es-MX")}</div></td>`
+    )
+    .join("");
+  const aviso = alta
+    ? `<p style="margin:8px 0 0;padding:8px 10px;border-radius:8px;background:#FEF2F2;color:#B91C1C;font-size:13px;font-weight:600;">⚠️ ${esc(MENSAJE_CARGA_ALTA)}</p>`
+    : "";
+  return (
+    `<h2 style="margin:28px 0 8px;font-size:16px;color:${AZUL};">Carga del sistema (últimas 24 h)</h2>` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>${celdas}</tr></table>` +
+    aviso
+  );
+}
+
+function cargaTexto(c: CargaSistema): string {
+  const lineas = cifrasCarga(c).map(([titulo, valor]) => `- ${titulo}: ${valor}`);
+  if (cargaAlta(c)) lineas.push(`⚠️ ${MENSAJE_CARGA_ALTA}`);
+  return `Carga del sistema (últimas 24 h)\n${lineas.join("\n")}`;
 }
 
 /** Resumen diario para hola@: una seccion por lista, vacias con "Nada nuevo". */
@@ -411,12 +478,14 @@ export function construirCorreoResumenInterno(r: ResumenInterno, ahora: Date): C
   const cuerpo =
     `<h1 style="margin:20px 0 4px;font-size:20px;color:${TINTA};">Resumen diario</h1>` +
     `<p style="margin:0;font-size:13px;color:${GRIS};">${esc(fechaHora(ahora.toISOString()))} · ${esc(intro)}</p>` +
+    (r.carga ? cargaHtml(r.carga) : "") +
     // Cada seccion trae sus propios tipos de fila; el arreglo las mezcla.
     secciones.map((s) => tablaHtml(s as Seccion<unknown>)).join("");
 
   const text = [
     "Resumen diario SYMVORA",
     intro,
+    ...(r.carga ? [cargaTexto(r.carga)] : []),
     ...secciones.map((s) => bloqueTexto(s as Seccion<unknown>)),
   ].join("\n\n");
 

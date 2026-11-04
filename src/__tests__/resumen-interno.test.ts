@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   asuntoResumen,
+  cargaAlta,
   construirCorreoNuevoNegocio,
   construirCorreoResumenInterno,
   detalleInactivo,
@@ -8,6 +9,8 @@ import {
   haceCuanto,
   MAX_FILAS_SECCION,
   totalNovedades,
+  UMBRAL_CARGA,
+  type CargaSistema,
   type NegocioInactivo,
   type ResumenInterno,
 } from "@/lib/resumen-interno";
@@ -99,6 +102,50 @@ describe("resumen interno", () => {
     expect(haceCuanto(hace(5), AHORA)).toBe("hace 5 h");
     expect(haceCuanto(hace(24), AHORA)).toBe("hace 1 día");
     expect(haceCuanto(hace(50), AHORA)).toBe("hace 2 días");
+  });
+});
+
+describe("termómetro de carga (migración 130)", () => {
+  const carga = (extra: Partial<CargaSistema> = {}): CargaSistema => ({
+    ventas_24h: 59,
+    negocios_con_venta: 3,
+    ventas_pico_minuto: 3,
+    cajeros_pico_hora: 2,
+    ...extra,
+  });
+
+  it("sin la clave (función anterior a la 130) no pinta la sección", () => {
+    const correo = construirCorreoResumenInterno(vacio, AHORA);
+    expect(correo.html).not.toContain("Carga del sistema");
+    expect(correo.text).not.toContain("Carga del sistema");
+  });
+
+  it("con la clave pinta las cuatro cifras, sin alerta bajo el umbral", () => {
+    const r = { ...vacio, carga: carga() };
+    const correo = construirCorreoResumenInterno(r, AHORA);
+    expect(correo.html).toContain("Carga del sistema");
+    expect(correo.text).toContain("Pico de ventas en un minuto: 3");
+    expect(correo.text).toContain("Pico de cajeros en una hora: 2");
+    expect(cargaAlta(r.carga)).toBe(false);
+    expect(correo.subject.startsWith("Resumen SYMVORA")).toBe(true);
+    expect(correo.html).not.toContain("umbral de alerta");
+  });
+
+  it("alerta al llegar a cualquiera de los dos umbrales", () => {
+    expect(cargaAlta(carga({ cajeros_pico_hora: UMBRAL_CARGA.cajerosPicoHora }))).toBe(true);
+    expect(cargaAlta(carga({ ventas_pico_minuto: UMBRAL_CARGA.ventasPicoMinuto }))).toBe(true);
+    expect(cargaAlta(carga({ cajeros_pico_hora: UMBRAL_CARGA.cajerosPicoHora - 1 }))).toBe(false);
+    expect(cargaAlta(undefined)).toBe(false);
+
+    const r = { ...vacio, carga: carga({ ventas_pico_minuto: 80 }) };
+    const correo = construirCorreoResumenInterno(r, AHORA);
+    expect(asuntoResumen(r, AHORA)).toMatch(/^⚠️ Carga alta · Resumen SYMVORA/);
+    expect(correo.html).toContain("umbral de alerta");
+    expect(correo.text).toContain("umbral de alerta");
+  });
+
+  it("la carga no cuenta como novedad", () => {
+    expect(totalNovedades({ ...vacio, carga: carga({ ventas_24h: 500 }) })).toBe(0);
   });
 });
 

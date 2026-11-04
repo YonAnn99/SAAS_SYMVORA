@@ -512,6 +512,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   negocio, p. ej. Google), sin productos (>2 días), inactivos (7 días sin vender o nunca tras 3), pruebas por vencer
   (3 días), pagos y vencidos/cancelados 24 h. Excluye demos, incluido el compartido viejo (miembro `is_demo`).
 - Contenido en `lib/resumen-interno.ts` (puro, `__tests__/resumen-interno.test.ts`); envío `sendCorreoInterno`.
+- **Termómetro de carga** (migración 130): la clave `carga` (ventas 24 h, negocios que vendieron, pico de ventas por
+  minuto y de cajeros por hora) abre el correo. Con `cajeros_pico_hora ≥ 50` o `ventas_pico_minuto ≥ 60`
+  (`UMBRAL_CARGA`, ~30 % del primer techo del plan Free) el asunto empieza con «⚠️ Carga alta». Capacidad medida el
+  2026-11-03: pico real de 3 ventas/min y 2 cajeros/hora; techos en orden: 200 conexiones de Realtime (Free), CPU de
+  la Nano con muchos paneles abriendo a la vez, y ~1,500 ventas/min.
 
 ## Celular del cliente y avisos (2026-10-01/02)
 - **Captura del celular:**
@@ -556,7 +561,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 129; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 130; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
