@@ -549,6 +549,10 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Cartera de clientes interna:** vista `interno.cartera_clientes` (migraciones 100 y 111), no expuesta por la
   API. Consulta: `select * from interno.cartera_clientes;` en el SQL Editor, o Table Editor → esquema `interno`.
   La 111 agrega al final `productos`, `variantes` (activos), `primer_producto`, `ventas` y `ultima_venta`.
+- **Ingresos de SYMVORA por mes** (migración 131): `select * from interno.ingresos_mensuales;` (mismo esquema, no
+  expuesta). Pagos `completed` de `payment_history` sin demos, por mes en CDMX: pagos, negocios, total, `base_sin_iva`
+  (total/1.16: el precio al público incluye IVA), `iva` y `por_metodo`. La contabilidad formal de la empresa va con
+  contador/programa contable, no dentro de la app (decisión del 2026-11-03).
 
 ## Cómo trabajar en este repo
 - **Commits y servidor:**
@@ -561,7 +565,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 130; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 131; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 
