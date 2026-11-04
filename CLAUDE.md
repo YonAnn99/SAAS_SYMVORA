@@ -105,6 +105,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Productos: `useVariants(..., { cargarProductos: false })`; la lista sale de `useProducts`.
   - jsPDF, xlsx y papaparse se cargan con `import()` al usarse (`generarPdfOrdenCompra` y `exportToPDF` son async).
   - Speed Insights (`@vercel/speed-insights`) en el layout raíz: activarlo en Vercel para ver datos.
+  - Web Analytics (`@vercel/analytics`, 2026-11-04) en el layout raíz vía `components/analitica-vercel.tsx`, sin cookies.
+    `limpiarEvento` quita query/hash y los códigos de `/tarjeta/<codigo>` y `/tarjeta/unirse/<codigo>`. **REGLA:** toda
+    ruta nueva con un código secreto en la URL se agrega ahí y a `analitica-vercel.test.ts`.
   - **Caché entre módulos** (fase 2, `lib/cache-datos.ts`): en memoria de la pestaña, por usuario+negocio
     (`fijarAlcanceCache` en el contexto del tenant; `vaciarCache` al cerrar sesión). POS, Productos, Variantes,
     Clientes y Compras pintan lo último cargado y SIEMPRE vuelven a consultar. La caja/acceso/permisos no se
