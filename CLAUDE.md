@@ -470,10 +470,13 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     - Va todo sobre azul, para empalmar con el splash nativo azul (`background_color`/`backgroundColor` #1E3A8A); si
       cambia ese color, cambiarlo también en `.sp-app`.
     - Sin vuelo al header: al final el logo se aleja y el azul se vuelve vidrio.
-    - La APK no se reconstruye para esto.
+    - Los splash NATIVOS van en azul liso, sin logo (2026-11-05; con logo se veían dos splash seguidos): el de la TWA
+      (`preparar-android.mjs` escribe `splash.png` transparente; fade 300 ms, versión 3) y los de iOS
+      (`public/splash/*.png`, `generate-pwa-icons.mjs`). En Android 12+ el sistema muestra un instante el ícono; la PWA
+      instalada desde Chrome Android trae su propio splash con ícono y nombre. Ninguno de los dos se controla.
   - Proyecto Android FUERA del repo: `~/Documentos/symvora-android` (keystore `android.keystore,symvora android`, alias
     `symvora`; `minSdkVersion` 24, `splashScreenFadeOutDuration` 900). Tras cada `bubblewrap update` correr
-    `node scripts/preparar-android.mjs ~/Documentos/symvora-android`: pone el splash chico (como el de iOS) y QUITA el
+    `node scripts/preparar-android.mjs ~/Documentos/symvora-android`: deja el splash nativo en azul liso y QUITA el
     intent-filter App Link (`autoVerify`) del manifest, para que los enlaces (correos de pago, WhatsApp) abran Chrome
     y no la app. En la app NO hay botón para pagar en el navegador: la política de pagos de Play
     lo prohíbe en México (solo programas de EE. UU., UE, Japón, Brasil…).

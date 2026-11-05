@@ -18,10 +18,10 @@
  *     icono opaco con esquinas redondeadas (las de un ícono de app). Lo usan
  *     `BRAND.logo` de src/lib/email.ts y las plantillas de Supabase
  *     (`supabase/templates/`); los correos lo muestran a 72 px.
- *   - Pantallas de arranque de iOS (`public/splash/*.png`): se regeneran desde sí
- *     mismas con el mismo método (su luminancia es la máscara de la S y de
- *     «SYMVORA»). Funciona sobre el fondo que tengan, así que repetir el script
- *     no las degrada.
+ *   - Pantallas de arranque de iOS (`public/splash/*.png`): AZUL LISO, sin logo
+ *     (2026-11-05). El logo y «SYMVORA» los anima el splash de la web al abrir la
+ *     app instalada; con logo aquí se veían dos splash seguidos. Se conservan
+ *     medidas y nombres (los usa `appleWebApp.startupImage` del layout raíz).
  *
  * `BRAND_BG` es el mismo valor que `background_color` en src/app/manifest.ts.
  *
@@ -130,14 +130,16 @@ await writeOpaco(512, "icon-maskable-512.png");
 await writeOpaco(180, "apple-touch-icon.png");
 await writeCorreo(288, "symvora-logo-email.png");
 
-console.log(`\nPantallas de arranque de iOS, fondo ${BRAND_BG}:`);
+console.log(`\nPantallas de arranque de iOS, azul liso ${BRAND_BG}:`);
 for (const file of (await readdir(SPLASH_DIR)).filter((f) => f.endsWith(".png")).sort()) {
   const ruta = join(SPLASH_DIR, file);
   const { width, height } = await sharp(ruta).metadata();
-  // Se lee a memoria antes de escribir: entrada y salida son el mismo archivo.
-  const salida = await sobreAzul(await sharp(ruta).toBuffer(), width, height);
-  await sharp(salida).toFile(ruta);
-  console.log(`  ✓ ${file}`);
+  // Sin logo: el logo y «SYMVORA» los pone el splash animado de la web (variante `app`),
+  // que arranca sobre este mismo azul. Con logo aqui se veian dos splash seguidos.
+  await sharp({ create: { width, height, channels: 3, background: BRAND_BG } })
+    .png({ compressionLevel: 9 })
+    .toFile(ruta);
+  console.log(`  ✓ ${file} (${width}×${height})`);
 }
 
 console.log("\nListo.");
