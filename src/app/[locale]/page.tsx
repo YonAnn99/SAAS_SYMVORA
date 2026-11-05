@@ -7,6 +7,7 @@ const FAQ_KEYS = ["1", "2", "3", "4", "5", "7", "8", "9"] as const;
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AppFrame } from "@/components/ui/app-frame";
+import { SplashEntrada } from "@/components/marketing/splash-entrada";
 import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import LogoCarousel from "@/components/ui/logo-carousel";
@@ -111,7 +112,11 @@ export default async function LocalePage({
   const faqSchema = faqPageSchema(siteUrl, faqs);
 
   return (
-    <AppFrame>
+    <>
+      {/* Pantalla de entrada (una vez por sesion): tapa la carga y al final el
+          logo vuela al header. Va antes del marco para tapar desde el primer cuadro. */}
+      <SplashEntrada />
+      <AppFrame>
       {/* Lo primero que se ve: el visitante se reconoce por su giro antes de
           leer el hero. "Ver los 20" baja a `GirosCatalog` (#giros). */}
       <GirosStrip />
@@ -130,6 +135,7 @@ export default async function LocalePage({
       <Footer locale={locale} />
       <JsonLd id="ld-software" data={software} />
       <JsonLd id="ld-faq" data={faqSchema} />
-    </AppFrame>
+      </AppFrame>
+    </>
   );
 }

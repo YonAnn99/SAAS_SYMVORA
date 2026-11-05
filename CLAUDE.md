@@ -269,6 +269,23 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     `app.symvora.com.mx/es/instalar` (`(auth)/[locale]/instalar`, pública por `isPublicRoute`, NO en
     `MARKETING_SEGMENTS`: instalada desde `www` sería otra app de otro origen). `CapturaInstalacion` (layout raíz)
     guarda `beforeinstallprompt`; `useInstalarApp` lo usa; sin él, pasos por navegador (`plataforma.ts`).
+  - **Splash de entrada** (2026-11-05, `components/marketing/splash-entrada.tsx`, CSS en `styles/splash-entrada.css`,
+    tiempos en `splash-logica.ts`): solo en la landing (`[locale]/page.tsx`).
+    - Una vez por sesión (`sessionStorage` `symvora-splash`); nunca a bots ni Lighthouse, ni con reduced-motion. Lo
+      decide un script en línea (`decidirSplash`, serializado con `toString()`: no puede usar nada de fuera de su cuerpo).
+    - Tiempos medidos: `/es` pesa ~400 KB y `load` llega a ~2.4 s en escritorio.
+    - La salida se ancla a la ANIMACIÓN, nunca a relojes: `splash-control.tsx` espera el `finished` de todas las
+      animaciones de entrada (~2.25 s), luego una pausa de 0.6 s con el logo completo, luego la carga (`load` +
+      fuentes) con 2 s de tope, y la salida dura 1.1 s. Total típico ≈ 4 s.
+    - Con un reloj desde el parser, en navegadores que pintan tarde la salida llegaba con la entrada a medias y el
+      splash «pasaba muy rápido».
+    - Pestaña abierta en segundo plano: las animaciones se pausan y arrancan desde cero al hacerse visible.
+    - Clic o toque solo saltan el splash después de la entrada; Esc, siempre.
+    - Respaldos: salida forzada a los 7 s; CSS a los 8 s si el JS no llega.
+    - Antes de medir el vuelo se terminan las animaciones de entrada (`dejarListoParaVolar`); si no, el logo llegaba
+      corrido.
+    - La salida es un FLIP: `splash-control.tsx` mide los `data-splash-*` de `app-frame.tsx` (logo y marca en
+      escritorio, logo de la píldora en celular). **Si cambia el header, revisar el vuelo.**
   - Footer: `components/ui/footer.tsx`, con enlaces legales con locale.
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**
@@ -446,6 +463,14 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     marca, `/billing` oculta precios y pagos, y `aviso-estado-pago.tsx` no invita a pagar. Se paga desde Chrome: los
     correos de prueba y cobro llevan a `/es/billing`.
   - `manifest.ts` lleva `id` fijo (`/es/dashboard`, igual al calculado: no cambia las PWA instaladas).
+  - **Splash animado al abrir la app** (2026-11-05): el mismo de la landing con `variante="app"`, montado en los layouts
+    `(dashboard)` y `(auth)`.
+    - Solo sale como app instalada: `display-mode` standalone/ventana/pantalla completa, `navigator.standalone`
+      (iOS) o las marcas de la TWA. En el navegador nunca. Una vez por arranque.
+    - Va todo sobre azul, para empalmar con el splash nativo azul (`background_color`/`backgroundColor` #1E3A8A); si
+      cambia ese color, cambiarlo también en `.sp-app`.
+    - Sin vuelo al header: al final el logo se aleja y el azul se vuelve vidrio.
+    - La APK no se reconstruye para esto.
   - Proyecto Android FUERA del repo: `~/Documentos/symvora-android` (keystore `android.keystore,symvora android`, alias
     `symvora`; `minSdkVersion` 24, `splashScreenFadeOutDuration` 900). Tras cada `bubblewrap update` correr
     `node scripts/preparar-android.mjs ~/Documentos/symvora-android`: pone el splash chico (como el de iOS) y QUITA el

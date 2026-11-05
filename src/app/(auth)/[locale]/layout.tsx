@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
+import { SplashEntrada } from "@/components/marketing/splash-entrada";
 
 export const metadata: Metadata = {
   robots: {
@@ -29,6 +30,8 @@ export default async function AuthLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      {/* Splash animado al abrir la app instalada sin sesion (cae en el login); en el navegador no sale. */}
+      <SplashEntrada variante="app" />
       <IdiomaHtml locale={locale} />
       <div className="auth-page-wrapper">
         {children}

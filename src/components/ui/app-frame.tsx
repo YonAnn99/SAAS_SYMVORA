@@ -73,7 +73,7 @@ export function AppFrame({
             { label: "Contáctanos", href: `${inicio}#footer-contacto`, rotation: 8 },
           ]}
           logo={
-            <a href={inicio || "#"} onClick={alLogo} aria-label="SYMVORA, ir al inicio" className="block w-[100px] h-[28px] overflow-hidden">
+            <a href={inicio || "#"} onClick={alLogo} aria-label="SYMVORA, ir al inicio" data-splash-destino="logo-movil" className="block w-[100px] h-[28px] overflow-hidden">
               <img 
                 src="/symvora-logo.webp" 
                 alt="SYMVORA" 
@@ -92,7 +92,9 @@ export function AppFrame({
 
       <div className="relative flex-1 bg-white dark:bg-zinc-900 rounded-[32px] sm:rounded-[40px] overflow-hidden shadow-2xl flex flex-col">
         
-        <header className="absolute top-0 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-4xl bg-zinc-950 text-white rounded-b-[24px] sm:rounded-b-[32px] px-6 py-4 z-50 items-center justify-between shadow-sm h-[88px] hidden md:flex">
+        {/* `data-splash-*`: destinos del vuelo del logo del splash de la landing
+            (components/marketing/splash-entrada.tsx). Si cambia el header, revisar el vuelo. */}
+        <header data-splash-cabecera className="absolute top-0 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-4xl bg-zinc-950 text-white rounded-b-[24px] sm:rounded-b-[32px] px-6 py-4 z-50 items-center justify-between shadow-sm h-[88px] hidden md:flex">
           
           <svg className="absolute -top-[1px] -left-6 w-6 h-[26px] text-zinc-950" viewBox="0 0 24 24" fill="currentColor">
             <path d="M24 24V0H0C13.2548 0 24 10.7452 24 24Z" />
@@ -109,8 +111,9 @@ export function AppFrame({
               width={80} 
               height={56} 
               className="w-[80px] h-[56px] object-contain brightness-0 invert"
+              data-splash-destino="logo"
             />
-            <span className="font-bold text-lg tracking-tight text-white">SYMVORA</span>
+            <span data-splash-destino="marca" className="font-bold text-lg tracking-tight text-white">SYMVORA</span>
           </a>
 
           <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">

@@ -1,0 +1,417 @@
+/*
+ * Splash de la landing (components/marketing/splash-entrada.tsx). Diseño aprobado en el canvas
+ * "Splash SYMVORA". Tiempos y razones en components/marketing/splash-logica.ts.
+ *
+ * - Entrada (0 a 2.2 s desde el primer pintado, solo CSS): las letras salen disparadas desde
+ *   abajo y forman SYMVORA, la marea azul trae los giros y se arma el logo.
+ * - Espera: si la pagina no ha cargado, el logo y la palabra "respiran".
+ * - Salida (clase .saliendo, la pone splash-control.tsx): el logo y la palabra vuelan al
+ *   header (FLIP con --logo-* y --pal-*) mientras el azul se vuelve vidrio y se disuelve.
+ *
+ * Clases en <html>: splash-activo (se esta mostrando), splash-saliendo (vuelo en curso),
+ * splash-controlada (el JS tomo el control), sin-splash. Sin ninguna, el splash no se ve:
+ * asi no reaparece al volver a la landing por navegacion del cliente.
+ */
+
+.splash-entrada {
+  display: none;
+}
+html.splash-activo .splash-entrada,
+html.splash-saliendo .splash-entrada {
+  display: block;
+}
+
+.splash-entrada {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  --sp-fondo: #fafaf9;
+  --sp-tinta: #0f172a;
+  --sp-azul: #1e3a8a;
+  --sp-crema: #fafaf9;
+  --logo-final: var(--sp-crema);
+  --f: min(15vw, 11svh, 128px);
+  --L: calc(var(--f) * 1.05);
+  --G: calc(var(--f) * 0.3);
+}
+.dark .splash-entrada {
+  --sp-fondo: #0a0a0a;
+  --sp-tinta: #f0efed;
+}
+
+/* Respaldo: si el JS de la pagina nunca toma el control, se retira solo a los 8 s
+   (RESPALDO_MS en splash-logica.ts). */
+html.splash-activo:not(.splash-controlada) .splash-entrada {
+  animation: sp-respaldo 0.4s 8s forwards;
+}
+@keyframes sp-respaldo {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Al terminar el vuelo, lo que quede del splash se desvanece. */
+html .splash-entrada.saliendo {
+  animation: sp-desvanece 0.25s 0.85s forwards;
+}
+@keyframes sp-desvanece {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---------- Fondo y marea ---------- */
+.sp-capa {
+  position: absolute;
+  inset: 0;
+  background: var(--sp-fondo);
+  animation: sp-capa-libre 0.01s 1.66s both;
+}
+@keyframes sp-capa-libre {
+  to {
+    background: transparent;
+  }
+}
+.sp-mar {
+  position: absolute;
+  inset: 0;
+  background-color: var(--sp-azul);
+  clip-path: circle(0% at 50% 50%);
+  animation: sp-marea 0.36s 1.3s cubic-bezier(0.7, 0, 0.25, 1) both;
+}
+@keyframes sp-marea {
+  from {
+    clip-path: circle(0% at 50% 50%);
+  }
+  to {
+    clip-path: circle(75% at 50% 50%);
+  }
+}
+/* El azul se vuelve vidrio y se disuelve. Sin backdrop-filter queda en un fundido. */
+.saliendo .sp-mar {
+  clip-path: none;
+  animation: sp-vidrio 1s linear forwards;
+}
+@keyframes sp-vidrio {
+  0% {
+    background-color: rgba(30, 58, 138, 1);
+    -webkit-backdrop-filter: blur(0px) saturate(1);
+    backdrop-filter: blur(0px) saturate(1);
+  }
+  30% {
+    background-color: rgba(30, 58, 138, 0.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    backdrop-filter: blur(28px) saturate(1.5);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  100% {
+    background-color: rgba(30, 58, 138, 0);
+    -webkit-backdrop-filter: blur(0px) saturate(1);
+    backdrop-filter: blur(0px) saturate(1);
+  }
+}
+.sp-brillo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  right: -30%;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.24) 50%, transparent 62%);
+}
+.saliendo .sp-brillo {
+  animation: sp-barrer 0.65s 0.05s ease-in-out both;
+}
+@keyframes sp-barrer {
+  0% {
+    opacity: 0;
+    transform: translateX(-55%);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(55%);
+  }
+}
+
+/* ---------- Giros en recuadros de vidrio ---------- */
+.sp-giros {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.25s ease-out;
+}
+.saliendo .sp-giros {
+  opacity: 0;
+}
+.sp-giro {
+  position: absolute;
+  width: clamp(42px, calc(var(--f) * 0.72), 68px);
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  border-radius: 30%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sp-crema);
+  animation:
+    sp-giro-entra 0.22s calc(1.33s + var(--d, 0s)) cubic-bezier(0.2, 0.9, 0.3, 1.2) both,
+    sp-giro-flota 2.4s calc(1.55s + var(--d, 0s)) ease-in-out infinite alternate;
+}
+.sp-giro svg {
+  width: 50%;
+  height: 50%;
+}
+@keyframes sp-giro-entra {
+  from {
+    opacity: 0;
+    transform: translate(0, 4vh) rotate(-10deg) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sp-giro-flota {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translate(var(--mx), -4vh) rotate(8deg);
+  }
+}
+.sp-g1 { left: 8%; top: 14%; --mx: 4vw; }
+.sp-g2 { left: 74%; top: 11%; --mx: -4vw; --d: 0.1s; }
+.sp-g3 { left: 82%; top: 36%; --mx: -3vw; --d: 0.2s; }
+.sp-g4 { left: 5%; top: 40%; --mx: 5vw; --d: 0.06s; }
+.sp-g5 { left: 12%; top: 70%; --mx: 5vw; --d: 0.16s; }
+.sp-g6 { left: 74%; top: 68%; --mx: -5vw; --d: 0.04s; }
+.sp-g7 { left: 44%; top: 84%; --mx: 3vw; --d: 0.12s; }
+.sp-g8 { left: 42%; top: 5%; --mx: -3vw; --d: 0.22s; }
+
+/* ---------- Logo y palabra ---------- */
+.sp-grupo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--G);
+}
+/* Espera: si la pagina tarda, respiran hasta que empiece la salida. */
+.sp-vuelo-logo,
+.sp-vuelo-palabra {
+  animation: sp-respira 1.6s 2.2s ease-in-out infinite alternate;
+}
+@keyframes sp-respira {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.03);
+  }
+}
+.saliendo .sp-vuelo-logo {
+  animation: sp-vuelo-logo 0.8s cubic-bezier(0.65, 0, 0.25, 1) forwards;
+}
+@keyframes sp-vuelo-logo {
+  to {
+    transform: translate(var(--logo-dx, 0px), var(--logo-dy, 0px)) scale(var(--logo-s, 1));
+  }
+}
+.saliendo .sp-vuelo-palabra {
+  animation: sp-vuelo-palabra 0.8s var(--pal-d, 0s) cubic-bezier(0.65, 0, 0.25, 1) both;
+}
+@keyframes sp-vuelo-palabra {
+  to {
+    opacity: var(--pal-op, 1);
+    transform: translate(var(--pal-dx, 0px), var(--pal-dy, 0px)) scale(var(--pal-s, 1));
+  }
+}
+
+.sp-logo {
+  position: relative;
+  width: var(--L);
+  height: var(--L);
+  font-size: var(--f);
+  color: var(--sp-crema);
+}
+.saliendo .sp-logo {
+  animation: sp-tinte-logo 0.3s 0.5s forwards;
+}
+@keyframes sp-tinte-logo {
+  to {
+    color: var(--logo-final);
+  }
+}
+.sp-pieza {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  animation: sp-ensamblar 0.49s calc(1.6s + var(--d, 0s)) cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+.sp-pieza:nth-child(1) { --px: 1.6em; --py: -1.3em; --pr: 110deg; }
+.sp-pieza:nth-child(2) { --px: -2em; --py: 0.3em; --pr: -140deg; --d: 0.07s; }
+.sp-pieza:nth-child(3) { --px: -0.9em; --py: 1.5em; --pr: 170deg; --d: 0.14s; }
+@keyframes sp-ensamblar {
+  0% {
+    opacity: 0;
+    transform: translate(var(--px), var(--py)) rotate(var(--pr)) scale(0.5);
+  }
+  19% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sp-palabra {
+  display: flex;
+  font-size: var(--f);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  /* Sola en el centro mientras no hay logo; baja a su lugar cuando se arma. */
+  transform: translateY(calc((var(--L) + var(--G)) / -2));
+  animation: sp-acomodar 0.45s 1.6s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+@keyframes sp-acomodar {
+  to {
+    transform: translateY(0);
+  }
+}
+/* Cada letra sale disparada desde abajo, pasa por encima de su lugar y cae con un rebote. */
+.sp-l {
+  display: inline-block;
+  color: var(--sp-tinta);
+  animation:
+    sp-llegar 1.153s var(--d, 0s) both,
+    sp-tinte 0.18s calc(1.3s + var(--d, 0s)) both;
+}
+.sp-l:nth-child(1) { --x0: -30vw; --y0: 72vh; --ap: -24vh; --r0: -110deg; --b: -0.1em; --d: 0.12s; }
+.sp-l:nth-child(2) { --x0: 34vw; --y0: 70vh; --ap: -20vh; --r0: 95deg; --b: -0.08em; --d: 0s; }
+.sp-l:nth-child(3) { --x0: -8vw; --y0: 74vh; --ap: -28vh; --r0: -60deg; --b: -0.11em; --d: 0.24s; }
+.sp-l:nth-child(4) { --x0: 40vw; --y0: 72vh; --ap: -18vh; --r0: 120deg; --b: -0.07em; --d: 0.06s; }
+.sp-l:nth-child(5) { --x0: -40vw; --y0: 70vh; --ap: -22vh; --r0: -85deg; --b: -0.09em; --d: 0.18s; }
+.sp-l:nth-child(6) { --x0: 12vw; --y0: 74vh; --ap: -26vh; --r0: 70deg; --b: -0.1em; --d: 0.28s; }
+.sp-l:nth-child(7) { --x0: -18vw; --y0: 72vh; --ap: -20vh; --r0: -130deg; --b: -0.08em; --d: 0.09s; }
+@keyframes sp-llegar {
+  0% {
+    transform: translate(var(--x0), var(--y0)) rotate(var(--r0));
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  40.5% {
+    transform: translate(calc(var(--x0) * 0.4), var(--ap)) rotate(calc(var(--r0) * 0.35));
+    animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.5);
+  }
+  68.7% {
+    transform: translate(0, 0) rotate(0deg);
+    animation-timing-function: ease-out;
+  }
+  78.2% {
+    transform: translate(0, var(--b)) rotate(0deg);
+    animation-timing-function: ease-in;
+  }
+  87.4% {
+    transform: translate(0, 0) rotate(0deg);
+    animation-timing-function: ease-out;
+  }
+  93.5% {
+    transform: translate(0, calc(var(--b) * 0.3)) rotate(0deg);
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+@keyframes sp-tinte {
+  from {
+    color: var(--sp-tinta);
+  }
+  to {
+    color: var(--sp-crema);
+  }
+}
+
+/* ---------- La landing mientras tanto ---------- */
+/* La entrada del hero espera a que se revele. */
+html.splash-activo .entrada-suave {
+  animation-play-state: paused;
+}
+/* El logo real del header se oculta mientras la copia vuela hacia el y aparece al aterrizar. */
+[data-splash-destino] {
+  transition: opacity 0.15s ease-out;
+}
+html.splash-saliendo [data-splash-destino] {
+  opacity: 0;
+}
+/* El header llega a recibir al logo. Tailwind v4 centra con `translate`; aqui se anima `transform`. */
+html.splash-saliendo [data-splash-cabecera] {
+  animation: sp-cabecera 0.45s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes sp-cabecera {
+  from {
+    opacity: 0;
+    transform: translateY(-110%);
+  }
+}
+html.splash-saliendo .bubble-menu .logo-bubble,
+html.splash-saliendo .bubble-menu .toggle-bubble {
+  animation: sp-burbuja 0.4s 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes sp-burbuja {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+/* ---------- Variante app (PWA instalada y APK de Play) ----------
+   Todo sobre azul desde el primer cuadro: empalma con el splash nativo azul de Android y de
+   la PWA (`background_color` #1E3A8A). Sin vuelo al header: al final el logo y la palabra
+   se alejan mientras el azul se vuelve vidrio. */
+.sp-app .sp-capa {
+  background: transparent;
+  animation: none;
+}
+.sp-app:not(.saliendo) .sp-mar {
+  clip-path: none;
+  animation: none;
+}
+.sp-app .sp-l {
+  color: var(--sp-crema);
+  animation: sp-llegar 1.153s var(--d, 0s) both;
+}
+.sp-app.saliendo .sp-grupo {
+  animation: sp-alejar 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sp-alejar {
+  to {
+    opacity: 0;
+    transform: translateY(-4vh) scale(0.94);
+    filter: blur(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-entrada {
+    display: none !important;
+  }
+}

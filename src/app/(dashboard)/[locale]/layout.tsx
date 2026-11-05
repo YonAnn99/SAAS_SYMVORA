@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { SplashEntrada } from "@/components/marketing/splash-entrada";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,8 @@ export default async function DashboardLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      {/* Splash animado al abrir la app instalada (PWA / APK); en el navegador no sale. */}
+      <SplashEntrada variante="app" />
       <IdiomaHtml locale={locale} />
       <DashboardShell>{children}</DashboardShell>
     </NextIntlClientProvider>
