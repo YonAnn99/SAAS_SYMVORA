@@ -463,20 +463,22 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     marca, `/billing` oculta precios y pagos, y `aviso-estado-pago.tsx` no invita a pagar. Se paga desde Chrome: los
     correos de prueba y cobro llevan a `/es/billing`.
   - `manifest.ts` lleva `id` fijo (`/es/dashboard`, igual al calculado: no cambia las PWA instaladas).
-  - **Splash animado al abrir la app** (2026-11-05): el mismo de la landing con `variante="app"`, montado en los layouts
-    `(dashboard)` y `(auth)`.
-    - Solo sale como app instalada: `display-mode` standalone/ventana/pantalla completa, `navigator.standalone`
-      (iOS) o las marcas de la TWA. En el navegador nunca. Una vez por arranque.
-    - Va todo sobre azul, para empalmar con el splash nativo azul (`background_color`/`backgroundColor` #1E3A8A); si
-      cambia ese color, cambiarlo también en `.sp-app`.
+  - **Splash animado al abrir la PWA instalada** (2026-11-05): el mismo de la landing con `variante="app"`, montado en
+    los layouts `(dashboard)` y `(auth)`.
+    - Solo sale como PWA instalada: `display-mode` standalone/ventana/pantalla completa o `navigator.standalone`
+      (iOS). En el navegador nunca. Una vez por arranque.
+    - **NUNCA en la APK de Play (TWA)**, aunque también sea standalone: con cualquier marca de la TWA (`?app=android`,
+      referrer `android-app://`, `symvora_app`) no sale. Ahí va SOLO el splash nativo con el logo blanco (decisión del
+      2026-11-05: con los dos se veían dos splash seguidos).
+    - Va todo sobre azul, para empalmar con el splash nativo azul (`background_color` #1E3A8A); si cambia ese color,
+      cambiarlo también en `.sp-app`.
     - Sin vuelo al header: al final el logo se aleja y el azul se vuelve vidrio.
-    - Los splash NATIVOS van en azul liso, sin logo (2026-11-05; con logo se veían dos splash seguidos): el de la TWA
-      (`preparar-android.mjs` escribe `splash.png` transparente; fade 300 ms, versión 3) y los de iOS
-      (`public/splash/*.png`, `generate-pwa-icons.mjs`). En Android 12+ el sistema muestra un instante el ícono; la PWA
-      instalada desde Chrome Android trae su propio splash con ícono y nombre. Ninguno de los dos se controla.
+    - Las pantallas de arranque de iOS (`public/splash/*.png`, `generate-pwa-icons.mjs`) son azul liso, porque ahí sí
+      sigue el animado. La PWA instalada desde Chrome Android trae su propio splash con ícono y nombre (no se controla).
   - Proyecto Android FUERA del repo: `~/Documentos/symvora-android` (keystore `android.keystore,symvora android`, alias
     `symvora`; `minSdkVersion` 24, `splashScreenFadeOutDuration` 900). Tras cada `bubblewrap update` correr
-    `node scripts/preparar-android.mjs ~/Documentos/symvora-android`: deja el splash nativo en azul liso y QUITA el
+    `node scripts/preparar-android.mjs ~/Documentos/symvora-android`: pone el logo blanco chico en el splash nativo
+    (fuente `scripts/assets/splash-logo-symvora.png`, la pantalla de iOS original) y QUITA el
     intent-filter App Link (`autoVerify`) del manifest, para que los enlaces (correos de pago, WhatsApp) abran Chrome
     y no la app. En la app NO hay botón para pagar en el navegador: la política de pagos de Play
     lo prohíbe en México (solo programas de EE. UU., UE, Japón, Brasil…).

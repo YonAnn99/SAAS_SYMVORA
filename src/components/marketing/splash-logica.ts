@@ -61,9 +61,12 @@ export type VarianteSplash = "landing" | "app";
  * No se muestra:
  * - a bots, Lighthouse ni navegadores automatizados (SEO y captura de Google);
  * - con `prefers-reduced-motion`;
- * - en modo "app", si no corre como app instalada: PWA (`display-mode` standalone,
- *   ventana o pantalla completa; `navigator.standalone` en iOS) o la app de Android (TWA:
- *   `?app=android`, referrer `android-app://` o la marca `symvora_app` de la pestaña);
+ * - en modo "app", si no corre como PWA instalada (`display-mode` standalone, ventana o
+ *   pantalla completa; `navigator.standalone` en iOS);
+ * - en modo "app", NUNCA en la app de Play (TWA), aunque tambien sea standalone: ahi va
+ *   solo el splash nativo con el logo (decision del 2026-11-05; con los dos se veian dos
+ *   splash seguidos). Marcas de la TWA: `?app=android`, referrer `android-app://` (se
+ *   conserva tras la redireccion al login) o la marca `symvora_app` de la pestaña;
  * - si ya se vio en la sesion. Cada arranque de la app es una sesion nueva: sale una vez
  *   por arranque.
  */
@@ -87,14 +90,15 @@ export function decidirSplash(entorno?: EntornoSplash, modo?: VarianteSplash): b
         mm("(display-mode: window-controls-overlay)").matches ||
         mm("(display-mode: fullscreen)").matches;
     }
-    if (/[?&]app=android(&|$)/.test((w.location && w.location.search) || "")) instalada = true;
-    if ((w.document.referrer || "").indexOf("android-app://") === 0) instalada = true;
+    let enTwa =
+      /[?&]app=android(&|$)/.test((w.location && w.location.search) || "") ||
+      (w.document.referrer || "").indexOf("android-app://") === 0;
     try {
-      if (w.sessionStorage && w.sessionStorage.getItem("symvora_app") === "android") instalada = true;
+      if (w.sessionStorage && w.sessionStorage.getItem("symvora_app") === "android") enTwa = true;
     } catch {
       // sin sessionStorage: se decide por lo demas.
     }
-    if (!instalada) mostrar = false;
+    if (!instalada || enTwa) mostrar = false;
   }
   if (mostrar) {
     try {

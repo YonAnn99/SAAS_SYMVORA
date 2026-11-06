@@ -108,11 +108,18 @@ describe("decidirSplash en la app instalada (PWA / APK)", () => {
     expect(decidirSplash(entorno({ iosStandalone: true }).e, "app")).toBe(true);
   });
 
-  it("sale en la app de Android (TWA) por cualquiera de sus marcas", () => {
-    expect(decidirSplash(entorno({ search: "?app=android" }).e, "app")).toBe(true);
-    expect(decidirSplash(entorno({ referrer: "android-app://com.symvora.app/" }).e, "app")).toBe(true);
-    expect(decidirSplash(entorno({ marcaAndroid: true }).e, "app")).toBe(true);
-    expect(decidirSplash(entorno({ search: "?app=androidx" }).e, "app")).toBe(false);
+  it("NO sale en la app de Play (TWA), aunque sea standalone: ahi va solo el splash nativo", () => {
+    for (const marca of [
+      { search: "?app=android" },
+      { referrer: "android-app://com.symvora.app/" },
+      { marcaAndroid: true },
+    ]) {
+      const { e, guardado } = entorno({ standalone: true, ...marca });
+      expect(decidirSplash(e, "app")).toBe(false);
+      expect(guardado.has(CLAVE_SESION)).toBe(false);
+    }
+    // Un parametro parecido no es la marca de la TWA.
+    expect(decidirSplash(entorno({ standalone: true, search: "?app=androidx" }).e, "app")).toBe(true);
   });
 
   it("una vez por arranque: con la sesion vista no se repite", () => {
