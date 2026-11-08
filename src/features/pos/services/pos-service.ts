@@ -153,7 +153,27 @@ export async function completeSale(params: CompleteSaleParams) {
   if (error) throw error;
   if (!venta) throw new Error("Error al procesar la venta");
 
+  if (tarjetaLealtadId) sincronizarTarjetaWallet(tenantId, tarjetaLealtadId);
+
   return venta;
+}
+
+/**
+ * Tras una venta con tarjeta de lealtad, actualiza su pase de Google Wallet
+ * (sellos y aviso al telefono). Sin `await` y sin errores hacia arriba: la venta
+ * y el ticket nunca esperan a Google. `keepalive` deja terminar la peticion
+ * aunque se cambie de pantalla. El servidor relee los sellos de la base.
+ */
+function sincronizarTarjetaWallet(tenantId: string, tarjetaId: string) {
+  if (typeof fetch === "undefined") return;
+  fetch("/api/lealtad/sync-wallet", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tenantId, tarjetaId }),
+    keepalive: true,
+  }).catch(() => {
+    // Sin conexion o error: el pase se pone al dia en la siguiente venta.
+  });
 }
 
 /** Errores de concurrencia de Postgres que revierten la transaccion completa. */

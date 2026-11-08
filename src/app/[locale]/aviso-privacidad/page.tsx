@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function AvisoPrivacidadPage() {
   return (
-    <LegalShell title="Aviso de Privacidad Integral" updatedAt="31 de octubre de 2026">
+    <LegalShell title="Aviso de Privacidad Integral" updatedAt="8 de noviembre de 2026">
       <p>
         SYMVORA (&quot;la Plataforma&quot;, &quot;nosotros&quot;), con domicilio en [Domicilio del responsable],
         pone a disposición de sus usuarios el presente Aviso de Privacidad Integral, en
@@ -92,6 +92,17 @@ export default function AvisoPrivacidadPage() {
         quien debe acreditar, ante sus clientes, la información relativa al tratamiento
         de dichos datos y contar con sus avisos de privacidad.
       </p>
+      <p>
+        <strong>Tarjetas de lealtad en Google Wallet.</strong> Cuando el cliente de un
+        negocio decide guardar su tarjeta de lealtad en Google Wallet (la Billetera de
+        Google), se envían a Google LLC su primer nombre y el código de su tarjeta, junto
+        con su avance de sellos, para crear el pase en su teléfono y mantenerlo
+        actualizado después de cada compra. Este envío solo ocurre si el propio cliente
+        lo elige al tocar «Agregar a la Billetera de Google»; si no lo hace, no se envía
+        ningún dato a Google. El tratamiento que Google haga de esos datos se rige por su
+        propia política de privacidad, y el cliente puede quitar el pase de su Billetera
+        en cualquier momento.
+      </p>
 
       <h2>5. Transferencias de datos</h2>
       <p>
@@ -119,6 +130,10 @@ export default function AvisoPrivacidadPage() {
           Proveedor de monitoreo de errores y observabilidad (Sentry) cuando esté
           habilitado, para identificar y resolver problemas técnicos que afecten la
           operación de la Plataforma.
+        </li>
+        <li>
+          Google LLC (Google Wallet), solo cuando el cliente de un negocio decide guardar
+          su tarjeta de lealtad en su Billetera, en los términos de la sección 4.
         </li>
         <li>
           Autoridades competentes, cuando sea requerido por ley, mandamiento judicial o

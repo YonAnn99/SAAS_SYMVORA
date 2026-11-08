@@ -6,6 +6,8 @@ import { TarjetaViva } from "@/features/lealtad/components/tarjeta-viva";
 import { obtenerTarjetaPublica } from "@/features/lealtad/tarjeta-publica.server";
 import { paletaDeTarjeta, urlTarjeta } from "@/features/lealtad/lealtad";
 import { qrSvg } from "@/features/lealtad/qr";
+import { BotonGoogleWallet } from "@/components/lealtad/boton-google-wallet";
+import { obtenerConfigGoogleWallet } from "@/features/lealtad/google-wallet/jwt";
 
 /**
  * Tarjeta de lealtad del cliente final (migracion 115). Publica: la abre el
@@ -90,7 +92,13 @@ export default async function TarjetaPage({ params }: Props) {
         />
       </TarjetaViva>
 
-      {/* Sin Wallet todavia: la tarjeta se guarda como acceso directo. */}
+      {/* Google Wallet: solo con las credenciales de SYMVORA configuradas. El
+          boton se oculta solo en iPhone/iPad (no hay Google Wallet en iOS). */}
+      {obtenerConfigGoogleWallet() && tarjeta.activa && (
+        <BotonGoogleWallet codigo={tarjeta.codigo} oscura={oscura} />
+      )}
+
+      {/* Alternativa: guardar como acceso directo en pantalla de inicio */}
       <details
         className={`w-full max-w-md rounded-2xl border px-4 py-3 text-sm ${
           oscura ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"

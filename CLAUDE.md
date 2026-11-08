@@ -295,8 +295,10 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     fecha. Al aplicarla, todo usuario existente ve una vez el aviso y su aceptación queda guardada.
     `/api/legal/accept` solo registra las versiones vigentes (409 si no). RLS: cada quien ve e inserta solo
     las suyas; nadie modifica ni borra.
-  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.5-2026-10-31` (eliminar cuenta, conservar nombre y celular
-    para comunicaciones comerciales, app de Android); términos en `v1.3-2026-10-06`
+  - Versiones en `lib/legal/versions.ts`; privacidad en `v1.6-2026-11-08` (la 1.5 sumó eliminar cuenta, conservar nombre
+    y celular para comunicaciones comerciales y la app de Android; la 1.6, Google Wallet: al guardar su tarjeta, el cliente
+    manda a Google su primer nombre, el código y sus sellos). **Cada versión nueva de privacidad necesita una migración
+    que cambie el literal en `ejecutar_baja`** (como la 132; lo vigila `eliminar-cuenta.test.ts`). Términos en `v1.3-2026-10-06`
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
     Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba; la **edad** es opcional y se captura en Mi perfil (`user_metadata.edad`, 18-120).
 
@@ -354,6 +356,21 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     agrupado por día, permiso `sales.create`). Cartel PDF carta en `features/lealtad/cartel-pdf.ts`; «QR para tu
     mostrador» en la pestaña (`qr-mostrador.tsx`); insignia «QR» y filtro en la lista. El celular guarda en
     `localStorage` (`symvora-mis-tarjetas`) las tarjetas que sacó, para ofrecer «Abrir mi tarjeta».
+- **Google Wallet** (2026-11-08, `features/lealtad/google-wallet/`; guía en
+  `~/Documentos/symvora_data/docs/google-wallet-setup.md`):
+  - SYMVORA es el único emisor (`GOOGLE_WALLET_ISSUER_ID`, `_CLIENT_EMAIL` y `_PRIVATE_KEY`). Sin ellas el botón no sale y
+    no se llama a Google.
+  - Clase = hash del id del PROGRAMA (`idClaseWallet`), nunca el nombre del negocio. Objeto = el código de la tarjeta.
+  - Enlace de guardar: `GET /api/tarjeta/[codigo]/google-wallet`, público con el rate limit de `obtenerTarjetaPublica`.
+  - Sincronización: `POST /api/lealtad/sync-wallet` con `sales.create`; recibe solo `tenantId` y `tarjetaId` y relee los
+    sellos de la base. **Nunca aceptar sellos del cliente** (la primera versión los aceptaba sin sesión). La llama
+    `completeSale` sin `await` (`keepalive`).
+  - El saldo va por `PATCH`; el aviso al teléfono por `addMessage` con `TEXT_AND_NOTIFY` (un `PATCH` de `messages` no
+    notifica; Google da ~3 avisos por pase al día).
+  - Botón: el badge OFICIAL de Google en español de Latinoamérica (`public/google-wallet/agregar-a-google-wallet.svg`,
+    paquete «es419»); no se recolorea ni se recorta. En iPhone se oculta (no hay Google Wallet). El aviso de privacidad
+    v1.6 lo menciona (sección 4 y transferencias). Pendiente: completar el perfil y pedir el acceso de publicación en la
+    consola de Wallet.
 - **Pendiente:** lealtad con terminal Mercado Pago.
 
 ## Lotes por sucursal (116) e insumos por servicio (117), 2026-10-12
@@ -598,7 +615,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 131; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 132; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 

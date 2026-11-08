@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -83,6 +83,44 @@ import type {
 import { insumosDeLinea, type RecetasServicio } from "@/features/inventory/insumos";
 import { fetchRecetasServicios } from "@/features/inventory/services/insumos-service";
 import { InsumosVentaDialog } from "@/features/pos/components/insumos-venta-dialog";
+
+/** Vista del catalogo del POS (agrupada / desglosada), recordada en este navegador. */
+const CLAVE_VISTA_POS = "pos_view_mode";
+const oyentesVistaPos = new Set<() => void>();
+
+function leerVistaPos(): PosViewMode {
+  try {
+    const guardada = localStorage.getItem(CLAVE_VISTA_POS);
+    if (guardada === "unbundled" || guardada === "grouped") return guardada;
+  } catch {
+    // localStorage bloqueado: vista por defecto.
+  }
+  return "grouped";
+}
+
+function guardarVistaPos(modo: PosViewMode) {
+  try {
+    localStorage.setItem(CLAVE_VISTA_POS, modo);
+  } catch {
+    // Sin localStorage la vista no se recuerda, pero se cambia igual abajo.
+  }
+  vistaPosEnMemoria = modo;
+  oyentesVistaPos.forEach((avisar) => avisar());
+}
+
+/** Respaldo en memoria para cuando localStorage no deja guardar. */
+let vistaPosEnMemoria: PosViewMode | null = null;
+
+function suscribirVistaPos(avisar: () => void) {
+  oyentesVistaPos.add(avisar);
+  return () => {
+    oyentesVistaPos.delete(avisar);
+  };
+}
+
+function leerVistaPosConRespaldo(): PosViewMode {
+  return vistaPosEnMemoria ?? leerVistaPos();
+}
 
 export default function POSPage() {
   const t = useTranslations();
@@ -176,19 +214,14 @@ export default function POSPage() {
   } | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<PosViewMode>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("pos_view_mode");
-      if (saved === "unbundled" || saved === "grouped") return saved;
-    }
-    return "grouped";
-  });
+  // Vista guardada en localStorage. Con `useSyncExternalStore` el servidor y la
+  // hidratacion pintan "grouped" y el valor guardado entra justo despues: leerlo
+  // en el estado inicial hacia que el servidor y el navegador no coincidieran
+  // (error de hidratacion en los botones Agrupada/Desglosada).
+  const viewMode = useSyncExternalStore(suscribirVistaPos, leerVistaPosConRespaldo, () => "grouped" as PosViewMode);
 
   const handleViewModeChange = useCallback((mode: PosViewMode) => {
-    setViewMode(mode);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("pos_view_mode", mode);
-    }
+    guardarVistaPos(mode);
   }, []);
 
   const [selectedPriceList, setSelectedPriceList] =

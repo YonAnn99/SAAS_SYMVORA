@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DIAS_PLAZO_BAJA, diasRestantes, solicitudQueBloquea, type SolicitudBaja } from "@/features/cuenta/baja";
@@ -22,8 +22,14 @@ describe("eliminación de cuenta", () => {
   });
 
   it("los contactos se conservan con la versión vigente del aviso de privacidad", () => {
-    const sql = readFileSync(join(process.cwd(), "supabase/migrations/128_eliminar_cuenta.sql"), "utf8");
-    expect(sql).toContain(`'${LEGAL_DOCUMENT_VERSIONS.privacy}'`);
+    // `ejecutar_baja` (128) anota la version; cada aviso nuevo la cambia con una
+    // migracion (132 para la v1.6). Alguna debe llevar la version vigente.
+    const dir = join(process.cwd(), "supabase/migrations");
+    const conVersion = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .map((f) => readFileSync(join(dir, f), "utf8"))
+      .filter((sql) => sql.includes("ejecutar_baja") && sql.includes(`'${LEGAL_DOCUMENT_VERSIONS.privacy}'`));
+    expect(conVersion.length).toBeGreaterThan(0);
   });
 
   it("cuenta los días que faltan, nunca negativos", () => {
