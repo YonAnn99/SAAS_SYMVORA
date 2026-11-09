@@ -240,6 +240,10 @@ export default function POSPage() {
   const tituloCarritoRef = useRef<HTMLHeadingElement>(null);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [saleReceipt, setSaleReceipt] = useState<SaleReceipt | null>(null);
+  // Cobro con terminal: el ticket se arma al INICIAR el cobro (es lo que se
+  // mando a cobrar) y se muestra cuando Mercado Pago confirma el pago.
+  const reciboTerminalRef = useRef<SaleReceipt | null>(null);
+  const [reciboTerminal, setReciboTerminal] = useState<SaleReceipt | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Tarjeta de lealtad de la venta (migracion 115). Sin programa activo todo
@@ -550,15 +554,32 @@ export default function POSPage() {
   } = useCashDrawer({
     tenantId,
     tenantReady: !tenantLoading,
-    // Cobro con terminal confirmado: la misma celebracion que el cobro directo.
-    onSaleCompleted: () => {
+    // Cobro con terminal confirmado: la misma celebracion que el cobro directo,
+    // y su ticket (antes no habia ticket de SYMVORA con terminal).
+    onSaleCompleted: (ventaId) => {
       celebrarVenta(null);
+      const recibo = reciboTerminalRef.current;
+      reciboTerminalRef.current = null;
+      if (recibo) setReciboTerminal({ ...recibo, reference: ventaId });
       finalizeSale();
     },
     // Ya no hay ventana de confirmar: al iniciar el cobro en la terminal se
     // cierra la hoja del carrito (celular) y queda la ventana de la terminal.
     onTerminalStarted: () => setMobileCartOpen(false),
   });
+
+  // Pago con terminal confirmado: un momento con «Pago recibido» a la vista y
+  // luego se cierra esa ventana y se abre el ticket (con impresora conectada
+  // sale solo), igual que tras el cobro directo.
+  useEffect(() => {
+    if (!reciboTerminal) return;
+    const t = window.setTimeout(() => {
+      setSaleReceipt(reciboTerminal);
+      setReciboTerminal(null);
+      void closeTerminalDialog();
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [reciboTerminal, closeTerminalDialog]);
 
   // «Tarjeta» (manual) solo con una terminal con que cobrar: Mercado Pago Point
   // lista o una terminal externa declarada en Configuración → Métodos de pago.
@@ -674,6 +695,18 @@ export default function POSPage() {
     }
 
     if (selectedPayment === "TARJETA_TERMINAL") {
+      // El ticket es lo que se manda a cobrar; se abre cuando Mercado Pago
+      // confirma el pago (`onSaleCompleted`). Con terminal no hay lealtad.
+      reciboTerminalRef.current = {
+        items: [...items],
+        total: totals.total,
+        paymentMethod: selectedPayment,
+        customerName,
+        customerPhone: selectedCustomerObj?.telefono ?? null,
+        reference: null,
+        descuentoEtiqueta:
+          totals.descuento > 0 ? etiquetaDescuento(descuentoTicket) : null,
+      };
       // La hoja del carrito se cierra al iniciar el cobro (`onTerminalStarted`); la
       // celebracion suena cuando la terminal confirma el pago.
       await startTerminalSale(

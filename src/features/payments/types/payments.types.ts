@@ -33,6 +33,8 @@ export interface TerminalOrderStatusResponse {
 export interface CancelTerminalOrderResponse {
   success: boolean;
   pagado: boolean;
+  /** Con `pagado`: la venta registrada (su id es el numero del ticket). */
+  venta_id?: string | null;
   message?: string;
   /**
    * Mercado Pago no dejo cancelar: el cobro ya esta en la terminal. Se cancela

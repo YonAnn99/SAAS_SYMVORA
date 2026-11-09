@@ -4,6 +4,7 @@ import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { cancelOrder, getOrder } from "@/features/payments/services/mercadopago/orders";
 import { estadoTerminal } from "@/features/payments/services/mercadopago/webhook";
+import { aplicarEstadoTerminal } from "@/features/payments/services/mercadopago/conciliar";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         pagado: true,
+        venta_id: pago.venta_id,
         message: "El pago ya fue procesado",
       });
     }
@@ -70,11 +72,15 @@ export async function POST(request: NextRequest) {
     // Se intenta cancelar y, haya funcionado o no, se pregunta a Mercado Pago
     // como quedo la orden: esa es la verdad, no la respuesta del cancel.
     let orderStatus = "unknown";
+    let cancelacionEnviada = false;
     if (secrets.accessToken) {
       try {
+        // Con la orden ya en la terminal, Mercado Pago responde 202 y le pide a
+        // la terminal que cancele (Point Smart con software al dia).
         await cancelOrder(secrets.accessToken, body.mp_order_id);
+        cancelacionEnviada = true;
       } catch (error) {
-        // Tipico: la orden ya llego a la terminal y solo se cancela ahi.
+        // Terminal que no admite cancelar a distancia: se cancela ahi.
         console.warn("Mercado Pago no cancelo la orden:", error);
       }
       try {
@@ -87,22 +93,44 @@ export async function POST(request: NextRequest) {
 
     const estado = estadoTerminal(orderStatus);
     if (estado === "PAGADA") {
-      return NextResponse.json({
-        success: true,
-        pagado: true,
-        message: "El pago ya fue procesado",
-      });
+      // El cliente ya pago: se registra la venta AQUI. Antes solo se respondia
+      // `pagado` y, si el webhook no llegaba, el POS celebraba y soltaba el
+      // carrito sin que existiera la venta (ni stock, ni caja, ni reportes).
+      try {
+        const { venta_id } = await aplicarEstadoTerminal(
+          supabase,
+          body.mp_order_id,
+          "PAGADA"
+        );
+        return NextResponse.json({
+          success: true,
+          pagado: true,
+          venta_id,
+          message: "El pago ya fue procesado",
+        });
+      } catch (error) {
+        // Sin venta NO se dice `pagado`: el POS sigue esperando y la consulta
+        // periodica vuelve a intentar registrarla.
+        console.error("Error registrando venta de terminal pagada:", error);
+        return NextResponse.json(
+          {
+            error:
+              "El pago se recibió, pero la venta aún no se registra. Espera un momento; no lo vuelvas a cobrar.",
+          },
+          { status: 500 }
+        );
+      }
     }
 
     // Sigue viva en la terminal (o no se pudo saber): NO se marca cancelada.
     // Si se marcara y el cliente pagara despues, el punto de venta ya habria
-    // soltado el carrito. El cajero la cancela en la terminal y el webhook
-    // avisa.
+    // soltado el carrito. La consulta periodica del POS ve cuando se cancela.
     if (estado === null && secrets.accessToken) {
       return NextResponse.json(
         {
-          error:
-            "La terminal ya tiene el cobro. Cancélalo en la terminal; aquí se actualiza solo.",
+          error: cancelacionEnviada
+            ? "Cancelación enviada a la terminal. Aquí se actualiza solo."
+            : "La terminal ya tiene el cobro. Cancélalo en la terminal; aquí se actualiza solo.",
           en_terminal: true,
         },
         { status: 409 }
@@ -134,9 +162,15 @@ export async function POST(request: NextRequest) {
 
     const updated = (updatedRows ?? []) as unknown[];
     if (updated.length === 0) {
+      const { data: pagado } = await supabase
+        .from("pagos_terminal")
+        .select("venta_id")
+        .eq("id", pago.id)
+        .maybeSingle();
       return NextResponse.json({
         success: true,
         pagado: true,
+        venta_id: pagado?.venta_id ?? null,
         message: "El pago ya fue procesado",
       });
     }

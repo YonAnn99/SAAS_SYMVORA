@@ -16,7 +16,11 @@ const MAX_POLLS = 48;
 interface UseCashDrawerParams {
   tenantId: string | null;
   tenantReady: boolean;
-  onSaleCompleted: () => void;
+  /**
+   * La terminal confirmo el pago. `ventaId` es la venta registrada (el numero
+   * del ticket); puede faltar si respondio una version vieja del servidor.
+   */
+  onSaleCompleted: (ventaId: string | null) => void;
   onTerminalStarted: () => void;
 }
 
@@ -48,7 +52,9 @@ export function useCashDrawer({
   const [terminalStatus, setTerminalStatus] = useState<TerminalStatus>(null);
   const [cancellingTerminal, setCancellingTerminal] = useState(false);
   const pollIntervalRef = useRef<number | null>(null);
-  const cancelPendingRef = useRef<() => Promise<boolean>>(async () => false);
+  const cancelPendingRef = useRef<
+    () => Promise<{ ventaId: string | null } | null>
+  >(async () => null);
 
   useEffect(() => {
     if (!tenantReady) return;
@@ -82,10 +88,16 @@ export function useCashDrawer({
     }
   }, []);
 
-  const cancelTerminalOrderIfPending = useCallback(async () => {
-    if (!tenantId || !terminalOrder) return false;
+  /**
+   * Cancela la orden si sigue pendiente. Devuelve la venta si resulto que el
+   * cliente ya habia pagado (`pagado`), o `null` si no.
+   */
+  const cancelTerminalOrderIfPending = useCallback(async (): Promise<
+    { ventaId: string | null } | null
+  > => {
+    if (!tenantId || !terminalOrder) return null;
     if (terminalStatus !== "waiting" && terminalStatus !== "timeout") {
-      return false;
+      return null;
     }
     stopPolling();
     try {
@@ -93,9 +105,9 @@ export function useCashDrawer({
         tenantId,
         terminalOrder.mpOrderId
       );
-      return Boolean(result.pagado);
+      return result.pagado ? { ventaId: result.venta_id ?? null } : null;
     } catch {
-      return false;
+      return null;
     }
   }, [tenantId, terminalOrder, terminalStatus, stopPolling]);
 
@@ -129,7 +141,7 @@ export function useCashDrawer({
           if (pagado) {
             setTerminalStatus("pagado");
             toast.success("El pago ya fue procesado en la terminal");
-            onSaleCompleted();
+            onSaleCompleted(pagado.ventaId);
           }
           return;
         }
@@ -139,7 +151,7 @@ export function useCashDrawer({
             stopPolling();
             setTerminalStatus("pagado");
             toast.success(`Pago recibido en terminal: $${monto.toFixed(2)}`);
-            onSaleCompleted();
+            onSaleCompleted(status.venta_id ?? null);
           } else if (status.estado === "RECHAZADA") {
             stopPolling();
             setTerminalStatus("rechazada");
@@ -219,8 +231,9 @@ export function useCashDrawer({
         terminalOrder.mpOrderId
       );
       if (result.enTerminal) {
-        // El cobro ya esta en la terminal: se cancela ahi. Se sigue
-        // consultando, asi el aviso de Mercado Pago cierra esta ventana.
+        // El cobro ya esta en la terminal: se le pidio cancelar o se cancela
+        // ahi. Se sigue consultando: el servidor le pregunta a Mercado Pago y
+        // esta ventana se cierra sola al quedar cancelada (o pagada).
         toast.info(result.message ?? "Cancela el cobro en la terminal");
         return;
       }
@@ -228,7 +241,7 @@ export function useCashDrawer({
       if (result.pagado) {
         setTerminalStatus("pagado");
         toast.success("El pago ya fue procesado en la terminal");
-        onSaleCompleted();
+        onSaleCompleted(result.venta_id ?? null);
       } else {
         setTerminalStatus("cancelada");
         toast.info("Cobro cancelado");
@@ -249,7 +262,7 @@ export function useCashDrawer({
       const pagado = await cancelTerminalOrderIfPending();
       if (pagado) {
         toast.success("El pago ya fue procesado en la terminal");
-        onSaleCompleted();
+        onSaleCompleted(pagado.ventaId);
       }
     }
     setTerminalOrder(null);

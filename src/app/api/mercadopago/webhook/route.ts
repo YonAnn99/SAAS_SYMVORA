@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { getOrder } from "@/features/payments/services/mercadopago/orders";
+import { aplicarEstadoTerminal } from "@/features/payments/services/mercadopago/conciliar";
 import {
   getMercadoPagoPointConfig,
   readMercadoPagoSecrets,
@@ -62,6 +63,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (!valid) {
+      // Deja rastro en los registros: si el webhook llega pero la firma no
+      // cuadra, casi siempre es la Clave secreta mal copiada en Configuracion.
+      console.warn("Webhook Mercado Pago con firma inválida", {
+        orden: dataId,
+        tieneSecreto: Boolean(secrets.webhookSecret),
+        tieneFirma: Boolean(xSignature),
+        tieneRequestId: Boolean(xRequestId),
+      });
       return NextResponse.json(
         { error: "Firma inválida" },
         { status: 401 }
@@ -97,16 +106,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const { error: rpcError } = await supabase.rpc(
-      "confirm_terminal_payment",
-      {
-        p_mp_order_id: dataId,
-        p_pagado: paid,
-        p_estado: estado,
-      }
-    );
-
-    if (rpcError) {
+    try {
+      await aplicarEstadoTerminal(supabase, dataId, estado);
+    } catch (rpcError) {
       console.error("Error confirmando pago de terminal:", rpcError);
       return NextResponse.json(
         { error: "No se pudo confirmar el pago" },

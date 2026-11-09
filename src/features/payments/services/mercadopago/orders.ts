@@ -45,7 +45,9 @@ export async function createOrder(params: CreateOrderParams): Promise<MpOrder> {
     config: {
       point: {
         terminal_id: params.terminalId,
-        print_on_terminal: "no_ticket",
+        // El comprobante de pago lo imprime la terminal (en modo PDV es el
+        // valor por defecto de Mercado Pago). Con `no_ticket` no salia nada.
+        print_on_terminal: "seller_ticket",
       },
       payment_method: {
         default_type: "credit_card",
@@ -81,7 +83,13 @@ export async function cancelOrder(
 ): Promise<MpOrder> {
   return mpFetch<MpOrder>(`/v1/orders/${encodeURIComponent(orderId)}/cancel`, {
     method: "POST",
-    headers: mpHeaders(accessToken, idempotencyKey ?? crypto.randomUUID()),
+    // Sin este header, una orden que ya esta en la terminal (`at_terminal`) no
+    // se puede cancelar por API: Mercado Pago responde 409 cannot_cancel_order.
+    // Con el, responde 202 y la terminal cancela (Point Smart con software al
+    // dia); la confirmacion llega por webhook o por la consulta del POS.
+    headers: mpHeaders(accessToken, idempotencyKey ?? crypto.randomUUID(), {
+      "x-allow-cancelable-status": "at_terminal",
+    }),
   });
 }
 

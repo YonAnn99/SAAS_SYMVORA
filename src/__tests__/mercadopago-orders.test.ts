@@ -168,3 +168,43 @@ describe("estadoTerminal", () => {
     }
   });
 });
+
+describe("ordenes de Mercado Pago Point", () => {
+  const respuestaOk = () =>
+    new Response(JSON.stringify({ id: "ORD1", status: "created" }), { status: 200 });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("la terminal imprime el comprobante del pago (antes `no_ticket`: no salia nada)", async () => {
+    const fetchMock = vi.fn(async () => respuestaOk());
+    vi.stubGlobal("fetch", fetchMock);
+    const { createOrder } = await import("@/features/payments/services/mercadopago/orders");
+
+    await createOrder({
+      accessToken: "APP_USR-x",
+      terminalId: "PAX__1",
+      amount: 10,
+      externalReference: "ref-1",
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body.config.point.print_on_terminal).toBe("seller_ticket");
+  });
+
+  it("cancelar permite una orden que ya esta en la terminal", async () => {
+    const fetchMock = vi.fn(async () => respuestaOk());
+    vi.stubGlobal("fetch", fetchMock);
+    const { cancelOrder } = await import("@/features/payments/services/mercadopago/orders");
+
+    await cancelOrder("APP_USR-x", "ORD1");
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toMatch(/\/v1\/orders\/ORD1\/cancel$/);
+    const headers = init.headers as Record<string, string>;
+    expect(headers["x-allow-cancelable-status"]).toBe("at_terminal");
+    expect(headers.Authorization).toBe("Bearer APP_USR-x");
+  });
+});

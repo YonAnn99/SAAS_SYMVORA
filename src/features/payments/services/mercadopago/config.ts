@@ -17,11 +17,13 @@ export class MercadoPagoError extends Error {
 
 export function mpHeaders(
   accessToken: string,
-  idempotencyKey?: string
+  idempotencyKey?: string,
+  extra?: Record<string, string>
 ): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${accessToken}`,
+    ...extra,
   };
   if (idempotencyKey) {
     headers["X-Idempotency-Key"] = idempotencyKey;
