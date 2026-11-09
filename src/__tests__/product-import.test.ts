@@ -345,3 +345,63 @@ describe("chunkRows", () => {
     expect(chunkRows([], 250)).toEqual([]);
   });
 });
+
+describe("campos del formulario «Producto único» en la importación", () => {
+  const mapping: ImportFieldMapping = {
+    nombre: "Nombre",
+    unidad_medida: "¿Cómo se vende?",
+    contenido_cantidad: "Contenido (cantidad)",
+    contenido_unidad: "Contenido (unidad)",
+    precio_venta: "Precio de venta",
+    stock_actual: "Stock actual",
+    es_servicio: "¿Es servicio? (Sí/No)",
+    permite_lotes: "¿Maneja lotes? (Sí/No)",
+  };
+  const construir = (filas: Record<string, unknown>[], columnas = mapping) =>
+    buildImportRows({
+      rawRows: filas,
+      mapping: columnas,
+      existingBarcodes: new Map(),
+      supplierMap: new Map(),
+    });
+
+  it("un servicio queda como SERVICIO, sin stock ni lotes", () => {
+    const [row] = construir([
+      { Nombre: "Corte", "¿Cómo se vende?": "Pieza", "Precio de venta": 120, "Stock actual": 9, "¿Es servicio? (Sí/No)": "Sí", "¿Maneja lotes? (Sí/No)": "sí" },
+    ]);
+    expect(row.status).toBe("new");
+    expect(row.data).toMatchObject({ unidad_medida: "SERVICIO", es_servicio: true, stock_actual: 0, permite_lotes: false });
+  });
+
+  it("lee Sí/No en sus formas comunes", () => {
+    const filas = ["Sí", "si", "X", "1", "No", "", "tal vez"].map((valor) => ({
+      Nombre: `P ${valor}`,
+      "¿Maneja lotes? (Sí/No)": valor,
+    }));
+    expect(construir(filas).map((row) => row.data?.permite_lotes)).toEqual([true, true, true, true, false, false, false]);
+  });
+
+  it("guarda el contenido del envase y lo ignora a granel", () => {
+    const [refresco, arroz] = construir([
+      { Nombre: "Refresco", "¿Cómo se vende?": "Pieza", "Contenido (cantidad)": "600", "Contenido (unidad)": "ml" },
+      { Nombre: "Arroz", "¿Cómo se vende?": "Kilogramo", "Contenido (cantidad)": "1", "Contenido (unidad)": "Kilogramo" },
+    ]);
+    expect(refresco.data).toMatchObject({ contenido_cantidad: 600, contenido_unidad: "MILILITRO" });
+    expect(arroz.data).toMatchObject({ unidad_medida: "KG", contenido_cantidad: null, contenido_unidad: null });
+  });
+
+  it("un contenido sin medida válida es un error", () => {
+    const [row] = construir([{ Nombre: "Refresco", "Contenido (cantidad)": "600", "Contenido (unidad)": "botella" }]);
+    expect(row.status).toBe("invalid");
+    expect(row.errorMessage).toMatch(/^Contenido:/);
+  });
+
+  it("sin esas columnas no manda contenido ni lotes (Actualizar no los borra)", () => {
+    const [row] = construir([{ Nombre: "Arroz", "Precio de venta": 30 }], {
+      nombre: "Nombre",
+      precio_venta: "Precio de venta",
+    });
+    expect(row.data).not.toHaveProperty("contenido_cantidad");
+    expect(row.data).not.toHaveProperty("permite_lotes");
+  });
+});

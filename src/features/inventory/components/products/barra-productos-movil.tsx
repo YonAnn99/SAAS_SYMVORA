@@ -57,7 +57,7 @@ interface BarraProductosMovilProps {
   categories: string[];
   sinCategoriaCount: number;
   placeholderBusqueda: string;
-  /** CSV/PDF (`DataTableToolbar`): en pantalla chica ya va solo con icono. */
+  /** CSV/PDF (`DataTableToolbar`): en pantalla chica va con el texto, sin icono. */
   exportar: ReactNode;
   /** `BotonActualizar` cuadrado, a la derecha de los filtros. */
   actualizar?: ReactNode;

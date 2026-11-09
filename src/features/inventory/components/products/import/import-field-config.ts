@@ -16,6 +16,10 @@ export const IMPORT_TARGET_FIELDS: {
   { field: "stock_minimo", required: false, labelKey: "products.import.fields.stock_minimo" },
   { field: "categoria", required: false, labelKey: "products.import.fields.categoria" },
   { field: "proveedor", required: false, labelKey: "products.import.fields.proveedor" },
+  { field: "contenido_cantidad", required: false, labelKey: "products.import.fields.contenido_cantidad" },
+  { field: "contenido_unidad", required: false, labelKey: "products.import.fields.contenido_unidad" },
+  { field: "es_servicio", required: false, labelKey: "products.import.fields.es_servicio" },
+  { field: "permite_lotes", required: false, labelKey: "products.import.fields.permite_lotes" },
 ];
 
 // Ya normalizados (ver `normalize`): minusculas, sin acentos ni signos.
@@ -24,13 +28,20 @@ const FIELD_ALIASES: Record<ImportTargetField, string[]> = {
   codigo_barras: ["codigo barras", "codigo de barras", "barcode", "ean", "upc", "gtin", "codigobarras"],
   sku: ["sku", "clave", "codigo interno"],
   descripcion: ["descripcion", "description", "detalle"],
-  unidad_medida: ["unidad medida", "unidad de medida", "unidad", "unit", "uom"],
+  // "como se vende" es el encabezado de la plantilla de SYMVORA (igual que el formulario).
+  unidad_medida: ["unidad medida", "unidad de medida", "unidad", "unit", "uom", "como se vende"],
   precio_venta: ["precio venta", "precio de venta", "precio", "price", "sale price", "precio publico"],
   costo_compra: ["costo compra", "costo de compra", "costo", "cost", "purchase cost", "precio de compra", "precio compra", "costo unitario"],
   stock_actual: ["stock actual", "stock", "existencia", "existencias", "cantidad", "quantity", "qty", "inventario"],
   stock_minimo: ["stock minimo", "minimum stock", "min stock", "minimo", "alerta stock minimo"],
   categoria: ["categoria", "categorias", "category", "categories", "departamento"],
   proveedor: ["proveedor", "proveedores", "supplier", "vendor"],
+  // "Contenido (cantidad)" tambien contiene "cantidad" (stock) y "Contenido
+  // (unidad)" contiene "unidad": el alias exacto gana por puntaje.
+  contenido_cantidad: ["contenido cantidad", "contenido", "contenido neto"],
+  contenido_unidad: ["contenido unidad", "unidad del contenido", "unidad contenido"],
+  es_servicio: ["es servicio", "servicio"],
+  permite_lotes: ["maneja lotes", "permite lotes", "lotes"],
 };
 
 function normalize(text: string): string {

@@ -1,6 +1,8 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { generateNextBarcode } from "./product-service";
-import type { ProductImportInput } from "../types/import.types";
+import { crearProductoConVariantes, deleteProduct, generateNextBarcode } from "./product-service";
+import { createVariant } from "./variant-service";
+import { baseSkuDe, inputDeTarjeta } from "../tarjetas-variante";
+import type { ProductImportInput, VariantGroup } from "../types/import.types";
 
 export const IMPORT_CHUNK_SIZE = 250;
 const IMPORT_UPDATE_CONCURRENCY = 20;
@@ -31,6 +33,24 @@ export async function fetchExistingBarcodes(
     }
   }
   return map;
+}
+
+/**
+ * Nombres de los productos activos, normalizados con `normalizar` (minusculas,
+ * sin acentos ni signos). Un producto con variantes de la plantilla que ya
+ * existe no se vuelve a crear: sus variantes se agregan desde el catalogo.
+ */
+export async function fetchExistingProductNames(
+  tenantId: string,
+  normalizar: (texto: string) => string
+): Promise<Set<string>> {
+  const supabase = createSupabaseBrowserClient();
+  const { data } = await supabase
+    .from("productos")
+    .select("nombre")
+    .eq("tenant_id", tenantId)
+    .is("archivado_en", null);
+  return new Set((data ?? []).map((row) => normalizar(row.nombre ?? "")).filter(Boolean));
 }
 
 export async function fetchSupplierNameMap(
@@ -159,4 +179,71 @@ export async function bulkUpdateProducts(
   }
 
   return { updatedCount, errors };
+}
+
+export interface VariantGroupOutcome {
+  creado: boolean;
+  variantes: number;
+  errors: { rowIndex: number; message: string }[];
+}
+
+/**
+ * Guarda un producto con variantes de la plantilla con los MISMOS pasos que la
+ * ventana "Producto con variantes": el producto general (precio y stock en 0) y
+ * una variante por fila con `inputDeTarjeta`. Si no se pudo crear ninguna
+ * variante, se borra el producto general (no tiene historial): sin variantes
+ * se venderia como general a $0.
+ */
+export async function importarGrupoVariantes(
+  tenantId: string,
+  grupo: VariantGroup
+): Promise<VariantGroupOutcome> {
+  const errors: { rowIndex: number; message: string }[] = [];
+  let productoId: string;
+  try {
+    productoId = await crearProductoConVariantes(tenantId, {
+      nombre: grupo.nombre,
+      unidad_medida: grupo.unidadProducto,
+      categoria: grupo.categoria,
+      es_servicio: grupo.esServicio,
+      permite_lotes: grupo.permiteLotes,
+    });
+  } catch (error: unknown) {
+    const message = mensajeDeError(error);
+    return { creado: false, variantes: 0, errors: grupo.filas.map((rowIndex) => ({ rowIndex, message })) };
+  }
+
+  const baseSku = baseSkuDe(grupo.nombre);
+  let variantes = 0;
+  for (let i = 0; i < grupo.tarjetas.length; i++) {
+    try {
+      await createVariant(
+        tenantId,
+        inputDeTarjeta(grupo.tarjetas[i], {
+          productoId,
+          baseSku,
+          imagenUrl: null,
+          unidadProducto: grupo.unidadProducto,
+          esServicio: grupo.esServicio,
+        })
+      );
+      variantes += 1;
+    } catch (error: unknown) {
+      errors.push({ rowIndex: grupo.filas[i], message: mensajeDeError(error) });
+    }
+  }
+
+  if (variantes === 0) {
+    await deleteProduct(productoId).catch(() => undefined);
+    return { creado: false, variantes: 0, errors };
+  }
+  return { creado: true, variantes, errors };
+}
+
+function mensajeDeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
 }

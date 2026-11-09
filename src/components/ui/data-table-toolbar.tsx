@@ -57,6 +57,15 @@ export function DataTableToolbar<T>({
   const boton = (formato: Formato) => {
     const Icono = formato === "csv" ? FileSpreadsheet : FileText;
     const etiqueta = formato === "csv" ? "CSV" : "PDF";
+    const descripcion = `Exportar a ${etiqueta}`;
+    // En celular va el texto (CSV / PDF) en lugar del icono: los dos iconos de
+    // documento se parecian y no decian que hacian. Desde `sm`, icono + texto.
+    const contenido = (
+      <>
+        <Icono className="hidden h-3.5 w-3.5 sm:inline-block" aria-hidden="true" />
+        <span>{etiqueta}</span>
+      </>
+    );
 
     // Sin seleccion posible: el boton de siempre.
     if (!seleccion) {
@@ -66,9 +75,10 @@ export function DataTableToolbar<T>({
           size="sm"
           onClick={() => void exportar(formato, data, false)}
           className="h-8 gap-1.5"
+          aria-label={descripcion}
+          title={descripcion}
         >
-          <Icono className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">{etiqueta}</span>
+          {contenido}
         </Button>
       );
     }
@@ -76,10 +86,17 @@ export function DataTableToolbar<T>({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="h-8 gap-1.5" />}
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              aria-label={descripcion}
+              title={descripcion}
+            />
+          }
         >
-          <Icono className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">{etiqueta}</span>
+          {contenido}
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">

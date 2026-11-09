@@ -1,4 +1,9 @@
-import { esUnidad, type UnidadMedida } from "@/lib/unidades";
+import {
+  contenidoCapturado,
+  esFraccionable,
+  esUnidad,
+  type UnidadMedida,
+} from "@/lib/unidades";
 import { productImportRowSchema } from "@/lib/validations/schemas";
 import { getDefaultClaveUnidad } from "@/features/facturacion/catalogs";
 import type {
@@ -38,7 +43,7 @@ function readField(
 }
 
 /** Vacio = 0; `null` si no es un numero (p. ej. una fila de ayuda: "Sin el símbolo $."). */
-function parseNumber(value: string): number | null {
+export function parseNumber(value: string): number | null {
   const cleaned = value.replace(/mxn/gi, "").replace(/[\s$,]/g, "");
   if (!cleaned) return 0;
   if (!/^-?(\d+\.?\d*|\.\d+)$/.test(cleaned)) return null;
@@ -61,6 +66,39 @@ export function parseUnidadMedida(value: string): UnidadMedida {
     .replace(/\.$/, "");
   if (esUnidad(upper)) return upper;
   return ALIAS_UNIDAD[upper] ?? "PIEZA";
+}
+
+const SI = new Set(["SI", "S", "X", "1", "TRUE", "YES", "Y", "VERDADERO"]);
+
+/** "Sí", "si", "x", "1"… = verdadero; vacio o cualquier otra cosa = falso. */
+export function parseSiNo(value: unknown): boolean {
+  if (value === true) return true;
+  const texto = String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\.$/, "");
+  return SI.has(texto);
+}
+
+/**
+ * Contenido del envase de una fila: cantidad y unidad escritas ("600" y
+ * "Mililitro" o "ml"). Vacio = sin contenido. Igual que el formulario: a granel
+ * o en un servicio no aplica y queda en NULL.
+ */
+export function contenidoDeFila(
+  cantidadTexto: string,
+  unidadTexto: string,
+  unidadVenta: UnidadMedida
+): { ok: true; cantidad: number | null; unidad: UnidadMedida | null } | { ok: false; error: string } {
+  if (!cantidadTexto.trim() || unidadVenta === "SERVICIO" || esFraccionable(unidadVenta)) {
+    return { ok: true, cantidad: null, unidad: null };
+  }
+  const unidad = unidadTexto.trim() ? parseUnidadMedida(unidadTexto) : null;
+  const contenido = contenidoCapturado(cantidadTexto, unidad);
+  if (!contenido.ok) return { ok: false, error: `Contenido: ${contenido.error}` };
+  return { ok: true, cantidad: contenido.contenido_cantidad, unidad: contenido.contenido_unidad };
 }
 
 export interface BuildImportRowsParams {
@@ -91,7 +129,12 @@ export function buildImportRows({
     const codigoBarras = readField(raw, mapping, "codigo_barras");
     const sku = readField(raw, mapping, "sku");
     const descripcion = readField(raw, mapping, "descripcion");
-    const unidadMedida = parseUnidadMedida(readField(raw, mapping, "unidad_medida"));
+    // Un servicio se vende como SERVICIO y sin existencias, como en el formulario.
+    const esServicio = parseSiNo(readField(raw, mapping, "es_servicio"));
+    const permiteLotes = !esServicio && parseSiNo(readField(raw, mapping, "permite_lotes"));
+    const unidadMedida: UnidadMedida = esServicio
+      ? "SERVICIO"
+      : parseUnidadMedida(readField(raw, mapping, "unidad_medida"));
     const categoria = readField(raw, mapping, "categoria");
     const proveedorNombre = readField(raw, mapping, "proveedor");
 
@@ -109,6 +152,21 @@ export function buildImportRows({
         } satisfies ImportRow;
       }
       numeros[field] = numero;
+    }
+
+    const contenido = contenidoDeFila(
+      readField(raw, mapping, "contenido_cantidad"),
+      readField(raw, mapping, "contenido_unidad"),
+      unidadMedida
+    );
+    if (!contenido.ok) {
+      return {
+        index: rowIndex,
+        raw,
+        status: "invalid",
+        errorMessage: contenido.error,
+        data: null,
+      } satisfies ImportRow;
     }
 
     let supplierWarning: string | null = null;
@@ -130,9 +188,9 @@ export function buildImportRows({
       unidad_medida: unidadMedida,
       precio_venta: numeros.precio_venta,
       costo_compra: numeros.costo_compra,
-      stock_actual: numeros.stock_actual,
-      stock_minimo: numeros.stock_minimo,
-      es_servicio: false,
+      stock_actual: esServicio ? 0 : numeros.stock_actual,
+      stock_minimo: esServicio ? 0 : numeros.stock_minimo,
+      es_servicio: esServicio,
       categoria: categoria || undefined,
       proveedor_id: proveedorId || undefined,
       // Las claves SAT no se importan (CFDI oculto); la de unidad se deriva
@@ -156,11 +214,15 @@ export function buildImportRows({
       codigo_barras: parsed.data.codigo_barras || null,
       sku: parsed.data.sku || null,
       unidad_medida: parsed.data.unidad_medida,
+      ...(mapping.contenido_cantidad || mapping.contenido_unidad
+        ? { contenido_cantidad: contenido.cantidad, contenido_unidad: contenido.unidad }
+        : {}),
       precio_venta: parsed.data.precio_venta,
       costo_compra: parsed.data.costo_compra,
       stock_actual: parsed.data.stock_actual,
       stock_minimo: parsed.data.stock_minimo,
       es_servicio: parsed.data.es_servicio ?? false,
+      ...(mapping.permite_lotes ? { permite_lotes: permiteLotes } : {}),
       categoria: parsed.data.categoria || null,
       proveedor_id: parsed.data.proveedor_id || null,
       clave_prod_serv: parsed.data.clave_prod_serv || null,

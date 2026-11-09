@@ -21,19 +21,23 @@ import { ImportMappingStep } from "./import-mapping-step";
 import { ImportPreviewStep } from "./import-preview-step";
 import { ImportResultsStep } from "./import-results-step";
 import { buildImportRows } from "./import-row-processor";
+import { buildVariantGroups, normalizarTexto } from "./import-variantes";
 import type { ParsedImportFile } from "./import-file-parser";
 import {
   bulkCreateProducts,
   bulkUpdateProducts,
   createProductWithGeneratedBarcode,
   fetchExistingBarcodes,
+  fetchExistingProductNames,
   fetchSupplierNameMap,
+  importarGrupoVariantes,
 } from "../../../services/product-import-service";
 import type {
   DuplicateResolution,
   ImportFieldMapping,
   ImportResult,
   ImportRow,
+  VariantGroup,
 } from "../../../types/import.types";
 
 type WizardStep = "upload" | "mapping" | "preview" | "results";
@@ -56,6 +60,8 @@ export function ImportProductsDialog({
   const [parsed, setParsed] = useState<ParsedImportFile | null>(null);
   const [mapping, setMapping] = useState<ImportFieldMapping>({});
   const [rows, setRows] = useState<ImportRow[]>([]);
+  // Hoja "Productos con variantes" de la plantilla: un grupo por producto.
+  const [groups, setGroups] = useState<VariantGroup[]>([]);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -65,6 +71,7 @@ export function ImportProductsDialog({
     setParsed(null);
     setMapping({});
     setRows([]);
+    setGroups([]);
     setResult(null);
     setProcessing(false);
     setProgress({ done: 0, total: 0 });
@@ -75,9 +82,63 @@ export function ImportProductsDialog({
     onOpenChange(next);
   };
 
+  /** Arma la vista previa: productos unicos y, con la plantilla, sus variantes. */
+  const prepararVistaPrevia = async (
+    archivo: ParsedImportFile,
+    columnas: ImportFieldMapping
+  ) => {
+    const conVariantes = (archivo.variantes?.rows.length ?? 0) > 0;
+    setProcessing(true);
+    try {
+      const [existingBarcodes, supplierMap, existingNames] = await Promise.all([
+        fetchExistingBarcodes(tenantId),
+        fetchSupplierNameMap(tenantId),
+        conVariantes
+          ? fetchExistingProductNames(tenantId, normalizarTexto)
+          : Promise.resolve(new Set<string>()),
+      ]);
+      const builtRows = buildImportRows({
+        rawRows: archivo.rows,
+        mapping: columnas,
+        existingBarcodes,
+        supplierMap,
+        rowNumbers: archivo.rowNumbers,
+      });
+      // Un codigo de barras no puede repetirse entre las dos hojas.
+      const barcodesEnArchivo = new Map<string, number>();
+      for (const row of builtRows) {
+        const codigo = row.data?.codigo_barras?.trim().toLowerCase();
+        if (codigo && !barcodesEnArchivo.has(codigo)) barcodesEnArchivo.set(codigo, row.index);
+      }
+      setRows(builtRows);
+      setGroups(
+        conVariantes && archivo.variantes
+          ? buildVariantGroups({
+              rawRows: archivo.variantes.rows,
+              rowNumbers: archivo.variantes.rowNumbers,
+              existingBarcodes,
+              existingNames,
+              barcodesEnArchivo,
+            })
+          : []
+      );
+      setStep("preview");
+    } catch {
+      toast.error(t("products.import.parseError"));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleParsed = (_file: File, parsedFile: ParsedImportFile) => {
+    const columnas = guessFieldMapping(parsedFile.headers);
     setParsed(parsedFile);
-    setMapping(guessFieldMapping(parsedFile.headers));
+    setMapping(columnas);
+    // La plantilla de SYMVORA ya trae las columnas esperadas: sin paso de mapeo.
+    if (parsedFile.esPlantilla) {
+      void prepararVistaPrevia(parsedFile, columnas);
+      return;
+    }
     setStep("mapping");
   };
 
@@ -86,26 +147,7 @@ export function ImportProductsDialog({
       toast.error(t("products.import.mapNameRequired"));
       return;
     }
-    setProcessing(true);
-    try {
-      const [existingBarcodes, supplierMap] = await Promise.all([
-        fetchExistingBarcodes(tenantId),
-        fetchSupplierNameMap(tenantId),
-      ]);
-      const builtRows = buildImportRows({
-        rawRows: parsed.rows,
-        mapping,
-        existingBarcodes,
-        supplierMap,
-        rowNumbers: parsed.rowNumbers,
-      });
-      setRows(builtRows);
-      setStep("preview");
-    } catch {
-      toast.error(t("products.import.parseError"));
-    } finally {
-      setProcessing(false);
-    }
+    await prepararVistaPrevia(parsed, mapping);
   };
 
   const handleResolutionChange = (rowIndex: number, resolution: DuplicateResolution) => {
@@ -136,8 +178,13 @@ export function ImportProductsDialog({
       (row): row is ImportRow & { data: NonNullable<ImportRow["data"]> } =>
         row.status === "duplicate" && row.resolution === "update" && row.data !== null
     );
+    const gruposNuevos = groups.filter((group) => group.status === "new");
     const skippedCount =
-      rows.length - toCreate.length - toGenerate.length - toUpdate.length;
+      rows.length -
+      toCreate.length -
+      toGenerate.length -
+      toUpdate.length +
+      (groups.length - gruposNuevos.length);
 
     const errors: { row: number; message: string }[] = [];
     let created = 0;
@@ -188,6 +235,16 @@ export function ImportProductsDialog({
         });
       }
 
+      // Productos con variantes, uno por uno (cada uno es producto + variantes).
+      for (let i = 0; i < gruposNuevos.length; i++) {
+        const outcome = await importarGrupoVariantes(tenantId, gruposNuevos[i]);
+        if (outcome.creado) created += 1;
+        outcome.errors.forEach((groupError) => {
+          errors.push({ row: groupError.rowIndex, message: groupError.message });
+        });
+        setProgress({ done: i + 1, total: gruposNuevos.length });
+      }
+
       if (created + updated > 0) {
         await logActivity({
           action: "CREATE",
@@ -209,15 +266,18 @@ export function ImportProductsDialog({
     if (hadSuccess) onImported();
   };
 
-  const importableCount = rows.filter(
-    (row) =>
-      row.status === "new" ||
-      (row.status === "duplicate" && row.resolution && row.resolution !== "skip")
-  ).length;
+  const importableCount =
+    rows.filter(
+      (row) =>
+        row.status === "new" ||
+        (row.status === "duplicate" && row.resolution && row.resolution !== "skip")
+    ).length + groups.filter((group) => group.status === "new").length;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
+      {/* `sm:max-w-2xl`: la base trae `sm:max-w-sm`, que ganaba al `max-w-2xl` y
+          dejaba la ventana angosta con las tablas cortadas. */}
+      <DialogContent className="max-w-2xl sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle className="text-base">{t("products.import.title")}</DialogTitle>
           <DialogDescription className="text-xs">
@@ -238,6 +298,7 @@ export function ImportProductsDialog({
           <>
             <ImportPreviewStep
               rows={rows}
+              groups={groups}
               onResolutionChange={handleResolutionChange}
               onApplyToAll={handleApplyToAll}
             />
@@ -280,7 +341,8 @@ export function ImportProductsDialog({
                 size="sm"
                 className="h-8"
                 disabled={processing}
-                onClick={() => setStep("mapping")}
+                // Con la plantilla no hubo paso de mapeo: se vuelve a subir.
+                onClick={() => setStep(parsed?.esPlantilla ? "upload" : "mapping")}
               >
                 {t("common.back")}
               </Button>

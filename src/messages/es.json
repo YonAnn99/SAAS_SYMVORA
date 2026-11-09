@@ -322,7 +322,11 @@
         "stock_actual": "Stock actual",
         "stock_minimo": "Stock mínimo",
         "categoria": "Categoría",
-        "proveedor": "Proveedor"
+        "proveedor": "Proveedor",
+        "contenido_cantidad": "Contenido (cantidad)",
+        "contenido_unidad": "Contenido (unidad)",
+        "es_servicio": "¿Es servicio?",
+        "permite_lotes": "¿Maneja lotes?"
       },
       "mapNameRequired": "Debes mapear la columna del nombre del producto",
       "status": "Estado",
@@ -343,7 +347,13 @@
       "skipped": "Omitidos",
       "noErrors": "Sin errores",
       "errorsFound": "{count} filas con errores",
-      "row": "Fila"
+      "row": "Fila",
+      "downloadTemplate": "Descargar plantilla",
+      "templateHint": "¿No tienes un archivo?",
+      "templateError": "No se pudo descargar la plantilla. Intenta de nuevo.",
+      "variantGroupsTitle": "Productos con variantes",
+      "variantsColumn": "Variantes",
+      "variantsCount": "{count, plural, one {# variante} other {# variantes}}"
     },
     "margin": "Margen",
     "inlineEditHint": "Clic para editar. Enter guarda, Esc cancela",

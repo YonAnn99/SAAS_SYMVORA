@@ -7,7 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, Palette, Calendar, Wrench, Archive, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, Package, Palette, Calendar, Wrench, Archive, SlidersHorizontal, ChevronDown, Download } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +79,8 @@ const AdjustmentsSection = dynamic(
 import { resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { descargarPlantillaProductos } from "@/features/inventory/plantilla-productos";
+import { toast } from "sonner";
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -289,21 +291,29 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
-        <div>
-          <EncabezadoModulo
-            titulo={t("products.title")}
-            descripcion="Gestiona tu catálogo de productos"
-          />
+        <div className="flex items-center justify-between gap-3">
+          {/* `EncabezadoModulo` es un fragmento (titulo + descripcion): sin
+              este bloque, la fila flex los ponia lado a lado. */}
+          <div className="min-w-0">
+            <EncabezadoModulo
+              titulo={t("products.title")}
+              descripcion="Gestiona tu catálogo de productos"
+            />
+          </div>
+          {/* En celular la sucursal va junto al titulo, en el espacio libre de
+              la derecha. Las dos instancias comparten `useSucursal()`. */}
+          <SucursalSelector className="h-8 w-auto shrink-0 sm:hidden" />
         </div>
         {/* En celular, cuadricula de 2 columnas: arriba Agregar producto (lo
-            del dia) e Importar, abajo Lista de precios y la sucursal. El orden
-            visual sale de `order-*`; desde `sm` vuelve a ser una fila con el
-            orden de siempre. "Actualizar" va junto a la busqueda de cada
-            pestaña, no aqui. */}
+            del dia) e Importar, abajo Lista de precios y Descargar plantilla;
+            la sucursal va junto al titulo. El orden visual sale de `order-*`;
+            desde `sm` vuelve a ser una fila con el orden de siempre.
+            "Actualizar" va junto a la busqueda de cada pestaña, no aqui. */}
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           {/* Con varias sucursales, la columna de existencias es la del local
-              elegido aqui. No se dibuja en un negocio de un solo local. */}
-          <SucursalSelector className="order-4 h-8 w-full sm:order-none sm:w-auto" />
+              elegido aqui. No se dibuja en un negocio de un solo local. En
+              celular va junto al titulo (arriba). */}
+          <SucursalSelector className="hidden h-8 sm:flex sm:w-auto" />
           {/* Listas de precios: liquidaciones, mayoreo, precio de distribuidor.
               Va el primero porque es lo que menos se usa a diario; los dos de
               la derecha son los del trabajo del día. */}
@@ -323,6 +333,22 @@ export default function ProductsPage() {
               onClick={() => setShowImportDialog(true)}
             >
               {t("products.import.title")}
+            </SpecularActionButton>
+          )}
+          {/* Plantilla de Excel en blanco para llenar y subir con "Importar
+              catalogo". En celular va junto a Lista de precios. */}
+          {canImport && (
+            <SpecularActionButton
+              tone="contorno"
+              className="order-4 h-8 w-full gap-1.5 active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
+              onClick={() => {
+                void descargarPlantillaProductos().catch(() =>
+                  toast.error(t("products.import.templateError"))
+                );
+              }}
+            >
+              <Download className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {t("products.import.downloadTemplate")}
             </SpecularActionButton>
           )}
           <span id="tutorial-add-product-btn" className="order-1 flex sm:order-none">

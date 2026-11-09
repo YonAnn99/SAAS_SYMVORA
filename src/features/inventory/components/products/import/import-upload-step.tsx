@@ -2,10 +2,11 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { FileSpreadsheet, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { parseImportFile } from "./import-file-parser";
+import { parseImportFile, totalFilas } from "./import-file-parser";
+import { descargarPlantillaProductos } from "../../../plantilla-productos";
 import type { ParsedImportFile } from "./import-file-parser";
 
 const ACCEPTED_EXTENSIONS = [".csv", ".xlsx", ".xls"];
@@ -32,7 +33,8 @@ export function ImportUploadStep({ onParsed }: ImportUploadStepProps) {
       setLoading(true);
       try {
         const parsed = await parseImportFile(file);
-        if (parsed.rows.length === 0) {
+        // La plantilla puede traer solo productos con variantes.
+        if (totalFilas(parsed) === 0) {
           toast.error(t("products.import.emptyFile"));
           return;
         }
@@ -97,6 +99,21 @@ export function ImportUploadStep({ onParsed }: ImportUploadStepProps) {
           {t("products.import.acceptedFormats")}
         </p>
       </button>
+      <p className="text-center text-xs text-muted-foreground">
+        {t("products.import.templateHint")}{" "}
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+          onClick={() => {
+            void descargarPlantillaProductos().catch(() =>
+              toast.error(t("products.import.templateError"))
+            );
+          }}
+        >
+          <Download className="h-3 w-3" />
+          {t("products.import.downloadTemplate")}
+        </button>
+      </p>
       <input
         ref={inputRef}
         type="file"

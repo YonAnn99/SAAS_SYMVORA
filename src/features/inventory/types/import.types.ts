@@ -1,4 +1,6 @@
 import type { UnidadMedida } from "@/lib/unidades";
+import type { TarjetaVariante } from "../tarjetas-variante";
+
 export type ImportTargetField =
   | "nombre"
   | "codigo_barras"
@@ -10,7 +12,12 @@ export type ImportTargetField =
   | "stock_actual"
   | "stock_minimo"
   | "categoria"
-  | "proveedor";
+  | "proveedor"
+  // Lo que pide el formulario "Producto unico" (y la plantilla de Excel).
+  | "contenido_cantidad"
+  | "contenido_unidad"
+  | "es_servicio"
+  | "permite_lotes";
 
 export type ImportFieldMapping = Partial<Record<ImportTargetField, string | null>>;
 
@@ -24,11 +31,20 @@ export interface ProductImportInput {
   codigo_barras: string | null;
   sku: string | null;
   unidad_medida: UnidadMedida;
+  /**
+   * Contenido del envase (migracion 114); NULL a granel o en servicios. Solo
+   * va si el archivo trae la columna: "Actualizar existente" con un archivo de
+   * otro sistema no debe borrar el contenido que ya tenia el producto.
+   */
+  contenido_cantidad?: number | null;
+  contenido_unidad?: UnidadMedida | null;
   precio_venta: number;
   costo_compra: number;
   stock_actual: number;
   stock_minimo: number;
   es_servicio: boolean;
+  /** Igual que el contenido: solo si el archivo trae la columna. */
+  permite_lotes?: boolean;
   categoria: string | null;
   proveedor_id: string | null;
   clave_prod_serv: string | null;
@@ -45,6 +61,26 @@ export interface ImportRow {
   resolution?: DuplicateResolution;
   supplierWarning?: string | null;
   data: ProductImportInput | null;
+}
+
+/**
+ * Un producto con variantes de la hoja "Productos con variantes": las filas con
+ * el mismo nombre general. Cada variante es una `TarjetaVariante`, la misma
+ * estructura de la ventana "Producto con variantes", para guardarla con la
+ * misma logica (`inputDeTarjeta`).
+ */
+export interface VariantGroup {
+  nombre: string;
+  /** Fila de la hoja de cada variante (alineado con `tarjetas`). */
+  filas: number[];
+  status: ImportRowStatus;
+  errorMessage?: string;
+  categoria: string | null;
+  esServicio: boolean;
+  permiteLotes: boolean;
+  /** La del producto general: la de la primera variante, o SERVICIO. */
+  unidadProducto: UnidadMedida;
+  tarjetas: TarjetaVariante[];
 }
 
 export interface ImportResult {

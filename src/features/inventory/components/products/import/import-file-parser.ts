@@ -4,12 +4,25 @@
  */
 
 import { guessFieldMapping } from "./import-field-config";
+import { HOJA_UNICOS, HOJA_VARIANTES } from "../../../plantilla-productos";
 
 export interface ParsedImportFile {
   headers: string[];
   rows: Record<string, unknown>[];
   /** Fila real de la hoja (1 = primera) de cada elemento de `rows`. */
   rowNumbers: number[];
+  /**
+   * La plantilla de SYMVORA (`plantilla-productos.ts`): sus encabezados son los
+   * esperados, asi que se salta el paso de elegir columnas.
+   */
+  esPlantilla?: boolean;
+  /** Hoja "Productos con variantes" de la plantilla, si viene. */
+  variantes?: ParsedImportFile;
+}
+
+/** Filas con datos del archivo, contando las dos hojas de la plantilla. */
+export function totalFilas(parsed: ParsedImportFile): number {
+  return parsed.rows.length + (parsed.variantes?.rows.length ?? 0);
 }
 
 /** Hasta que fila se busca el encabezado. */
@@ -45,14 +58,24 @@ async function parseExcel(file: File): Promise<ParsedImportFile> {
   const XLSX = await import("xlsx");
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array" });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  if (!sheet?.["!ref"]) return { headers: [], rows: [], rowNumbers: [] };
-  const matriz = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    defval: "",
-    blankrows: true,
-  });
-  return tablaDesdeMatriz(matriz, XLSX.utils.decode_range(sheet["!ref"]).s.r + 1);
+
+  const leerHoja = (nombre: string): ParsedImportFile => {
+    const sheet = workbook.Sheets[nombre];
+    if (!sheet?.["!ref"]) return { headers: [], rows: [], rowNumbers: [] };
+    const matriz = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+      header: 1,
+      defval: "",
+      blankrows: true,
+    });
+    return tablaDesdeMatriz(matriz, XLSX.utils.decode_range(sheet["!ref"]).s.r + 1);
+  };
+
+  const principal = leerHoja(workbook.SheetNames[0]);
+  // La plantilla: primera hoja "Productos unicos" y otra "Productos con variantes".
+  const esPlantilla =
+    workbook.SheetNames[0] === HOJA_UNICOS && workbook.SheetNames.includes(HOJA_VARIANTES);
+  if (!esPlantilla) return principal;
+  return { ...principal, esPlantilla, variantes: leerHoja(HOJA_VARIANTES) };
 }
 
 function celdaTexto(valor: unknown): string {

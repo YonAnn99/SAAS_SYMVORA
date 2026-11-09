@@ -322,7 +322,11 @@
         "stock_actual": "Current stock",
         "stock_minimo": "Minimum stock",
         "categoria": "Category",
-        "proveedor": "Supplier"
+        "proveedor": "Supplier",
+        "contenido_cantidad": "Content (amount)",
+        "contenido_unidad": "Content (unit)",
+        "es_servicio": "Is it a service?",
+        "permite_lotes": "Tracks lots?"
       },
       "mapNameRequired": "You must map the product name column",
       "status": "Status",
@@ -343,7 +347,13 @@
       "skipped": "Skipped",
       "noErrors": "No errors",
       "errorsFound": "{count} rows with errors",
-      "row": "Row"
+      "row": "Row",
+      "downloadTemplate": "Download template",
+      "templateHint": "Don't have a file?",
+      "templateError": "Couldn't download the template. Please try again.",
+      "variantGroupsTitle": "Products with variants",
+      "variantsColumn": "Variants",
+      "variantsCount": "{count, plural, one {# variant} other {# variants}}"
     },
     "margin": "Margin",
     "inlineEditHint": "Click to edit. Enter saves, Esc cancels",
