@@ -217,7 +217,10 @@ export function ImprimirEtiquetasDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl sm:max-w-2xl max-h-[90dvh] overflow-y-auto">
+      {/* `minmax(0,1fr)`: sin el, la columna del grid crece al ancho de los nombres
+          largos (con `truncate`) y en la hoja del celular el contenido se corria
+          de lado. */}
+      <DialogContent className="grid-cols-[minmax(0,1fr)] max-w-2xl sm:max-w-2xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">Imprimir etiquetas</DialogTitle>
           <DialogDescription className="text-xs">
@@ -262,7 +265,7 @@ export function ImprimirEtiquetasDialog({
           </p>
         ) : (
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
                 {renglones.length} {renglones.length === 1 ? "artículo" : "artículos"} · {total}{" "}
                 {total === 1 ? "etiqueta" : "etiquetas"}
@@ -272,7 +275,7 @@ export function ImprimirEtiquetasDialog({
                 Copias = existencias
               </Button>
             </div>
-            <div className="max-h-56 divide-y overflow-y-auto rounded-md border">
+            <div className="max-h-48 divide-y overflow-y-auto rounded-md border sm:max-h-56">
               {renglones.map((r) => (
                 <div key={r.clave} className="flex items-center gap-2 px-2.5 py-1.5">
                   <div className="min-w-0 flex-1">
@@ -369,8 +372,8 @@ export function ImprimirEtiquetasDialog({
               <p className="text-[11px] text-muted-foreground">{formato.descripcion}</p>
             </div>
             {formato.tipo === "hoja" && (
-              <div className="flex items-center gap-2">
-                <Label htmlFor="inicio-etiqueta" className="text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="inicio-etiqueta" className="shrink-0 text-xs">
                   Empezar en la etiqueta
                 </Label>
                 <Input
