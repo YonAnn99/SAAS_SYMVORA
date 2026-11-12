@@ -9,6 +9,13 @@
  * - `alfanumerico`: el original solo acepta numeros. Las claves de invitacion
  *   de SYMVORA son de letras y numeros (`/api/users/invite`), asi que con esta
  *   prop se aceptan [A-Z0-9] y todo pasa a mayusculas.
+ * - Con `alfanumerico` el input oculto es ESPEJO de la clave: conserva lo que
+ *   el teclado escribio y las casillas salen de su contenido completo. El
+ *   original lo deja controlado en `""` y procesa tecla por tecla, que sirve con
+ *   el teclado numerico; con el de TEXTO de Android (Samsung, Gboard) se rompe:
+ *   el teclado compone una palabra («96U8»), ve el campo vacio, la "corrige" con
+ *   borrados y reinserciones, y las casillas se vaciaban dejando una letra
+ *   suelta (reporte de un cliente, 2026-11-12). Pegar si funcionaba.
  * - La palomita es `Check` de lucide (el original usa Hugeicons, que el
  *   proyecto no tiene).
  * - Las refs que el original escribia durante el render (`slotsRef`, `live`)
@@ -233,6 +240,19 @@ export function CodeSlots({
   );
   const checkOpacity = useTransform(checkMv, clamp01);
 
+  // Modo espejo (alfanumerico): el campo real guarda la clave. Solo se reescribe
+  // cuando no coincide con las casillas (cambio desde fuera, pegado, vaciado por
+  // error); mientras el teclado compone, se deja en paz.
+  const espejo = alfanumerico;
+  const sincronizarCampo = useCallback(
+    (code: string) => {
+      const el = inputRef.current;
+      if (!espejo || !el) return;
+      if (limpiar(el.value, true) !== code) el.value = code;
+    },
+    [espejo]
+  );
+
   const commit = useCallback(
     (next: string[]) => {
       const prev = slotsRef.current;
@@ -240,11 +260,36 @@ export function CodeSlots({
       setSlots(next);
       const code = next.join("");
       emitted.current = code;
+      sincronizarCampo(code);
       onChange?.(code);
       if (!isFull(prev) && isFull(next)) onComplete?.(code);
     },
-    [onChange, onComplete]
+    [onChange, onComplete, sincronizarCampo]
   );
+
+  /** Modo espejo: la clave completa sale del contenido del campo. */
+  const aplicarEspejo = (raw: string) => {
+    const code = sanear(raw).slice(0, length);
+    const prev = slotsRef.current;
+    const next = toSlots(code, length);
+    if (code === prev.join("")) {
+      sincronizarCampo(code);
+      return;
+    }
+    const step = reduce ? 0 : cascade;
+    const cambiadas: number[] = [];
+    let k = 0;
+    next.forEach((ch, i) => {
+      if (ch === prev[i]) return;
+      cambiadas.push(i);
+      if (ch) {
+        land(i, k * step);
+        k += 1;
+      } else drive(i, 0);
+    });
+    commit(next);
+    moveActive(firstEmptyOf(next), cambiadas);
+  };
 
   const insert = (raw: string, from = active) => {
     const chars = sanear(raw);
@@ -281,6 +326,12 @@ export function CodeSlots({
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (busy() || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key;
+    if (espejo) {
+      // Letras y borrado los maneja el campo (y su `onChange`). La clave se
+      // escribe siempre al final: las flechas no mueven el cursor.
+      if (k === "ArrowLeft" || k === "ArrowRight" || k === "Home" || k === "End") e.preventDefault();
+      return;
+    }
     if (teclaValida.test(k)) {
       e.preventDefault();
       insert(k);
@@ -308,11 +359,22 @@ export function CodeSlots({
   const onPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     if (busy()) return;
     e.preventDefault();
+    if (espejo) {
+      // Una clave completa reemplaza lo escrito; un pedazo se agrega al final.
+      const pegado = sanear(e.clipboardData.getData("text"));
+      if (!pegado) return;
+      aplicarEspejo(pegado.length >= length ? pegado : slotsRef.current.join("") + pegado);
+      return;
+    }
     insert(e.clipboardData.getData("text"));
   };
   // Teclados de celular (y autocompletado) que no mandan `keydown` por tecla.
   const onInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (busy()) return;
+    if (espejo) {
+      aplicarEspejo(e.target.value);
+      return;
+    }
     const d = sanear(e.target.value);
     if (!d) return;
     insert(d, d.length === 1 ? active : 0);
@@ -320,6 +382,16 @@ export function CodeSlots({
   const onRowMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
     e.preventDefault();
+    if (espejo) {
+      // Sin saltar a una casilla intermedia: el cursor va al final de la clave.
+      const el = inputRef.current;
+      el?.focus();
+      if (el && status !== "success") {
+        const fin = el.value.length;
+        el.setSelectionRange(fin, fin);
+      }
+      return;
+    }
     const row = rowRef.current;
     if (row && !draining.current && status !== "success") {
       const rect = row.getBoundingClientRect();
@@ -339,6 +411,7 @@ export function CodeSlots({
     setSlots(next);
     jumpActive(firstEmptyOf(next));
     const code = next.join("");
+    sincronizarCampo(code);
     if (code !== emitted.current) {
       emitted.current = code;
       onChange?.(code);
@@ -372,6 +445,7 @@ export function CodeSlots({
     });
     slotsRef.current = next;
     setSlots(next);
+    sincronizarCampo(clean);
     moveActive(firstEmptyOf(next), [...landing, ...leaving]);
     if (!isFull(prev) && isFull(next)) onComplete?.(clean);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo cuando cambia el valor de fuera
@@ -488,8 +562,10 @@ export function CodeSlots({
           autoCorrect="off"
           spellCheck={false}
           pattern={alfanumerico ? undefined : "[0-9]*"}
-          value=""
-          maxLength={length}
+          enterKeyHint={alfanumerico ? "go" : undefined}
+          // Modo espejo: sin `value` (no controlado) ni `maxLength`; lo que sobra
+          // se recorta al limpiar. El numerico sigue como el original.
+          {...(espejo ? {} : { value: "", maxLength: length })}
           aria-label={ariaLabel}
           aria-invalid={status === "error"}
           aria-describedby={`${uid}-count`}
