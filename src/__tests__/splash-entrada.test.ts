@@ -111,7 +111,7 @@ describe("decidirSplash en la app instalada (PWA / APK)", () => {
   it("NO sale en la app de Play (TWA), aunque sea standalone: ahi va solo el splash nativo", () => {
     for (const marca of [
       { search: "?app=android" },
-      { referrer: "android-app://com.symvora.app/" },
+      { referrer: "android-app://com.symvoramx.app/" },
       { marcaAndroid: true },
     ]) {
       const { e, guardado } = entorno({ standalone: true, ...marca });

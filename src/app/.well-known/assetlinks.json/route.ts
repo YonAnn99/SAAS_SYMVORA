@@ -9,14 +9,14 @@ import { NextResponse } from "next/server";
  * salta las rutas con punto, asi que el middleware no la toca.
  *
  * Variables (Vercel → Production; cambiarlas requiere redeploy):
- * - `ANDROID_APP_PACKAGE`: nombre del paquete. Por defecto `com.symvora.app`.
+ * - `ANDROID_APP_PACKAGE`: nombre del paquete. Por defecto `com.symvoramx.app`.
  * - `ANDROID_APP_SHA256`: huella(s) SHA-256 de la llave con que Google firma la
  *   app (Play Console → Configuracion → Integridad de la app → «Certificado de
  *   la clave de firma de apps»). Separadas por coma si hay varias (por ejemplo
  *   la de Play y la de una compilacion de prueba local). Sin ella, lista vacia.
  */
 export function GET() {
-  const paquete = process.env.ANDROID_APP_PACKAGE?.trim() || "com.symvora.app";
+  const paquete = process.env.ANDROID_APP_PACKAGE?.trim() || "com.symvoramx.app";
   const huellas = (process.env.ANDROID_APP_SHA256 ?? "")
     .split(",")
     .map((h) => h.trim().toUpperCase())

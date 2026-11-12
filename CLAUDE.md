@@ -472,7 +472,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   No es Capacitor/WebView: ahí no funcionan el login con Google ni las impresoras WebUSB/Bluetooth. Cada deploy
   actualiza la app; Play solo se resube si cambia el contenedor. `output: 'export'` NO sirve (API, proxy, sesiones).
   - `/.well-known/assetlinks.json` (`src/app/.well-known/assetlinks.json/route.ts`) con `ANDROID_APP_PACKAGE`
-    (default `com.symvora.app`) y `ANDROID_APP_SHA256` (huella de la firma de Play App Signing; coma si hay varias).
+    (default `com.symvoramx.app`) y `ANDROID_APP_SHA256` (huella de la firma de Play App Signing; coma si hay varias).
+    El paquete es `com.symvoramx.app`: `com.symvora.app` ya lo usa otro desarrollador en Play (2026-11-11). Huellas:
+    firma de Google `5D:F9:08:…:2B:3F` (la que importa) y clave de subida `1C:0B:12:…:6F:7A` (solo para APK local).
   - **Cobro:** Google Play exige su facturación para lo que se vende DENTRO de la app. La app no vende: se reconoce
     con `?app=android` en el start URL o el referrer `android-app://` → `sessionStorage` `symvora_app=android`
     (`lib/app-android.ts`, `features/app-android/`, montado en el layout RAÍZ: el panel y el login son otros árboles
@@ -665,10 +667,10 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
 - [ ] Cuenta de Play Console PERSONAL (aún sin RFC de empresa para el D-U-N-S): exige una prueba cerrada con ≥12 testers
       dentro 14 días seguidos antes de pedir producción (usar 15-20: clientes actuales + conocidos, con Grupo de Google).
       Con RFC: cuenta de organización y transferir la app (conserva paquete, reseñas e instalaciones).
-- [ ] Bubblewrap: `npx @bubblewrap/cli init --manifest https://app.symvora.com.mx/manifest.webmanifest`, paquete
-      `com.symvora.app`, start URL `/es/dashboard?app=android`. Respaldar el keystore de subida fuera de git.
-- [ ] Poner `ANDROID_APP_SHA256` (Play Console → Integridad de la app) en Vercel y redeploy; revisar
-      `https://app.symvora.com.mx/.well-known/assetlinks.json` y el de `www.`.
+- [x] Bubblewrap: paquete `com.symvoramx.app` (versión 3), start URL `/es/dashboard?app=android`. Respaldar el keystore
+      de subida fuera de git.
+- [x] `ANDROID_APP_PACKAGE` y `ANDROID_APP_SHA256` en Vercel (2026-11-11; la huella está en Play Console → Protegido con
+      Play → Firma de apps). Prueba cerrada enviada a revisión con el Grupo `symvora_test_01`.
 - [ ] Ficha: política de privacidad, URL de eliminación `https://www.symvora.com.mx/es/eliminar-cuenta`,
       «Seguridad de los datos», cuenta de prueba (negocio de pruebas) en «Acceso a la app».
 
