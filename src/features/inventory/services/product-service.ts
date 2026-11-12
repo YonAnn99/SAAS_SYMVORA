@@ -1,5 +1,6 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cropToSquareWebP } from "@/lib/image";
+import { elegirCodigosLibres } from "@/lib/codigo-barras";
 import type { Producto } from "../types/inventory.types";
 
 export interface ProductInput {
@@ -22,27 +23,85 @@ export interface ProductInput {
   imagen_url: string | null;
 }
 
-export async function generateNextBarcode(tenantId: string): Promise<string> {
+/**
+ * De una tanda de codigos, los que ya usa un producto o una variante activos
+ * del negocio (los archivados no reservan su codigo, migraciones 102 y 110).
+ */
+async function codigosEnUso(tenantId: string, codigos: string[]): Promise<Set<string>> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("productos")
-    .select("codigo_barras")
-    .eq("tenant_id", tenantId)
-    .not("codigo_barras", "is", null)
-    .like("codigo_barras", "750%")
-    .order("codigo_barras", { ascending: false })
-    .limit(1);
+  const [productos, variantes] = await Promise.all([
+    supabase
+      .from("productos")
+      .select("codigo_barras")
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .in("codigo_barras", codigos),
+    supabase
+      .from("variantes_producto")
+      .select("codigo_barras")
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .in("codigo_barras", codigos),
+  ]);
+  if (productos.error) throw productos.error;
+  if (variantes.error) throw variantes.error;
+  return new Set(
+    [...(productos.data ?? []), ...(variantes.data ?? [])]
+      .map((r) => r.codigo_barras)
+      .filter((c): c is string => Boolean(c))
+  );
+}
 
-  let nextNumber = 1;
-  if (data && data.length > 0 && data[0].codigo_barras) {
-    const lastCode = data[0].codigo_barras;
-    const lastNumber = parseInt(lastCode.slice(-5), 10);
-    if (!isNaN(lastNumber)) {
-      nextNumber = lastNumber + 1;
-    }
-  }
+/**
+ * `n` codigos de barras internos libres: EAN-13 "200..." (prefijo GS1 de uso
+ * interno, con verificador valido; ver `lib/codigo-barras.ts`). Antes se
+ * generaba "750" + consecutivo: 750 es el prefijo de Mexico (chocaba con
+ * productos reales) y el ultimo digito no era un verificador.
+ */
+export async function generarCodigosDeBarras(tenantId: string, n: number): Promise<string[]> {
+  return elegirCodigosLibres(n, (codigos) => codigosEnUso(tenantId, codigos));
+}
 
-  return `750${nextNumber.toString().padStart(10, "0")}`;
+export interface AsignacionCodigo {
+  tipo: "producto" | "variante";
+  id: string;
+}
+
+/**
+ * Da un codigo interno nuevo a productos o variantes que no tienen (desde
+ * "Imprimir etiquetas"). Solo llena los vacios: un codigo existente nunca se
+ * sobrescribe. Devuelve el codigo asignado por clave `tipo:id`; los que fallan
+ * van en `errores` sin detener a los demas.
+ */
+export async function asignarCodigosGenerados(
+  tenantId: string,
+  asignaciones: AsignacionCodigo[]
+): Promise<{ asignados: Map<string, string>; errores: string[] }> {
+  const supabase = createSupabaseBrowserClient();
+  const codigos = await generarCodigosDeBarras(tenantId, asignaciones.length);
+  const asignados = new Map<string, string>();
+  const errores: string[] = [];
+  await Promise.all(
+    asignaciones.map(async (a, i) => {
+      const tabla = a.tipo === "producto" ? "productos" : "variantes_producto";
+      const vacio = "codigo_barras.is.null,codigo_barras.eq.";
+      const { data, error } = await supabase
+        .from(tabla)
+        .update({ codigo_barras: codigos[i] })
+        .eq("id", a.id)
+        .eq("tenant_id", tenantId)
+        .or(vacio)
+        .select("id");
+      if (error) errores.push(error.message);
+      else if (data && data.length > 0) asignados.set(`${a.tipo}:${a.id}`, codigos[i]);
+    })
+  );
+  return { asignados, errores };
+}
+
+export async function generateNextBarcode(tenantId: string): Promise<string> {
+  const [codigo] = await generarCodigosDeBarras(tenantId, 1);
+  return codigo;
 }
 
 export async function generateNextSku(tenantId: string): Promise<string> {

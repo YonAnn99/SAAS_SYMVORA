@@ -61,6 +61,8 @@ interface BarraProductosMovilProps {
   exportar: ReactNode;
   /** `BotonActualizar` cuadrado, a la derecha de los filtros. */
   actualizar?: ReactNode;
+  /** Boton "Etiquetas" (imprimir codigos de barras), junto a actualizar. */
+  imprimirEtiquetas?: ReactNode;
 }
 
 function Opcion({
@@ -99,6 +101,7 @@ export function BarraProductosMovil({
   placeholderBusqueda,
   exportar,
   actualizar,
+  imprimirEtiquetas,
 }: BarraProductosMovilProps) {
   const etiquetas = filtrosAEtiquetas(filters);
 
@@ -195,8 +198,9 @@ export function BarraProductosMovil({
         </MultiSelectContent>
       </MultiSelect>
       </div>
+      {imprimirEtiquetas && <div className="flex shrink-0 [&>button]:h-auto [&>button]:min-h-9">{imprimirEtiquetas}</div>}
       {/* Mismo alto que el campo de filtros (crece con las etiquetas). */}
-      {actualizar && <div className="flex shrink-0 [&>button]:h-auto [&>button]:min-h-9 [&>button]:w-10">{actualizar}</div>}
+      {actualizar &&<div className="flex shrink-0 [&>button]:h-auto [&>button]:min-h-9 [&>button]:w-10">{actualizar}</div>}
       </div>
     </div>
   );

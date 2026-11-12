@@ -60,6 +60,7 @@ import {
   type ProductInput,
 } from "../../services/product-service";
 import { generateNextBarcode, generateNextSku } from "../../services/product-service";
+import { BotonGenerarCodigo } from "../boton-generar-codigo";
 
 /** En que seccion del formulario vive cada campo (para abrirla si falta). */
 const SECCION_DE_CAMPO: Record<string, number> = {
@@ -752,11 +753,13 @@ export function ProductDialog({
                     </label>
                   </div>
                 )}
+                {/* Al editar no hay "Automático": un producto sin codigo puede generarlo aqui. */}
+                {editingProduct && <BotonGenerarCodigo onCodigo={(codigo) => updateField("codigo_barras", codigo)} />}
               </div>
               <div className="relative">
                 <Input
                   ref={barcodeInputRef}
-                  placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : "EAN-13"}
+                  placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : editingProduct ? "Escanea o genera" : "EAN-13"}
                   value={formData.codigo_barras}
                   onChange={(e) => updateField("codigo_barras", e.target.value)}
                   className="h-8 pr-9 text-sm font-mono"

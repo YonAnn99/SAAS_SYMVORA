@@ -7,7 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, Palette, Calendar, Wrench, Archive, SlidersHorizontal, ChevronDown, Download } from "lucide-react";
+import { Search, Package, Palette, Calendar, Wrench, Archive, SlidersHorizontal, ChevronDown, Download, Barcode } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,11 @@ const ImportProductsDialog = dynamic(
     import("@/features/inventory/components/products/import/import-products-dialog").then(
       (m) => m.ImportProductsDialog
     ),
+  { ssr: false }
+);
+const ImprimirEtiquetasDialog = dynamic(
+  () =>
+    import("@/features/inventory/etiquetas/imprimir-etiquetas-dialog").then((m) => m.ImprimirEtiquetasDialog),
   { ssr: false }
 );
 const VariantDialog = dynamic(
@@ -190,6 +195,7 @@ export default function ProductsPage() {
   // buscar o filtrar, para juntar productos de varias busquedas; al exportar se
   // cruza con `products`, asi un producto borrado se ignora solo.
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
+  const [etiquetasAbiertas, setEtiquetasAbiertas] = useState(false);
   const productosSeleccionados = products.filter((p) => seleccionados.has(p.id));
   const toggleSeleccion = (id: string) =>
     setSeleccionados((prev) => {
@@ -448,6 +454,17 @@ export default function ProductsPage() {
           sinCategoriaCount={sinCategoriaCount}
           placeholderBusqueda={t("common.search")}
           actualizar={<BotonActualizar soloIcono onActualizar={actualizarCatalogo} />}
+          imprimirEtiquetas={
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 px-2.5 text-xs"
+              onClick={() => setEtiquetasAbiertas(true)}
+            >
+              <Barcode className="h-4 w-4" />
+              Etiquetas
+            </Button>
+          }
           exportar={
             <DataTableToolbar
               data={filteredProducts}
@@ -489,6 +506,25 @@ export default function ProductsPage() {
           )}
         </Button>
         <BotonActualizar soloIcono onActualizar={actualizarCatalogo} />
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 gap-1.5 text-xs"
+          onClick={() => setEtiquetasAbiertas(true)}
+          title={
+            productosSeleccionados.length > 0
+              ? `Imprimir etiquetas de ${productosSeleccionados.length} seleccionados`
+              : "Imprimir etiquetas con código de barras"
+          }
+        >
+          <Barcode className="h-3.5 w-3.5" />
+          Etiquetas
+          {productosSeleccionados.length > 0 && (
+            <span className="ml-0.5 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+              {productosSeleccionados.length}
+            </span>
+          )}
+        </Button>
         <DataTableToolbar
           data={filteredProducts}
           columns={exportColumns}
@@ -613,6 +649,22 @@ export default function ProductsPage() {
         tenantId={tenantId ?? ""}
         categorias={categories}
       />
+
+      {/* Imprimir etiquetas con codigo de barras (de los marcados o buscando). */}
+      {etiquetasAbiertas && (
+        <ImprimirEtiquetasDialog
+          open={etiquetasAbiertas}
+          onOpenChange={setEtiquetasAbiertas}
+          seleccion={productosSeleccionados}
+          productos={products}
+          variantesPorProducto={variantesPorProducto}
+          puedeGenerar={canManageInventory}
+          onCodigosGenerados={() => {
+            void refetch();
+            void variantes.refetch();
+          }}
+        />
+      )}
 
       {/* Import Catalog Dialog */}
       {canImport && (

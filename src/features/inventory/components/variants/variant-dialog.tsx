@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { BotonEscanear } from "@/components/escaner/boton-escanear";
+import { BotonGenerarCodigo } from "../boton-generar-codigo";
 import { EtiquetasInput } from "@/components/ui/etiquetas-input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { IMAGEN_PRODUCTO } from "@/lib/imagen-validacion";
@@ -450,10 +451,13 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Código de barras</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs">Código de barras</Label>
+                <BotonGenerarCodigo onCodigo={setCodigo} />
+              </div>
               <div className="relative">
                 <Input
-                  placeholder="EAN-13"
+                  placeholder="Escanea o genera"
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value)}
                   className="h-8 pr-9 text-sm font-mono"

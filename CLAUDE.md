@@ -246,6 +246,18 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   (en variantes también `productos.archivado_en` si se une al producto); el historial no se filtra.
 - **Producto:** foto con la cámara, quitar fondo con PhotoRoom (`PHOTOROOM_API_KEY`, permiso
   `inventory.manage`, rate limit por presupuesto).
+- **Códigos de barras y etiquetas** (2026-11-11, pedido de un cliente; sin migración):
+  - `lib/codigo-barras.ts` (puro):
+    - Los códigos generados son EAN-13 **«200…»** (prefijo GS1 de uso interno) con verificador, al azar.
+    - `generateNextBarcode`/`generarCodigosDeBarras` (`product-service.ts`) revisan que no existan en productos ni en
+      variantes activos.
+    - Antes era «750» + consecutivo sin verificador; esos códigos viejos se quedan y se imprimen como Code 128.
+  - «Generar» en el código de: producto (al editar), tarjeta de variante y `variant-dialog` (`boton-generar-codigo.tsx`).
+  - **Etiquetas en PDF:** botón «Etiquetas» en Productos (toma los marcados) → `features/inventory/etiquetas/`.
+    - Formatos: hoja carta 3×10 y 4×20; rollo 50×25, 40×30 y 58×40.
+    - Barras vectoriales en jsPDF; se imprime al 100 %.
+    - «Generar código a los que no tienen» solo con `inventory.manage` y solo llena los vacíos.
+    - Verificado decodificando con `zxing-wasm` a 203 dpi.
 - **Cobro:**
   - **Fin de prueba / pago vencido** (migración 096, aplicada el 2026-10-04): acceso completo, gracia de 3
     días o solo lectura (ve y exporta; no vende ni edita), calculado en vivo por `acceso_tenant()`.
