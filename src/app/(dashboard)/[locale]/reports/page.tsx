@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+import { clavePagoI18n } from "@/features/pos/ticket-format";
 import {
   Card,
   CardContent,
@@ -116,28 +118,13 @@ interface ReportData {
  * escritorio. Con todo seguido habia que bajar demasiado.
  */
 type GrupoReporte = "resumen" | "ventas" | "productos" | "clientes" | "historial";
-const GRUPOS: { valor: GrupoReporte; etiqueta: string }[] = [
-  { valor: "resumen", etiqueta: "Resumen" },
-  { valor: "ventas", etiqueta: "Ventas" },
-  { valor: "productos", etiqueta: "Productos" },
-  { valor: "clientes", etiqueta: "Clientes" },
-  { valor: "historial", etiqueta: "Historial" },
-];
+/** El texto de cada pestaña es `reports.tabs.<grupo>`. */
+const GRUPOS: GrupoReporte[] = ["resumen", "ventas", "productos", "clientes", "historial"];
 
-// La etiqueta sale de la lista compartida para que el desplegable y el
-// resumen del disparador no puedan decir cosas distintas.
-const DIA_LABEL =
-  PERIODOS.find((p) => p.valor === "dia")?.etiqueta ?? "Día específico";
-const WEEKDAY_LABELS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
-
-/** Leyenda de la linea de comparacion (ver `rangoAnterior`). */
-const ETIQUETA_ANTERIOR: Record<Periodo, string> = {
-  dia: "Día anterior",
-  semana: "Semana anterior",
-  mes: "Mismo tramo del mes pasado",
-  trimestre: "Trimestre anterior",
-  ano: "Año anterior",
-};
+/** Iniciales del calendario (lunes a domingo): `reports.calendarDays.<n>`. */
+const DIAS_CALENDARIO = ["0", "1", "2", "3", "4", "5", "6"] as const;
+/** Nombres cortos de la grafica por dia de la semana: `reports.weekdays.<n>`. */
+const DIAS_GRAFICA = ["0", "1", "2", "3", "4", "5", "6"] as const;
 
 /**
  * Tope de ventas por reporte. Todo lo de abajo (agrupar por periodo, top de
@@ -159,21 +146,26 @@ function claveReporte(
   tenantId: string | null,
   sucursalId: string | null,
   periodo: string,
-  fecha: Date | null
+  fecha: Date | null,
+  locale: string
 ) {
-  return ["reportes", tenantId, sucursalId, periodo, fecha?.toDateString() ?? null, new Date().toDateString()];
+  // El idioma tambien: las etiquetas de las graficas se arman ya traducidas.
+  return ["reportes", tenantId, sucursalId, periodo, fecha?.toDateString() ?? null, new Date().toDateString(), locale];
 }
 
 export default function ReportsPage() {
   const t = useTranslations();
-  const { tenantId, tenantName, loading: tenantLoading } = useCurrentTenant();
+  const tr = useTranslations("reports");
+  const locale = useLocale();
+  const li = localeIntl(locale);
+  const { tenantId, tenantName, moneda, loading: tenantLoading } = useCurrentTenant();
   const { seleccionada: sucursalId, sucursales } = useSucursal();
   // Cache entre modulos (`lib/cache-datos.ts`), por negocio, sucursal, periodo,
   // fecha elegida y DIA de hoy (el "mes" de hoy no es el de mañana). La vista
   // inicial es "mes" sin fecha: es la que se pinta al instante al volver.
   const [enCache] = useState(() =>
     leerCache<{ datos: ReportData; truncado: boolean }>(
-      claveReporte(tenantId, sucursalId, "mes", null)
+      claveReporte(tenantId, sucursalId, "mes", null, locale)
     )
   );
   const [reportData, setReportData] = useState<ReportData>(() => enCache?.datos ?? {
@@ -219,7 +211,7 @@ export default function ReportsPage() {
 
   const fetchReportData = useCallback(async () => {
     if (!tenantId) return;
-    const clave = claveReporte(tenantId, sucursalId, periodo, selectedDate);
+    const clave = claveReporte(tenantId, sucursalId, periodo, selectedDate, locale);
     const previo = leerCache<{ datos: ReportData; truncado: boolean }>(clave);
     // Periodo ya visto: se pinta lo guardado y se actualiza por detras.
     if (previo) {
@@ -338,7 +330,7 @@ export default function ReportsPage() {
     );
 
     if (ventasError) {
-      toast.error("Error al cargar reportes");
+      toast.error(tr("loadError"));
       setLoading(false);
       return;
     }
@@ -350,12 +342,13 @@ export default function ReportsPage() {
         ventas,
         startDate,
         endDate,
-        groupBy
+        groupBy,
+        li
       );
       // Misma agrupacion que el actual para que las cubetas se correspondan.
       const ventasAnterior = alinearComparacion(
         ventasPorPeriodo.length,
-        groupSalesByPeriod(ventasPrevias ?? [], anterior.desde, anterior.hasta, groupBy).map(
+        groupSalesByPeriod(ventasPrevias ?? [], anterior.desde, anterior.hasta, groupBy, li).map(
           (c) => c.ventas
         )
       );
@@ -386,7 +379,7 @@ export default function ReportsPage() {
         .map(([productoId, data]) => {
           const producto = productos.find((p) => p.id === productoId);
           return {
-            nombre: producto?.nombre || "Producto desconocido",
+            nombre: producto?.nombre || tr("unknownProduct"),
             cantidad: data.cantidad,
             total: data.total,
           };
@@ -396,7 +389,10 @@ export default function ReportsPage() {
 
       // De TODAS las lineas del periodo, por id de producto (ver
       // `ventasPorCategoria`); antes salia solo del top 10 y por nombre.
-      const topCategorias = ventasPorCategoria(detalleVentas, productos);
+      const topCategorias = ventasPorCategoria(detalleVentas, productos, 5, {
+        sinCategoria: tr("noCategory"),
+        otras: tr("otherCategories"),
+      });
 
       const metodosPagoMap = ventas.reduce(
         (acc, v) => {
@@ -408,7 +404,7 @@ export default function ReportsPage() {
 
       const metodosPago = Object.entries(metodosPagoMap)
         .map(([name, value]) => ({
-          name: name.charAt(0) + name.slice(1).toLowerCase(),
+          name: t(clavePagoI18n(name)),
           value,
         }))
         .sort((a, b) => b.value - a.value);
@@ -434,7 +430,7 @@ export default function ReportsPage() {
         .map(([clienteId, data]) => {
           const cliente = clientes?.find((c) => c.id === clienteId);
           return {
-            nombre: cliente?.nombre || "Cliente general",
+            nombre: cliente?.nombre || tr("generalCustomer"),
             compras: data.compras,
             total: data.total,
           };
@@ -455,13 +451,17 @@ export default function ReportsPage() {
         ventasPorPeriodo,
         ventasAnterior,
         ventasPorHora: ventasPorHora(ventas),
-        ventasPorDiaSemana: ventasPorDiaSemana(ventas),
+        ventasPorDiaSemana: ventasPorDiaSemana(
+          ventas,
+          DIAS_GRAFICA.map((d) => tr(`weekdays.${d}`))
+        ),
         ingresosGanancia: ingresosYGananciaPorPeriodo(
           ventas,
           detalleVentas,
           startDate,
           endDate,
-          groupBy
+          groupBy,
+          li
         ),
         topProductos,
         topCategorias,
@@ -484,7 +484,7 @@ export default function ReportsPage() {
             id: r.productoId,
             nombre:
               productos.find((p) => p.id === r.productoId)?.nombre ||
-              "Producto desconocido",
+              tr("unknownProduct"),
             ganancia: r.ganancia,
             ingresos: r.ingresos,
           })),
@@ -495,7 +495,7 @@ export default function ReportsPage() {
     }
 
     setLoading(false);
-  }, [periodo, tenantId, selectedDate, sucursalId]);
+  }, [periodo, tenantId, selectedDate, sucursalId, locale, li, t, tr]);
 
   useEffect(() => {
     if (!tenantLoading && tenantId) {
@@ -534,7 +534,7 @@ export default function ReportsPage() {
     const rango = rangoDePeriodo(periodo, selectedDate);
     if (!tenantId || !rango || exportando) return;
     setExportando(true);
-    const aviso = toast.loading("Preparando reporte…");
+    const aviso = toast.loading(tr("exportPreparing"));
     try {
       const { ventas, truncado } = await traerVentasParaExportar({
         tenantId,
@@ -555,14 +555,15 @@ export default function ReportsPage() {
         resumenTruncado: reporteTruncado,
         ventasTruncadas: truncado,
         esDia: periodo === "dia",
+        moneda,
       };
       const secciones = armarSeccionesReporte(reportData, ventas, meta);
       const archivo = nombreArchivoReporte(meta);
-      if (formato === "excel") await exportarReporteExcel(secciones, archivo);
+      if (formato === "excel") await exportarReporteExcel(secciones, archivo, moneda);
       else await exportarReportePdf(secciones, meta, archivo);
-      toast.success(formato === "excel" ? "Reporte descargado en Excel" : "Reporte descargado en PDF", { id: aviso });
+      toast.success(formato === "excel" ? tr("exportedExcel") : tr("exportedPdf"), { id: aviso });
     } catch {
-      toast.error("No se pudo generar el reporte. Intenta de nuevo.", { id: aviso });
+      toast.error(tr("exportError"), { id: aviso });
     } finally {
       setExportando(false);
     }
@@ -570,7 +571,7 @@ export default function ReportsPage() {
   const sinRango = periodo === "dia" && !selectedDate;
 
   const cambiarGrupo = (valor: unknown) => {
-    if (typeof valor !== "string" || !GRUPOS.some((g) => g.valor === valor)) return;
+    if (typeof valor !== "string" || !GRUPOS.some((g) => g === valor)) return;
     setGrupo(valor as GrupoReporte);
     // La barra queda fija arriba; el contenido nuevo empieza bajo ella.
     document.getElementById("pestanas-reporte")?.scrollIntoView({ block: "start" });
@@ -608,10 +609,10 @@ export default function ReportsPage() {
 
   const selectDisplayValue = useMemo(() => {
     if (periodo === "dia" && selectedDate) {
-      return formatShortDate(selectedDate);
+      return formatShortDate(selectedDate, li);
     }
-    return DIA_LABEL;
-  }, [periodo, selectedDate]);
+    return tr("periods.dia");
+  }, [periodo, selectedDate, li, tr]);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -620,18 +621,15 @@ export default function ReportsPage() {
           role="status"
           className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200"
         >
-          Este periodo tiene más de {MAX_VENTAS_REPORTE.toLocaleString("es-MX")}{" "}
-          ventas. Se están mostrando las más recientes, así que los totales no
-          cubren el periodo completo. Elige un rango más corto para ver cifras
-          exactas.
+          {tr("truncated", { max: MAX_VENTAS_REPORTE.toLocaleString(li) })}
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
           <EncabezadoModulo
             // En celular solo «Reportes»; desde `sm`, el titulo completo.
-            titulo={<>Reportes<span className="max-sm:hidden"> y Analytics</span></>}
-            descripcion="Análisis detallado de ventas, productos y clientes"
+            titulo={<>{tr("title")}<span className="max-sm:hidden"> {tr("titleSuffix")}</span></>}
+            descripcion={tr("subtitle")}
           />
         </div>
         {/* En celular se acomodan en dos filas: sucursal y periodo, y abajo
@@ -644,13 +642,13 @@ export default function ReportsPage() {
               {periodo === "dia" && selectedDate ? (
                 <span className="flex flex-1 text-left">{selectDisplayValue}</span>
               ) : (
-                <SelectValue />
+                <SelectValue>{(v: string) => (v ? tr(`periods.${v}`) : "")}</SelectValue>
               )}
             </SelectTrigger>
             <SelectContent>
               {PERIODOS.map((p) => (
                 <SelectItem key={p.valor} value={p.valor}>
-                  {p.etiqueta}
+                  {tr(`periods.${p.valor}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -663,7 +661,7 @@ export default function ReportsPage() {
                   variant="outline"
                   size="sm"
                   className="h-8 w-8 p-0"
-                  aria-label="Seleccionar día"
+                  aria-label={tr("selectDay")}
                 />
               }
             >
@@ -687,7 +685,7 @@ export default function ReportsPage() {
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="text-sm font-medium capitalize">
-                    {formatMonthYear(calendarMonth)}
+                    {formatMonthYear(calendarMonth, li)}
                   </span>
                   <Button
                     variant="ghost"
@@ -707,12 +705,12 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="grid grid-cols-7 gap-0.5 mb-1">
-                  {WEEKDAY_LABELS.map((label) => (
+                  {DIAS_CALENDARIO.map((d) => (
                     <div
-                      key={label}
+                      key={d}
                       className="text-center text-[10px] font-medium text-muted-foreground py-1"
                     >
-                      {label}
+                      {tr(`calendarDays.${d}`)}
                     </div>
                   ))}
                 </div>
@@ -757,7 +755,7 @@ export default function ReportsPage() {
               ) : (
                 <Download className="h-3.5 w-3.5" />
               )}
-              Exportar
+              {tr("export")}
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -790,11 +788,11 @@ export default function ReportsPage() {
         <TabsList className="w-full sm:w-fit">
           {GRUPOS.map((g) => (
             <TabsTrigger
-              key={g.valor}
-              value={g.valor}
+              key={g}
+              value={g}
               className="max-sm:group-data-[variant=default]/tabs-list:px-1.5"
             >
-              {g.etiqueta}
+              {tr(`tabs.${g}`)}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -805,22 +803,22 @@ export default function ReportsPage() {
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {[
           {
-            title: "Total Ventas",
-            value: <ContadorAnimado valor={reportData.resumen.totalVentas} prefijo="$" decimales={2} />,
+            title: tr("cards.totalSales"),
+            value: <ContadorAnimado valor={reportData.resumen.totalVentas} dinero />,
             icon: TrendingUp,
           },
           {
-            title: "Transacciones",
+            title: tr("cards.transactions"),
             value: <ContadorAnimado valor={reportData.resumen.totalTransacciones} />,
             icon: CreditCard,
           },
           {
-            title: "Ticket Promedio",
-            value: <ContadorAnimado valor={reportData.resumen.ticketPromedio} prefijo="$" decimales={2} />,
+            title: tr("cards.averageTicket"),
+            value: <ContadorAnimado valor={reportData.resumen.ticketPromedio} dinero />,
             icon: Package,
           },
           {
-            title: "Productos Vendidos",
+            title: tr("cards.productsSold"),
             value: (
               // Con granel la cantidad trae fraccion (kg, l): entonces con 2 decimales.
               <ContadorAnimado
@@ -854,33 +852,33 @@ export default function ReportsPage() {
       <Card className="animate-fade-in-up stagger-5">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium">
-            Ganancia sobre productos
+            {tr("profit.title")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Margen bruto: no descuenta renta, sueldos ni otros gastos del negocio.
+            {tr("profit.desc")}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Ingresos (sin IVA)
+                {tr("profit.revenue")}
               </p>
               <p className="text-xl font-semibold font-mono">
-                <ContadorAnimado valor={reportData.ganancia.ingresos} prefijo="$" decimales={2} />
+                <ContadorAnimado valor={reportData.ganancia.ingresos} dinero />
               </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Costo de lo vendido
+                {tr("profit.cost")}
               </p>
               <p className="text-xl font-semibold font-mono text-muted-foreground">
-                <ContadorAnimado valor={reportData.ganancia.costoVendido} prefijo="$" decimales={2} />
+                <ContadorAnimado valor={reportData.ganancia.costoVendido} dinero />
               </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Ganancia
+                {tr("profit.profit")}
               </p>
               <p
                 className={`text-xl font-semibold font-mono ${
@@ -889,7 +887,7 @@ export default function ReportsPage() {
                     : "text-emerald-600 dark:text-emerald-400"
                 }`}
               >
-                <ContadorAnimado valor={reportData.ganancia.ganancia} prefijo="$" decimales={2} />
+                <ContadorAnimado valor={reportData.ganancia.ganancia} dinero />
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
                   <ContadorAnimado valor={reportData.ganancia.margenPct} sufijo="%" decimales={1} />
                 </span>
@@ -899,13 +897,9 @@ export default function ReportsPage() {
 
           {reportData.ganancia.productosSinCosto > 0 && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-              {reportData.ganancia.productosSinCosto}{" "}
-              {reportData.ganancia.productosSinCosto === 1
-                ? "producto sin costo capturado no se incluye"
-                : "productos sin costo capturado no se incluyen"}{" "}
-              en este cálculo.{" "}
+              {tr("profit.noCost", { count: reportData.ganancia.productosSinCosto })}{" "}
               <Link href="/products" className="underline underline-offset-2">
-                Ver productos
+                {tr("profit.seeProducts")}
               </Link>
             </div>
           )}
@@ -913,7 +907,7 @@ export default function ReportsPage() {
           {reportData.ganancia.topPorGanancia.length > 0 && (
             <div>
               <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-                Lo que más deja
+                {tr("profit.topEarners")}
               </p>
               <div className="space-y-1.5">
                 {reportData.ganancia.topPorGanancia.map((p, i) => (
@@ -923,9 +917,9 @@ export default function ReportsPage() {
                   >
                     <span className="truncate">{p.nombre}</span>
                     <span className="shrink-0 font-mono text-emerald-600 dark:text-emerald-400">
-                      <ContadorAnimado valor={p.ganancia} prefijo="$" decimales={2} />
+                      <ContadorAnimado valor={p.ganancia} dinero />
                       <span className="ml-2 text-xs text-muted-foreground">
-                        de <ContadorAnimado valor={p.ingresos} prefijo="$" decimales={2} />
+                        {tr("profit.of")} <ContadorAnimado valor={p.ingresos} dinero />
                       </span>
                     </span>
                   </div>
@@ -939,7 +933,7 @@ export default function ReportsPage() {
       <div className="animate-fade-in-up stagger-5">
         <IngresosGananciaChart
           data={reportData.ingresosGanancia ?? []}
-          title="Ingresos vs ganancia"
+          title={tr("charts.revenueVsProfit")}
           productosSinCosto={reportData.ganancia.productosSinCosto}
         />
       </div>
@@ -963,12 +957,12 @@ export default function ReportsPage() {
             data={reportData.ventasPorPeriodo}
             title={
               periodo === "dia" && selectedDate
-                ? `Ventas por hora — ${formatShortDate(selectedDate)}`
-                : "Ventas por período"
+                ? tr("charts.salesByHourOf", { fecha: formatShortDate(selectedDate, li) })
+                : tr("charts.salesByPeriod")
             }
             comparacion={
               reportData.ventasAnterior?.length
-                ? { etiqueta: ETIQUETA_ANTERIOR[periodo], datos: reportData.ventasAnterior }
+                ? { etiqueta: tr(`previous.${periodo}`), datos: reportData.ventasAnterior }
                 : undefined
             }
           />
@@ -976,7 +970,7 @@ export default function ReportsPage() {
         <div className="min-w-0 animate-fade-in-up stagger-7">
           <PaymentMethodsChart
             data={reportData.metodosPago}
-            title="Distribución por método de pago"
+            title={tr("charts.paymentMethods")}
           />
         </div>
       </div>
@@ -987,14 +981,14 @@ export default function ReportsPage() {
         <div className="min-w-0 animate-fade-in-up stagger-8">
           <VentasPorHoraChart
             data={reportData.ventasPorHora ?? []}
-            title="Ventas por hora del día"
+            title={tr("charts.salesByHour")}
           />
         </div>
         {periodo !== "dia" && (
           <div className="min-w-0 animate-fade-in-up stagger-8">
             <VentasPorDiaSemanaChart
               data={reportData.ventasPorDiaSemana ?? []}
-              title="Ventas por día de la semana"
+              title={tr("charts.salesByWeekday")}
             />
           </div>
         )}
@@ -1010,13 +1004,13 @@ export default function ReportsPage() {
               nombre: p.nombre,
               cantidad: p.cantidad,
             }))}
-            title="Top 10 productos más vendidos"
+            title={tr("charts.topProducts")}
           />
         </div>
         <div className="min-w-0 animate-fade-in-up stagger-9">
           <TopCategoriasChart
             data={reportData.topCategorias}
-            title="Top categorías (ventas sin IVA)"
+            title={tr("charts.topCategories")}
           />
         </div>
       </div>
@@ -1028,13 +1022,13 @@ export default function ReportsPage() {
       <Card className="animate-fade-in-up stagger-10">
         <CardHeader>
           <CardTitle className="text-sm font-medium">
-            Clientes Más Frecuentes
+            {tr("customers.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {reportData.clientesFrecuentes.length === 0 ? (
             <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-              Sin datos de clientes disponibles
+              {tr("customers.empty")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -1042,13 +1036,13 @@ export default function ReportsPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 font-medium text-muted-foreground">
-                      Cliente
+                      {tr("customers.colCustomer")}
                     </th>
                     <th className="text-right py-2 font-medium text-muted-foreground">
-                      Compras
+                      {tr("customers.colPurchases")}
                     </th>
                     <th className="text-right py-2 font-medium text-muted-foreground">
-                      Total
+                      {tr("customers.colTotal")}
                     </th>
                   </tr>
                 </thead>
@@ -1060,7 +1054,7 @@ export default function ReportsPage() {
                         <ContadorAnimado valor={cliente.compras} />
                       </td>
                       <td className="py-2 text-right font-mono">
-                        <ContadorAnimado valor={cliente.total} prefijo="$" decimales={2} />
+                        <ContadorAnimado valor={cliente.total} dinero />
                       </td>
                     </tr>
                   ))}

@@ -61,11 +61,12 @@ export function resumenPorSucursal(
   sucursales: readonly { id: string; nombre: string; activa: boolean }[],
   ventas: readonly VentaResumen[],
   stock: readonly StockResumen[],
-  cajas: readonly CajaResumen[]
+  cajas: readonly CajaResumen[],
+  textos: { sinSucursal: string; total: string } = { sinSucursal: "Sin sucursal", total: "Todo el negocio" }
 ): { filas: FilaResumen[]; total: FilaResumen } {
   const porId = new Map<string, FilaResumen>();
   for (const s of sucursales) porId.set(s.id, vacia(s.id, s.nombre, s.activa));
-  const huerfana = vacia(null, "Sin sucursal", true);
+  const huerfana = vacia(null, textos.sinSucursal, true);
 
   const fila = (id: string | null) => (id && porId.get(id)) || huerfana;
 
@@ -89,7 +90,7 @@ export function resumenPorSucursal(
     filas.push(huerfana);
   }
 
-  const total = vacia(null, "Todo el negocio", true);
+  const total = vacia(null, textos.total, true);
   for (const f of filas) {
     total.ventas += f.ventas;
     total.tickets += f.tickets;

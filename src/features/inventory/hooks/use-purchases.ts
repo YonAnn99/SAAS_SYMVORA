@@ -1,15 +1,16 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { notifyCashRegisterChanged } from "@/features/cash-register/hooks/use-open-register";
 import type {
   Proveedor,
   PurchaseWithRelations,
 } from "../types/inventory.types";
-import { MENSAJES_RENGLON, validarCompraDirecta, type RenglonCompraForm } from "../compra-directa";
+import { validarCompraDirecta, type RenglonCompraForm } from "../compra-directa";
 import {
   cancelPurchase,
   createPurchase,
@@ -47,6 +48,10 @@ interface ComprasEnCache {
 const claveCompras = (tenantId: string) => ["compras", tenantId] as const;
 
 export function usePurchases(tenantId: string, tenantLoading: boolean) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("purchases.msg");
+  const tEstado = useTranslations("purchases");
+  const te = useTranslations("inventory.errors");
   // Lo ultimo cargado en esta pestaña: se pinta ya y `refetch` lo reemplaza.
   const [enCache] = useState(() => leerCache<ComprasEnCache>(claveCompras(tenantId)));
   const [purchases, setPurchases] = useState<PurchaseWithRelations[]>(() => enCache?.compras ?? []);
@@ -100,7 +105,7 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const handleCreatePurchase = useCallback(
     async (input: PurchaseInput, renglones: RenglonCompraForm[]) => {
       if (!input.proveedorId || !tenantId) {
-        toast.error("Faltan datos requeridos");
+        toast.error(t("missingData"));
         return;
       }
 
@@ -108,8 +113,8 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
       // antes del viaje y señalando el renglón concreto.
       const validacion = validarCompraDirecta(renglones);
       if (!validacion.ok && validacion.motivo) {
-        const donde = validacion.renglon ? ` (renglón ${validacion.renglon})` : "";
-        toast.error(`${MENSAJES_RENGLON[validacion.motivo]}${donde}`);
+        const motivo = t(`rows.${validacion.motivo}`);
+        toast.error(validacion.renglon ? t("rowAt", { motivo, renglon: validacion.renglon }) : motivo);
         return;
       }
 
@@ -130,21 +135,21 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           // La salida ya quedo registrada por el RPC: que Finanzas y el
           // encabezado lo vean sin recargar.
           notifyCashRegisterChanged();
-          toast.success("Compra creada y descontada del efectivo de tu caja");
+          toast.success(t("createdFromCash"));
         } else {
-          toast.success("Compra creada correctamente");
+          toast.success(t("created"));
         }
         setShowNewPurchaseDialog(false);
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
-            ? `Error al crear la compra: ${error.message}`
-            : "Error al crear la compra"
+            ? t("createErrorDetail", { error: error.message })
+            : t("createError")
         );
       }
     },
-    [tenantId, refetch]
+    [tenantId, refetch, t]
   );
 
   const openEditPurchase = useCallback((purchase: PurchaseWithRelations) => {
@@ -155,7 +160,7 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
   const handleUpdatePurchase = useCallback(
     async (purchaseId: string, input: PurchaseInput) => {
       if (!input.proveedorId) {
-        toast.error("Faltan datos requeridos");
+        toast.error(t("missingData"));
         return;
       }
 
@@ -168,25 +173,25 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entityName: `Compra ${input.numeroFactura || ""}`,
           details: { proveedor_id: input.proveedorId },
         });
-        toast.success("Compra actualizada correctamente");
+        toast.success(t("updated"));
         setShowNewPurchaseDialog(false);
         setEditingPurchase(null);
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
-            ? `Error al actualizar la compra: ${error.message}`
-            : "Error al actualizar la compra"
+            ? t("updateErrorDetail", { error: error.message })
+            : t("updateError")
         );
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   const handleCreateSupplier = useCallback(
     async (input: SupplierInput) => {
       if (!tenantId) {
-        toast.error("No se pudo identificar el tenant");
+        toast.error(t("noTenant"));
         return;
       }
 
@@ -198,18 +203,18 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entityName: input.nombre,
           details: { email: input.email, telefono: input.phone },
         });
-        toast.success("Proveedor creado correctamente");
+        toast.success(t("supplierCreated"));
         setShowNewSupplierDialog(false);
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
-            ? `Error al crear el proveedor: ${error.message}`
-            : "Error al crear el proveedor"
+            ? t("supplierCreateErrorDetail", { error: error.message })
+            : t("supplierCreateError")
         );
       }
     },
-    [tenantId, refetch]
+    [tenantId, refetch, t]
   );
 
   const openEditSupplier = useCallback((supplier: Proveedor) => {
@@ -228,19 +233,19 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entityName: input.nombre,
           details: { email: input.email, telefono: input.phone },
         });
-        toast.success("Proveedor actualizado correctamente");
+        toast.success(t("supplierUpdated"));
         setShowNewSupplierDialog(false);
         setEditingSupplier(null);
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
-            ? `Error al actualizar el proveedor: ${error.message}`
-            : "Error al actualizar el proveedor"
+            ? t("supplierUpdateErrorDetail", { error: error.message })
+            : t("supplierUpdateError")
         );
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   /** `false` si no se pudo: la fila deslizable del celular reaparece. */
@@ -254,19 +259,19 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entityId: supplier.id,
           entityName: supplier.nombre,
         });
-        toast.success("Proveedor eliminado");
+        toast.success(t("supplierDeleted"));
         void refetch();
         return true;
       } catch (error) {
         toast.error(
           esErrorDeHistorial(error)
-            ? `«${supplier.nombre}» tiene compras u órdenes registradas: no se puede eliminar para conservar tu historial.`
-            : mensajeDeError(error)
+            ? t("supplierHasHistory", { nombre: supplier.nombre })
+            : mensajeDeError(error, te)
         );
         return false;
       }
     },
-    [refetch]
+    [refetch, t, te]
   );
 
   const handleUpdatePurchaseStatus = useCallback(
@@ -282,17 +287,17 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entityId: purchaseId,
           details: { nuevo_estado: estado },
         });
-        toast.success(`Compra marcada como ${estado.toLowerCase()}`);
+        toast.success(t("markedAs", { estado: tEstado(`statuses.${estado}`).toLowerCase() }));
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
-            ? `Error al actualizar estado: ${error.message}`
-            : "Error al actualizar estado"
+            ? t("statusErrorDetail", { error: error.message })
+            : t("statusError")
         );
       }
     },
-    [refetch]
+    [refetch, t, tEstado]
   );
 
   const handleDeletePurchase = useCallback(
@@ -304,17 +309,17 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
           entity: "compra",
           entityId: purchaseId,
         });
-        toast.success("Compra eliminada correctamente");
+        toast.success(t("deleted"));
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
-            ? `Error al eliminar la compra: ${error.message}`
-            : "Error al eliminar la compra"
+            ? t("deleteErrorDetail", { error: error.message })
+            : t("deleteError")
         );
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   const handleCancelPurchase = useCallback(
@@ -334,16 +339,16 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
         if (resultado.devuelto_a_caja > 0) {
           notifyCashRegisterChanged();
           toast.success(
-            `Compra cancelada. El inventario volvió a su valor anterior y se devolvieron ${formatMXN(resultado.devuelto_a_caja)} a la caja.`
+            t("canceledRefund", { monto: formatear(resultado.devuelto_a_caja) })
           );
         } else {
-          toast.success("Compra cancelada. El inventario volvió a su valor anterior.");
+          toast.success(t("canceled"));
         }
         // Se pago con una caja cuyo corte ya se cerro: no se toca (reabrirlo
         // lo descuadraria), pero hay que decirlo para que se ajuste a mano.
         if (resultado.caja_cerrada) {
           toast.warning(
-            "Esta compra se pagó con una caja que ya hizo su corte: el efectivo no se devolvió solo. Regístralo como entrada en Finanzas si volvió al cajón.",
+            t("closedRegister"),
             { duration: 10000 }
           );
         }
@@ -352,11 +357,11 @@ export function usePurchases(tenantId: string, tenantLoading: boolean) {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Error al cancelar la compra"
+            : t("cancelError")
         );
       }
     },
-    [refetch]
+    [refetch, t, formatear]
   );
 
   const handlePurchaseDialogOpenChange = useCallback((open: boolean) => {

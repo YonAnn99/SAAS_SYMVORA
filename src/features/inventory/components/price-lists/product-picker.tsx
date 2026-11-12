@@ -1,11 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { getInitials } from "@/lib/utils";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import type { FilaSeleccionable } from "../../price-list";
 
 /**
@@ -32,6 +33,8 @@ export function ProductPicker({
   onToggleTodos,
   yaEnLista,
 }: ProductPickerProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("products.priceLists.picker");
   const [busqueda, setBusqueda] = useState("");
 
   const visibles = useMemo(() => {
@@ -54,7 +57,7 @@ export function ProductPicker({
         <Input
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar producto, talla o color..."
+          placeholder={t("search")}
           className="h-8 pl-8 text-sm"
         />
       </div>
@@ -71,16 +74,16 @@ export function ProductPicker({
           }
           disabled={seleccionables.length === 0}
         />
-        <span className="font-medium">Seleccionar todo</span>
+        <span className="font-medium">{t("selectAll")}</span>
         <span className="ml-auto text-xs text-muted-foreground">
-          {marcadas} de {seleccionables.length}
+          {t("countOf", { marcadas, total: seleccionables.length })}
         </span>
       </label>
 
       <div className="max-h-[42vh] overflow-y-auto rounded-lg border border-border">
         {visibles.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            Sin resultados
+            {t("noResults")}
           </p>
         ) : (
           visibles.map((f) => {
@@ -114,11 +117,11 @@ export function ProductPicker({
                   )}
                 </span>
                 <span className="shrink-0 font-mono text-sm tabular-nums">
-                  {formatMXN(f.precio_base)}
+                  {formatear(f.precio_base)}
                 </span>
                 {yaEsta && (
                   <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-                    ya está
+                    {t("alreadyIn")}
                   </span>
                 )}
               </label>

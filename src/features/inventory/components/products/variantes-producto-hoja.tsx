@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
@@ -49,6 +51,7 @@ export function VariantesProductoHoja({
   onAgregar,
 }: VariantesProductoHojaProps) {
   const t = useTranslations();
+  const { formatear } = useMoneda();
   const abierta = producto !== null;
   const resumen = producto ? resumenConVariantes(producto, variantes) : null;
 
@@ -77,12 +80,12 @@ export function VariantesProductoHoja({
                   <DialogTitle className="truncate text-base">{producto.nombre}</DialogTitle>
                   <DialogDescription className="mt-1 text-xs">
                     {/* Precio y stock del producto general: los de sus variantes. */}
-                    {t(`products.units.${producto.unidad_medida}`)} · {rangoDePrecio(resumen)} ·{" "}
+                    {t(`products.units.${producto.unidad_medida}`)} · {rangoDePrecio(resumen, formatear)} ·{" "}
                     {resumen.stockTotal} en stock
                   </DialogDescription>
                 </div>
                 <span className="shrink-0 rounded-full bg-[#1e3a8a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
-                  {variantes.length === 1 ? "1 variante" : `${variantes.length} variantes`}
+                  {t("pos.grid.variants", { count: variantes.length })}
                 </span>
               </div>
             </DialogHeader>
@@ -115,7 +118,7 @@ export function VariantesProductoHoja({
             {onAgregar && (
               <Button variant="outline" size="sm" className="h-9 w-full gap-1.5 text-xs" onClick={onAgregar}>
                 <Plus className="h-3.5 w-3.5" />
-                Agregar variante
+                {t("products.table.addVariant")}
               </Button>
             )}
           </>

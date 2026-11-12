@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ export function AsignarSucursalesDialog({
   onSaved: () => void;
 }) {
   const [seleccion, setSeleccion] = useState<string[]>(asignadas);
+  const t = useTranslations("users.ui");
+  const te = useTranslations("inventory.errors");
   const [guardando, setGuardando] = useState(false);
 
   async function guardar() {
@@ -58,13 +61,13 @@ export function AsignarSucursalesDialog({
       if (error) throw error;
       toast.success(
         seleccion.length === 0
-          ? `${email} puede trabajar en todas las sucursales`
-          : `Sucursales de ${email} actualizadas`
+          ? t("allBranchesSaved", { nombre: email })
+          : t("branchesSaved", { nombre: email })
       );
       onSaved();
       onOpenChange(false);
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     } finally {
       setGuardando(false);
     }
@@ -74,20 +77,18 @@ export function AsignarSucursalesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-base">Sucursales de {email}</DialogTitle>
+          <DialogTitle className="text-base">{t("branchesOf", { nombre: email })}</DialogTitle>
           <DialogDescription className="text-xs">
-            Dónde puede abrir caja y mover inventario, y de qué locales ve las cifras.
-            Si tiene una caja abierta en una sucursal que le quitas, ciérrala antes:
-            después ya no la verá.
+            {t("branchesDesc")}
           </DialogDescription>
         </DialogHeader>
         <SucursalesCheckboxes value={seleccion} onChange={setSeleccion} idPrefix={`asig-${userId}`} />
         <DialogFooter>
           <Button variant="outline" size="sm" className="h-8" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t("cancel")}
           </Button>
           <SpecularActionButton tone="add" className="h-8" disabled={guardando} onClick={() => void guardar()}>
-            {guardando ? "Guardando…" : "Guardar"}
+            {guardando ? t("saving") : t("save")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

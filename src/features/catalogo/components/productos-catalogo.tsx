@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -10,10 +13,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SelectSimple } from "@/components/ui/select-simple";
 import { Switch } from "@/components/ui/switch";
-import { porUnidad } from "@/lib/unidades";
+import { abreviatura, esFraccionable } from "@/lib/unidades";
 import { cn } from "@/lib/utils";
 import { guardarAjustesProductos, listarFilasCatalogo, mensajeErrorCatalogo } from "../catalogo-service";
-import { formatearPrecio } from "../pedido";
 import {
   aplicarAccion,
   conteosCatalogo,
@@ -24,11 +26,12 @@ import {
 } from "../seleccion";
 import type { AjusteProductoCatalogo } from "../types";
 
-const FILTROS: { valor: FiltroCatalogo; etiqueta: string }[] = [
-  { valor: "todos", etiqueta: "Todos" },
-  { valor: "publicados", etiqueta: "Publicados" },
-  { valor: "ocultos", etiqueta: "Ocultos" },
-  { valor: "destacados", etiqueta: "Destacados" },
+/** Texto de cada filtro: `onlineCatalog.products.filters.<valor>`. */
+const FILTROS: { valor: FiltroCatalogo }[] = [
+  { valor: "todos" },
+  { valor: "publicados" },
+  { valor: "ocultos" },
+  { valor: "destacados" },
 ];
 
 /** Se pintan de 100 en 100: un negocio puede tener miles de productos. */
@@ -46,6 +49,8 @@ function ajusteDe(f: FilaCatalogo): AjusteProductoCatalogo {
  * base lo rechaza, la fila regresa a como estaba).
  */
 export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
+  const t = useTranslations("onlineCatalog.products");
+  const te = useTranslations("onlineCatalog.errors");
   const [filas, setFilas] = useState<FilaCatalogo[] | null>(null);
   const [errorCarga, setErrorCarga] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -93,7 +98,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
       return true;
     } catch (error) {
       setFilas(antes);
-      toast.error(mensajeErrorCatalogo(error));
+      toast.error(mensajeErrorCatalogo(error, te));
       return false;
     }
   };
@@ -104,13 +109,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
     const ok = await aplicar(ids, (a) => aplicarAccion(a, accion));
     setGuardando(false);
     if (ok) {
-      const textos: Record<Accion, string> = {
-        publicar: "publicados",
-        ocultar: "ocultos",
-        destacar: "destacados",
-        quitarDestacado: "sin destacar",
-      };
-      toast.success(`${ids.length} ${ids.length === 1 ? "producto" : "productos"} ${textos[accion]}`);
+      toast.success(t(`bulk.${accion}`, { count: ids.length }));
       setSeleccion(new Set());
     }
   };
@@ -119,7 +118,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-sm text-muted-foreground">
-          No se pudieron cargar los productos. Recarga la página.
+          {t("loadError")}
         </CardContent>
       </Card>
     );
@@ -139,15 +138,13 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Al publicar el catálogo salen todos tus productos activos. Aquí ocultas los que no quieras mostrar, destacas
-        los que van primero y pones un precio especial solo para el catálogo (en el punto de venta se cobra el precio
-        normal).
+        {t("intro")}
       </p>
 
       {/* Filtros */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <label className="relative flex-1">
-          <span className="sr-only">Buscar producto</span>
+          <span className="sr-only">{t("search")}</span>
           <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busqueda}
@@ -155,7 +152,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
               setBusqueda(e.target.value);
               setLimite(PASO_LISTA);
             }}
-            placeholder="Buscar producto"
+            placeholder={t("search")}
             className="h-9 pl-8"
           />
         </label>
@@ -166,8 +163,8 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
               setCategoria(c);
               setLimite(PASO_LISTA);
             }}
-            opciones={[{ value: "", label: "Todas las categorías" }, ...categorias]}
-            placeholder="Todas las categorías"
+            opciones={[{ value: "", label: t("allCategories") }, ...categorias]}
+            placeholder={t("allCategories")}
             ariaLabel="Categoría"
             className="sm:w-56"
           />
@@ -188,7 +185,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
               filtro === f.valor ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"
             )}
           >
-            {f.etiqueta} <span className="opacity-70">{conteos[f.valor]}</span>
+            {t(`filters.${f.valor}`)} <span className="opacity-70">{conteos[f.valor]}</span>
           </button>
         ))}
       </div>
@@ -208,24 +205,24 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
               return nueva;
             })
           }
-          aria-label="Seleccionar todos los que se ven"
+          aria-label={t("selectVisible")}
         />
         <span className="text-xs text-muted-foreground">
-          {seleccion.size > 0 ? `${seleccion.size} seleccionados` : "Seleccionar todos"}
+          {seleccion.size > 0 ? t("selected", { count: seleccion.size }) : t("selectAll")}
         </span>
         {seleccion.size > 0 && (
           <div className="ml-auto flex flex-wrap gap-1.5">
             <Button size="xs" variant="outline" disabled={guardando} onClick={() => void accionEnGrupo("publicar")}>
-              <Eye className="h-3.5 w-3.5" /> Publicar
+              <Eye className="h-3.5 w-3.5" /> {t("publish")}
             </Button>
             <Button size="xs" variant="outline" disabled={guardando} onClick={() => void accionEnGrupo("ocultar")}>
-              <EyeOff className="h-3.5 w-3.5" /> Ocultar
+              <EyeOff className="h-3.5 w-3.5" /> {t("hide")}
             </Button>
             <Button size="xs" variant="outline" disabled={guardando} onClick={() => void accionEnGrupo("destacar")}>
-              <Star className="h-3.5 w-3.5" /> Destacar
+              <Star className="h-3.5 w-3.5" /> {t("feature")}
             </Button>
             <Button size="xs" variant="outline" disabled={guardando} onClick={() => void accionEnGrupo("quitarDestacado")}>
-              <StarOff className="h-3.5 w-3.5" /> Quitar destacado
+              <StarOff className="h-3.5 w-3.5" /> {t("unfeature")}
             </Button>
           </div>
         )}
@@ -233,7 +230,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
 
       {visibles.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          {filas.length === 0 ? "Aún no tienes productos. Agrégalos en Productos." : "Ningún producto coincide con el filtro."}
+          {filas.length === 0 ? t("noProducts") : t("noMatch")}
         </p>
       ) : (
         <ul className="divide-y rounded-lg border">
@@ -259,7 +256,7 @@ export function ProductosCatalogo({ tenantId }: { tenantId: string }) {
       {visibles.length > limite && (
         <div className="flex justify-center">
           <Button variant="outline" size="sm" onClick={() => setLimite((l) => l + PASO_LISTA)}>
-            Mostrar más ({visibles.length - limite})
+            {t("showMore", { n: visibles.length - limite })}
           </Button>
         </div>
       )}
@@ -278,6 +275,9 @@ function FilaProducto({
   onMarcar: (v: boolean) => void;
   onCambio: (cambio: (a: AjusteProductoCatalogo) => AjusteProductoCatalogo) => Promise<boolean>;
 }) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("onlineCatalog.products");
+  const tf = useTranslations("products.form");
   const [texto, setTexto] = useState(fila.precio_especial != null ? String(fila.precio_especial) : "");
   const [anterior, setAnterior] = useState(fila.precio_especial);
   // Si cambia desde fuera (se revirtió un guardado), el campo sigue al dato.
@@ -289,7 +289,7 @@ function FilaProducto({
   const guardarPrecio = () => {
     const capturado = precioEspecialCapturado(texto, fila.precio_venta);
     if (!capturado.ok) {
-      toast.error(capturado.error);
+      toast.error(capturado.error === "Escribe un precio válido" ? t("priceInvalid") : t("pricePositive", { cero: formatear(0) }));
       setTexto(fila.precio_especial != null ? String(fila.precio_especial) : "");
       return;
     }
@@ -302,7 +302,7 @@ function FilaProducto({
 
   return (
     <li className={cn("flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5", fila.oculto && "bg-muted/40")}>
-      <Checkbox checked={marcada} onCheckedChange={(v) => onMarcar(Boolean(v))} aria-label={`Seleccionar ${fila.nombre}`} />
+      <Checkbox checked={marcada} onCheckedChange={(v) => onMarcar(Boolean(v))} aria-label={t("selectNamed", { nombre: fila.nombre })} />
       {fila.imagen_url ? (
         <Image
           src={fila.imagen_url}
@@ -320,35 +320,35 @@ function FilaProducto({
       <div className="min-w-0 flex-1 basis-40">
         <p className={cn("truncate text-sm font-medium", fila.oculto && "text-muted-foreground")}>{fila.nombre}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {formatearPrecio(fila.precio_venta)}
-          {porUnidad(fila.unidad_medida)}
+          {formatear(fila.precio_venta)}
+          {esFraccionable(fila.unidad_medida) ? tf("perUnit", { unidad: abreviatura(fila.unidad_medida, 1) }) : ""}
           {fila.categoria ? ` · ${fila.categoria}` : ""}
-          {fila.tieneVariantes ? " · con variantes" : ""}
+          {fila.tieneVariantes ? ` · ${t("withVariants")}` : ""}
         </p>
       </div>
 
       <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="sm:sr-only">Precio catálogo</span>
+          <span className="sm:sr-only">{t("catalogPrice")}</span>
           <Input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             onBlur={guardarPrecio}
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             inputMode="decimal"
-            placeholder={fila.tieneVariantes ? "—" : "Precio catálogo"}
+            placeholder={fila.tieneVariantes ? "—" : t("catalogPrice")}
             disabled={fila.tieneVariantes || fila.oculto}
-            title={fila.tieneVariantes ? "El precio especial es solo para productos sin variantes" : undefined}
+            title={fila.tieneVariantes ? t("noVariantPrice") : undefined}
             className="h-8 w-28 font-mono text-xs"
-            aria-label={`Precio especial en el catálogo de ${fila.nombre}`}
+            aria-label={t("specialPriceOf", { nombre: fila.nombre })}
           />
         </label>
         <button
           type="button"
           onClick={() => void onCambio((a) => aplicarAccion(a, a.destacado ? "quitarDestacado" : "destacar"))}
           aria-pressed={fila.destacado}
-          aria-label={fila.destacado ? `Quitar destacado de ${fila.nombre}` : `Destacar ${fila.nombre}`}
-          title={fila.destacado ? "Destacado: sale primero" : "Destacar"}
+          aria-label={fila.destacado ? t("unfeatureNamed", { nombre: fila.nombre }) : t("featureNamed", { nombre: fila.nombre })}
+          title={fila.destacado ? t("featuredHint") : t("feature")}
           className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
         >
           <Star className={cn("h-4 w-4", fila.destacado ? "fill-amber-400 text-amber-500" : "text-muted-foreground")} />
@@ -356,7 +356,7 @@ function FilaProducto({
         <Switch
           checked={!fila.oculto}
           onCheckedChange={(v) => void onCambio((a) => aplicarAccion(a, v ? "publicar" : "ocultar"))}
-          aria-label={fila.oculto ? `Publicar ${fila.nombre}` : `Ocultar ${fila.nombre}`}
+          aria-label={fila.oculto ? t("publishNamed", { nombre: fila.nombre }) : t("hideNamed", { nombre: fila.nombre })}
         />
       </div>
     </li>

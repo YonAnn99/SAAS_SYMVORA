@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Archive, Layers, RotateCcw, Search } from "lucide-react";
@@ -28,9 +30,11 @@ import {
 } from "../../services/variant-service";
 import { etiquetaAtributos } from "../../atributos-variante";
 import type { Producto } from "../../types/inventory.types";
+import { useTranslations, useLocale } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 
-const fecha = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "";
+const fechaEn = (locale: string) => (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString(localeIntl(locale), { day: "numeric", month: "short", year: "numeric" }) : "";
 
 function Miniatura({ producto }: { producto: { nombre: string; imagen_url: string | null } }) {
   return producto.imagen_url ? (
@@ -68,6 +72,9 @@ export function ProductosArchivadosSeccion({
   version: number;
   onRestaurado: () => void;
 }) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("products.archived");
+  const fecha = fechaEn(useLocale());
   const [archivados, setArchivados] = useState<Producto[]>([]);
   const [variantes, setVariantes] = useState<VarianteArchivada[]>([]);
   // Variantes que vuelven con cada producto archivado al restaurarlo.
@@ -147,10 +154,10 @@ export function ProductosArchivadosSeccion({
       });
       toast.success(
         variante.productos?.archivado_en
-          ? `«${nombreVariante(variante)}» se restauró`
-          : `«${nombreVariante(variante)}» vuelve al catálogo y al punto de venta`,
+          ? t("variantRestored", { nombre: nombreVariante(variante) })
+          : t("backToCatalog", { nombre: nombreVariante(variante) }),
         variante.productos?.archivado_en
-          ? { description: "Se verá cuando restaures su producto." }
+          ? { description: t("variantRestoredHint") }
           : undefined
       );
       await cargar();
@@ -176,8 +183,8 @@ export function ProductosArchivadosSeccion({
       const n = conteoVariantes[producto.id] ?? 0;
       toast.success(
         n > 0
-          ? `«${producto.nombre}» y ${n === 1 ? "su variante vuelven" : `sus ${n} variantes vuelven`} al catálogo y al punto de venta`
-          : `«${producto.nombre}» vuelve al catálogo y al punto de venta`
+          ? t("backWithVariants", { nombre: producto.nombre, count: n })
+          : t("backToCatalog", { nombre: producto.nombre })
       );
       await cargar();
       onRestaurado();
@@ -197,7 +204,7 @@ export function ProductosArchivadosSeccion({
       onClick={() => void alRestaurar()}
     >
       <RotateCcw className="h-3.5 w-3.5" />
-      {restaurando === p.id ? "Restaurando…" : "Restaurar"}
+      {restaurando === p.id ? t("restoring") : t("restore")}
     </Button>
   );
 
@@ -207,7 +214,7 @@ export function ProductosArchivadosSeccion({
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, código o SKU..."
+            placeholder={t("searchPlaceholder")}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="h-8 pl-8 text-sm"
@@ -219,28 +226,27 @@ export function ProductosArchivadosSeccion({
       <Card className="animate-fade-in-up">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-sm font-medium">Productos archivados</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("title")}</CardTitle>
             <span className="font-mono text-xs text-muted-foreground">
-              {archivados.length} {archivados.length === 1 ? "producto" : "productos"}
+              {t("productsCount", { count: archivados.length })}
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            No aparecen en el catálogo ni en el punto de venta, pero sus ventas y reportes se conservan.
-            Restaura el que quieras volver a vender.
+            {t("description")}
           </p>
         </CardHeader>
         <CardContent>
           {cargando ? (
             <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-              Cargando...
+              {t("loading")}
             </div>
           ) : filtrados.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
               <Archive className="h-8 w-8 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">
                 {archivados.length === 0
-                  ? "No tienes productos archivados"
-                  : "No se encontraron productos archivados"}
+                  ? t("none")
+                  : t("noResults")}
               </p>
             </div>
           ) : (
@@ -256,7 +262,7 @@ export function ProductosArchivadosSeccion({
                         <EtiquetaVariantes n={conteoVariantes[p.id] ?? 0} />
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {[p.codigo_barras, `Archivado el ${fecha(p.archivado_en)}`]
+                        {[p.codigo_barras, t("archivedOn", { fecha: fecha(p.archivado_en) })]
                           .filter(Boolean)
                           .join(" · ")}
                       </p>
@@ -270,14 +276,14 @@ export function ProductosArchivadosSeccion({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs uppercase tracking-wider">Producto</TableHead>
-                      <TableHead className="text-xs uppercase tracking-wider">Código</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("colProduct")}</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("colCode")}</TableHead>
                       <TableHead className="text-right text-xs uppercase tracking-wider">
-                        Precio de venta
+                        {t("colPrice")}
                       </TableHead>
-                      <TableHead className="text-xs uppercase tracking-wider">Archivado</TableHead>
+                      <TableHead className="text-xs uppercase tracking-wider">{t("colArchived")}</TableHead>
                       <TableHead className="text-right text-xs uppercase tracking-wider">
-                        Acciones
+                        {t("colActions")}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -295,7 +301,7 @@ export function ProductosArchivadosSeccion({
                           {p.codigo_barras || p.sku || "-"}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm tabular-nums">
-                          ${p.precio_venta.toFixed(2)}
+                          {formatear(p.precio_venta)}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {fecha(p.archivado_en)}
@@ -315,16 +321,16 @@ export function ProductosArchivadosSeccion({
         <Card className="animate-fade-in-up">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-sm font-medium">Variantes archivadas</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("variantsTitle")}</CardTitle>
               <span className="font-mono text-xs text-muted-foreground">
-                {variantes.length} {variantes.length === 1 ? "variante" : "variantes"}
+                {t("variantsCount", { count: variantes.length })}
               </span>
             </div>
           </CardHeader>
           <CardContent>
             {variantesFiltradas.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                No se encontraron variantes archivadas
+                {t("noVariantResults")}
               </p>
             ) : (
               <ul className="divide-y divide-border">
@@ -337,11 +343,11 @@ export function ProductosArchivadosSeccion({
                       <p className="truncate text-sm font-medium">{nombreVariante(v)}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {v.productos?.archivado_en
-                          ? "Su producto también está archivado"
+                          ? t("productAlsoArchived")
                           : [
                               v.sku || v.codigo_barras,
-                              `$${v.precio_venta.toFixed(2)}`,
-                              `Archivada el ${fecha(v.archivado_en ?? null)}`,
+                              `${formatear(v.precio_venta)}`,
+                              t("archivedOnFem", { fecha: fecha(v.archivado_en ?? null) }),
                             ]
                               .filter(Boolean)
                               .join(" · ")}
@@ -380,14 +386,15 @@ async function contarVariantes(tenantId: string, productos: Producto[]) {
 
 /** Mismo estilo que en el catalogo: vuelven con el producto al restaurarlo. */
 function EtiquetaVariantes({ n }: { n: number }) {
+  const t = useTranslations("products.archived");
   if (n <= 0) return null;
   return (
     <span
       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300"
-      title="Vuelven con el producto al restaurarlo"
+      title={t("variantsComeBack")}
     >
       <Layers className="h-3 w-3" aria-hidden="true" />
-      {n === 1 ? "1 variante" : `${n} variantes`}
+      {t("variantsCount", { count: n })}
     </span>
   );
 }

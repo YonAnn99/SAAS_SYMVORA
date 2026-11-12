@@ -12,6 +12,7 @@
  * distintas del mismo producto.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import {
@@ -27,7 +28,6 @@ import {
   SIN_CATEGORIA,
   countActiveFilters,
   SORT_LABELS,
-  STOCK_STATUS_LABEL,
   type ProductFilters,
   type SortOption,
   type StockStatus,
@@ -59,6 +59,8 @@ export function ProductsFilterDialog({
   stockCounts,
   sinCategoriaCount,
 }: ProductsFilterDialogProps) {
+  const t = useTranslations("products.filters");
+  const ts = useTranslations("products.stockStatus");
   const [draft, setDraft] = useState<ProductFilters>(filters);
   const [showSort, setShowSort] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
@@ -84,14 +86,14 @@ export function ProductsFilterDialog({
 
   const categoriaLabel =
     draft.categoria === SIN_CATEGORIA
-      ? "Sin categoría"
-      : (draft.categoria ?? "Todas las categorías");
+      ? t("noCategory")
+      : (draft.categoria ?? t("allCategories"));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Filtros</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         {/* Ordenar */}
@@ -102,9 +104,9 @@ export function ProductsFilterDialog({
             className="flex w-full items-center justify-between py-1 text-left"
           >
             <span>
-              <span className="block text-sm font-medium">Ordenar</span>
+              <span className="block text-sm font-medium">{t("sort")}</span>
               <span className="block text-xs text-muted-foreground">
-                {SORT_LABELS[draft.sort]}
+                {t(`sortOptions.${draft.sort}`)}
               </span>
             </span>
             <ChevronDown
@@ -124,7 +126,7 @@ export function ProductsFilterDialog({
                   }}
                   className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted"
                 >
-                  {SORT_LABELS[key]}
+                  {t(`sortOptions.${key}`)}
                   {draft.sort === key && <Check className="h-3.5 w-3.5" />}
                 </button>
               ))}
@@ -140,7 +142,7 @@ export function ProductsFilterDialog({
             className="flex w-full items-center justify-between py-1 text-left"
           >
             <span>
-              <span className="block text-sm font-medium">Categoría</span>
+              <span className="block text-sm font-medium">{t("category")}</span>
               <span className="block text-xs text-muted-foreground">
                 {categoriaLabel}
               </span>
@@ -153,7 +155,7 @@ export function ProductsFilterDialog({
           {showCategories && (
             <div className="mt-2 max-h-56 space-y-0.5 overflow-y-auto">
               <CategoryOption
-                label="Todas las categorías"
+                label={t("allCategories")}
                 selected={draft.categoria === null}
                 onSelect={() => {
                   setDraft((d) => ({ ...d, categoria: null }));
@@ -175,7 +177,7 @@ export function ProductsFilterDialog({
                   resultados es ruido. */}
               {sinCategoriaCount > 0 && (
                 <CategoryOption
-                  label="Sin categoría"
+                  label={t("noCategory")}
                   count={sinCategoriaCount}
                   selected={draft.categoria === SIN_CATEGORIA}
                   onSelect={() => {
@@ -190,7 +192,7 @@ export function ProductsFilterDialog({
 
         {/* Stock */}
         <section className="border-t border-border pt-3">
-          <p className="mb-2 text-sm font-medium">Stock</p>
+          <p className="mb-2 text-sm font-medium">{t("stock")}</p>
           <div className="flex flex-wrap gap-2">
             {STOCK_ORDER.map((status) => {
               const active = draft.stock.includes(status);
@@ -205,7 +207,7 @@ export function ProductsFilterDialog({
                       : "border-border hover:bg-muted"
                   }`}
                 >
-                  {STOCK_STATUS_LABEL[status]}
+                  {ts(status)}
                   {/* El conteo es lo que convierte esto en un diagnóstico
                       ("tienes 3 por acabarse") y no solo en un filtro. */}
                   <span className="ml-1.5 opacity-60">{stockCounts[status]}</span>
@@ -225,7 +227,7 @@ export function ProductsFilterDialog({
             // filtros activos, que es justo cuando hace falta.
             disabled={countActiveFilters(draft) === 0}
           >
-            Limpiar
+            {t("clear")}
           </Button>
           <Button
             onClick={() => {
@@ -233,7 +235,7 @@ export function ProductsFilterDialog({
               onOpenChange(false);
             }}
           >
-            Aplicar
+            {t("apply")}
           </Button>
         </DialogFooter>
       </DialogContent>

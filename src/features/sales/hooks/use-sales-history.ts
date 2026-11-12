@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { mensajeDeError } from "@/features/inventory/error-message";
 import { rangoDePeriodo, type Periodo } from "@/lib/periodo";
 import {
@@ -36,6 +37,7 @@ export function useSalesHistory(
   /** Las compras de un cliente (migracion 129). `null` = todos. */
   clienteId: string | null = null
 ) {
+  const te = useTranslations("inventory.errors");
   const [ventas, setVentas] = useState<VentaEnHistorial[]>([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(0);
@@ -76,11 +78,11 @@ export function useSalesHistory(
       setVentas(pag.ventas);
       setTotal(pag.total);
     } catch (error: unknown) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     } finally {
       setCargando(false);
     }
-  }, [tenantId, rango, cajeroId, sucursalId, clienteId, pagina]);
+  }, [tenantId, rango, cajeroId, sucursalId, clienteId, pagina, te]);
 
   // Diferido, convencion del repo: un setState sincrono dentro de un efecto
   // encadena renders y dispara `react-hooks/set-state-in-effect`.
@@ -111,6 +113,7 @@ export function useSalesHistory(
  * las 25 ventas de la pagina seria trabajo tirado, porque el usuario abre una.
  */
 export function useSaleDetail() {
+  const te = useTranslations("inventory.errors");
   const [venta, setVenta] = useState<VentaGuardada | null>(null);
   const [receipt, setReceipt] = useState<SaleReceipt | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -124,13 +127,13 @@ export function useSaleDetail() {
     } catch (error: unknown) {
       // El servidor rechaza una venta ajena con un mensaje claro; se muestra
       // tal cual en vez de un "error inesperado".
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
       setVenta(null);
       setReceipt(null);
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [te]);
 
   const cerrar = useCallback(() => {
     setVenta(null);

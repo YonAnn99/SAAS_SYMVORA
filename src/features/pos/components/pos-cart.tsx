@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { FlaskConical, Minus, Plus, Trash2 } from "lucide-react";
@@ -37,6 +39,7 @@ function CantidadEditable({
   item: CartItem;
   onChange: (cantidad: number) => void;
 }) {
+  const t = useTranslations("pos.cartLine");
   const [editando, setEditando] = useState<string | null>(null);
   const fraccionable = esFraccionable(item.unidad_medida);
 
@@ -59,7 +62,7 @@ function CantidadEditable({
           if (e.key === "Enter") aplicar();
           if (e.key === "Escape") setEditando(null);
         }}
-        aria-label={`Cantidad de ${item.nombre}`}
+        aria-label={t("quantityOf", { nombre: item.nombre })}
         className={`${fraccionable ? "w-16" : "w-10"} h-6 max-lg:h-10 rounded border border-input bg-background px-1 text-center text-xs max-lg:text-base font-mono`}
       />
     );
@@ -69,7 +72,7 @@ function CantidadEditable({
     <button
       type="button"
       onClick={() => setEditando(String(item.cantidad))}
-      title="Toca para escribir la cantidad"
+      title={t("tapToType")}
       className={`${fraccionable ? "min-w-16 px-1" : "w-6 max-lg:w-8"} h-6 max-lg:h-10 rounded text-center text-xs max-lg:text-[15px] max-lg:font-bold font-mono hover:bg-muted`}
     >
       {fraccionable ? formatearCantidad(item.cantidad, item.unidad_medida) : item.cantidad}
@@ -110,6 +113,7 @@ export function PosCart({
   insumosDe,
   onEditarInsumos,
 }: PosCartProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   // Celular y tablet (la hoja del carrito): cada linea es una pastilla que se
   // desliza a la izquierda para quitarla, el mismo gesto de Productos.
@@ -156,7 +160,7 @@ export function PosCart({
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground font-mono">
-                    ${item.precioUnitario.toFixed(2)} x {formatearCantidad(item.cantidad, item.unidad_medida)}
+                    {formatear(item.precioUnitario)} x {formatearCantidad(item.cantidad, item.unidad_medida)}
                   </p>
                   {insumos && (
                     <button
@@ -164,12 +168,12 @@ export function PosCart({
                       onPointerDown={noArrastrar}
                       onClick={() => onEditarInsumos?.(item)}
                       disabled={!onEditarInsumos}
-                      title="Ajustar los insumos de esta venta"
+                      title={t("pos.cartLine.adjustSupplies")}
                       className="mt-0.5 flex max-w-full items-center gap-1 text-left text-[11px] text-muted-foreground hover:text-foreground"
                     >
                       <FlaskConical className="h-3 w-3 shrink-0" aria-hidden="true" />
                       <span className="truncate">
-                        {item.insumos ? "Ajustado: " : "Usa: "}
+                        {item.insumos ? t("pos.cartLine.adjusted") : t("pos.cartLine.uses")}
                         {textoInsumos(insumos)}
                       </span>
                     </button>
@@ -227,7 +231,7 @@ export function PosCart({
                     acciones={[
                       {
                         id: "quitar",
-                        etiqueta: "Quitar",
+                        etiqueta: t("pos.cartLine.remove"),
                         color: COLOR_ELIMINAR,
                         icono: <Trash2 size={18} strokeWidth={2} />,
                         alElegir: () => onRemove(clave),
@@ -252,7 +256,7 @@ export function PosCart({
             })}
             {!esEscritorio && verPista && (
               <p className="text-center text-xs text-muted-foreground">
-                Desliza una línea a la izquierda para quitarla
+                {t("pos.cartLine.swipeHint")}
               </p>
             )}
           </div>
@@ -263,7 +267,7 @@ export function PosCart({
             <Separator />
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">{t("pos.subtotal")}</span>
-              <span className="font-mono">${totals.subtotal.toFixed(2)}</span>
+              <span className="font-mono">{formatear(totals.subtotal)}</span>
             </div>
             {/* Descuento manual a toda la compra (% o monto fijo). */}
             <DescuentoTicketControl
@@ -273,7 +277,7 @@ export function PosCart({
             {premioLealtad && premioLealtad.monto > 0 && (
               <div className="flex justify-between gap-2 text-xs text-emerald-700 dark:text-emerald-400">
                 <span className="truncate">Premio: {premioLealtad.etiqueta}</span>
-                <span className="shrink-0 font-mono">-${premioLealtad.monto.toFixed(2)}</span>
+                <span className="shrink-0 font-mono">-{formatear(premioLealtad.monto)}</span>
               </div>
             )}
             <div className="flex items-center justify-between text-xs">
@@ -285,13 +289,13 @@ export function PosCart({
                 {t("pos.includeIva")}
               </label>
               {includeIva && (
-                <span className="font-mono">${totals.impuesto.toFixed(2)}</span>
+                <span className="font-mono">{formatear(totals.impuesto)}</span>
               )}
             </div>
             <Separator />
             <div className="flex justify-between text-sm font-semibold">
               <span>{t("pos.total")}</span>
-              <span className="font-mono">${totals.total.toFixed(2)}</span>
+              <span className="font-mono">{formatear(totals.total)}</span>
             </div>
           </div>
         )}

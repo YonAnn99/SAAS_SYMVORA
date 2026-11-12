@@ -1,5 +1,7 @@
 "use client";
 
+import { localeIntl } from "@/lib/idioma";
+
 import { useState, useEffect, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -122,7 +124,7 @@ export default function UsersPage() {
 
   const nombresDe = (ids: string[] | undefined) =>
     !ids || ids.length === 0
-      ? "Todas"
+      ? t("users.page.allBranches")
       : ids.map((id) => sucursales.find((x) => x.id === id)?.nombre ?? "—").join(", ");
 
   const fetchMemberships = useCallback(async () => {
@@ -175,11 +177,11 @@ export default function UsersPage() {
     // Con el nombre el dueño ubica a cada persona en Usuarios y en las ventas,
     // y el sistema la saluda; el apellido es opcional.
     if (!inviteNombre.trim()) {
-      toast.error("Escribe el nombre del usuario");
+      toast.error(t("users.page.nameRequired"));
       return;
     }
     if (!inviteEmail || !tenantId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) {
-      toast.error("Por favor ingresa un email válido");
+      toast.error(t("users.page.emailInvalid"));
       return;
     }
 
@@ -203,10 +205,10 @@ export default function UsersPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Error al enviar invitación");
+        throw new Error(result.error || t("users.page.inviteError"));
       }
 
-      toast.success(`Invitación enviada a ${inviteNombre.trim()}`);
+      toast.success(t("users.page.inviteSent", { nombre: inviteNombre.trim() }));
       setShowInviteDialog(false);
       setInviteNombre("");
       setInviteApellido("");
@@ -216,7 +218,7 @@ export default function UsersPage() {
       fetchMemberships();
       fetchInviteKeys();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al enviar invitación");
+      toast.error(error instanceof Error ? error.message : t("users.page.inviteError"));
     } finally {
       setInviting(false);
     }
@@ -235,14 +237,14 @@ export default function UsersPage() {
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || "Error al eliminar");
+        throw new Error(result.error || t("users.page.deleteError"));
       }
 
-      toast.success("Miembro eliminado");
+      toast.success(t("users.page.deleted"));
       fetchMemberships();
       return true;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al eliminar");
+      toast.error(error instanceof Error ? error.message : t("users.page.deleteError"));
       // La pastilla del celular se colapsa antes: con `false` reaparece.
       return false;
     }
@@ -267,14 +269,14 @@ export default function UsersPage() {
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || "Error al cambiar rol");
+        throw new Error(result.error || t("users.page.roleError"));
       }
 
-      toast.success("Rol actualizado");
+      toast.success(t("users.page.roleUpdated"));
       setConfirmRoleChange(null);
       fetchMemberships();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al cambiar rol");
+      toast.error(error instanceof Error ? error.message : t("users.page.roleError"));
     } finally {
       setChangingRole(false);
     }
@@ -291,14 +293,14 @@ export default function UsersPage() {
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || "Error al revocar clave");
+        throw new Error(result.error || t("users.page.revokeError"));
       }
 
-      toast.success("Clave revocada");
+      toast.success(t("users.page.revoked"));
       fetchInviteKeys();
       return true;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al revocar clave");
+      toast.error(error instanceof Error ? error.message : t("users.page.revokeError"));
       return false;
     }
   };
@@ -311,7 +313,7 @@ export default function UsersPage() {
         <div>
           <EncabezadoModulo
             titulo={t("users.title")}
-            descripcion="Gestiona los usuarios y permisos de tu organización"
+            descripcion={t("users.page.subtitle")}
           />
         </div>
         <div className="flex gap-2">
@@ -361,7 +363,7 @@ export default function UsersPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <CardTitle className="text-sm font-medium">{t("users.title")}</CardTitle>
             <span className="text-xs text-muted-foreground font-mono">
-              {memberships.length} usuarios
+              {t("users.page.count", { count: memberships.length })}
             </span>
           </div>
         </CardHeader>
@@ -408,10 +410,10 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs uppercase tracking-wider">Usuario</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("users.page.colUser")}</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">{t("users.role")}</TableHead>
                   {hayVarias && (
-                    <TableHead className="text-xs uppercase tracking-wider">Sucursales</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("users.page.colBranches")}</TableHead>
                   )}
                   <TableHead className="text-xs uppercase tracking-wider">{t("users.lastAccess")}</TableHead>
                   {canManage && (
@@ -449,12 +451,12 @@ export default function UsersPage() {
                     {hayVarias && (
                       <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
                         {membership.role === "SUPER_ADMIN"
-                          ? "Todas (dueño)"
+                          ? t("users.page.allOwner")
                           : nombresDe(asignaciones[membership.user_id])}
                       </TableCell>
                     )}
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(membership.creado_en).toLocaleDateString()}
+                      {new Date(membership.creado_en).toLocaleDateString(localeIntl(locale))}
                     </TableCell>
                     {canManage && (
                       <TableCell className="text-right">
@@ -466,8 +468,8 @@ export default function UsersPage() {
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs"
-                          title="Editar nombre"
-                          aria-label={`Editar el nombre de ${nombreVisible(membership.user_nombre, membership.user_email)}`}
+                          title={t("users.page.editName")}
+                          aria-label={t("users.page.editNameOf", { nombre: nombreVisible(membership.user_nombre, membership.user_email) })}
                           onClick={() => setNombreFor(membership)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -489,8 +491,8 @@ export default function UsersPage() {
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs"
-                            title="Sucursales"
-                            aria-label={`Sucursales de ${nombreVisible(membership.user_nombre, membership.user_email)}`}
+                            title={t("users.page.colBranches")}
+                            aria-label={t("users.page.branchesOf", { nombre: nombreVisible(membership.user_nombre, membership.user_email) })}
                             onClick={() => setSucursalesFor(membership)}
                           >
                             <Store className="h-3.5 w-3.5" />
@@ -498,7 +500,7 @@ export default function UsersPage() {
                         )}
                         <BotonEliminar
                           nombre={nombreVisible(membership.user_nombre, membership.user_email)}
-                          detalle="Pierde el acceso al negocio"
+                          detalle={t("users.page.losesAccess")}
                           onEliminar={async () => {
                             await handleDeleteMember(membership);
                           }}
@@ -522,7 +524,7 @@ export default function UsersPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Key className="h-4 w-4" />
-                {t("users.inviteKeys") || "Claves de acceso"}
+                {t("users.inviteKeys")}
               </CardTitle>
             </div>
           </CardHeader>
@@ -538,10 +540,10 @@ export default function UsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs uppercase tracking-wider">Usuario</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("users.page.colUser")}</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">{t("users.role")}</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Clave</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">{t("users.createdAt") || "Creada"}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("users.page.colKey")}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("users.createdAt")}</TableHead>
                     <TableHead className="text-right text-xs uppercase tracking-wider">
                       {t("common.actions")}
                     </TableHead>
@@ -564,12 +566,12 @@ export default function UsersPage() {
                         </code>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(key.created_at).toLocaleDateString()}
+                        {new Date(key.created_at).toLocaleDateString(localeIntl(locale))}
                       </TableCell>
                       <TableCell className="text-right">
                         <BotonEliminar
-                          nombre={`la clave de ${nombreDeClave(key) ?? key.email}`}
-                          detalle="Ya no servirá para entrar"
+                          nombre={t("users.page.keyOf", { nombre: nombreDeClave(key) ?? key.email })}
+                          detalle={t("users.page.keyNoLonger")}
                           onEliminar={async () => {
                             await handleRevokeKey(key.id);
                           }}
@@ -620,16 +622,16 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle className="text-base">{t("users.addUser")}</DialogTitle>
             <DialogDescription className="text-xs">
-              Invita un nuevo usuario a tu organización
+              {t("users.page.inviteDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="invitar-nombre" className="text-xs">Nombre *</Label>
+                <Label htmlFor="invitar-nombre" className="text-xs">{t("users.page.firstName")}</Label>
                 <Input
                   id="invitar-nombre"
-                  placeholder="Nombre"
+                  placeholder={t("users.page.firstNamePlaceholder")}
                   value={inviteNombre}
                   onChange={(e) => setInviteNombre(e.target.value)}
                   maxLength={60}
@@ -639,11 +641,11 @@ export default function UsersPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="invitar-apellido" className="text-xs">
-                  Apellido <span className="text-muted-foreground">(opcional)</span>
+                  {t("users.page.lastName")} <span className="text-muted-foreground">{t("users.page.optional")}</span>
                 </Label>
                 <Input
                   id="invitar-apellido"
-                  placeholder="Apellido"
+                  placeholder={t("users.page.lastNamePlaceholder")}
                   value={inviteApellido}
                   onChange={(e) => setInviteApellido(e.target.value)}
                   maxLength={60}
@@ -667,7 +669,7 @@ export default function UsersPage() {
               <Label className="text-xs">{t("users.role")}</Label>
               <Select value={inviteRole} onValueChange={(v) => setInviteRole(v || "CAJERO")}>
                 <SelectTrigger className="h-8 w-full text-sm">
-                  <SelectValue />
+                  <SelectValue>{(v: string) => (v ? t(`users.roles.${v}`) : "")}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ORG_ADMIN">
@@ -702,13 +704,13 @@ export default function UsersPage() {
       <Dialog open={!!confirmRoleChange} onOpenChange={() => setConfirmRoleChange(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-base">{t("users.confirmRoleChange") || "Cambiar rol"}</DialogTitle>
+            <DialogTitle className="text-base">{t("users.confirmRoleChange")}</DialogTitle>
             <DialogDescription className="text-xs">
               {t("users.confirmRoleChangeDesc", {
                 email: confirmRoleChange
                   ? nombreVisible(confirmRoleChange.member.user_nombre, confirmRoleChange.member.user_email)
                   : "",
-                role: confirmRoleChange?.newRole === "ORG_ADMIN" ? "Administrador" : "Cajero",
+                role: t(`users.roles.${confirmRoleChange?.newRole === "ORG_ADMIN" ? "ORG_ADMIN" : "CAJERO"}`),
               })}
             </DialogDescription>
           </DialogHeader>

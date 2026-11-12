@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 /**
  * El catalogo en celular: una "pastilla" deslizable por producto (Swipe Row de
  * React Bits, `components/ui/swipe-row.tsx`) en lugar de la tabla de 9
@@ -19,8 +21,7 @@ import { useTranslations } from "next-intl";
 import {
   COLOR_ARCHIVAR,
   FilaDeslizable,
-  TEXTO_PISTA_DESLIZAR,
-  TEXTO_PISTA_DESLIZAR_ARCHIVAR,
+  useTextoPistaDeslizar,
   noArrastrar,
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
@@ -72,8 +73,10 @@ export function ProductSwipeList({
   onVerVariantes,
   variantesPorProducto,
 }: ProductSwipeListProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const { verPista, alAbrir } = usePistaDeslizar();
+  const pista = useTextoPistaDeslizar(Boolean(onArchive));
 
   return (
     <div className="space-y-2">
@@ -83,13 +86,13 @@ export function ProductSwipeList({
             checked={todosVisibles}
             indeterminate={algunosVisibles}
             onCheckedChange={() => onSeleccionarVisibles(!todosVisibles)}
-            aria-label="Seleccionar todos los productos visibles"
+            aria-label={t("products.table.selectAllVisible")}
           />
-          Seleccionar todos
+          {t("products.table.selectAll")}
         </label>
         {verPista && (
           <span className="text-[11px] text-muted-foreground">
-            {onArchive ? TEXTO_PISTA_DESLIZAR_ARCHIVAR : TEXTO_PISTA_DESLIZAR}
+            {pista}
           </span>
         )}
       </div>
@@ -110,7 +113,7 @@ export function ProductSwipeList({
               onArchive
                 ? {
                     id: "archivar",
-                    etiqueta: "Archivar",
+                    etiqueta: t("products.table.archive"),
                     color: COLOR_ARCHIVAR,
                     icono: <Archive size={18} strokeWidth={2} />,
                     // Pide confirmacion (`handleArchive`); la fila regresa sola.
@@ -155,7 +158,7 @@ export function ProductSwipeList({
                 <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs">
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#1e3a8a]/10 px-1.5 py-px text-[10px] font-semibold text-[#1e3a8a] dark:bg-blue-500/15 dark:text-blue-300">
                     <Layers className="h-3 w-3" aria-hidden="true" />
-                    {nVariantes === 1 ? "1 variante" : `${nVariantes} variantes`}
+                    {t("pos.grid.variants", { count: nVariantes })}
                   </span>
                   <span
                     className={`truncate ${
@@ -168,7 +171,7 @@ export function ProductSwipeList({
                             : "text-muted-foreground"
                     }`}
                   >
-                    {product.es_servicio ? "Servicio" : `${resumen.stockTotal} en stock`}
+                    {product.es_servicio ? t("products.badges.service") : t("products.table.inStock", { stock: resumen.stockTotal })}
                   </span>
                 </div>
               </div>
@@ -183,13 +186,13 @@ export function ProductSwipeList({
                   {t(`products.units.${product.unidad_medida}`)}
                   {textoContenido(product) && ` ${textoContenido(product)}`}
                   {" · "}
-                  {product.es_servicio ? "Servicio" : `${product.stock_actual} en stock`}
+                  {product.es_servicio ? t("products.badges.service") : t("products.table.inStock", { stock: product.stock_actual })}
                 </p>
               </div>
 
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <span className="font-mono text-sm tabular-nums">
-                  ${product.precio_venta.toFixed(2)}
+                  {formatear(product.precio_venta)}
                 </span>
                 <StockBadge product={product} />
               </div>

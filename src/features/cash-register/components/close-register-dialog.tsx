@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ export function CloseRegisterDialog({
   saldoEsperado,
   onConfirm,
 }: CloseRegisterDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const [saldoReal, setSaldoReal] = useState("");
   const [closingNotes, setClosingNotes] = useState("");
@@ -48,45 +51,45 @@ export function CloseRegisterDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-base">Cerrar caja</DialogTitle>
+          <DialogTitle className="text-base">{t("finances.close.title")}</DialogTitle>
           <DialogDescription className="text-xs">
-            Ingresa el saldo real para cerrar la caja
+            {t("finances.close.desc")}
           </DialogDescription>
         </DialogHeader>
         {register && (
           <div className="space-y-3">
             <div className="rounded-lg bg-muted p-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Fondo inicial</span>
+                <span className="text-muted-foreground">{t("pos.initialFund")}</span>
                 <span className="font-mono">
-                  ${register.fondo_inicial.toFixed(2)}
+                  {formatear(register.fondo_inicial)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Ventas</span>
+                <span className="text-muted-foreground">{t("finances.close.sales")}</span>
                 <span className="font-mono text-blue-600 dark:text-blue-400">
-                  +${totalVentas.toFixed(2)}
+                  +{formatear(totalVentas)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Entradas</span>
+                <span className="text-muted-foreground">{t("finances.close.inflows")}</span>
                 <span className="font-mono text-[#346538] dark:text-[#7BC67E]">
-                  +${totalEntradas.toFixed(2)}
+                  +{formatear(totalEntradas)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Salidas</span>
+                <span className="text-muted-foreground">{t("finances.close.outflows")}</span>
                 <span className="font-mono text-[#9F2F2D] dark:text-[#F2A5A4]">
-                  -${totalSalidas.toFixed(2)}
+                  -{formatear(totalSalidas)}
                 </span>
               </div>
               <div className="flex justify-between font-semibold border-t pt-2">
-                <span>Saldo esperado</span>
-                <span className="font-mono">${saldoEsperado.toFixed(2)}</span>
+                <span>{t("finances.close.expected")}</span>
+                <span className="font-mono">{formatear(saldoEsperado)}</span>
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Saldo real (contado) *</Label>
+              <Label className="text-xs">{t("finances.close.actual")}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -105,14 +108,15 @@ export function CloseRegisterDialog({
                     : "bg-[#FDEBEC] text-[#9F2F2D] dark:bg-[#9F2F2D]/20 dark:text-[#F2A5A4]"
                 }`}
               >
-                Diferencia: ${Math.abs(diferencia).toFixed(2)}{" "}
-                {diferenciaNegativa ? "(faltante)" : "(sobrante)"}
+                {t(diferenciaNegativa ? "finances.close.shortage" : "finances.close.surplus", {
+                  monto: formatear(Math.abs(diferencia)),
+                })}
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="text-xs">Notas de cierre</Label>
+              <Label className="text-xs">{t("finances.close.notes")}</Label>
               <Input
-                placeholder="Observaciones (opcional)"
+                placeholder={t("finances.close.notesPlaceholder")}
                 value={closingNotes}
                 onChange={(e) => setClosingNotes(e.target.value)}
                 className="h-8 text-sm"
@@ -136,7 +140,7 @@ export function CloseRegisterDialog({
               onConfirm(parseFloat(saldoReal) || 0, closingNotes)
             }
           >
-            Cerrar caja
+            {t("finances.close.title")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

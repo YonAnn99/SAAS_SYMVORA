@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +24,9 @@ interface DescargaDatosCuentaProps {
  */
 export function DescargaDatosCuenta({ tenantId, limite }: DescargaDatosCuentaProps) {
   const [descargando, setDescargando] = useState<string | null>(null);
+  const t = useTranslations("billing.dataDownload");
+  const li = localeIntl(useLocale());
+  const etiqueta = (clave: string) => t(`sets.${clave}`);
 
   const descargar = async (clave: string) => {
     const conjunto = CONJUNTOS.find((c) => c.clave === clave);
@@ -28,10 +34,10 @@ export function DescargaDatosCuenta({ tenantId, limite }: DescargaDatosCuentaPro
     setDescargando(clave);
     try {
       const total = await descargarConjunto(conjunto, tenantId);
-      toast.success(`${conjunto.etiqueta}: ${total} registros descargados`);
+      toast.success(t("downloaded", { conjunto: etiqueta(conjunto.clave), total }));
     } catch (error) {
       console.error("Error al exportar", clave, error);
-      toast.error(`No se pudo descargar ${conjunto.etiqueta.toLowerCase()}`);
+      toast.error(t("error", { conjunto: etiqueta(conjunto.clave).toLowerCase() }));
     } finally {
       setDescargando(null);
     }
@@ -42,21 +48,18 @@ export function DescargaDatosCuenta({ tenantId, limite }: DescargaDatosCuentaPro
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Download className="h-4 w-4" />
-          Descarga tu información
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Tu información sigue siendo tuya. Tienes {DIAS_CONSERVACION_DATOS} días
-          naturales desde que terminó tu acceso para descargarla
+          {t("desc", { dias: DIAS_CONSERVACION_DATOS })}
           {limite
-            ? ` (hasta el ${limite.toLocaleDateString("es-MX", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })})`
+            ? ` ${t("until", {
+                fecha: limite.toLocaleDateString(li, { day: "numeric", month: "long", year: "numeric" }),
+              })}`
             : ""}
-          . Cada archivo es un CSV que abre en Excel.
+          . {t("csv")}
         </p>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {CONJUNTOS.map((c) => (
@@ -73,12 +76,12 @@ export function DescargaDatosCuenta({ tenantId, limite }: DescargaDatosCuentaPro
               ) : (
                 <Download className="h-3.5 w-3.5" />
               )}
-              {c.etiqueta}
+              {etiqueta(c.clave)}
             </Button>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          ¿Necesitas otro formato o algo que no está aquí? Escríbenos a{" "}
+          {t("otherFormat")}{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} className="underline">
             {CONTACT_EMAIL}
           </a>

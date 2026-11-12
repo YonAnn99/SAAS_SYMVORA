@@ -16,7 +16,8 @@
  */
 
 import { Pencil, SlidersHorizontal, Store, Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,13 +58,14 @@ export function MemberSwipeList({
   onEliminar,
 }: MemberSwipeListProps) {
   const t = useTranslations();
+  const locale = useLocale();
   const { verPista, alAbrir } = usePistaDeslizar();
 
   return (
     <div className="space-y-2">
       {canManage && verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
-          Desliza a la izquierda para editar, ver permisos o eliminar
+          {t("users.ui.swipeHint")}
         </p>
       )}
 
@@ -75,7 +77,7 @@ export function MemberSwipeList({
 
         const accionNombre: AccionFila = {
           id: "nombre",
-          etiqueta: "Nombre",
+          etiqueta: t("users.ui.name"),
           color: COLOR_EDITAR,
           icono: <Pencil size={18} strokeWidth={2} />,
           alElegir: () => onEditarNombre(member),
@@ -85,18 +87,18 @@ export function MemberSwipeList({
           ? [
               {
                 id: "eliminar",
-                etiqueta: "Eliminar",
+                etiqueta: t("users.ui.delete"),
                 color: COLOR_ELIMINAR,
                 icono: <Trash2 size={18} strokeWidth={2} />,
                 alElegir: () => onEliminar(member),
                 confirmar: {
-                  titulo: `¿Eliminar a ${correo}?`,
-                  descripcion: "Pierde el acceso al negocio. Esta acción no se puede deshacer.",
+                  titulo: t("users.ui.deleteTitle", { nombre: correo }),
+                  descripcion: t("users.ui.deleteDesc"),
                 },
               },
               {
                 id: "permisos",
-                etiqueta: "Permisos",
+                etiqueta: t("users.ui.permissions"),
                 color: COLOR_EDITAR,
                 icono: <SlidersHorizontal size={18} strokeWidth={2} />,
                 alElegir: () => onPermisos(member),
@@ -135,7 +137,7 @@ export function MemberSwipeList({
                         onCambiarRol(member);
                       }}
                       className="cursor-pointer transition-opacity hover:opacity-80"
-                      aria-label={`Cambiar el rol de ${correo}`}
+                      aria-label={t("users.ui.changeRoleOf", { nombre: correo })}
                     >
                       {etiquetaRol}
                     </button>
@@ -146,11 +148,11 @@ export function MemberSwipeList({
                 <span className="min-w-0 truncate opacity-60">
                   {hayVarias && (
                     <>
-                      {esDueno ? "Todas (dueño)" : sucursalesDe(member)}
+                      {esDueno ? t("users.page.allOwner") : sucursalesDe(member)}
                       {" · "}
                     </>
                   )}
-                  {fechaCorta(member.creado_en)}
+                  {fechaCorta(member.creado_en, localeIntl(locale))}
                 </span>
               </div>
             </div>
@@ -166,8 +168,8 @@ export function MemberSwipeList({
                     e.stopPropagation();
                     onSucursales(member);
                   }}
-                  aria-label={`Sucursales de ${correo}`}
-                  title="Sucursales"
+                  aria-label={t("users.page.branchesOf", { nombre: correo })}
+                  title={t("users.page.colBranches")}
                 >
                   <Store className="h-4 w-4" />
                 </Button>

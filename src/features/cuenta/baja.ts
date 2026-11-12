@@ -17,8 +17,8 @@ export interface SolicitudBaja {
 }
 
 /** «15 de noviembre de 2026», en hora de Ciudad de México. */
-export function fechaLegible(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-MX", {
+export function fechaLegible(iso: string, locale = "es-MX"): string {
+  return new Date(iso).toLocaleDateString(locale, {
     timeZone: "America/Mexico_City",
     day: "numeric",
     month: "long",

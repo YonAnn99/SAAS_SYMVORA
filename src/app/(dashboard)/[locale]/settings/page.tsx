@@ -1,6 +1,6 @@
 "use client";
 
-import { CLAVES_MODULO, INFO_MODULO, normalizarModulos, type ClaveModulo } from "@/lib/modulos";
+import { CLAVES_MODULO, normalizarModulos, type ClaveModulo } from "@/lib/modulos";
 import { useModulos } from "@/hooks/use-modulos";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
@@ -29,6 +29,9 @@ import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { subirLogoNegocio } from "@/lib/logo-negocio";
 import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { SelectSimple } from "@/components/ui/select-simple";
+import { useConfirmar } from "@/components/ui/confirmar";
+import { MONEDAS, formatMoneda, monedaDe, type Moneda } from "@/lib/money";
 
 const PESTANAS = ["general", "modules", "payments", "printer"];
 
@@ -67,6 +70,8 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
+  const [moneda, setMoneda] = useState<Moneda>("MXN");
+  const confirmar = useConfirmar();
 
   useEffect(() => {
     if (tenantLoading || !tenantId) return;
@@ -86,6 +91,7 @@ export default function SettingsPage() {
         setPhone(tenantData.telefono || "");
         setAddress(tenantData.direccion || "");
         setEmail(tenantData.email || "");
+        setMoneda(monedaDe(tenantData.moneda));
       }
 
       const { data: settingsData } = await supabase
@@ -106,9 +112,30 @@ export default function SettingsPage() {
 
   const handleSaveCompany = async () => {
     if (!tenant) return;
-    setSaving(true);
-
     const supabase = createSupabaseBrowserClient();
+
+    // Cambiar la moneda NO convierte montos: si ya hay ventas, se avisa antes.
+    const monedaAnterior = monedaDe(tenant.moneda);
+    if (moneda !== monedaAnterior) {
+      const { count } = await supabase
+        .from("ventas")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenant.id);
+      if ((count ?? 0) > 0) {
+        const si = await confirmar({
+          titulo: t("settings.currency.confirmTitle"),
+          descripcion: t("settings.currency.confirmDesc", {
+            antes: formatMoneda(100, monedaAnterior),
+            despues: formatMoneda(100, moneda),
+          }),
+          accion: t("settings.currency.confirmAction"),
+          tono: "aviso",
+        });
+        if (!si) return;
+      }
+    }
+
+    setSaving(true);
     const { error } = await supabase
       .from("tenants")
       .update({
@@ -116,13 +143,15 @@ export default function SettingsPage() {
         telefono: phone,
         direccion: address,
         email: email,
+        moneda,
       })
       .eq("id", tenant.id);
 
     if (error) {
-      toast.error("Error al guardar: " + error.message);
+      toast.error(t("settings.msg.saveError", { error: error.message }));
     } else {
-      toast.success("Cambios guardados");
+      toast.success(t("settings.msg.saved"));
+      setTenant({ ...tenant, moneda });
       // El menu lateral y el dock leen el nombre del contexto del negocio.
       void refetchTenantContext();
     }
@@ -139,7 +168,7 @@ export default function SettingsPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast.error("No se pudo identificar al usuario actual");
+      toast.error(t("settings.msg.noUser"));
       setLogoUploading(false);
       return;
     }
@@ -150,7 +179,9 @@ export default function SettingsPage() {
         logoUrl = await subirLogoNegocio(supabase, user.id, file);
       } catch (err) {
         toast.error(
-          "Error al subir el logo: " + (err instanceof Error ? err.message : "inténtalo de nuevo")
+          t("settings.msg.logoUploadError", {
+            error: err instanceof Error ? err.message : t("settings.msg.tryAgain"),
+          })
         );
         return;
       }
@@ -161,13 +192,13 @@ export default function SettingsPage() {
         .eq("id", tenant.id);
 
       if (updateError) {
-        toast.error("Error al guardar el logo: " + updateError.message);
+        toast.error(t("settings.msg.logoSaveError", { error: updateError.message }));
         return;
       }
 
       setTenant({ ...tenant, logo_url: logoUrl });
       void refetchTenantContext();
-      toast.success("Logo actualizado");
+      toast.success(t("settings.msg.logoUpdated"));
     } finally {
       setLogoUploading(false);
     }
@@ -184,11 +215,11 @@ export default function SettingsPage() {
       .eq("id", tenant.id);
 
     if (error) {
-      toast.error("Error al quitar el logo: " + error.message);
+      toast.error(t("settings.msg.logoRemoveError", { error: error.message }));
     } else {
       setTenant({ ...tenant, logo_url: null });
       void refetchTenantContext();
-      toast.success("Logo eliminado");
+      toast.success(t("settings.msg.logoRemoved"));
     }
     setLogoUploading(false);
   };
@@ -217,7 +248,7 @@ export default function SettingsPage() {
 
     if (error) {
       setModulo(module, !value);
-      toast.error("Error al actualizar módulo: " + error.message);
+      toast.error(t("settings.msg.moduleError", { error: error.message }));
     }
   };
 
@@ -242,14 +273,14 @@ export default function SettingsPage() {
     if (error) {
       setTerminalExterna(!value);
       setSettings(settings);
-      toast.error("Error al guardar la terminal: " + error.message);
+      toast.error(t("settings.msg.terminalError", { error: error.message }));
     }
   };
 
   if (!tenantLoading && !tenantId) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
-        No se encontró la configuración del tenant.
+        {t("settings.notFound")}
       </div>
     );
   }
@@ -267,7 +298,7 @@ export default function SettingsPage() {
       <div className="animate-fade-in-up stagger-1">
         <EncabezadoModulo
           titulo={t("settings.title")}
-          descripcion="Configura los ajustes de tu organización"
+          descripcion={t("settings.subtitle")}
         />
       </div>
 
@@ -299,7 +330,7 @@ export default function SettingsPage() {
           {/* Antes era un boton en la barra del Punto de venta. */}
           <TabsTrigger value="printer" className={CLASE_PESTANA}>
             <Printer className="h-3.5 w-3.5 max-sm:hidden" />
-            Impresora
+            {t("settings.printer")}
           </TabsTrigger>
         </TabsList>
 
@@ -341,6 +372,16 @@ export default function SettingsPage() {
                       onChange={(e) => setPhone(e.target.value)}
                       className="h-8 text-sm"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="currency" className="text-xs">{t("settings.currency.label")}</Label>
+                    <SelectSimple
+                      id="currency"
+                      value={moneda}
+                      onChange={(v) => setMoneda(monedaDe(v))}
+                      opciones={MONEDAS.map((m) => ({ value: m, label: t(`settings.currency.options.${m}`) }))}
+                    />
+                    <p className="text-[11px] text-muted-foreground">{t("settings.currency.hint")}</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="address" className="text-xs">{t("common.address")}</Label>
@@ -392,8 +433,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-0">
               <p className="pb-2 text-[11px] text-muted-foreground">
-                Apagar un módulo oculta sus opciones en el sistema. No se borra nada: lo
-                que ya lo usa sigue funcionando, y al encenderlo vuelve todo.
+                {t("settings.modulesHint")}
               </p>
               {settings &&
                 CLAVES_MODULO.map((key, i) => {
@@ -404,9 +444,9 @@ export default function SettingsPage() {
                       {i > 0 && <Separator />}
                       <div className="flex items-center justify-between gap-4 py-3">
                         <div className="min-w-0 space-y-0.5">
-                          <Label className="text-xs">{INFO_MODULO[key].nombre}</Label>
+                          <Label className="text-xs">{t(`settings.moduleInfo.${key}.name`)}</Label>
                           <p className="text-[11px] text-muted-foreground">
-                            {INFO_MODULO[key].efecto}
+                            {t(`settings.moduleInfo.${key}.effect`)}
                           </p>
                         </div>
                         <Switch
@@ -428,11 +468,9 @@ export default function SettingsPage() {
           <Card>
             <CardContent className="flex items-center justify-between gap-4 py-4">
               <div className="space-y-0.5">
-                <Label className="text-xs">Tengo una terminal de tarjeta externa</Label>
+                <Label className="text-xs">{t("settings.externalTerminal")}</Label>
                 <p className="text-[11px] text-muted-foreground">
-                  Banco, Clip, Getnet… Cobras en tu terminal y registras la venta con «Tarjeta».
-                  Sin terminal externa ni Mercado Pago Point, «Tarjeta» queda bloqueado en el
-                  punto de venta.
+                  {t("settings.externalTerminalHint")}
                 </p>
               </div>
               <Switch

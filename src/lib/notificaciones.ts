@@ -101,15 +101,28 @@ const MINUTO = 60_000;
 const HORA = 60 * MINUTO;
 const DIA = 24 * HORA;
 
+/** Cuánto pasó, sin texto: la interfaz lo traduce (`notifications.ago.<clave>`). */
+export function tiempoTranscurrido(
+  iso: string,
+  ahora: number = Date.now()
+): { clave: "moment" | "minutes" | "hours" | "yesterday" | "days"; n: number } {
+  const ms = ahora - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < MINUTO) return { clave: "moment", n: 0 };
+  if (ms < HORA) return { clave: "minutes", n: Math.floor(ms / MINUTO) };
+  if (ms < DIA) return { clave: "hours", n: Math.floor(ms / HORA) };
+  const dias = Math.floor(ms / DIA);
+  if (dias === 1) return { clave: "yesterday", n: 1 };
+  return { clave: "days", n: dias };
+}
+
 /** "hace un momento", "hace 5 min", "hace 3 h", "ayer", "hace 4 días". */
 export function haceCuanto(iso: string, ahora: number = Date.now()): string {
-  const ms = ahora - new Date(iso).getTime();
-  if (!Number.isFinite(ms) || ms < MINUTO) return "hace un momento";
-  if (ms < HORA) return `hace ${Math.floor(ms / MINUTO)} min`;
-  if (ms < DIA) return `hace ${Math.floor(ms / HORA)} h`;
-  const dias = Math.floor(ms / DIA);
-  if (dias === 1) return "ayer";
-  return `hace ${dias} días`;
+  const { clave, n } = tiempoTranscurrido(iso, ahora);
+  if (clave === "moment") return "hace un momento";
+  if (clave === "minutes") return `hace ${n} min`;
+  if (clave === "hours") return `hace ${n} h`;
+  if (clave === "yesterday") return "ayer";
+  return `hace ${n} días`;
 }
 
 /**

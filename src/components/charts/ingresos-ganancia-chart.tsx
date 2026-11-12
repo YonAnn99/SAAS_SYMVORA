@@ -2,8 +2,10 @@
 
 import "./registro";
 import { Chart } from "react-chartjs-2";
+import { useTranslations } from "next-intl";
 import type { ChartData, ChartOptions } from "chart.js";
 import { useTemaGrafica } from "./use-tema-grafica";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 import { ejeCategorias, ejeMontos, leyendaBase, opcionesBase, tooltipBase } from "./opciones";
 import { montoCompleto } from "./formato-grafica";
 import { TarjetaGrafica } from "./tarjeta-grafica";
@@ -23,6 +25,8 @@ export function IngresosGananciaChart({
   productosSinCosto: number;
 }) {
   const tema = useTemaGrafica();
+  const moneda = useMonedaDelNegocio();
+  const t = useTranslations("reports.charts");
   const vacia = data.every((d) => d.ingresos === 0 && d.ganancia === 0);
 
   const datos: ChartData<"bar" | "line"> = {
@@ -30,7 +34,7 @@ export function IngresosGananciaChart({
     datasets: [
       {
         type: "line" as const,
-        label: "Ganancia",
+        label: t("profit"),
         data: data.map((d) => d.ganancia),
         borderColor: tema.serie[1],
         backgroundColor: tema.serie[1],
@@ -42,7 +46,7 @@ export function IngresosGananciaChart({
       },
       {
         type: "bar" as const,
-        label: "Ingresos (sin IVA)",
+        label: t("revenue"),
         data: data.map((d) => d.ingresos),
         backgroundColor: tema.principal,
         borderRadius: 4,
@@ -55,13 +59,13 @@ export function IngresosGananciaChart({
   const opciones: ChartOptions<"bar" | "line"> = {
     ...opcionesBase<"bar" | "line">(tema),
     // `beginAtZero` (de ejeMontos) igual baja del cero si hay ganancia negativa.
-    scales: { x: ejeCategorias(tema), y: ejeMontos(tema) },
+    scales: { x: ejeCategorias(tema), y: ejeMontos(tema, moneda) },
     plugins: {
       legend: leyendaBase(tema),
       tooltip: {
         ...tooltipBase(tema),
         callbacks: {
-          label: (ctx) => ` ${ctx.dataset.label}: ${montoCompleto(Number(ctx.parsed.y))}`,
+          label: (ctx) => ` ${ctx.dataset.label}: ${montoCompleto(Number(ctx.parsed.y), moneda)}`,
         },
       },
     },
@@ -74,9 +78,7 @@ export function IngresosGananciaChart({
       pie={
         productosSinCosto > 0 ? (
           <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
-            {productosSinCosto === 1
-              ? "1 producto sin costo capturado no se incluye."
-              : `${productosSinCosto} productos sin costo capturado no se incluyen.`}
+            {t("noCost", { count: productosSinCosto })}
           </p>
         ) : null
       }

@@ -1,6 +1,10 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useLocale, useTranslations } from "next-intl";
 import { Calendar, History, Pencil } from "lucide-react";
+import { localeIntl } from "@/lib/idioma";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -37,6 +41,7 @@ interface LotsTableProps {
 }
 
 export function BadgeCaducidad({ fecha }: { fecha: string | null }) {
+  const t = useTranslations("products.lots");
   const estado = estadoCaducidad(fecha);
   const dias = diasParaCaducar(fecha);
   if (!estado || dias === null) return null;
@@ -44,7 +49,7 @@ export function BadgeCaducidad({ fecha }: { fecha: string | null }) {
   if (estado === "vencido") {
     return (
       <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-        Caducado
+        {t("expired")}
       </Badge>
     );
   }
@@ -56,13 +61,13 @@ export function BadgeCaducidad({ fecha }: { fecha: string | null }) {
         : "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300";
   return (
     <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${clase}`}>
-      {dias === 0 ? "Hoy" : `${dias} días`}
+      {dias === 0 ? t("today") : t("days", { count: dias })}
     </Badge>
   );
 }
 
-function fechaCorta(fecha: string): string {
-  return new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX");
+function fechaCorta(fecha: string, locale: string): string {
+  return new Date(`${fecha}T12:00:00`).toLocaleDateString(localeIntl(locale));
 }
 
 export function LotsTable({
@@ -77,29 +82,32 @@ export function LotsTable({
   onVer,
   onAdd,
 }: LotsTableProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("products.lots");
+  const locale = useLocale();
   return (
     <Card className="animate-fade-in-up stagger-3">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <CardTitle className="text-sm font-medium">Lotes</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("tableTitle")}</CardTitle>
           <span className="text-xs text-muted-foreground font-mono">
-            {filteredLots.length} de {lots.length} lotes
+            {t("countOf", { shown: filteredLots.length, total: lots.length })}
           </span>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-            Cargando...
+            {t("loading")}
           </div>
         ) : filteredLots.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <Calendar className="h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
-              {lots.length === 0 ? "No hay lotes registrados" : "No se encontraron lotes"}
+              {lots.length === 0 ? t("none") : t("noneFound")}
             </p>
             <SpecularActionButton tone="add" className="h-8 mt-1" onClick={onAdd}>
-              Registrar lote
+              {t("register")}
             </SpecularActionButton>
           </div>
         ) : (
@@ -107,12 +115,12 @@ export function LotsTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs uppercase tracking-wider">Producto</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">N° Lote</TableHead>
-                  <TableHead className="text-right text-xs uppercase tracking-wider">Existencia</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">Caducidad</TableHead>
-                  <TableHead className="text-right text-xs uppercase tracking-wider">Costo</TableHead>
-                  <TableHead className="text-right text-xs uppercase tracking-wider">Acciones</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("product")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("colNumber")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">{t("colStock")}</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">{t("colExpiry")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">{t("colCost")}</TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">{t("colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -128,7 +136,7 @@ export function LotsTable({
                           <span className="font-mono">{cantidad}</span>
                         ) : (
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            Agotado
+                            {t("soldOut")}
                           </Badge>
                         )}
                         {!sucursalSeleccionada && enSucursales.length > 1 && (
@@ -147,7 +155,7 @@ export function LotsTable({
                       <TableCell className="text-sm">
                         {lot.fecha_caducidad ? (
                           <div className="flex items-center gap-2 whitespace-nowrap">
-                            {fechaCorta(lot.fecha_caducidad)}
+                            {fechaCorta(lot.fecha_caducidad, locale)}
                             <BadgeCaducidad fecha={lot.fecha_caducidad} />
                           </div>
                         ) : (
@@ -155,7 +163,7 @@ export function LotsTable({
                         )}
                       </TableCell>
                       <TableCell className="text-right text-sm font-mono">
-                        ${Number(lot.costo_unitario).toFixed(2)}
+                        {formatear(Number(lot.costo_unitario))}
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
@@ -164,7 +172,7 @@ export function LotsTable({
                             size="sm"
                             className="h-7 text-xs"
                             onClick={() => onVer(lot)}
-                            aria-label={`Movimientos del lote ${lot.numero_lote}`}
+                            aria-label={t("movementsOf", { numero: lot.numero_lote })}
                           >
                             <History className="h-3 w-3" />
                           </Button>
@@ -175,11 +183,11 @@ export function LotsTable({
                             onClick={() => onEdit(lot)}
                           >
                             <Pencil className="h-3 w-3 mr-1" />
-                            Editar
+                            {t("edit")}
                           </Button>
                           <BotonEliminar
-                            nombre={`el lote ${lot.numero_lote}`}
-                            detalle="Las piezas no se borran del inventario: quedan sin lote. Un lote con ventas o traspasos no se puede eliminar."
+                            nombre={t("theLot", { numero: lot.numero_lote })}
+                            detalle={t("deleteDetail")}
                             onEliminar={() => onDelete(lot)}
                           />
                         </div>

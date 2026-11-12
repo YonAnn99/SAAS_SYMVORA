@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Copy, ExternalLink, Globe, Share2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -34,6 +34,8 @@ export function EstadoCatalogo({
   const base = useBaseCatalogo();
   const [guardando, setGuardando] = useState(false);
   const [svg, setSvg] = useState<string | null>(null);
+  const t = useTranslations("onlineCatalog.status");
+  const te = useTranslations("onlineCatalog.errors");
 
   const activo = guardado?.activo ?? false;
   const enlace = activo && guardado ? urlCatalogo(guardado.slug, locale, base) : null;
@@ -50,16 +52,16 @@ export function EstadoCatalogo({
   const cambiar = async (publicar: boolean) => {
     const actual = guardado ?? borrador;
     if (publicar && !actual.whatsapp) {
-      toast.error("Escribe el WhatsApp que recibirá los pedidos");
+      toast.error(t("whatsappRequired"));
       onFaltanDatos();
       return;
     }
     setGuardando(true);
     try {
       await guardar({ ...actual, activo: publicar });
-      toast.success(publicar ? "¡Tu catálogo ya está en línea!" : "Catálogo apagado: el enlace ya no muestra productos");
+      toast.success(publicar ? t("published") : t("unpublished"));
     } catch (error) {
-      toast.error(mensajeErrorCatalogo(error));
+      toast.error(mensajeErrorCatalogo(error, te));
     } finally {
       setGuardando(false);
     }
@@ -69,9 +71,9 @@ export function EstadoCatalogo({
     if (!enlace) return;
     try {
       await navigator.clipboard.writeText(enlace);
-      toast.success("Enlace copiado");
+      toast.success(t("copied"));
     } catch {
-      toast.error("No se pudo copiar el enlace");
+      toast.error(t("copyError"));
     }
   };
 
@@ -82,18 +84,17 @@ export function EstadoCatalogo({
           <div className="min-w-0 space-y-1">
             <p className="flex items-center gap-2 text-sm font-medium">
               <Globe className="h-4 w-4 text-muted-foreground" />
-              {activo ? "Tu catálogo está en línea" : "Tu catálogo está apagado"}
+              {activo ? t("online") : t("offline")}
             </p>
             <p className="text-xs text-muted-foreground">
-              Tus clientes ven tus productos, arman su pedido y te lo mandan por WhatsApp. No cobra en línea ni
-              descuenta inventario: tú confirmas y cobras como siempre.
+              {t("desc")}
             </p>
           </div>
           <Switch
             checked={activo}
             disabled={guardando}
             onCheckedChange={(v) => void cambiar(v)}
-            aria-label="Publicar catálogo en línea"
+            aria-label={t("publishAria")}
           />
         </div>
 
@@ -108,7 +109,7 @@ export function EstadoCatalogo({
               <p className="rounded-lg bg-muted px-3 py-2 font-mono text-xs break-all">{enlace}</p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => void copiar()}>
-                  <Copy className="h-3.5 w-3.5" /> Copiar enlace
+                  <Copy className="h-3.5 w-3.5" /> {t("copy")}
                 </Button>
                 <a
                   href={enlace}
@@ -116,7 +117,7 @@ export function EstadoCatalogo({
                   rel="noopener noreferrer"
                   className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
                 >
-                  <ExternalLink className="h-3.5 w-3.5" /> Abrir catálogo
+                  <ExternalLink className="h-3.5 w-3.5" /> {t("open")}
                 </a>
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(`Mira nuestro catálogo y haz tu pedido: ${enlace}`)}`}
@@ -124,11 +125,11 @@ export function EstadoCatalogo({
                   rel="noopener noreferrer"
                   className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
                 >
-                  <Share2 className="h-3.5 w-3.5" /> Compartir por WhatsApp
+                  <Share2 className="h-3.5 w-3.5" /> {t("shareWhatsApp")}
                 </a>
               </div>
               <p className="text-xs text-muted-foreground">
-                Ponlo en tu estado de WhatsApp, en Facebook o imprime el QR para tu mostrador.
+                {t("shareHint")}
               </p>
             </div>
           </div>

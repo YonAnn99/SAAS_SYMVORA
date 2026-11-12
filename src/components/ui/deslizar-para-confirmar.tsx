@@ -12,6 +12,7 @@
  * que el destello nazca de ahi.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import SlideCommit from "@/components/ui/slide-commit";
@@ -29,13 +30,14 @@ interface DeslizarParaConfirmarProps {
 export function DeslizarParaConfirmar({
   label,
   doneLabel,
-  errorLabel = "No se completó",
+  errorLabel,
   successColor,
   disabled = false,
   onConfirm,
   onDone,
 }: DeslizarParaConfirmarProps) {
   const { resolvedTheme } = useTheme();
+  const t = useTranslations("common.slide");
   const oscuro = resolvedTheme === "dark";
 
   // El slider hace sus cuentas con un ancho en pixeles: se mide el contenedor
@@ -61,7 +63,7 @@ export function DeslizarParaConfirmar({
           radius={26}
           label={label}
           doneLabel={doneLabel}
-          errorLabel={errorLabel}
+          errorLabel={errorLabel ?? t("notCompleted")}
           // Oscuro como la referencia; claro, invertido (igual que las
           // pestañas). Van en hex: el componente calcula el color del texto a
           // partir de ellos.

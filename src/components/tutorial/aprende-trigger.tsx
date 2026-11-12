@@ -1,6 +1,7 @@
 "use client";
 
 import { GraduationCap } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ import { guiaParaRuta, rutaGuia } from "@/features/marketing/aprende";
  * Un <a> y no `Link`: es otra pestaña y otro host, no navegacion interna.
  */
 export function AprendeTrigger() {
+  const t = useTranslations("layout.learn");
   const pathname = usePathname();
   const guia = guiaParaRuta(pathname);
 
@@ -24,11 +26,12 @@ export function AprendeTrigger() {
       href={rutaGuia(guia?.slug)}
       target="_blank"
       rel="noopener"
-      title={guia ? `Guía: ${guia.titulo}` : "Guías de uso de SYMVORA"}
+      // Las guias estan en espanol: su titulo se muestra tal cual.
+      title={guia ? t("guide", { titulo: guia.titulo }) : t("allGuides")}
       className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1.5 text-muted-foreground hover:text-foreground")}
     >
       <GraduationCap className="h-4 w-4" aria-hidden="true" />
-      <span className="hidden md:inline">Aprende</span>
+      <span className="hidden md:inline">{t("label")}</span>
     </a>
   );
 }

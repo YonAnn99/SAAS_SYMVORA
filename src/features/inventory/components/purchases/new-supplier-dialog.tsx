@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -30,6 +31,7 @@ export function NewSupplierDialog({
   onConfirm,
   editingSupplier,
 }: NewSupplierDialogProps) {
+  const t = useTranslations("purchases.suppliers");
   const isEditing = !!editingSupplier;
 
   const [formData, setFormData] = useState<SupplierFormData>({
@@ -67,7 +69,7 @@ export function NewSupplierDialog({
 
   const handleConfirm = () => {
     if (!formData.nombre.trim()) {
-      toast.error("Ingresa el nombre del proveedor");
+      toast.error(t("nameRequired"));
       return;
     }
     // El celular se valida AL CAPTURARLO, no al querer usarlo. Antes un numero
@@ -75,7 +77,7 @@ export function NewSupplierDialog({
     // el boton de WhatsApp de la orden simplemente no aparecia, sin explicar
     // por que.
     if (!normalizarTelefonoMx(formData.phone)) {
-      toast.error("Escribe un celular de 10 dígitos para poder mandarle pedidos");
+      toast.error(t("phoneInvalid"));
       return;
     }
     onConfirm({ ...formData, nombre: formData.nombre.trim() });
@@ -86,19 +88,19 @@ export function NewSupplierDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-base">
-            {isEditing ? "Editar proveedor" : "Agregar proveedor"}
+            {isEditing ? t("editTitle") : t("add")}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {isEditing
-              ? "Actualiza la información del proveedor"
-              : "Registra un nuevo proveedor en tu catálogo"}
+              ? t("editDesc")
+              : t("newDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Nombre *</Label>
+            <Label className="text-xs">{t("name")}</Label>
             <Input
-              placeholder="Nombre del proveedor"
+              placeholder={t("namePlaceholder")}
               value={formData.nombre}
               onChange={(e) => updateField("nombre", e.target.value)}
               className="h-8 text-sm"
@@ -108,7 +110,7 @@ export function NewSupplierDialog({
               (mandar el pedido por WhatsApp), y el orden del formulario le dice
               al usuario qué importa. */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Celular *</Label>
+            <Label className="text-xs">{t("phoneRequired")}</Label>
             <Input
               type="tel"
               inputMode="tel"
@@ -118,14 +120,14 @@ export function NewSupplierDialog({
               className="h-8 text-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              Con este número podrás mandarle los pedidos por WhatsApp.
+              {t("phoneHint")}
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Email (opcional)</Label>
+            <Label className="text-xs">{t("email")}</Label>
             <Input
               type="email"
-              placeholder="correo@ejemplo.com"
+              placeholder={t("emailPlaceholder")}
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
               className="h-8 text-sm"
@@ -139,10 +141,10 @@ export function NewSupplierDialog({
             className="h-8"
             onClick={() => handleOpenChange(false)}
           >
-            Cancelar
+            {t("cancel")}
           </Button>
           <SpecularActionButton tone="add" className="h-8" onClick={handleConfirm}>
-            {isEditing ? "Guardar cambios" : "Guardar proveedor"}
+            {isEditing ? t("saveChanges") : t("save")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

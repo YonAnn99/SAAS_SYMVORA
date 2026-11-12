@@ -8,6 +8,7 @@
  * ve lo que ve: el rol dejó de contar toda la historia desde la migración 055.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Info, Lock, RotateCcw } from "lucide-react";
@@ -64,6 +65,8 @@ export function PermissionsDialog({
   onSaved,
 }: PermissionsDialogProps) {
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
+  const t = useTranslations("users.ui");
+  const tr = useTranslations("users.roles");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -131,17 +134,17 @@ export function PermissionsDialog({
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Error al guardar");
+      if (!res.ok) throw new Error(json.error || t("saveError"));
 
       toast.success(
         overrides.length === 0
-          ? "Permisos restablecidos a los del rol"
-          : `${overrides.length} ${overrides.length === 1 ? "excepción guardada" : "excepciones guardadas"}`
+          ? t("permsReset")
+          : t("exceptionsSaved", { count: overrides.length })
       );
       onSaved();
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al guardar");
+      toast.error(error instanceof Error ? error.message : t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -164,7 +167,7 @@ export function PermissionsDialog({
     if (
       exceptionCount > 0 &&
       !window.confirm(
-        `Se quitarán ${exceptionCount} ${exceptionCount === 1 ? "excepción" : "excepciones"} y este usuario volverá a tener exactamente lo que da su rol ${targetUserRole}. ¿Continuar?`
+        t("resetConfirm", { count: exceptionCount, rol: tr(targetUserRole) })
       )
     ) {
       return;
@@ -183,17 +186,17 @@ export function PermissionsDialog({
       <div key={mod.key} className="flex items-start justify-between gap-3 py-2.5">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{mod.label}</span>
+            <span className="text-sm font-medium">{t(`modules.${mod.key}.label`)}</span>
             {isException && (
               <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                manual
+                {t("manual")}
               </span>
             )}
             {!isException && fromRole && (
-              <span className="text-[10px] text-muted-foreground">por rol</span>
+              <span className="text-[10px] text-muted-foreground">{t("byRole")}</span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">{mod.description}</p>
+          <p className="text-xs text-muted-foreground">{t(`modules.${mod.key}.description`)}</p>
         </div>
         <Switch
           checked={value}
@@ -208,10 +211,9 @@ export function PermissionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Permisos de {targetUserEmail}</DialogTitle>
+          <DialogTitle>{t("permsOf", { nombre: targetUserEmail })}</DialogTitle>
           <DialogDescription>
-            Rol actual: <strong>{targetUserRole}</strong>. Los switches son
-            excepciones sobre lo que ese rol concede.
+            {t.rich("permsDesc", { rol: tr(targetUserRole), b: (chunks) => <strong>{chunks}</strong> })}
           </DialogDescription>
         </DialogHeader>
 
@@ -220,21 +222,20 @@ export function PermissionsDialog({
         <div className="rounded-md border border-border bg-muted/40 p-3">
           <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium">
             <Lock className="h-3 w-3 shrink-0" />
-            No se pueden conceder
+            {t("notGrantable")}
           </p>
           {locked
             .filter((m) => m.notGrantableReason)
             .map((m) => (
               <p key={m.key} className="text-xs text-muted-foreground">
-                <strong>{m.label}:</strong> {m.notGrantableReason}
+                <strong>{t(`modules.${m.key}.label`)}:</strong> {t(`modules.${m.key}.reason`)}
               </p>
             ))}
         </div>
 
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
           <Info className="mt-0.5 h-3 w-3 shrink-0" />
-          Los cambios se aplican de inmediato, también en la base de datos: no
-          es solo lo que la persona ve, sino lo que puede hacer.
+          {t("appliesNow")}
         </p>
 
         <DialogFooter className="sm:justify-between">
@@ -245,14 +246,14 @@ export function PermissionsDialog({
             className="gap-1.5"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Restablecer
+            {t("reset")}
           </Button>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button onClick={() => void save()} disabled={loading || saving}>
-              {saving ? "Guardando…" : "Guardar"}
+              {saving ? t("saving") : t("save")}
             </Button>
           </div>
         </DialogFooter>

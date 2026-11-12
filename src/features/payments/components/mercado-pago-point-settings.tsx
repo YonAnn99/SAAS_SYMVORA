@@ -53,49 +53,21 @@ const URL_WEBHOOK = "https://app.symvora.com.mx/api/mercadopago/webhook";
  * y pedia poner la terminal en modo PDV desde la app, cuando "Probar conexion"
  * ya lo hace (`setTerminalOperatingMode` en /api/mercadopago/test-connection).
  */
-const INSTRUCTIONS: { title: string; body: string; webhook?: boolean }[] = [
-  {
-    title: "Crea una aplicación en Mercado Pago",
-    body: "Entra a mercadopago.com.mx/developers con la MISMA cuenta a la que está vinculada tu terminal. Ve a «Tus integraciones» → «Crear aplicación». Ponle un nombre (por ejemplo «SYMVORA»), elige «Pagos presenciales» y, como producto, «Point».",
-  },
-  {
-    title: "Copia el Access Token de producción",
-    body: "Dentro de tu aplicación abre «Credenciales de producción» y copia el «Access Token» (empieza con APP_USR-). Las credenciales de prueba no funcionan con una terminal real.",
-  },
-  {
-    title: "Configura el webhook",
-    body: "En tu aplicación entra a «Webhooks» → «Configurar notificaciones», pestaña «Modo productivo». Pega esta URL, marca el evento «Order (Mercado Pago)» y guarda. Después copia la «Clave secreta» que aparece en esa misma pantalla.",
-    webhook: true,
-  },
-  {
-    title: "Pega las dos claves aquí y guarda",
-    body: "Access Token y Clave secreta van en los campos de arriba. Pulsa «Guardar»: se guardan cifradas.",
-  },
-  {
-    title: "Elige tu terminal",
-    body: "Con la terminal encendida y con internet, pulsa «Probar conexión»: aparece en la lista. Elígela y pulsa «Probar conexión» otra vez; SYMVORA la pasa a modo Punto de Venta (PDV). Reinicia la terminal para que tome el cambio.",
-  },
-  {
-    title: "Activa y cobra",
-    body: "Prende «Habilitar terminal» y guarda. En el punto de venta elige «Tarjeta (terminal)»: el monto llega solo a la terminal. Si el cobro ya apareció en la terminal y quieres cancelarlo, cancélalo en la terminal.",
-  },
+/** Texto de cada paso: `settings.mp.steps.<n>.title/body`; el 3 lleva la URL del webhook. */
+const INSTRUCTIONS: { paso: number; webhook?: boolean }[] = [
+  { paso: 0 },
+  { paso: 1 },
+  { paso: 2, webhook: true },
+  { paso: 3 },
+  { paso: 4 },
+  { paso: 5 },
 ];
 
+
 /** Lo que más se atora al conectarla. */
-const PROBLEMAS: { si: string; entonces: string }[] = [
-  {
-    si: "La terminal no aparece al probar la conexión",
-    entonces: "La aplicación se creó con otra cuenta de Mercado Pago, o la terminal está apagada o sin internet.",
-  },
-  {
-    si: "El punto de venta se queda «esperando» aunque ya pagaron",
-    entonces: "Falta el webhook o la Clave secreta no coincide: revisa el paso 3 y vuelve a pegar la clave.",
-  },
-  {
-    si: "La terminal no recibe el cobro",
-    entonces: "No está en modo PDV: repite el paso 5 y reiníciala.",
-  },
-];
+/** Texto de cada problema: `settings.mp.problems.<n>.if/then`. */
+const PROBLEMAS = [0, 1, 2] as const;
+
 
 /**
  * Cobro con terminal Mercado Pago Point: habilitarla, sus claves, elegir la
@@ -130,6 +102,8 @@ export function MercadoPagoPointSettings() {
     if (!terminal) return terminalId;
     return `${terminal.description || terminal.id}${terminal.operating_mode === "PDV" ? " (PDV)" : " (no-PDV)"}`;
   }, [terminalId, terminalOptions]);
+  const tm = useTranslations("settings.mp");
+  const { moneda } = useCurrentTenant();
 
   useEffect(() => {
     if (tenantLoading) return;
@@ -139,7 +113,7 @@ export function MercadoPagoPointSettings() {
         const res = await fetch("/api/mercadopago/config", { method: "GET" });
         const data = await res.json();
         if (!res.ok || !data.success) {
-          throw new Error(data.error || "No se pudo leer la configuración");
+          throw new Error(data.error || tm("readError"));
         }
         const cfg = data.config as MpConfigStatus;
         setHabilitado(cfg.habilitado);
@@ -148,7 +122,7 @@ export function MercadoPagoPointSettings() {
         setWebhookSecretSet(cfg.webhook_secret_set);
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Error al cargar configuración"
+          error instanceof Error ? error.message : tm("loadError")
         );
       } finally {
         setLoading(false);
@@ -156,7 +130,7 @@ export function MercadoPagoPointSettings() {
     };
 
     loadConfig();
-  }, [tenantLoading]);
+  }, [tenantLoading, tm]);
 
   const handleTestConnection = async () => {
     if (!tenantId) return;
@@ -173,15 +147,15 @@ export function MercadoPagoPointSettings() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "No se pudo conectar");
+        throw new Error(data.error || tm("connectError"));
       }
       setTerminalOptions(data.terminals);
       if (data.terminal_id) setTerminalId(data.terminal_id);
       setConnectionOk(true);
-      toast.success("Conexión exitosa con Mercado Pago");
+      toast.success(tm("connected"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "No se pudo conectar con Mercado Pago"
+        error instanceof Error ? error.message : tm("connectMpError")
       );
     } finally {
       setTesting(false);
@@ -205,16 +179,16 @@ export function MercadoPagoPointSettings() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "No se pudo guardar la configuración");
+        throw new Error(data.error || tm("saveError"));
       }
       setAccessToken("");
       setWebhookSecret("");
       setAccessTokenSet(accessTokenSet || Boolean(accessToken.trim()));
       setWebhookSecretSet(webhookSecretSet || Boolean(webhookSecret.trim()));
-      toast.success("Configuración de Mercado Pago guardada");
+      toast.success(tm("saved"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error al guardar configuración"
+        error instanceof Error ? error.message : tm("saveErrorGeneric")
       );
     } finally {
       setSaving(false);
@@ -231,6 +205,15 @@ export function MercadoPagoPointSettings() {
 
   if (isDemo) {
     return <DemoRestrictedNotice />;
+  }
+
+  // Mercado Pago Point solo opera en México y en pesos (migración 133).
+  if (moneda !== "MXN") {
+    return (
+      <Card>
+        <CardContent className="py-6 text-sm text-muted-foreground">{tm("onlyMxn")}</CardContent>
+      </Card>
+    );
   }
 
   const isReady =
@@ -250,16 +233,15 @@ export function MercadoPagoPointSettings() {
               Mercado Pago Point
             </CardTitle>
             <CardDescription className="text-xs">
-              Cobra en el punto de venta con una terminal física. La venta se
-              completa cuando la terminal confirma el pago.
+              {tm("desc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label className="text-xs">Habilitar terminal</Label>
+                <Label className="text-xs">{tm("enable")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Permite “Tarjeta (terminal)” como método de pago en el POS
+                  {tm("enableHint")}
                 </p>
               </div>
               <Switch checked={habilitado} onCheckedChange={setHabilitado} />
@@ -278,30 +260,30 @@ export function MercadoPagoPointSettings() {
                   type="password"
                   value={accessToken}
                   onChange={(e) => setAccessToken(e.target.value)}
-                  placeholder={accessTokenSet ? "APP_USR-•••••••••••• (guardado)" : "APP_USR-xxxxxxxxxx"}
+                  placeholder={accessTokenSet ? tm("tokenSaved") : "APP_USR-xxxxxxxxxx"}
                   className="h-8 text-sm font-mono"
                   autoComplete="off"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Se cifra antes de guardarse
+                  {tm("encrypted")}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="mp-webhook-secret" className="text-xs">
-                  Clave secreta del webhook
+                  {tm("secret")}
                 </Label>
                 <Input
                   id="mp-webhook-secret"
                   type="password"
                   value={webhookSecret}
                   onChange={(e) => setWebhookSecret(e.target.value)}
-                  placeholder={webhookSecretSet ? "•••••••••••• (guardado)" : "Clave secreta (paso 3)"}
+                  placeholder={webhookSecretSet ? tm("secretSaved") : tm("secretPlaceholder")}
                   className="h-8 text-sm font-mono"
                   autoComplete="off"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Verifica las notificaciones de pago
+                  {tm("secretHint")}
                 </p>
               </div>
             </div>
@@ -316,12 +298,12 @@ export function MercadoPagoPointSettings() {
                     disabled={!terminalOptions.length}
                   >
                     <SelectTrigger className="h-8 text-sm w-full">
-                      <SelectValue placeholder="Conecta tus terminales primero">
-                        {selectedTerminalName || "Selecciona una terminal"}
+                      <SelectValue placeholder={tm("connectFirst")}>
+                        {selectedTerminalName || tm("selectTerminal")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Selecciona una terminal</SelectItem>
+                      <SelectItem value="none">{tm("selectTerminal")}</SelectItem>
                       {terminalOptions.map((terminal) => (
                         <SelectItem key={terminal.id} value={terminal.id}>
                           {terminal.description || terminal.id}
@@ -345,15 +327,15 @@ export function MercadoPagoPointSettings() {
                   ) : (
                     <RefreshCw className="h-3.5 w-3.5 mr-1" />
                   )}
-                  Probar conexión
+                  {tm("test")}
                 </Button>
               </div>
               {connectionOk && (
                 <p className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Conexión exitosa
+                  {tm("success")}
                   {terminalOptions.length > 0 &&
-                    ` — ${terminalOptions.length} terminal(es) encontrada(s)`}
+                    ` — ${tm("found", { count: terminalOptions.length })}`}
                 </p>
               )}
             </div>
@@ -361,7 +343,7 @@ export function MercadoPagoPointSettings() {
             <div className="flex items-center justify-between pt-1">
               {isReady && !habilitado && (
                 <p className="text-xs text-muted-foreground">
-                  La terminal estará disponible en el POS al habilitarla
+                  {tm("availableWhenEnabled")}
                 </p>
               )}
               <div className="flex-1" />
@@ -378,7 +360,7 @@ export function MercadoPagoPointSettings() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Info className="h-4 w-4 text-primary" />
-              Cómo configurarlo
+              {tm("howTo")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -389,9 +371,9 @@ export function MercadoPagoPointSettings() {
                     {index + 1}
                   </span>
                   <div className="min-w-0 space-y-0.5">
-                    <p className="text-xs font-medium leading-snug">{step.title}</p>
+                    <p className="text-xs font-medium leading-snug">{tm(`steps.${step.paso}.title`)}</p>
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      {step.body}
+                      {tm(`steps.${step.paso}.body`)}
                     </p>
                     {step.webhook && (
                       <div className="mt-1.5 flex items-center gap-1.5 rounded-md border border-border bg-muted/40 p-1.5">
@@ -403,12 +385,12 @@ export function MercadoPagoPointSettings() {
                           onClick={() => {
                             navigator.clipboard
                               .writeText(URL_WEBHOOK)
-                              .then(() => toast.success("URL del webhook copiada"))
-                              .catch(() => toast.error("No se pudo copiar; selecciónala a mano"));
+                              .then(() => toast.success(tm("urlCopied")))
+                              .catch(() => toast.error(tm("copyError")));
                           }}
                         >
                           <Copy className="h-3 w-3" />
-                          Copiar
+                          {tm("copy")}
                         </Button>
                       </div>
                     )}
@@ -418,12 +400,12 @@ export function MercadoPagoPointSettings() {
             </ol>
 
             <Separator className="my-4" />
-            <p className="mb-2 text-xs font-medium">Si algo falla</p>
+            <p className="mb-2 text-xs font-medium">{tm("ifFails")}</p>
             <ul className="space-y-2">
               {PROBLEMAS.map((p) => (
-                <li key={p.si} className="text-[11px] leading-relaxed">
-                  <span className="font-medium">{p.si}.</span>{" "}
-                  <span className="text-muted-foreground">{p.entonces}</span>
+                <li key={p} className="text-[11px] leading-relaxed">
+                  <span className="font-medium">{tm(`problems.${p}.if`)}.</span>{" "}
+                  <span className="text-muted-foreground">{tm(`problems.${p}.then`)}</span>
                 </li>
               ))}
             </ul>

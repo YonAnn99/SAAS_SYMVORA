@@ -4,7 +4,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const toastError = vi.fn();
 vi.mock("sonner", () => ({ toast: { error: (...a: unknown[]) => toastError(...a) } }));
 
-import { BotonActualizar } from "@/components/ui/boton-actualizar";
+import { NextIntlClientProvider } from "next-intl";
+import type { ComponentProps } from "react";
+import { BotonActualizar as BotonSinIdioma } from "@/components/ui/boton-actualizar";
+import mensajes from "@/messages/es.json";
+
+/** El boton usa next-intl: se prueba con los textos en espanol. */
+function BotonActualizar(props: ComponentProps<typeof BotonSinIdioma>) {
+  return (
+    <NextIntlClientProvider locale="es" messages={mensajes}>
+      <BotonSinIdioma {...props} />
+    </NextIntlClientProvider>
+  );
+}
 
 afterEach(() => {
   vi.useRealTimers();

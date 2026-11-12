@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,10 +42,12 @@ export function EliminarCuenta() {
   const [noConservar, setNoConservar] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const t = useTranslations("account.delete");
+  const li = localeIntl(useLocale());
 
   if (isDemo) return null;
   const esDueno = role === "SUPER_ADMIN";
-  const listo = confirmacion.trim().toUpperCase() === "ELIMINAR";
+  const listo = confirmacion.trim().toUpperCase() === t("confirmWord");
 
   async function solicitar() {
     setEnviando(true);
@@ -53,12 +58,12 @@ export function EliminarCuenta() {
         body: JSON.stringify({ conservar_contacto: !noConservar, motivo }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "No se pudo registrar la solicitud");
-      toast.success(`Listo. Tu cuenta se eliminará el ${fechaLegible(data.ejecutar_en)}.`);
+      if (!res.ok) throw new Error(data.error || t("requestError"));
+      toast.success(t("requested", { fecha: fechaLegible(data.ejecutar_en, li) }));
       setAbierto(false);
       avisarCambioDeBaja();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo registrar la solicitud");
+      toast.error(e instanceof Error ? e.message : t("requestError"));
     } finally {
       setEnviando(false);
     }
@@ -69,12 +74,12 @@ export function EliminarCuenta() {
       <div className="space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
           <Trash2 className="h-3.5 w-3.5" />
-          Eliminar mi cuenta
+          {t("title")}
         </div>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           {esDueno
-            ? `Se eliminará tu cuenta y todo tu negocio${tenantName ? ` «${tenantName}»` : ""}: productos, ventas, clientes y la cuenta de tu equipo. Tienes ${DIAS_PLAZO_BAJA} días para arrepentirte.`
-            : `Saldrás del negocio y tu cuenta se eliminará. Las ventas que registraste se quedan en el negocio. Tienes ${DIAS_PLAZO_BAJA} días para arrepentirte.`}
+            ? t("ownerDesc", { negocio: tenantName ? ` «${tenantName}»` : "", dias: DIAS_PLAZO_BAJA })
+            : t("memberDesc", { dias: DIAS_PLAZO_BAJA })}
         </p>
         <Button
           type="button"
@@ -86,28 +91,27 @@ export function EliminarCuenta() {
             setAbierto(true);
           }}
         >
-          Eliminar mi cuenta
+          {t("title")}
         </Button>
       </div>
 
       <Dialog open={abierto} onOpenChange={setAbierto}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>¿Eliminar tu cuenta?</DialogTitle>
+            <DialogTitle>{t("confirmTitle")}</DialogTitle>
             <DialogDescription>
               {esDueno
-                ? "Tu negocio quedará bloqueado desde hoy y tu suscripción se cancela. "
-                : "Tu acceso quedará bloqueado desde hoy. "}
-              El borrado definitivo es en {DIAS_PLAZO_BAJA} días; antes de eso puedes
-              entrar y cancelar la solicitud.
-              {esDueno ? " Durante ese plazo también puedes descargar tu información." : ""}
+                ? `${t("ownerBlocked")} `
+                : `${t("memberBlocked")} `}
+              {t("finalDeletion", { dias: DIAS_PLAZO_BAJA })}
+              {esDueno ? ` ${t("canDownload")}` : ""}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor="motivo-baja" className="text-xs">
-                ¿Por qué te vas? (opcional)
+                {t("reason")}
               </Label>
               <Input
                 id="motivo-baja"
@@ -125,15 +129,13 @@ export function EliminarCuenta() {
                 className="mt-0.5"
               />
               <span>
-                SYMVORA conserva tu nombre y tu celular para avisarte de novedades y
-                ofertas, como dice el aviso de privacidad. Marca esta casilla si
-                <strong> no </strong>quieres que los conservemos.
+                {t.rich("keepContact", { b: (chunks) => <strong>{chunks}</strong> })}
               </span>
             </label>
 
             <div className="space-y-1">
               <Label htmlFor="confirmar-baja" className="text-xs">
-                Escribe <strong>ELIMINAR</strong> para confirmar
+                {t.rich("typeToConfirm", { palabra: t("confirmWord"), b: (chunks) => <strong>{chunks}</strong> })}
               </Label>
               <Input
                 id="confirmar-baja"
@@ -147,10 +149,10 @@ export function EliminarCuenta() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAbierto(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button variant="destructive" disabled={!listo || enviando} onClick={() => void solicitar()}>
-              {enviando ? "Enviando…" : "Eliminar mi cuenta"}
+              {enviando ? t("sending") : t("title")}
             </Button>
           </DialogFooter>
         </DialogContent>

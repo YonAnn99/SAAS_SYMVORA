@@ -1,3 +1,4 @@
+import type { Moneda } from "@/lib/money";
 import { articulosDeLinea } from "@/lib/unidades";
 import type { CartItem } from "./types/pos.types";
 
@@ -83,9 +84,20 @@ export function desgloseTicket(items: CartItem[], total: number): DesgloseTicket
   };
 }
 
-/** Importes siempre con dos decimales; el ticket se lee en columna. */
-export function formatearImporte(valor: number): string {
-  return valor.toFixed(2);
+/** Importes siempre con dos decimales; el ticket se lee en columna. En euros, con coma decimal. */
+export function formatearImporte(valor: number, moneda: Moneda = "MXN"): string {
+  const texto = valor.toFixed(2);
+  return moneda === "EUR" ? texto.replace(".", ",") : texto;
+}
+
+/**
+ * Lo que acompaña a cada etiqueta de monto en el ticket ("Total $").
+ * `paraTermica`: las impresoras ESC/POS no siempre traen «€» en su página de
+ * códigos, así que ahí el euro va como «EUR».
+ */
+export function marcaMonedaTicket(moneda: Moneda = "MXN", paraTermica = false): string {
+  if (moneda === "EUR") return paraTermica ? "EUR" : "€";
+  return "$";
 }
 
 /**

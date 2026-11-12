@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
@@ -57,6 +58,10 @@ export function useProducts(
   /** Estado por producto (ver `resumenConVariantes`); por defecto `stockStatus`. */
   estadoDe?: (p: Producto) => StockStatus
 ) {
+  const t = useTranslations("products.msg");
+  const te = useTranslations("inventory.errors");
+  /** " Sus 3 variantes también…" (vacio sin variantes). */
+  const avisoVariantes = useCallback((n: number) => (n > 0 ? t("variantsAlso", { count: n }) : ""), [t]);
   // Con una sucursal elegida, la columna de existencias es la DE ESE LOCAL, no
   // el total del negocio. Todo lo que ya se deriva de `stock_actual` (stock
   // bajo, agotado, orden, filtros) pasa a hablar del local sin tocarlo.
@@ -153,7 +158,7 @@ export function useProducts(
           destinoStock = destinoPorDefecto(seleccionada, activas);
           if (!destinoStock) {
             toast.error(
-              "Elige en el selector de arriba a qué sucursal entran las existencias iniciales, o déjalas en 0 y repártelas después."
+              t("pickBranchForStock")
             );
             return false;
           }
@@ -190,7 +195,7 @@ export function useProducts(
             entityId: editingProduct.id,
             entityName: input.nombre,
           });
-          toast.success("Producto actualizado");
+          toast.success(t("updated"));
         } else {
           const nuevoId = await createProduct(tenantId, datosProducto);
           if (destinoStock) {
@@ -205,19 +210,19 @@ export function useProducts(
             entity: "producto",
             entityName: input.nombre,
           });
-          toast.success("Producto creado");
+          toast.success(t("created"));
         }
         void refetch();
         // Cerrar lo decide el dialogo: al crear, tras la animacion.
         return true;
       } catch (error: unknown) {
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
         return false;
       } finally {
         setSaving(false);
       }
     },
-    [tenantId, editingProduct, refetch, hayVarias, seleccionada, activas]
+    [tenantId, editingProduct, refetch, hayVarias, seleccionada, activas, t, te]
   );
 
   // Ids con una edicion express en vuelo. Es un Set y no un booleano porque
@@ -304,12 +309,12 @@ export function useProducts(
             p.id === product.id ? { ...p, [campo]: anterior } : p
           )
         );
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
       } finally {
         marcarGuardando(product.id, false);
       }
     },
-    [marcarGuardando, refetch, hayVarias, seleccionada]
+    [marcarGuardando, refetch, hayVarias, seleccionada, te]
   );
 
   /**
@@ -340,10 +345,10 @@ export function useProducts(
           else revertido.delete(product.id);
           return revertido;
         });
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
       }
     },
-    [tenantId, favoritos]
+    [tenantId, favoritos, te]
   );
 
   const confirmar = useConfirmar();
@@ -363,19 +368,19 @@ export function useProducts(
           entityName: product.nombre,
           details: { archivado: true },
         });
-        toast.success(`«${product.nombre}» se archivó`, {
-          description: "Lo encuentras en la pestaña Archivados.",
+        toast.success(t("archived", { nombre: product.nombre }), {
+          description: t("archivedHint"),
         });
         setDeleteConfirm(null);
         setArchivadosVersion((n) => n + 1);
         void refetch();
         return true;
       } catch (error) {
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
         return false;
       }
     },
-    [refetch]
+    [refetch, t, te]
   );
 
   /**
@@ -386,15 +391,15 @@ export function useProducts(
   const handleArchive = useCallback(
     async (product: Producto, nVariantes = 0) => {
       const ok = await confirmar({
-        titulo: `¿Archivar «${product.nombre}»?`,
-        descripcion: `Deja de aparecer en el catálogo y en el punto de venta.${avisoVariantes(nVariantes)} Sus ventas y reportes se conservan, y lo puedes restaurar desde la pestaña Archivados.`,
-        accion: "Archivar",
+        titulo: t("archiveConfirmTitle", { nombre: product.nombre }),
+        descripcion: t("archiveConfirmDesc", { variantes: avisoVariantes(nVariantes) }),
+        accion: t("archiveAction"),
         tono: "aviso",
       });
       if (!ok) return false;
       return archivar(product);
     },
-    [archivar, confirmar]
+    [archivar, confirmar, avisoVariantes, t]
   );
 
   const handleDelete = useCallback(
@@ -407,13 +412,13 @@ export function useProducts(
           entityId: product.id,
           entityName: product.nombre,
         });
-        toast.success("Producto eliminado");
+        toast.success(t("deleted"));
         setDeleteConfirm(null);
         void refetch();
         return true;
       } catch (error) {
         if (!esErrorDeHistorial(error)) {
-          toast.error(mensajeDeError(error));
+          toast.error(mensajeDeError(error, te));
           // La fila deslizable del celular se colapsa ANTES de borrar: con
           // `false` sabe que tiene que reaparecer.
           return false;
@@ -421,16 +426,16 @@ export function useProducts(
         // Tiene ventas, compras o movimientos: la base no deja borrarlo (asi
         // los reportes no cambian). En vez del error, se ofrece archivarlo.
         const quiereArchivar = await confirmar({
-          titulo: `«${product.nombre}» tiene historial`,
-          descripcion: `Tiene ventas, compras o movimientos registrados. Para no alterar tus reportes no se puede eliminar, pero puedes archivarlo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar cuando quieras.${avisoVariantes(nVariantes)}`,
-          accion: "Archivar",
+          titulo: t("hasHistoryTitle", { nombre: product.nombre }),
+          descripcion: t("hasHistoryDesc", { variantes: avisoVariantes(nVariantes) }),
+          accion: t("archiveAction"),
           tono: "aviso",
         });
         if (!quiereArchivar) return false;
         return archivar(product);
       }
     },
-    [refetch, confirmar, archivar]
+    [refetch, confirmar, archivar, avisoVariantes, t, te]
   );
 
   // Búsqueda y filtros se aplican EN CADENA, no se sustituyen: buscar "coca"
@@ -519,12 +524,4 @@ export function useProducts(
     archivar,
     archivadosVersion,
   };
-}
-
-/** " Sus 3 variantes también…" (vacio sin variantes). */
-function avisoVariantes(n: number): string {
-  if (n <= 0) return "";
-  return n === 1
-    ? " Su variante también deja de aparecer y vuelve con él al restaurarlo."
-    : ` Sus ${n} variantes también dejan de aparecer y vuelven con él al restaurarlo.`;
 }

@@ -2,8 +2,10 @@
 
 import "./registro";
 import { Line } from "react-chartjs-2";
+import { useTranslations } from "next-intl";
 import type { ChartData, ChartOptions, ScriptableContext } from "chart.js";
 import { useTemaGrafica } from "./use-tema-grafica";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 import { ejeCategorias, ejeMontos, leyendaBase, opcionesBase, tooltipBase } from "./opciones";
 import { montoCompleto } from "./formato-grafica";
 import { TarjetaGrafica } from "./tarjeta-grafica";
@@ -29,14 +31,16 @@ function conAlfa(color: string, alfa: number): string {
 }
 
 export function SalesChart({ data, title, comparacion }: SalesChartProps) {
+  const t = useTranslations("charts");
   const tema = useTemaGrafica();
+  const moneda = useMonedaDelNegocio();
   const conComparacion = Boolean(comparacion);
 
   const datos: ChartData<"line"> = {
     labels: data.map((d) => d.date),
     datasets: [
       {
-        label: "Ventas",
+        label: t("sales"),
         data: data.map((d) => d.ventas),
         borderColor: tema.principal,
         borderWidth: 2,
@@ -79,14 +83,14 @@ export function SalesChart({ data, title, comparacion }: SalesChartProps) {
 
   const opciones: ChartOptions<"line"> = {
     ...opcionesBase<"line">(tema),
-    scales: { x: ejeCategorias(tema), y: ejeMontos(tema) },
+    scales: { x: ejeCategorias(tema), y: ejeMontos(tema, moneda) },
     plugins: {
       // Con una sola serie la leyenda sobra; con comparacion permite ocultarla.
       legend: { ...leyendaBase(tema), display: conComparacion },
       tooltip: {
         ...tooltipBase(tema),
         callbacks: {
-          label: (ctx) => ` ${ctx.dataset.label}: ${montoCompleto(Number(ctx.parsed.y))}`,
+          label: (ctx) => ` ${ctx.dataset.label}: ${montoCompleto(Number(ctx.parsed.y), moneda)}`,
         },
       },
     },

@@ -56,7 +56,7 @@ export default function FinancesPage() {
   useAccionRapida(
     "abrir-caja",
     () => {
-      if (cash.activeRegister) toast.info("Ya tienes una caja abierta");
+      if (cash.activeRegister) toast.info(t("finances.quick.alreadyOpen"));
       else cash.setShowOpenDialog(true);
     },
     cajaLista
@@ -65,7 +65,7 @@ export default function FinancesPage() {
     "cerrar-caja",
     () => {
       if (cash.activeRegister) cash.setShowCloseDialog(true);
-      else toast.info("No hay una caja abierta para cerrar");
+      else toast.info(t("finances.quick.noneToClose"));
     },
     cajaLista
   );
@@ -73,7 +73,7 @@ export default function FinancesPage() {
     "movimiento-caja",
     () => {
       if (cash.activeRegister) cash.setShowMovementDialog(true);
-      else toast.info("Primero abre la caja para registrar un depósito o retiro");
+      else toast.info(t("finances.quick.openFirst"));
     },
     cajaLista
   );
@@ -94,8 +94,8 @@ export default function FinancesPage() {
             titulo={t("finances.title")}
             descripcion={
               nombreSucursalCaja
-                ? `Caja de ${nombreSucursalCaja}`
-                : "Control de caja y movimientos financieros"
+                ? t("finances.registerOf", { sucursal: nombreSucursalCaja })
+                : t("finances.subtitleFull")
             }
           />
         </OpenSinceTooltip>

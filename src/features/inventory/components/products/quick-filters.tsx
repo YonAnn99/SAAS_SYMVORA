@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Heart, PackageX, TriangleAlert } from "lucide-react";
 import type { ProductFilters } from "@/features/inventory/stock-status";
 
@@ -32,6 +33,7 @@ export function QuickFilters({
   sinMinimoCount,
   favoritosCount,
 }: QuickFiltersProps) {
+  const t = useTranslations("products.filters");
   const stockBajoActivo = filters.stock.includes("bajo");
 
   return (
@@ -51,9 +53,9 @@ export function QuickFilters({
         }
         count={stockBajoCount}
         icon={<TriangleAlert className="h-3.5 w-3.5" />}
-        title="Productos por acabarse: existencias iguales o por debajo del mínimo"
+        title={t("lowStockTitle")}
       >
-        Stock bajo
+        {t("lowStock")}
       </Chip>
 
       <Chip
@@ -63,9 +65,9 @@ export function QuickFilters({
         icon={<PackageX className="h-3.5 w-3.5" />}
         // El término no se explica solo, y sin esto nadie adivina que "sin
         // mínimo" es la razón por la que esos productos nunca avisan.
-        title="Productos sin stock mínimo configurado: el sistema no puede avisarte de que se acaban"
+        title={t("noMinTitle")}
       >
-        Stock indefinido
+        {t("noMin")}
       </Chip>
 
       <Chip
@@ -79,9 +81,9 @@ export function QuickFilters({
             className={`h-3.5 w-3.5 ${filters.soloFavoritos ? "fill-current" : ""}`}
           />
         }
-        title="Los productos que marcaste con el corazón"
+        title={t("favoritesTitle")}
       >
-        Favoritos
+        {t("favorites")}
       </Chip>
     </>
   );

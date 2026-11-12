@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
 import {
@@ -40,24 +41,27 @@ export function DataTableToolbar<T>({
   title,
   filename,
   seleccion,
-  nombreFilas = "registros",
+  nombreFilas,
 }: DataTableToolbarProps<T>) {
+  const t = useTranslations("common.exportMenu");
   const exportar = async (formato: Formato, filas: T[], soloSeleccion: boolean) => {
     const archivo = soloSeleccion ? `${filename}-seleccionados` : filename;
     const etiqueta = formato === "csv" ? "CSV" : "PDF";
     try {
       if (formato === "csv") exportToCSV(filas, columns, archivo);
       else await exportToPDF(filas, columns, title, archivo);
-      toast.success(`${etiqueta} exportado: ${filas.length} ${nombreFilas}`);
+      toast.success(
+        t("exported", { formato: etiqueta, n: filas.length, filas: nombreFilas ?? t("rows") })
+      );
     } catch {
-      toast.error(`Error al exportar ${etiqueta}`);
+      toast.error(t("error", { formato: etiqueta }));
     }
   };
 
   const boton = (formato: Formato) => {
     const Icono = formato === "csv" ? FileSpreadsheet : FileText;
     const etiqueta = formato === "csv" ? "CSV" : "PDF";
-    const descripcion = `Exportar a ${etiqueta}`;
+    const descripcion = t("exportTo", { formato: etiqueta });
     // En celular va el texto (CSV / PDF) en lugar del icono: los dos iconos de
     // documento se parecian y no decian que hacian. Desde `sm`, icono + texto.
     const contenido = (
@@ -104,14 +108,14 @@ export function DataTableToolbar<T>({
             className="cursor-pointer"
             onClick={() => void exportar(formato, data, false)}
           >
-            Toda la lista ({data.length})
+            {t("allList", { n: data.length })}
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
             disabled={seleccion.length === 0}
             onClick={() => void exportar(formato, seleccion, true)}
           >
-            Solo seleccionados ({seleccion.length})
+            {t("onlySelected", { n: seleccion.length })}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

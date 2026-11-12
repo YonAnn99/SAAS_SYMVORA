@@ -3,6 +3,7 @@
  * y sube a su valor. Aqui va lo puro (curva y formato); el componente esta en
  * `components/ui/contador-animado.tsx`.
  */
+import { formatMoneda, type Moneda } from "@/lib/money";
 
 /** Duracion de la animacion, en milisegundos. */
 export const DURACION_MS = 1100;
@@ -17,7 +18,12 @@ export function easeOutExpo(t: number): number {
 }
 
 export interface FormatoContador {
-  /** Antes del numero, ej. "$". */
+  /**
+   * Monto en esa moneda (formato de `lib/money.ts`, 2 decimales): ignora
+   * `prefijo`, `sufijo` y `decimales`.
+   */
+  moneda?: Moneda;
+  /** Antes del numero, ej. "%" no; para dinero usa `moneda`. */
   prefijo?: string;
   /** Despues del numero, ej. "%". */
   sufijo?: string;
@@ -31,8 +37,12 @@ export interface FormatoContador {
  */
 export function formatearContador(
   valor: number,
-  { prefijo = "", sufijo = "", decimales = 0 }: FormatoContador = {}
+  { moneda, prefijo = "", sufijo = "", decimales = 0 }: FormatoContador = {}
 ): string {
+  if (moneda) {
+    const centavos = Math.round(Math.abs(valor) * 100) / 100;
+    return `${valor < 0 && centavos !== 0 ? "-" : ""}${formatMoneda(centavos, moneda)}`;
+  }
   const factor = 10 ** decimales;
   const redondeado = Math.round(Math.abs(valor) * factor) / factor;
   const signo = valor < 0 && redondeado !== 0 ? "-" : "";

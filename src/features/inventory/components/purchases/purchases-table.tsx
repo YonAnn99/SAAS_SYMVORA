@@ -1,6 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { ShoppingCart, CheckCircle, Pencil, Undo2 } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { Button } from "@/components/ui/button";
@@ -45,16 +48,18 @@ export function PurchasesTable({
   onCancel,
   onOpen,
 }: PurchasesTableProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  const locale = useLocale();
   const confirmar = useConfirmar();
 
   // Devolver no se deshace: cancela la compra, regresa el stock y, si aplica,
   // el efectivo a la caja. Se pregunta antes, igual que al eliminar.
   const devolver = async (purchase: PurchaseWithRelations) => {
     const si = await confirmar({
-      titulo: `¿Devolver la compra de ${purchase.proveedor?.nombre || "este proveedor"}?`,
-      descripcion: "La compra se cancela y el stock regresa al inventario. Si se pagó con la caja todavía abierta, el efectivo vuelve a la caja.",
-      accion: "Devolver",
+      titulo: t("purchases.ui.returnTitle", { proveedor: purchase.proveedor?.nombre || t("purchases.ui.thisSupplier") }),
+      descripcion: t("purchases.ui.returnDesc"),
+      accion: t("purchases.ui.return"),
       tono: "aviso",
     });
     if (si) onCancel(purchase.id);
@@ -144,7 +149,7 @@ export function PurchasesTable({
                       {purchase.numero_factura || "-"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {new Date(purchase.fecha_compra).toLocaleDateString()}
+                      {new Date(purchase.fecha_compra).toLocaleDateString(localeIntl(locale))}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -154,11 +159,11 @@ export function PurchasesTable({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      ${Number(purchase.total).toFixed(2)}
+                      {formatear(Number(purchase.total))}
                       {!movioInventario(purchase) && (
                         <span
                           className="ml-1.5 font-sans text-[10px] uppercase tracking-wider text-muted-foreground"
-                          title="Registrada antes de que las compras movieran inventario: no tiene desglose y no sumó existencias."
+                          title={t("purchases.ui.legacy")}
                         >
                           sin desglose
                         </span>
@@ -197,14 +202,14 @@ export function PurchasesTable({
                               size="icon"
                               className="h-7 w-7"
                               onClick={() => void devolver(purchase)}
-                              title="Cancelar y devolver el stock al inventario"
+                              title={t("purchases.ui.returnHint")}
                             >
                               <Undo2 className="h-3.5 w-3.5 text-amber-600" />
                             </Button>
                           ) : (
                             <BotonEliminar
-                              nombre={`la compra${purchase.numero_factura ? ` ${purchase.numero_factura}` : ""}`}
-                              detalle="No se puede deshacer"
+                              nombre={purchase.numero_factura ? t("purchases.ui.thePurchaseNumber", { numero: purchase.numero_factura }) : t("purchases.ui.thePurchase")}
+                              detalle={t("purchases.ui.noUndo")}
                               onEliminar={() => onDelete(purchase.id)}
                             />
                           ))}

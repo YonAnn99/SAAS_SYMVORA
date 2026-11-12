@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +35,7 @@ interface HeaderProps {
 
 export function Header({ onSearchOpen }: HeaderProps) {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const { oscuro, montado, alternar } = useCambioTema();
@@ -77,7 +78,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
             dice el dock inferior (`dock-movil.tsx`) y repetirlo aquí era
             redundante. El logo es negro sobre transparente: `dark:invert` lo
             pasa a blanco en oscuro, igual que en el menú lateral. */}
-        <Link href="/dashboard" className="flex items-center lg:hidden" aria-label="SYMVORA, ir al inicio">
+        <Link href="/dashboard" className="flex items-center lg:hidden" aria-label={t("layout.goHome")}>
           <Image
             src="/symvora-logo.webp"
             alt=""
@@ -124,7 +125,9 @@ export function Header({ onSearchOpen }: HeaderProps) {
         {/* Language switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-9 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer transition-all duration-200" />}>
-            {pathname.startsWith("/en") ? "🇺🇸 EN" : "🇲🇽 ES"}
+            {/* `usePathname` de next-intl devuelve la ruta SIN el idioma: por eso
+                la bandera sale de `useLocale` (antes siempre decia ES). */}
+            {locale === "en" ? "🇺🇸 EN" : "🇲🇽 ES"}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
             <DropdownMenuItem onClick={() => handleLocaleSwitch("es")} className="cursor-pointer">
@@ -142,7 +145,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           size="icon"
           onClick={alternar}
           className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
-          aria-label={oscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          aria-label={oscuro ? t("layout.lightMode") : t("layout.darkMode")}
         >
           <IconoTema oscuro={oscuro} montado={montado} />
         </Button>
@@ -167,7 +170,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
               onClick={() => setProfileOpen(true)}
             >
               <User className="mr-2 h-4 w-4" />
-              <span className="text-sm">Perfil</span>
+              <span className="text-sm">{t("layout.profile")}</span>
             </DropdownMenuItem>
             {canManageSettings && (
               <DropdownMenuItem

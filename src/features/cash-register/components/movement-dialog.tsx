@@ -77,8 +77,8 @@ export function MovementDialog({
     if (descripcion === null) {
       toast.error(
         esSalida
-          ? "Describe en qué se usó el dinero"
-          : "La descripción es requerida"
+          ? t("finances.movement.describeUse")
+          : t("finances.movementMsg.descriptionRequired")
       );
       return;
     }
@@ -98,12 +98,12 @@ export function MovementDialog({
             {t("finances.addMovement")}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Registra un movimiento de entrada o salida
+            {t("finances.movement.desc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Tipo</Label>
+            <Label className="text-xs">{t("finances.movement.type")}</Label>
             <Select
               items={tipos}
               value={movementType}
@@ -126,7 +126,7 @@ export function MovementDialog({
               dueño u otro gasto. Queda en el movimiento (`concepto`). */}
           {esSalida && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Motivo</Label>
+              <Label className="text-xs">{t("finances.movement.reason")}</Label>
               <Select
                 items={conceptos}
                 value={concepto}
@@ -160,15 +160,15 @@ export function MovementDialog({
               {t("common.description")}
               {esSalida && concepto !== "OTRO_GASTO" && (
                 <span className="ml-1 font-normal text-muted-foreground">
-                  (opcional)
+                  {t("finances.movement.optional")}
                 </span>
               )}
             </Label>
             <Input
               placeholder={
                 esSalida && concepto === "OTRO_GASTO"
-                  ? "Ej. pago de luz, papelería"
-                  : "Descripción del movimiento"
+                  ? t("finances.movement.otherPlaceholder")
+                  : t("finances.movement.descPlaceholder")
               }
               value={movementDescription}
               onChange={(e) => setMovementDescription(e.target.value)}

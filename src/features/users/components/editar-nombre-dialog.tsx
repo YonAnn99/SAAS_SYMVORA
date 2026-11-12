@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,12 +42,13 @@ export function EditarNombreDialog({
   onSaved: () => void;
 }) {
   const [nombre, setNombre] = useState(nombreActual ?? "");
+  const t = useTranslations("users.ui");
   const [guardando, setGuardando] = useState(false);
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
     if (!nombre.trim()) {
-      toast.error("El nombre no puede estar vacío");
+      toast.error(t("nameEmpty"));
       return;
     }
     setGuardando(true);
@@ -57,12 +59,12 @@ export function EditarNombreDialog({
         body: JSON.stringify({ tenantId, nombre: nombre.trim() }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Error al guardar el nombre");
-      toast.success("Nombre actualizado");
+      if (!response.ok) throw new Error(result.error || t("nameSaveError"));
+      toast.success(t("nameSaved"));
       onSaved();
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al guardar el nombre");
+      toast.error(error instanceof Error ? error.message : t("nameSaveError"));
     } finally {
       setGuardando(false);
     }
@@ -73,18 +75,18 @@ export function EditarNombreDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={guardar} className="contents">
           <DialogHeader>
-            <DialogTitle className="text-base">Nombre del usuario</DialogTitle>
+            <DialogTitle className="text-base">{t("nameTitle")}</DialogTitle>
             <DialogDescription className="text-xs">
-              Así aparecerá {email} en Usuarios, en el historial de ventas y en su saludo.
+              {t("nameDesc", { email })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="editar-nombre" className="text-xs">Nombre completo</Label>
+            <Label htmlFor="editar-nombre" className="text-xs">{t("fullName")}</Label>
             <Input
               id="editar-nombre"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Nombre y apellido"
+              placeholder={t("fullNamePlaceholder")}
               maxLength={120}
               autoComplete="off"
               className="h-8 text-sm"
@@ -93,7 +95,7 @@ export function EditarNombreDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <SpecularActionButton
               type="submit"
@@ -101,7 +103,7 @@ export function EditarNombreDialog({
               className="h-8 active:scale-[0.98] transition-transform"
               disabled={guardando}
             >
-              {guardando ? "Guardando…" : "Guardar"}
+              {guardando ? t("saving") : t("save")}
             </SpecularActionButton>
           </DialogFooter>
         </form>

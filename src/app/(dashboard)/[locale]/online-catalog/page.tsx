@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Eye, Loader2, Package, Palette } from "lucide-react";
@@ -23,6 +24,7 @@ const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-
  * Permiso `catalog.manage` (lo protege el middleware por `modules.ts`).
  */
 export default function OnlineCatalogPage() {
+  const t = useTranslations("onlineCatalog");
   const searchParams = useSearchParams();
   const [pestana, setPestana] = useState(() => {
     const pedida = searchParams.get("tab");
@@ -44,21 +46,21 @@ export default function OnlineCatalogPage() {
     <div className="space-y-6 md:space-y-8">
       <div className="animate-fade-in-up stagger-1">
         <EncabezadoModulo
-          titulo="Catálogo en línea"
-          descripcion="Tu página de productos para que tus clientes te pidan por WhatsApp"
+          titulo={t("title")}
+          descripcion={t("subtitle")}
         />
       </div>
 
       {esDemo ? (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            El catálogo en línea no está disponible en la demo. Crea tu cuenta gratis para publicar el tuyo.
+            {t("demo")}
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            No se pudo cargar el catálogo. Recarga la página.
+            {t("loadError")}
           </CardContent>
         </Card>
       ) : cargando || !borrador || !tenantId ? (
@@ -78,15 +80,15 @@ export default function OnlineCatalogPage() {
             <TabsList className="w-full sm:w-fit">
               <TabsTrigger value="productos" className={CLASE_PESTANA}>
                 <Package className="h-3.5 w-3.5 max-sm:hidden" />
-                Productos
+                {t("tabs.products")}
               </TabsTrigger>
               <TabsTrigger value="personalizar" className={CLASE_PESTANA}>
                 <Palette className="h-3.5 w-3.5 max-sm:hidden" />
-                Personalizar
+                {t("tabs.customize")}
               </TabsTrigger>
               <TabsTrigger value="vista-previa" className={CLASE_PESTANA}>
                 <Eye className="h-3.5 w-3.5 max-sm:hidden" />
-                Vista previa
+                {t("tabs.preview")}
               </TabsTrigger>
             </TabsList>
 

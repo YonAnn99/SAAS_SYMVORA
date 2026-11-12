@@ -44,11 +44,11 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
 
   const handleSubmit = async () => {
     if (formData.titulo.trim().length < 3) {
-      toast.error("El título debe tener al menos 3 caracteres");
+      toast.error(t("suggestions.form.titleShort"));
       return;
     }
     if (formData.descripcion.trim().length < 10) {
-      toast.error("La descripción debe tener al menos 10 caracteres");
+      toast.error(t("suggestions.form.descShort"));
       return;
     }
 
@@ -63,10 +63,10 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Error al enviar");
+        throw new Error(data.error || t("suggestions.form.sendError"));
       }
 
-      toast.success("Sugerencia enviada correctamente");
+      toast.success(t("suggestions.form.sent"));
       setSent(true);
       setFormData({
         categoria: "general",
@@ -77,7 +77,7 @@ export function SuggestionForm({ tenantId }: SuggestionFormProps) {
       setTimeout(() => setSent(false), 4000);
     } catch (error: unknown) {
       toast.error(
-        error instanceof Error ? error.message : "Error al enviar la sugerencia"
+        error instanceof Error ? error.message : t("suggestions.form.sendErrorLong")
       );
     } finally {
       setLoading(false);

@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
@@ -62,8 +65,7 @@ interface ReceiveOrderDialogProps {
   ) => void;
 }
 
-const money = (n: number) =>
-  n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+
 
 export function ReceiveOrderDialog({
   open,
@@ -75,6 +77,8 @@ export function ReceiveOrderDialog({
   saving,
   onConfirm,
 }: ReceiveOrderDialogProps) {
+  const t = useTranslations("purchaseOrders.receive");
+  const { formatear: money } = useMoneda();
   /** Lo que se escribe en cada renglón, como texto. Clave: id del detalle. */
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
   /** Lote y caducidad por renglon (solo productos con lotes). */
@@ -177,7 +181,7 @@ export function ReceiveOrderDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            Recibir mercancía {order ? `· ${order.numero_orden}` : ""}
+            {t("title")} {order ? `· ${order.numero_orden}` : ""}
           </DialogTitle>
         </DialogHeader>
 
@@ -185,18 +189,18 @@ export function ReceiveOrderDialog({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-xs uppercase">Producto</TableHead>
+                <TableHead className="text-xs uppercase">{t("product")}</TableHead>
                 <TableHead className="text-right text-xs uppercase">
-                  Pedido
+                  {t("ordered")}
                 </TableHead>
                 <TableHead className="text-right text-xs uppercase">
-                  Ya recibido
+                  {t("alreadyReceived")}
                 </TableHead>
                 <TableHead className="text-right text-xs uppercase">
-                  Pendiente
+                  {t("pending")}
                 </TableHead>
                 <TableHead className="text-right text-xs uppercase">
-                  Llegó ahora
+                  {t("arrivedNow")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -213,8 +217,8 @@ export function ReceiveOrderDialog({
                     {conLotes?.(l.detalle.producto_id) && l.pendiente > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         <Input
-                          placeholder="Lote (opcional)"
-                          aria-label="Número de lote"
+                          placeholder={t("lotPlaceholder")}
+                          aria-label={t("lotNumber")}
                           value={lotes[l.detalle.id]?.numero ?? ""}
                           onChange={(e) =>
                             setLotes((prev) => ({
@@ -230,7 +234,7 @@ export function ReceiveOrderDialog({
                         />
                         <Input
                           type="date"
-                          aria-label="Caducidad del lote"
+                          aria-label={t("lotExpiry")}
                           value={lotes[l.detalle.id]?.caducidad ?? ""}
                           onChange={(e) =>
                             setLotes((prev) => ({
@@ -279,32 +283,32 @@ export function ReceiveOrderDialog({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Número de factura</Label>
+          <Label className="text-xs">{t("invoice")}</Label>
           <Input
             value={numeroFactura}
             onChange={(e) => setNumeroFactura(e.target.value)}
-            placeholder="Ej. A-1234"
+            placeholder={t("invoicePlaceholder")}
             disabled={saving}
             className="h-8 text-sm"
           />
           {/* El texto de ejemplo anterior ("La que trae la mercancía") se leía
               como una opción para elegir; es un campo libre. */}
           <p className="text-[11px] text-muted-foreground">
-            Folio de la factura o nota del proveedor (opcional).
+            {t("invoiceHint")}
           </p>
         </div>
 
         <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Subtotal de la entrega</span>
+            <span className="text-muted-foreground">{t("subtotal")}</span>
             <span className="font-mono">{money(totales.subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">IVA</span>
+            <span className="text-muted-foreground">{t("tax")}</span>
             <span className="font-mono">{money(totales.impuesto)}</span>
           </div>
           <div className="mt-1 flex justify-between border-t border-border pt-1 font-medium">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span className="font-mono">{money(totales.total)}</span>
           </div>
         </div>
@@ -322,8 +326,7 @@ export function ReceiveOrderDialog({
             legítimo, pero conviene saber que la orden seguirá abierta. */}
         {algoQueRecibir && quedaraPendiente && (
           <p className="text-xs text-muted-foreground">
-            Quedará como <strong>recibida parcial</strong>: todavía falta
-            mercancía por llegar.
+            {t.rich("partialNotice", { b: (chunks) => <strong>{chunks}</strong> })}
           </p>
         )}
 
@@ -333,13 +336,13 @@ export function ReceiveOrderDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancelar
+            {t("cancel")}
           </Button>
           <Button
             onClick={confirmar}
             disabled={saving || errores.length > 0 || !algoQueRecibir}
           >
-            {saving ? "Recibiendo..." : "Confirmar recepción"}
+            {saving ? t("receiving") : t("confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

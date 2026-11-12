@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
@@ -15,6 +18,8 @@ import { guardarCache, leerCache } from "@/lib/cache-datos";
 const claveClientes = (tenantId: string | null) => ["clientes", tenantId] as const;
 
 export function useCustomers(tenantId: string | null) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("customers.msg");
   // Cache entre modulos (`lib/cache-datos.ts`): al volver se pinta la lista
   // anterior y `refresh` la reemplaza en cuanto llega.
   const [customers, setCustomers] = useState<Cliente[]>(
@@ -52,14 +57,14 @@ export function useCustomers(tenantId: string | null) {
     async (monto: number, metodoPago: CreditMetodoPago, notas: string) => {
       if (!tenantId || !paymentDialogFor) return;
       if (!(monto > 0)) {
-        toast.error("El monto debe ser mayor a 0");
+        toast.error(t("amountPositive"));
         return;
       }
       setSavingPayment(true);
       try {
         const userId = await getCurrentUserId();
         if (!userId) {
-          toast.error("No se pudo identificar el usuario");
+          toast.error(t("noUser"));
           return;
         }
         await registerCreditPayment({
@@ -78,19 +83,19 @@ export function useCustomers(tenantId: string | null) {
           details: { tipo: "pago_credito", monto, metodo_pago: metodoPago },
         });
         toast.success(
-          `Pago de $${monto.toFixed(2)} registrado para ${paymentDialogFor.nombre}`
+          t("paymentRecorded", { monto: formatear(monto), nombre: paymentDialogFor.nombre })
         );
         setPaymentDialogFor(null);
         void refresh();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Error al registrar el pago"
+          error instanceof Error ? error.message : t("paymentError")
         );
       } finally {
         setSavingPayment(false);
       }
     },
-    [tenantId, paymentDialogFor, refresh]
+    [tenantId, paymentDialogFor, refresh, t, formatear]
   );
 
   return {

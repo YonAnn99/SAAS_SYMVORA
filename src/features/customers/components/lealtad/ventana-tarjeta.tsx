@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Copy, ExternalLink, Loader2, Mail, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ export function VentanaTarjeta({
 }) {
   const locale = useLocale();
   const { tenantId, tenantName, tenantLogo } = useCurrentTenant();
+  const t = useTranslations("customers.loyalty.cardWindow");
   const [svg, setSvg] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -66,9 +67,9 @@ export function VentanaTarjeta({
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      toast.success("Enlace copiado");
+      toast.success(t("copied"));
     } catch {
-      toast.error("No se pudo copiar el enlace");
+      toast.error(t("copyError"));
     }
   };
 
@@ -95,10 +96,10 @@ export function VentanaTarjeta({
         body: JSON.stringify({ tenantId, tarjetaId: tarjeta.id, locale }),
       });
       const cuerpo = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(cuerpo?.error ?? "No se pudo enviar el correo");
-      toast.success(`Tarjeta enviada a ${tarjeta.clienteEmail}`);
+      if (!res.ok) throw new Error(cuerpo?.error ?? t("sendError"));
+      toast.success(t("sent", { email: tarjeta.clienteEmail ?? "" }));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo enviar el correo");
+      toast.error(error instanceof Error ? error.message : t("sendError"));
     } finally {
       setEnviando(false);
     }
@@ -108,9 +109,9 @@ export function VentanaTarjeta({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] max-w-md overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Tarjeta de {tarjeta.clienteNombre}</DialogTitle>
+          <DialogTitle className="text-base">{t("title", { nombre: tarjeta.clienteNombre })}</DialogTitle>
           <DialogDescription className="text-xs">
-            Compártele el enlace: la abre desde su celular, sin crear cuenta, y ve sus sellos al día.
+            {t("desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -139,11 +140,11 @@ export function VentanaTarjeta({
         <div className="grid grid-cols-2 gap-2">
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={copiar}>
             <Copy className="h-3.5 w-3.5" />
-            Copiar enlace
+            {t("copy")}
           </Button>
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={compartir}>
             <Share2 className="h-3.5 w-3.5" />
-            Compartir
+            {t("share")}
           </Button>
           <Button
             type="button"
@@ -153,7 +154,7 @@ export function VentanaTarjeta({
             onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Abrir
+            {t("open")}
           </Button>
           <Button
             type="button"
@@ -161,11 +162,11 @@ export function VentanaTarjeta({
             size="sm"
             className="gap-1.5"
             disabled={!tarjeta.clienteEmail || enviando}
-            title={tarjeta.clienteEmail ? `Enviar a ${tarjeta.clienteEmail}` : "El cliente no tiene correo capturado"}
+            title={tarjeta.clienteEmail ? t("sendTo", { email: tarjeta.clienteEmail }) : t("noEmail")}
             onClick={enviarCorreo}
           >
             {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
-            Por correo
+            {t("byEmail")}
           </Button>
         </div>
       </DialogContent>

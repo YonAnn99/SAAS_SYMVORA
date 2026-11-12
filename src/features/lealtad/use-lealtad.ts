@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -22,6 +23,7 @@ import type { EstadoTarjeta, ProgramaLealtad } from "./types";
  * los sellos cambian con cada venta.
  */
 export function useLealtad(tenantId: string | null) {
+  const t = useTranslations("customers.loyalty.msg");
   const [programa, setPrograma] = useState<ProgramaLealtad | null>(null);
   const [tarjetas, setTarjetas] = useState<TarjetaConCliente[]>([]);
   const [resumen, setResumen] = useState<ResumenLealtad | null>(null);
@@ -40,11 +42,11 @@ export function useLealtad(tenantId: string | null) {
       setTarjetas(t);
       setResumen(r);
     } catch (error) {
-      toast.error(mensajeDeError(error, "No se pudieron cargar las tarjetas de lealtad"));
+      toast.error(mensajeDeError(error, t("loadError")));
     } finally {
       setCargando(false);
     }
-  }, [tenantId]);
+  }, [tenantId, t]);
 
   useEffect(() => {
     const t = window.setTimeout(() => void refrescar(), 0);
@@ -57,16 +59,16 @@ export function useLealtad(tenantId: string | null) {
       setGuardando(true);
       try {
         setPrograma(await guardarPrograma(tenantId, input));
-        toast.success(input.activo ? "Programa de lealtad guardado y activo" : "Programa de lealtad guardado");
+        toast.success(input.activo ? t("savedActive") : t("saved"));
         return true;
       } catch (error) {
-        toast.error(mensajeDeError(error, "No se pudo guardar el programa"));
+        toast.error(mensajeDeError(error, t("saveError")));
         return false;
       } finally {
         setGuardando(false);
       }
     },
-    [tenantId]
+    [tenantId, t]
   );
 
   const emitir = useCallback(
@@ -76,26 +78,26 @@ export function useLealtad(tenantId: string | null) {
         await refrescar();
         return estado;
       } catch (error) {
-        toast.error(mensajeDeError(error, "No se pudo crear la tarjeta"));
+        toast.error(mensajeDeError(error, t("createError")));
         return null;
       }
     },
-    [refrescar]
+    [refrescar, t]
   );
 
   const ajustar = useCallback(
     async (tarjetaId: string, cantidad: number, nota: string): Promise<boolean> => {
       try {
         await ajustarSellos(tarjetaId, cantidad, nota);
-        toast.success(cantidad > 0 ? `Se sumaron ${cantidad} sellos` : `Se quitaron ${-cantidad} sellos`);
+        toast.success(cantidad > 0 ? t("stampsAdded", { count: cantidad }) : t("stampsRemoved", { count: -cantidad }));
         await refrescar();
         return true;
       } catch (error) {
-        toast.error(mensajeDeError(error, "No se pudieron ajustar los sellos"));
+        toast.error(mensajeDeError(error, t("adjustError")));
         return false;
       }
     },
-    [refrescar]
+    [refrescar, t]
   );
 
   return { programa, tarjetas, resumen, cargando, guardando, refrescar, guardar, emitir, ajustar };

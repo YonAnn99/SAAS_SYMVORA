@@ -32,7 +32,7 @@ import {
   enUnidad,
   esFraccionable,
   formatearContenido,
-  porUnidad,
+  abreviatura,
   type UnidadMedida,
 } from "@/lib/unidades";
 import { AvisoEmpaquetado, CampoContenido, OpcionesUnidad } from "../unidad-y-contenido";
@@ -108,6 +108,8 @@ export function VariantDialog({
 }: VariantDialogProps) {
   const { tenantGiro, tenantId } = useCurrentTenant();
   const t = useTranslations();
+  const porU = (u: string | null | undefined) =>
+    esFraccionable(u) ? t("products.form.perUnit", { unidad: abreviatura(u, 1) }) : "";
   const { modulos } = useModulos();
   const [filas, setFilas] = useState<FilaAtributo[]>([]);
   const [sku, setSku] = useState("");
@@ -170,8 +172,8 @@ export function VariantDialog({
     unidad === UNIDAD_DEL_PRODUCTO ? null : (unidad as UnidadMedida)
   ).filter((u) => u !== "SERVICIO");
   const etiquetaDelProducto = producto?.unidad_medida
-    ? `Igual que el producto (${t(`products.units.${producto.unidad_medida}`)})`
-    : "Igual que el producto";
+    ? t("products.variants.sameAsProductUnit", { unidad: t(`products.units.${producto.unidad_medida}`) })
+    : t("products.variants.sameAsProduct");
   // La unidad con la que se vende: la suya o la del producto (para "por kg").
   const unidadEfectiva = unidad === UNIDAD_DEL_PRODUCTO ? producto?.unidad_medida : unidad;
   const granel = esFraccionable(unidadEfectiva);
@@ -201,18 +203,18 @@ export function VariantDialog({
   const handleSave = async (): Promise<boolean> => {
     if (!editingVariant) return false;
     if (filas.some((f) => f.tipo === TIPO_PERSONALIZADO && !normalizarValor(f.nombre))) {
-      toast.error("Ponle nombre al atributo personalizado");
+      toast.error(t("products.variants.nameCustomAttr"));
       return false;
     }
     const atributos = filas
       .map((f) => ({ tipo: tipoEfectivo(f), valor: normalizarValor(f.valores[0] ?? "") }))
       .filter((a) => a.tipo && a.valor);
     if (atributos.length === 0) {
-      toast.error("Agrega al menos un valor de atributo");
+      toast.error(t("products.variants.addAttrValue"));
       return false;
     }
     if (!(parseFloat(precio) > 0)) {
-      toast.error("El precio de venta debe ser mayor a 0");
+      toast.error(t("products.variants.priceAboveZero"));
       return false;
     }
     // A granel no lleva contenido: se guarda vacio aunque hubiera algo escrito.
@@ -231,7 +233,7 @@ export function VariantDialog({
       try {
         imagen_url = await subirImagenProducto(imagenFile, tenantId);
       } catch {
-        toast.error("No se pudo subir la foto. Revisa tu conexión e intenta de nuevo.");
+        toast.error(t("products.variants.photoError"));
         return false;
       } finally {
         setSubiendo(false);
@@ -266,9 +268,9 @@ export function VariantDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Editar variante</DialogTitle>
+          <DialogTitle className="text-base">{t("products.variants.editTitle")}</DialogTitle>
           <DialogDescription className="text-xs">
-            {producto ? `Variante de «${producto.nombre}»` : "Actualiza los datos de la variante"}
+            {producto ? t("products.variants.variantOf", { nombre: producto.nombre }) : t("products.variants.editDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -286,14 +288,14 @@ export function VariantDialog({
                 <div key={fila.id} className="rounded-xl border border-border p-3 space-y-2.5">
                   <div className="flex items-end gap-2">
                     <div className="min-w-0 flex-1 space-y-1.5">
-                      <Label className="text-xs">Tipo de atributo</Label>
+                      <Label className="text-xs">{t("products.variants.attrType")}</Label>
                       <Select
                         items={Object.fromEntries(opciones.map((t) => [t, t]))}
                         value={fila.tipo}
                         onValueChange={(v) => typeof v === "string" && cambiarFila(fila.id, { tipo: v, valores: [] })}
                       >
-                        <SelectTrigger className="h-8 w-full" aria-label="Tipo de atributo">
-                          <SelectValue placeholder="Selecciona un atributo" />
+                        <SelectTrigger className="h-8 w-full" aria-label={t("products.variants.attrType")}>
+                          <SelectValue placeholder={t("products.variants.selectAttr")} />
                         </SelectTrigger>
                         <SelectContent>
                           {opciones.map((t) => (
@@ -310,7 +312,7 @@ export function VariantDialog({
                         size="icon"
                         className="h-8 w-8 shrink-0 text-muted-foreground"
                         onClick={() => setFilas((prev) => prev.filter((f) => f.id !== fila.id))}
-                        aria-label="Quitar atributo"
+                        aria-label={t("products.variants.removeAttr")}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -319,7 +321,7 @@ export function VariantDialog({
 
                   {fila.tipo === TIPO_PERSONALIZADO && (
                     <Input
-                      placeholder="Nombre del atributo (ej: Aroma)"
+                      placeholder={t("products.variants.attrNamePlaceholder")}
                       value={fila.nombre}
                       onChange={(e) => cambiarFila(fila.id, { nombre: e.target.value })}
                       maxLength={30}
@@ -335,9 +337,9 @@ export function VariantDialog({
                       normalizar={normalizarValor}
                       prefijo={esColor ? (v) => <PuntoColor valor={v} /> : undefined}
                       max={1}
-                      placeholder={esColor ? "Ej: Rojo" : "Escribe un valor"}
+                      placeholder={esColor ? t("products.variants.colorPlaceholder") : t("products.variants.valuePlaceholder")}
                       ayuda=""
-                      ariaLabel={`Valor de ${tipoEfectivo(fila) || "atributo"}`}
+                      ariaLabel={t("products.variants.valueOf", { tipo: tipoEfectivo(fila) || t("products.variants.attribute") })}
                     />
                   </div>
 
@@ -363,7 +365,7 @@ export function VariantDialog({
 
           {/* Foto de la variante: subir o (en celular) tomarla con la camara. */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Foto (opcional)</Label>
+            <Label className="text-xs">{t("products.variants.photoOptional")}</Label>
             <FileUpload
               preview={imagenPreview}
               onFileSelect={(file) => {
@@ -376,8 +378,8 @@ export function VariantDialog({
                 setImagenPreview(null);
                 setImagenQuitada(true);
               }}
-              dragDropText="Arrastra una foto de la variante o haz clic para seleccionar"
-              maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
+              dragDropText={t("products.variants.dragPhoto")}
+              maxSizeText={t("products.form.photoHint")}
               opciones={IMAGEN_PRODUCTO}
               accept="image/*"
               allowCamera
@@ -388,7 +390,7 @@ export function VariantDialog({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="variante-descripcion" className="text-xs">
-                Descripción <span className="text-muted-foreground">(opcional)</span>
+                {t("products.form.description")} <span className="text-muted-foreground">({t("products.variants.optional")})</span>
               </Label>
               <Input
                 id="variante-descripcion"
@@ -400,7 +402,7 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">¿Cómo se vende?</Label>
+              <Label className="text-xs">{t("products.form.howSold")}</Label>
               <Select
                 items={{
                   [UNIDAD_DEL_PRODUCTO]: etiquetaDelProducto,
@@ -409,7 +411,7 @@ export function VariantDialog({
                 value={unidad}
                 onValueChange={(v) => typeof v === "string" && setUnidad(v)}
               >
-                <SelectTrigger className="h-8 w-full text-sm" aria-label="Cómo se vende">
+                <SelectTrigger className="h-8 w-full text-sm" aria-label={t("products.form.howSold")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -444,7 +446,7 @@ export function VariantDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">SKU</Label>
               <Input
-                placeholder="Automático"
+                placeholder={t("products.form.auto")}
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
                 className="h-8 text-sm font-mono"
@@ -452,17 +454,17 @@ export function VariantDialog({
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <Label className="text-xs">Código de barras</Label>
+                <Label className="text-xs">{t("products.form.barcode")}</Label>
                 <BotonGenerarCodigo onCodigo={setCodigo} />
               </div>
               <div className="relative">
                 <Input
-                  placeholder="Escanea o genera"
+                  placeholder={t("products.form.scanOrGenerate")}
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value)}
                   className="h-8 pr-9 text-sm font-mono"
                 />
-                <BotonEscanear modo="uno" titulo="Escanear código de la variante" onCodigo={setCodigo} />
+                <BotonEscanear modo="uno" titulo={t("products.variants.scanCode")} onCodigo={setCodigo} />
               </div>
             </div>
           </div>
@@ -470,7 +472,7 @@ export function VariantDialog({
           {/* Precio, costo, stock y minimo */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Precio de venta{porUnidad(unidadEfectiva)} *</Label>
+              <Label className="text-xs">{t("products.form.salePrice")}{porU(unidadEfectiva)} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -482,7 +484,7 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Costo de compra{porUnidad(unidadEfectiva)}</Label>
+              <Label className="text-xs">{t("products.form.cost")}{porU(unidadEfectiva)}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -494,7 +496,7 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Stock actual{enUnidad(unidadEfectiva)}</Label>
+              <Label className="text-xs">{t("products.form.stock")}{enUnidad(unidadEfectiva)}</Label>
               <Input
                 type="number"
                 step={esFraccionable(unidadEfectiva) ? "any" : undefined}
@@ -506,7 +508,7 @@ export function VariantDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Stock mínimo{enUnidad(unidadEfectiva)}</Label>
+              <Label className="text-xs">{t("products.form.minStock")}{enUnidad(unidadEfectiva)}</Label>
               <Input
                 type="number"
                 step={esFraccionable(unidadEfectiva) ? "any" : undefined}
@@ -522,10 +524,10 @@ export function VariantDialog({
 
         <DialogFooter>
           <Button variant="outline" size="sm" className="h-8" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <SpecularActionButton tone="add" className="h-8" onClick={() => void guardarEdicion()} disabled={saving || subiendo}>
-            {subiendo ? "Subiendo foto..." : saving ? "Guardando..." : "Guardar cambios"}
+            {subiendo ? t("products.variants.uploadingPhoto") : saving ? t("products.variants.saving") : t("products.form.saveChanges")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

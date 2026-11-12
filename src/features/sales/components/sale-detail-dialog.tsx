@@ -10,7 +10,8 @@
 
 import { formatearCantidad } from "@/lib/unidades";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { Printer, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -25,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { TicketReceipt } from "@/features/pos/components/ticket-receipt";
 import { clavePagoI18n, numeroOperacion } from "@/features/pos/ticket-format";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { useSaleDetail } from "../hooks/use-sales-history";
 import { fetchLotesDeVenta, textoLotes, type LoteDeVenta } from "../services/lotes-de-venta";
@@ -40,8 +41,8 @@ interface SaleDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function fechaLarga(iso: string): string {
-  return new Date(iso).toLocaleString("es-MX", {
+function fechaLarga(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -55,7 +56,9 @@ export function SaleDetailDialog({
   ventaId,
   onOpenChange,
 }: SaleDetailDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  const locale = useLocale();
   const { venta, receipt, cargando, abrir, cerrar } = useSaleDetail();
   const [ticketAbierto, setTicketAbierto] = useState(false);
   // Lotes que salieron con esta venta (116). Solo informativo: si falla, no
@@ -111,11 +114,11 @@ export function SaleDetailDialog({
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-base">
-              Venta
+              {t("reports.sale.title")}
               {venta && ` #${numeroOperacion(venta.id) ?? ""}`}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {venta ? fechaLarga(venta.fecha_venta) : "Cargando..."}
+              {venta ? fechaLarga(venta.fecha_venta, localeIntl(locale)) : t("common.loading")}
             </DialogDescription>
           </DialogHeader>
 
@@ -129,19 +132,19 @@ export function SaleDetailDialog({
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Atendió</span>
+                  <span className="text-muted-foreground">{t("reports.history.colCashier")}</span>
                   <p className="font-medium">
                     {venta.cajero_nombre?.trim() || venta.cajero_email || "—"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Cliente</span>
+                  <span className="text-muted-foreground">{t("reports.history.colCustomer")}</span>
                   <p className="font-medium">
-                    {venta.cliente_nombre ?? "Cliente general"}
+                    {venta.cliente_nombre ?? t("reports.generalCustomer")}
                   </p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Forma de pago</span>
+                  <span className="text-muted-foreground">{t("reports.sale.paymentMethod")}</span>
                   <p className="font-medium">
                     {t(clavePagoI18n(venta.metodo_pago))}
                   </p>
@@ -155,8 +158,7 @@ export function SaleDetailDialog({
                   para que las viejas no pasen desapercibidas. */}
               {venta.requiere_revision && (
                 <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-                  Esta venta quedó marcada para revisión: el total cobrado no
-                  coincidió con el recalculado al subirla.
+                  {t("reports.sale.review")}
                 </p>
               )}
 
@@ -164,10 +166,10 @@ export function SaleDetailDialog({
                 <table className="w-full text-xs">
                   <thead className="border-b border-border text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2 text-left font-medium">Producto</th>
-                      <th className="px-3 py-2 text-right font-medium">Cant.</th>
-                      <th className="px-3 py-2 text-right font-medium">Precio</th>
-                      <th className="px-3 py-2 text-right font-medium">Importe</th>
+                      <th className="px-3 py-2 text-left font-medium">{t("reports.sale.product")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("reports.sale.qty")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("reports.sale.price")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("reports.sale.amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -185,17 +187,17 @@ export function SaleDetailDialog({
                           )}
                           {lotesDe(r.producto_id, r.variante_id ?? null).length > 0 && (
                             <span className="block text-[11px] text-muted-foreground">
-                              Lote {textoLotes(lotesDe(r.producto_id, r.variante_id ?? null))}
+                              {t("reports.sale.lot", { lotes: textoLotes(lotesDe(r.producto_id, r.variante_id ?? null)) })}
                             </span>
                           )}
                           {insumosDe(r.producto_id).length > 0 && (
                             <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                              Usó:{" "}
+                              {t("reports.sale.used")}{" "}
                               {insumosDe(r.producto_id)
                                 .map((ins) => {
                                   const lotesIns = lotesDeInsumo(ins.producto_id, ins.variante_id);
                                   return `${Math.round((ins.cantidad + ins.faltante) * 1000) / 1000} ${ins.nombre}${
-                                    lotesIns.length > 0 ? ` (lote ${textoLotes(lotesIns)})` : ""
+                                    lotesIns.length > 0 ? ` (${t("reports.sale.lotLower", { lotes: textoLotes(lotesIns) })})` : ""
                                   }`;
                                 })
                                 .join(" · ")}
@@ -203,7 +205,7 @@ export function SaleDetailDialog({
                           )}
                           {insumosDe(r.producto_id).some((ins) => ins.faltante > 0) && (
                             <span className="block text-[11px] text-amber-700 dark:text-amber-400">
-                              Sin existencias al cobrar:{" "}
+                              {t("reports.sale.outOfStock")}{" "}
                               {insumosDe(r.producto_id)
                                 .filter((ins) => ins.faltante > 0)
                                 .map((ins) => `${ins.faltante} ${ins.nombre}`)
@@ -215,10 +217,10 @@ export function SaleDetailDialog({
                           {formatearCantidad(Number(r.cantidad), r.unidad_medida)}
                         </td>
                         <td className="px-3 py-2 text-right font-mono tabular-nums">
-                          {formatMXN(Number(r.precio_unitario))}
+                          {formatear(Number(r.precio_unitario))}
                         </td>
                         <td className="px-3 py-2 text-right font-mono tabular-nums">
-                          {formatMXN(Number(r.subtotal))}
+                          {formatear(Number(r.subtotal))}
                         </td>
                       </tr>
                     ))}
@@ -228,28 +230,28 @@ export function SaleDetailDialog({
 
               <div className="flex flex-col items-end gap-0.5 font-mono text-xs">
                 <span className="text-muted-foreground">
-                  Subtotal: {formatMXN(Number(venta.subtotal ?? 0))}
+                  {t("reports.sale.subtotal", { monto: formatear(Number(venta.subtotal ?? 0)) })}
                 </span>
                 {Number(venta.descuento ?? 0) > 0 && (
                   <span className="text-muted-foreground">
-                    Descuento: −{formatMXN(Number(venta.descuento))}
+                    {t("reports.sale.discount", { monto: formatear(Number(venta.descuento)) })}
                   </span>
                 )}
                 {Number(venta.impuesto ?? 0) > 0 && (
                   <span className="text-muted-foreground">
-                    IVA: {formatMXN(Number(venta.impuesto))}
+                    {t("reports.sale.tax", { monto: formatear(Number(venta.impuesto)) })}
                   </span>
                 )}
                 <span className="text-sm font-semibold">
-                  Total: {formatMXN(Number(venta.total))}
+                  {t("reports.sale.total", { monto: formatear(Number(venta.total)) })}
                 </span>
                 {venta.monto_recibido !== null && (
                   <>
                     <span className="text-muted-foreground">
-                      Recibido: {formatMXN(Number(venta.monto_recibido))}
+                      {t("reports.sale.received", { monto: formatear(Number(venta.monto_recibido)) })}
                     </span>
                     <span className="text-muted-foreground">
-                      Cambio: {formatMXN(Number(venta.cambio ?? 0))}
+                      {t("reports.sale.change", { monto: formatear(Number(venta.cambio ?? 0)) })}
                     </span>
                   </>
                 )}
@@ -259,7 +261,7 @@ export function SaleDetailDialog({
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Cerrar
+              {t("common.close")}
             </Button>
             <SpecularActionButton
               tone="money"
@@ -287,7 +289,7 @@ export function SaleDetailDialog({
               }}
             >
               <Printer className="mr-1.5 h-3.5 w-3.5" />
-              Reimprimir ticket
+              {t("reports.sale.reprint")}
             </SpecularActionButton>
           </DialogFooter>
         </DialogContent>
@@ -307,10 +309,11 @@ export function SaleDetailDialog({
 
 /** Estado de la venta, con el mismo color que usa el resto del panel. */
 export function EstadoVentaBadge({ estado }: { estado: string }) {
+  const t = useTranslations("reports.saleStatus");
   if (estado === "COMPLETADA") return null;
   return (
     <Badge variant="secondary" className="text-[10px]">
-      {estado}
+      {t.has(estado) ? t(estado) : estado}
     </Badge>
   );
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Banknote,
@@ -33,6 +36,8 @@ export function TerminalPaymentDialog({
   onCancel,
   onClose,
 }: TerminalPaymentDialogProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("pos.terminal");
   return (
     <Dialog
       open={status !== null}
@@ -42,9 +47,9 @@ export function TerminalPaymentDialog({
     >
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-base">Cobro con terminal</DialogTitle>
+          <DialogTitle className="text-base">{t("title")}</DialogTitle>
           <DialogDescription className="text-xs">
-            Pago por tarjeta con terminal Mercado Pago Point
+            {t("subtitle")}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center gap-4 py-4">
@@ -53,14 +58,14 @@ export function TerminalPaymentDialog({
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <div className="text-center">
                 <p className="text-sm font-medium">
-                  Esperando pago en la terminal…
+                  {t("waiting")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solicita al cliente que acerque su tarjeta o dispositivo
+                  {t("waitingHint")}
                 </p>
               </div>
               <p className="font-mono text-xl font-semibold">
-                ${order?.monto.toFixed(2)}
+                {formatear(order?.monto ?? 0)}
               </p>
             </>
           )}
@@ -70,13 +75,13 @@ export function TerminalPaymentDialog({
                 <Check className="h-6 w-6 text-emerald-500" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium">Pago recibido</p>
+                <p className="text-sm font-medium">{t("paid")}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  La venta se registró correctamente
+                  {t("paidHint")}
                 </p>
               </div>
               <p className="font-mono text-xl font-semibold">
-                ${order?.monto.toFixed(2)}
+                {formatear(order?.monto ?? 0)}
               </p>
             </>
           )}
@@ -86,7 +91,7 @@ export function TerminalPaymentDialog({
                 <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
               <p className="text-sm text-center">
-                El pago fue rechazado en la terminal. Puedes intentar de nuevo.
+                {t("rejected")}
               </p>
             </>
           )}
@@ -95,7 +100,7 @@ export function TerminalPaymentDialog({
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                 <Banknote className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-sm text-center">Cobro cancelado.</p>
+              <p className="text-sm text-center">{t("cancelled")}</p>
             </>
           )}
           {status === "timeout" && (
@@ -104,13 +109,13 @@ export function TerminalPaymentDialog({
                 <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
               <p className="text-sm text-center">
-                La terminal no respondió. Puedes cancelar el cobro o cerrar.
+                {t("timeout")}
               </p>
             </>
           )}
           {status === "error" && (
             <p className="text-sm text-center">
-              Ocurrió un error con el cobro.
+              {t("error")}
             </p>
           )}
         </div>
@@ -123,7 +128,7 @@ export function TerminalPaymentDialog({
               onClick={onCancel}
               disabled={cancelling}
             >
-              {cancelling ? "Cancelando..." : "Cancelar cobro"}
+              {cancelling ? t("cancelling") : t("cancelCharge")}
             </Button>
           )}
           {(status === "timeout" ||
@@ -131,7 +136,7 @@ export function TerminalPaymentDialog({
             status === "error") && (
             <>
               <Button variant="outline" size="sm" className="h-8" onClick={onClose}>
-                Cerrar
+                {t("close")}
               </Button>
               {status === "timeout" && (
                 <SpecularActionButton
@@ -140,14 +145,14 @@ export function TerminalPaymentDialog({
                   onClick={onCancel}
                   disabled={cancelling}
                 >
-                  {cancelling ? "Cancelando..." : "Cancelar cobro"}
+                  {cancelling ? t("cancelling") : t("cancelCharge")}
                 </SpecularActionButton>
               )}
             </>
           )}
           {(status === "pagado" || status === "cancelada") && (
             <SpecularActionButton tone="add" className="h-8" onClick={onClose}>
-              Aceptar
+              {t("accept")}
             </SpecularActionButton>
           )}
         </DialogFooter>

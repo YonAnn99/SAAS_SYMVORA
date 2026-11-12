@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,11 +31,13 @@ export function EtiquetasInput({
   prefijo,
   placeholder,
   max,
-  ayuda = "Ingresa cada valor y presiona Enter.",
+  ayuda,
   ariaLabel,
   className,
 }: EtiquetasInputProps) {
   const [texto, setTexto] = useState("");
+  const t = useTranslations("common.tagsInput");
+  const ayudaFinal = ayuda === undefined ? t("help") : ayuda;
   const lleno = max !== undefined && valores.length >= max;
 
   const agregar = (crudo: string) => {
@@ -70,7 +73,7 @@ export function EtiquetasInput({
             <button
               type="button"
               onClick={() => onChange(valores.filter((x) => x !== v))}
-              aria-label={`Quitar ${v}`}
+              aria-label={t("remove", { valor: v })}
               className="rounded p-0.5 text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
             >
               <X className="h-3 w-3" aria-hidden="true" />
@@ -100,7 +103,7 @@ export function EtiquetasInput({
           />
         )}
       </div>
-      {!lleno && ayuda && <p className="mt-1 text-[11px] text-muted-foreground">{ayuda}</p>}
+      {!lleno && ayudaFinal && <p className="mt-1 text-[11px] text-muted-foreground">{ayudaFinal}</p>}
     </div>
   );
 }

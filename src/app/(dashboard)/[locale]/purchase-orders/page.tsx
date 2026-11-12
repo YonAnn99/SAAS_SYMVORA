@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 export default function PurchaseOrdersPage() {
+  const t = useTranslations("purchaseOrders");
   const { tenantId, tenantName, loading: tenantLoading } = useCurrentTenant();
   const [editingDetails, setEditingDetails] = useState<DetalleOrdenCompra[]>(
     []
@@ -75,8 +77,8 @@ export default function PurchaseOrdersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <div>
           <EncabezadoModulo
-            titulo="Órdenes de Compra"
-            descripcion="Gestiona órdenes de compra con flujo de estados"
+            titulo={t("title")}
+            descripcion={t("subtitle")}
           />
         </div>
         <div className="flex gap-2">
@@ -86,7 +88,7 @@ export default function PurchaseOrdersPage() {
             className="h-8 flex-1 active:scale-[0.98] transition-transform sm:flex-none"
             onClick={handleAdd}
           >
-            Nueva orden
+            {t("new")}
           </SpecularActionButton>
         </div>
       </div>
@@ -96,7 +98,7 @@ export default function PurchaseOrdersPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por número o proveedor..."
+            placeholder={t("search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-8 text-sm"
@@ -139,7 +141,7 @@ export default function PurchaseOrdersPage() {
         order={receivingOrder}
         details={receivingDetails}
         nombreProducto={(id, varianteId) => {
-          const base = products.find((p) => p.id === id)?.nombre ?? "Producto";
+          const base = products.find((p) => p.id === id)?.nombre ?? t("productFallback");
           if (!varianteId) return base;
           const v = variants.find((v) => v.id === varianteId);
           // Sin el sufijo, dos renglones de la misma prenda en distinta talla

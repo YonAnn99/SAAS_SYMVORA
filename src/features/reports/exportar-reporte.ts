@@ -11,7 +11,7 @@
 import { fetchHistorialVentas, type VentaEnHistorial } from "@/features/sales/services/sales-history-service";
 import { numeroOperacion } from "@/features/pos/ticket-format";
 import { cargarJsPdf } from "@/lib/export/pdf";
-import { formatMXN } from "@/lib/money";
+import { formatMoneda, type Moneda } from "@/lib/money";
 
 /** Lo del reporte que se exporta (estructural: `ReportData` de la pagina lo cumple). */
 export interface DatosReporte {
@@ -54,6 +54,8 @@ export interface MetaReporte {
   ventasTruncadas: boolean;
   /** Con "dia" no hay grafica por dia de la semana: tampoco hoja. */
   esDia: boolean;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
 }
 
 export type Celda = string | number | null;
@@ -262,12 +264,12 @@ function formatoDe(seccion: SeccionReporte, fila: number, columna: number): Form
 }
 
 /** Texto para el PDF. */
-export function celdaComoTexto(valor: Celda, formato: Formato): string {
+export function celdaComoTexto(valor: Celda, formato: Formato, moneda: Moneda = "MXN"): string {
   if (valor === null) return "";
   if (typeof valor === "string") return valor;
   switch (formato) {
     case "dinero":
-      return formatMXN(valor);
+      return formatMoneda(valor, moneda);
     case "porcentaje":
       return `${valor.toFixed(1)}%`;
     case "numero":
@@ -302,13 +304,19 @@ export async function traerVentasParaExportar(filtros: {
   return { ventas, truncado: total > ventas.length };
 }
 
-const FORMATO_EXCEL: Partial<Record<Formato, string>> = {
-  dinero: '"$"#,##0.00',
-  porcentaje: '0.0"%"',
-};
+/** Formato de numero de Excel por tipo de celda; el de dinero depende de la moneda. */
+function formatoExcel(formato: Formato, moneda: Moneda): string | undefined {
+  if (formato === "porcentaje") return '0.0"%"';
+  if (formato !== "dinero") return undefined;
+  return moneda === "EUR" ? '#,##0.00 "€"' : '"$"#,##0.00';
+}
 
 /** Una hoja por seccion. `xlsx` (~400 kB) se descarga al exportar, no al abrir Reportes. */
-export async function exportarReporteExcel(secciones: SeccionReporte[], archivo: string): Promise<void> {
+export async function exportarReporteExcel(
+  secciones: SeccionReporte[],
+  archivo: string,
+  moneda: Moneda = "MXN"
+): Promise<void> {
   const XLSX = await import("xlsx");
   const libro = XLSX.utils.book_new();
   for (const seccion of secciones) {
@@ -317,7 +325,7 @@ export async function exportarReporteExcel(secciones: SeccionReporte[], archivo:
     // numeros (se pueden sumar), solo cambia como se ven.
     seccion.filas.forEach((fila, f) =>
       fila.forEach((valor, c) => {
-        const z = FORMATO_EXCEL[formatoDe(seccion, f, c)];
+        const z = formatoExcel(formatoDe(seccion, f, c), moneda);
         if (!z || typeof valor !== "number") return;
         const celda = hoja[XLSX.utils.encode_cell({ r: f + 1, c })];
         if (celda) celda.z = z;
@@ -326,7 +334,7 @@ export async function exportarReporteExcel(secciones: SeccionReporte[], archivo:
     hoja["!cols"] = seccion.encabezados.map((encabezado, c) => {
       const largo = Math.max(
         encabezado.length,
-        ...seccion.filas.map((fila) => celdaComoTexto(fila[c] ?? null, formatoDe(seccion, 0, c)).length)
+        ...seccion.filas.map((fila) => celdaComoTexto(fila[c] ?? null, formatoDe(seccion, 0, c), moneda).length)
       );
       return { wch: Math.min(Math.max(largo + 2, 10), 60) };
     });
@@ -370,7 +378,7 @@ export async function exportarReportePdf(
     autoTable(doc, {
       startY: y + 3,
       head: [seccion.encabezados],
-      body: filas.map((fila, f) => fila.map((valor, c) => celdaComoTexto(valor, formatoDe(seccion, f + offset, c)))),
+      body: filas.map((fila, f) => fila.map((valor, c) => celdaComoTexto(valor, formatoDe(seccion, f + offset, c), meta.moneda))),
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [17, 17, 17], textColor: [255, 255, 255], fontStyle: "bold" },
       alternateRowStyles: { fillColor: [247, 246, 243] },

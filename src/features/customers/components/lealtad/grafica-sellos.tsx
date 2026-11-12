@@ -2,13 +2,15 @@
 
 import "@/components/charts/registro";
 import { Bar } from "react-chartjs-2";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import type { ChartData, ChartOptions } from "chart.js";
 import { useTemaGrafica } from "@/components/charts/use-tema-grafica";
 import { ejeCategorias, opcionesBase, tooltipBase } from "@/components/charts/opciones";
 import { ALTO_GRAFICA_CHICA, TarjetaGrafica } from "@/components/charts/tarjeta-grafica";
 
-function etiquetaSemana(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+function etiquetaSemana(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(localeIntl(locale), { day: "numeric", month: "short" });
 }
 
 /**
@@ -18,14 +20,16 @@ function etiquetaSemana(iso: string): string {
  */
 export function GraficaSellos({ semanas }: { semanas: { inicio: string; sellos: number }[] }) {
   const tema = useTemaGrafica();
+  const t = useTranslations("customers.loyalty.chart");
+  const locale = useLocale();
   const valores = semanas.map((s) => s.sellos);
   const actual = semanas.length - 1;
 
   const datos: ChartData<"bar"> = {
-    labels: semanas.map((s) => etiquetaSemana(s.inicio)),
+    labels: semanas.map((s) => etiquetaSemana(s.inicio, locale)),
     datasets: [
       {
-        label: "Sellos",
+        label: t("stamps"),
         data: valores,
         backgroundColor: valores.map((_, i) => (i === actual ? tema.serie[1] : tema.principal)),
         borderRadius: 4,
@@ -50,10 +54,10 @@ export function GraficaSellos({ semanas }: { semanas: { inicio: string; sellos: 
       tooltip: {
         ...tooltipBase(tema),
         callbacks: {
-          title: (items) => `Semana del ${items[0]?.label ?? ""}`,
+          title: (items) => t("weekOf", { fecha: items[0]?.label ?? "" }),
           label: (ctx) => {
             const n = Number(ctx.parsed.y);
-            return ` ${n} ${n === 1 ? "sello" : "sellos"}`;
+            return ` ${t("stampCount", { count: n })}`;
           },
         },
       },
@@ -61,7 +65,7 @@ export function GraficaSellos({ semanas }: { semanas: { inicio: string; sellos: 
   };
 
   return (
-    <TarjetaGrafica title="Sellos por semana" vacia={valores.every((v) => v === 0)} simple alto={ALTO_GRAFICA_CHICA}>
+    <TarjetaGrafica title={t("title")} vacia={valores.every((v) => v === 0)} simple alto={ALTO_GRAFICA_CHICA}>
       <Bar data={datos} options={opciones} />
     </TarjetaGrafica>
   );

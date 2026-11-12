@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, Gift, Loader2, PauseCircle, Plus, QrCode, Search, Settings2, SlidersHorizontal, Stamp } from "lucide-react";
@@ -37,24 +40,19 @@ const GraficaSellos = dynamic(() => import("./grafica-sellos").then((m) => m.Gra
 
 type Filtro = "todas" | "un-sello" | "premio" | "inactivas" | "qr";
 
-const FILTROS: { valor: Filtro; texto: string }[] = [
-  { valor: "todas", texto: "Todas" },
-  { valor: "un-sello", texto: "A un sello" },
-  { valor: "premio", texto: "Con premio" },
-  { valor: "inactivas", texto: `Sin venir ${DIAS_INACTIVO} días` },
-  { valor: "qr", texto: "Se unieron con QR" },
-];
+/** El texto de cada filtro es `customers.loyalty.tab.filters.<valor>`. */
+const FILTROS: Filtro[] = ["todas", "un-sello", "premio", "inactivas", "qr"];
 
-function diasTexto(dias: number | null): string {
+function diasTexto(dias: number | null, tl: (clave: string, valores?: Record<string, number>) => string): string {
   if (dias == null) return "—";
-  if (dias < 1) return "< 1 día";
+  if (dias < 1) return tl("lessThanDay");
   const n = dias < 10 ? Math.round(dias * 10) / 10 : Math.round(dias);
-  return `${n} ${n === 1 ? "día" : "días"}`;
+  return tl("days", { count: n });
 }
 
-function fechaCorta(iso: string | null): string {
+function fechaCorta(iso: string | null, locale: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString(localeIntl(locale), { day: "numeric", month: "short" });
 }
 
 export function paraVentana(t: TarjetaConCliente): TarjetaParaVentana {
@@ -86,6 +84,8 @@ export function PestanaLealtad({
   onClienteCreado: () => void;
 }) {
   const { programa, tarjetas, resumen, cargando, guardando, guardar, emitir, ajustar, refrescar } = lealtad;
+  const tl = useTranslations("customers.loyalty.tab");
+  const locale = useLocale();
   const [configAbierta, setConfigAbierta] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [ventana, setVentana] = useState<TarjetaParaVentana | null>(null);
@@ -133,12 +133,10 @@ export function PestanaLealtad({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Stamp className="h-5 w-5 text-primary" />
-            Premia a tus clientes frecuentes
+            {tl("welcomeTitle")}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Cada compra suma un sello en una tarjeta digital con tu logo. Al completar los sellos, tu cliente se
-            lleva el premio que tú elijas (por ejemplo, «10 cafés = 1 gratis»). Tu cliente la abre desde su
-            celular, sin descargar nada.
+            {tl("welcomeDesc")}
           </p>
         </CardHeader>
         <CardContent>
@@ -146,7 +144,7 @@ export function PestanaLealtad({
             <FormularioPrograma programa={null} puedeEditar guardando={guardando} onGuardar={guardar} />
           ) : (
             <p className="text-sm text-muted-foreground">
-              Pídele al dueño del negocio que configure el programa de lealtad.
+              {tl("askOwnerSetup")}
             </p>
           )}
         </CardContent>
@@ -183,14 +181,13 @@ export function PestanaLealtad({
         <div className="flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center dark:text-amber-300">
           <PauseCircle className="hidden h-5 w-5 shrink-0 sm:block" aria-hidden="true" />
           <p className="flex-1">
-            <span className="font-medium">El programa de lealtad está pausado.</span> No se suman sellos ni se
-            pueden crear tarjetas nuevas.
-            {!puedeConfigurar && " Pídele al dueño del negocio que lo active."}
+            <span className="font-medium">{tl("pausedTitle")}</span> {tl("pausedDesc")}
+            {!puedeConfigurar && ` ${tl("askOwnerActivate")}`}
           </p>
           {puedeConfigurar && (
             <Button size="sm" className="h-8 shrink-0 gap-1.5" onClick={activar} disabled={guardando}>
               {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Activar programa
+              {tl("activate")}
             </Button>
           )}
         </div>
@@ -199,9 +196,9 @@ export function PestanaLealtad({
       {/* Resumen del mes */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { etiqueta: "Tarjetas activas", valor: resumen?.tarjetasActivas ?? 0 },
-          { etiqueta: "Sellos este mes", valor: resumen?.sellosDelMes ?? 0 },
-          { etiqueta: "Premios este mes", valor: resumen?.canjesDelMes ?? 0 },
+          { etiqueta: tl("activeCards"), valor: resumen?.tarjetasActivas ?? 0 },
+          { etiqueta: tl("stampsThisMonth"), valor: resumen?.sellosDelMes ?? 0 },
+          { etiqueta: tl("rewardsThisMonth"), valor: resumen?.canjesDelMes ?? 0 },
         ].map((c) => (
           <Card key={c.etiqueta}>
             <CardContent className="p-3 sm:p-4">
@@ -218,15 +215,15 @@ export function PestanaLealtad({
         <CardContent className="grid gap-5 p-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
           <div className="grid grid-cols-2 gap-2.5 self-start">
             {[
-              { etiqueta: "A un sello del premio", valor: String(panel.aUnSello), filtro: "un-sello" as Filtro },
-              { etiqueta: "Premios por canjear", valor: String(panel.conPremio), filtro: "premio" as Filtro },
+              { etiqueta: tl("oneStampAway"), valor: String(panel.aUnSello), filtro: "un-sello" as Filtro },
+              { etiqueta: tl("rewardsToRedeem"), valor: String(panel.conPremio), filtro: "premio" as Filtro },
               {
-                etiqueta: "Vuelven cada",
-                valor: diasTexto(panel.diasEntreVisitas),
-                nota: `${panel.recurrentes} ${panel.recurrentes === 1 ? "cliente volvió" : "clientes volvieron"}`,
+                etiqueta: tl("comeBackEvery"),
+                valor: diasTexto(panel.diasEntreVisitas, tl),
+                nota: tl("returned", { count: panel.recurrentes }),
               },
               {
-                etiqueta: `Sin venir ${DIAS_INACTIVO} días`,
+                etiqueta: tl("filters.inactivas", { dias: DIAS_INACTIVO }),
                 valor: String(panel.inactivas),
                 filtro: "inactivas" as Filtro,
               },
@@ -275,8 +272,8 @@ export function PestanaLealtad({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{programa.nombre}</p>
             <p className="truncate text-xs text-muted-foreground">
-              {meta} sellos = {programa.premio_descripcion}
-              {programa.activo ? "" : " · Pausado"}
+              {tl("summary", { meta, premio: programa.premio_descripcion })}
+              {programa.activo ? "" : ` · ${tl("paused")}`}
             </p>
           </div>
           <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${configAbierta ? "rotate-180" : ""}`} />
@@ -305,7 +302,7 @@ export function PestanaLealtad({
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-sm font-medium">
-              Tarjetas <span className="font-mono text-xs text-muted-foreground">{tarjetas.length}</span>
+              {tl("cards")} <span className="font-mono text-xs text-muted-foreground">{tarjetas.length}</span>
             </CardTitle>
             <div className="flex gap-2">
               <div className="relative flex-1 sm:w-56 sm:flex-none">
@@ -313,7 +310,7 @@ export function PestanaLealtad({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar cliente o código"
+                  placeholder={tl("search")}
                   className="h-8 pl-8 text-sm"
                 />
               </div>
@@ -322,31 +319,31 @@ export function PestanaLealtad({
                 className="h-8 gap-1.5"
                 onClick={() => setNuevaAbierta(true)}
                 disabled={!programa.activo}
-                title={programa.activo ? undefined : "Activa el programa para emitir tarjetas"}
+                title={programa.activo ? undefined : tl("activateToIssue")}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Nueva tarjeta
+                {tl("newCard")}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {tarjetas.length > 0 && (
-            <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1" role="radiogroup" aria-label="Filtrar tarjetas">
+            <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1" role="radiogroup" aria-label={tl("filterCards")}>
               {FILTROS.map((f) => (
                 <button
-                  key={f.valor}
+                  key={f}
                   type="button"
                   role="radio"
-                  aria-checked={filtro === f.valor}
-                  onClick={() => setFiltro(f.valor)}
+                  aria-checked={filtro === f}
+                  onClick={() => setFiltro(f)}
                   className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                    filtro === f.valor
+                    filtro === f
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {f.texto}
+                  {tl(`filters.${f}`, { dias: DIAS_INACTIVO })}
                 </button>
               ))}
             </div>
@@ -354,21 +351,21 @@ export function PestanaLealtad({
           {filtradas.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
               {tarjetas.length === 0
-                ? "Aún no hay tarjetas. Crea la primera con «Nueva tarjeta» o desde la lista de clientes."
+                ? tl("emptyNone")
                 : filtro !== "todas" && !busqueda.trim()
-                  ? "Ninguna tarjeta en este grupo por ahora."
-                  : "Ninguna tarjeta coincide con la búsqueda."}
+                  ? tl("emptyGroup")
+                  : tl("emptySearch")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs uppercase tracking-wider">Cliente</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Sellos</TableHead>
-                    <TableHead className="hidden text-xs uppercase tracking-wider sm:table-cell">Última visita</TableHead>
-                    <TableHead className="hidden text-right text-xs uppercase tracking-wider sm:table-cell">Premios</TableHead>
-                    <TableHead className="text-right text-xs uppercase tracking-wider">Acciones</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{tl("colCustomer")}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{tl("colStamps")}</TableHead>
+                    <TableHead className="hidden text-xs uppercase tracking-wider sm:table-cell">{tl("colLastVisit")}</TableHead>
+                    <TableHead className="hidden text-right text-xs uppercase tracking-wider sm:table-cell">{tl("colRewards")}</TableHead>
+                    <TableHead className="text-right text-xs uppercase tracking-wider">{tl("colActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -382,7 +379,7 @@ export function PestanaLealtad({
                             {t.origen === "qr" && (
                               <span
                                 className="shrink-0 rounded-full bg-pink-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-pink-700 dark:text-pink-300"
-                                title="Se registró solo con el QR del mostrador"
+                                title={tl("qrBadge")}
                               >
                                 QR
                               </span>
@@ -398,12 +395,12 @@ export function PestanaLealtad({
                               {t.sellos}/{meta}
                             </span>
                             {p.premiosDisponibles > 0 && (
-                              <Gift className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-label="Premio listo" />
+                              <Gift className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-label={tl("rewardReady")} />
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
-                          {fechaCorta(t.ultima_visita)}
+                          {fechaCorta(t.ultima_visita, locale)}
                         </TableCell>
                         <TableCell className="hidden text-right font-mono text-sm sm:table-cell">
                           {t.premios_canjeados}
@@ -415,8 +412,8 @@ export function PestanaLealtad({
                               size="icon"
                               className="h-7 w-7"
                               onClick={() => setVentana(paraVentana(t))}
-                              aria-label={`Ver tarjeta de ${t.cliente?.nombre ?? "cliente"}`}
-                              title="Ver tarjeta"
+                              aria-label={tl("viewCardOf", { nombre: t.cliente?.nombre ?? tl("customerLower") })}
+                              title={tl("viewCard")}
                             >
                               <QrCode className="h-4 w-4" />
                             </Button>
@@ -426,8 +423,8 @@ export function PestanaLealtad({
                                 size="icon"
                                 className="h-7 w-7"
                                 onClick={() => setAjustando(t)}
-                                aria-label={`Ajustar sellos de ${t.cliente?.nombre ?? "cliente"}`}
-                                title="Ajustar sellos"
+                                aria-label={tl("adjustOf", { nombre: t.cliente?.nombre ?? tl("customerLower") })}
+                                title={tl("adjust")}
                               >
                                 <SlidersHorizontal className="h-4 w-4" />
                               </Button>
@@ -490,6 +487,7 @@ function AjustarSellosDialog({
   onAjustar: (tarjetaId: string, cantidad: number, nota: string) => Promise<boolean>;
 }) {
   const [cantidad, setCantidad] = useState("1");
+  const tl = useTranslations("customers.loyalty.tab");
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -513,14 +511,14 @@ function AjustarSellosDialog({
     <Dialog open onOpenChange={(a) => !a && onCerrar()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-base">Ajustar sellos</DialogTitle>
+          <DialogTitle className="text-base">{tl("adjust")}</DialogTitle>
           <DialogDescription className="text-xs">
-            {tarjeta.cliente?.nombre} tiene {tarjeta.sellos} de {meta} sellos. Usa números negativos para quitar.
+            {tl("adjustDesc", { nombre: tarjeta.cliente?.nombre ?? "", sellos: tarjeta.sellos, meta })}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Sellos a sumar (o quitar)</Label>
+            <Label className="text-xs">{tl("adjustQty")}</Label>
             <Input
               type="number"
               step={1}
@@ -528,26 +526,26 @@ function AjustarSellosDialog({
               onChange={(e) => setCantidad(e.target.value)}
               className="h-8 font-mono text-sm"
             />
-            <p className="text-[11px] text-muted-foreground">Quedará en {Math.max(0, resultado)} sellos.</p>
+            <p className="text-[11px] text-muted-foreground">{tl("adjustResult", { n: Math.max(0, resultado) })}</p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Motivo</Label>
+            <Label className="text-xs">{tl("reason")}</Label>
             <Input
               value={nota}
               maxLength={200}
               onChange={(e) => setNota(e.target.value)}
-              placeholder="Ej. Compra que no se escaneó"
+              placeholder={tl("reasonPlaceholder")}
               className="h-8 text-sm"
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={onCerrar}>
-            Cancelar
+            {tl("cancel")}
           </Button>
           <Button size="sm" onClick={confirmar} disabled={!valido || guardando} className="gap-1.5">
             {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Guardar ajuste
+            {tl("saveAdjust")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -573,6 +571,7 @@ function NuevaTarjetaDialog({
   onEmitir: (clienteId: string) => Promise<boolean>;
 }) {
   const [clienteId, setClienteId] = useState("");
+  const tl = useTranslations("customers.loyalty.tab");
   const [nuevoCliente, setNuevoCliente] = useState(false);
   const [emitiendo, setEmitiendo] = useState(false);
   const yaTiene = tarjetas.some((t) => t.cliente_id === clienteId);
@@ -592,9 +591,9 @@ function NuevaTarjetaDialog({
       <Dialog open={abierta && !nuevoCliente} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base">Nueva tarjeta de lealtad</DialogTitle>
+            <DialogTitle className="text-base">{tl("newCardTitle")}</DialogTitle>
             <DialogDescription className="text-xs">
-              Elige al cliente o regístralo con el botón de la derecha.
+              {tl("newCardDesc")}
             </DialogDescription>
           </DialogHeader>
           <CustomerSelector
@@ -603,20 +602,20 @@ function NuevaTarjetaDialog({
             onSelectCustomer={(id) => setClienteId(id === "none" ? "" : id)}
             onNewCustomer={() => setNuevoCliente(true)}
             allowGeneral={false}
-            label="Cliente"
+            label={tl("colCustomer")}
           />
           {yaTiene && (
             <p className="text-xs text-muted-foreground">
-              Este cliente ya tiene tarjeta: se abrirá la que tiene.
+              {tl("alreadyHas")}
             </p>
           )}
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {tl("cancel")}
             </Button>
             <Button size="sm" onClick={emitir} disabled={!clienteId || emitiendo} className="gap-1.5">
               {emitiendo && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {yaTiene ? "Ver tarjeta" : "Crear tarjeta"}
+              {yaTiene ? tl("viewCard") : tl("createCard")}
             </Button>
           </DialogFooter>
         </DialogContent>

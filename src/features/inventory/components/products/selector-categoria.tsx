@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ interface SelectorCategoriaProps {
 }
 
 export function SelectorCategoria({ value, onChange, categorias }: SelectorCategoriaProps) {
+  const t = useTranslations("products.categorySelector");
   const [nuevas, setNuevas] = useState<string[]>([]);
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -58,23 +60,23 @@ export function SelectorCategoria({ value, onChange, categorias }: SelectorCateg
   return (
     <>
       <Select
-        items={{ [NINGUNA]: "Sin categoría", [CREAR]: "Crear categoría", ...Object.fromEntries(lista.map((c) => [c, c])) }}
+        items={{ [NINGUNA]: t("none"), [CREAR]: t("create"), ...Object.fromEntries(lista.map((c) => [c, c])) }}
         value={value || NINGUNA}
         onValueChange={(v) => {
           if (v === CREAR) setCreando(true);
           else if (typeof v === "string") onChange(v === NINGUNA ? "" : v);
         }}
       >
-        <SelectTrigger className="h-8 w-full text-sm" aria-label="Categoría">
-          <SelectValue placeholder="Sin categoría" />
+        <SelectTrigger className="h-8 w-full text-sm" aria-label={t("label")}>
+          <SelectValue placeholder={t("none")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={CREAR} className="font-medium text-[#1e3a8a] dark:text-blue-400">
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-            Crear categoría
+            {t("create")}
           </SelectItem>
           <SelectSeparator />
-          <SelectItem value={NINGUNA}>Sin categoría</SelectItem>
+          <SelectItem value={NINGUNA}>{t("none")}</SelectItem>
           {lista.map((c) => (
             <SelectItem key={c} value={c}>
               {c}
@@ -92,11 +94,11 @@ export function SelectorCategoria({ value, onChange, categorias }: SelectorCateg
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base">Crea una categoría de productos</DialogTitle>
+            <DialogTitle className="text-base">{t("dialogTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
             <Label htmlFor="nueva-categoria" className="text-xs">
-              Nombre de la categoría
+              {t("nameLabel")}
             </Label>
             <Input
               id="nueva-categoria"
@@ -110,11 +112,11 @@ export function SelectorCategoria({ value, onChange, categorias }: SelectorCateg
                   crear();
                 }
               }}
-              placeholder="Ej: Bebidas"
+              placeholder={t("placeholder")}
               className="h-9 text-sm"
             />
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-destructive">{repetida && limpio ? "Esa categoría ya existe" : ""}</span>
+              <span className="text-destructive">{repetida && limpio ? t("exists") : ""}</span>
               <span className="text-muted-foreground">
                 {nombre.length} / {MAX}
               </span>
@@ -122,10 +124,10 @@ export function SelectorCategoria({ value, onChange, categorias }: SelectorCateg
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" className="h-8" onClick={() => setCreando(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <SpecularActionButton tone="add" className="h-8" disabled={!limpio || repetida} onClick={crear}>
-              Crear
+              {t("createShort")}
             </SpecularActionButton>
           </DialogFooter>
         </DialogContent>

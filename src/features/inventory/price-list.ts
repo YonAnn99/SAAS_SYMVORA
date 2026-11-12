@@ -190,3 +190,16 @@ export function construirFilas(
 
   return filas;
 }
+
+/**
+ * Los errores de `aplicarPorcentaje` y `parsearPrecio` (en espanol) a su clave
+ * en `products.priceLists.errors` de los mensajes, para la interfaz en ingles.
+ */
+export const CLAVE_ERROR_PRECIO: Record<string, string> = {
+  "Escribe un porcentaje válido": "invalidPct",
+  "El porcentaje no puede ser negativo": "negativePct",
+  "Un descuento no puede pasar del 100%": "over100",
+  "Escribe un precio": "emptyPrice",
+  "Escribe un precio válido": "invalidPrice",
+  "El precio no puede ser negativo": "negativePrice",
+};

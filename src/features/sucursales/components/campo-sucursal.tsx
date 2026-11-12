@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { SelectSimple } from "@/components/ui/select-simple";
@@ -19,7 +20,7 @@ export function CampoSucursal({
   id = "campo-sucursal",
   value,
   onChange,
-  etiqueta = "Sucursal",
+  etiqueta,
   ayuda,
 }: {
   id?: string;
@@ -28,19 +29,20 @@ export function CampoSucursal({
   etiqueta?: string;
   ayuda?: string;
 }) {
+  const t = useTranslations("branches.selector");
   const { activas, hayVarias } = useSucursal();
   if (!hayVarias) return null;
 
   return (
     <div className="space-y-1.5">
       <Label className="text-xs" htmlFor={id}>
-        {etiqueta}
+        {etiqueta ?? t("branch")}
       </Label>
       <SelectSimple
         id={id}
         value={value}
         onChange={onChange}
-        placeholder="Selecciona una sucursal…"
+        placeholder={t("pick")}
         opciones={activas.map((s) => ({ value: s.id, label: s.nombre }))}
       />
       {ayuda && <p className="text-[11px] text-muted-foreground">{ayuda}</p>}

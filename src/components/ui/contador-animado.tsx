@@ -10,6 +10,7 @@ import {
   type FormatoContador,
 } from "@/lib/contador";
 import { cn } from "@/lib/utils";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 
 /**
  * Numero que cuenta desde 0 hasta `valor` (expo-out, 1.1 s, tras 120 ms). Si
@@ -20,8 +21,16 @@ import { cn } from "@/lib/utils";
 export function ContadorAnimado({
   valor,
   className,
-  ...formato
-}: FormatoContador & { valor: number; className?: string }) {
+  dinero = false,
+  ...resto
+}: Omit<FormatoContador, "moneda"> & {
+  valor: number;
+  className?: string;
+  /** Monto en la moneda del negocio (`tenants.moneda`). */
+  dinero?: boolean;
+}) {
+  const monedaNegocio = useMonedaDelNegocio();
+  const formato: FormatoContador = dinero ? { moneda: monedaNegocio } : resto;
   const reducir = useReducedMotion();
   const [mostrado, setMostrado] = useState(0);
   // Lo que se ve en este momento: de ahi parte la siguiente animacion.

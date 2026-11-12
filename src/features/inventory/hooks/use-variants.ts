@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
@@ -65,6 +66,8 @@ export function useVariants(
   onCambio?: () => void,
   { cargarProductos = true }: { cargarProductos?: boolean } = {}
 ) {
+  const t = useTranslations("products.variantMsg");
+  const te = useTranslations("inventory.errors");
   // Mismo criterio que la pestaña de productos: con un local elegido, cada
   // talla muestra lo que hay EN ESE local.
   const { seleccionada, hayVarias, activas, restringido, permitidas } = useSucursal();
@@ -210,7 +213,7 @@ export function useVariants(
             entityId: editingVariant.id,
             entityName: etiquetaAtributos(input) || "Variante",
           });
-          toast.success("Variante actualizada");
+          toast.success(t("updated"));
         } else {
           const nuevaId = await createVariant(tenantId, datos);
           if (destinoStock) {
@@ -226,7 +229,7 @@ export function useVariants(
             entity: "producto",
             entityName: etiquetaAtributos(input) || "Variante",
           });
-          toast.success("Variante creada");
+          toast.success(t("created", { count: 1 }));
         }
         void refetch();
         onCambio?.();
@@ -235,18 +238,14 @@ export function useVariants(
       } catch (error: unknown) {
         const isUnique = error instanceof Error && error.message.includes("23505");
         toast.error(
-          isUnique
-            ? "Ya existe una variante con esos atributos para este producto"
-            : error instanceof Error
-              ? "Error al guardar la variante"
-              : "Error al guardar la variante"
+          isUnique ? t("duplicate") : t("saveError")
         );
         return false;
       } finally {
         setSaving(false);
       }
     },
-    [tenantId, editingVariant, refetch, hayVarias, seleccionada, activas, onCambio]
+    [tenantId, editingVariant, refetch, hayVarias, seleccionada, activas, onCambio, t]
   );
 
   /**
@@ -294,21 +293,21 @@ export function useVariants(
             creadas++;
             onCreada?.(indice);
           } catch (error: unknown) {
-            const nombre = etiquetaAtributos(input) || "la variante";
+            const nombre = etiquetaAtributos(input) || t("theVariant");
             const duplicada = error instanceof Error
               ? error.message.includes("23505")
               : String((error as { code?: string })?.code) === "23505";
             toast.error(
               duplicada
-                ? `"${nombre}" ya existe para este producto${creadas ? ` (se crearon ${creadas} antes)` : ""}`
-                : `No se pudo crear "${nombre}"${creadas ? ` (se crearon ${creadas} antes)` : ""}`
+                ? t("alreadyExists", { nombre }) + (creadas ? ` ${t("createdBefore", { count: creadas })}` : "")
+                : t("createError", { nombre }) + (creadas ? ` ${t("createdBefore", { count: creadas })}` : "")
             );
             if (creadas) void refetch();
             onCambio?.();
             return false;
           }
         }
-        toast.success(creadas === 1 ? "Variante creada" : `${creadas} variantes creadas`);
+        toast.success(t("created", { count: creadas }));
         void refetch();
         onCambio?.();
         return true;
@@ -316,7 +315,7 @@ export function useVariants(
         setSaving(false);
       }
     },
-    [tenantId, hayVarias, seleccionada, activas, refetch, onCambio]
+    [tenantId, hayVarias, seleccionada, activas, refetch, onCambio, t]
   );
 
   const confirmar = useConfirmar();
@@ -337,8 +336,8 @@ export function useVariants(
           entityName: nombre,
           details: { archivado: true },
         });
-        toast.success(`«${nombre}» se archivó`, {
-          description: "La encuentras en la pestaña Archivados.",
+        toast.success(t("archived", { nombre }), {
+          description: t("archivedHint"),
         });
         setDeleteConfirm(null);
         setArchivadosVersion((n) => n + 1);
@@ -346,11 +345,11 @@ export function useVariants(
         onCambio?.();
         return true;
       } catch (error) {
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
         return false;
       }
     },
-    [refetch, onCambio]
+    [refetch, onCambio, t, te]
   );
 
   /**
@@ -364,30 +363,30 @@ export function useVariants(
       producto: ProductoDeLaVariante | undefined,
       conHistorial: boolean
     ): Promise<boolean> => {
-      const nombre = etiquetaAtributos(variant) || "Variante";
+      const nombre = etiquetaAtributos(variant) || t("variant");
       const ultima = producto !== undefined && esUltimaVarianteActiva(variant, variants);
       const porHistorial = conHistorial
-        ? "Tiene ventas, compras o movimientos registrados: para no alterar tus reportes no se puede eliminar. "
+        ? t("hasHistoryPrefix") + " "
         : "";
       const ok = await confirmar(
         ultima
           ? {
-              titulo: conHistorial ? `«${nombre}» tiene historial` : `¿Archivar «${producto.nombre}»?`,
-              descripcion: `${porHistorial}Es la única variante de «${producto.nombre}», así que se archiva el producto completo: deja de aparecer en el catálogo y en el punto de venta, y lo puedes restaurar desde la pestaña Archivados.`,
-              accion: "Archivar producto",
+              titulo: conHistorial ? t("hasHistoryTitle", { nombre }) : t("archiveConfirmTitle", { nombre: producto.nombre }),
+              descripcion: porHistorial + t("lastVariantDesc", { producto: producto.nombre }),
+              accion: t("archiveProduct"),
               tono: "aviso",
             }
           : {
-              titulo: conHistorial ? `«${nombre}» tiene historial` : `¿Archivar «${nombre}»?`,
-              descripcion: `${porHistorial}${conHistorial ? "Puedes archivarla: d" : "D"}eja de aparecer en el catálogo y en el punto de venta. Sus ventas y reportes se conservan, y la puedes restaurar desde la pestaña Archivados.`,
-              accion: "Archivar",
+              titulo: conHistorial ? t("hasHistoryTitle", { nombre }) : t("archiveConfirmTitle", { nombre }),
+              descripcion: porHistorial + (conHistorial ? t("archiveDescWithHistory") : t("archiveDesc")),
+              accion: t("archive"),
               tono: "aviso",
             }
       );
       if (!ok) return false;
       return ultima ? producto.archivar() : archivar(variant);
     },
-    [variants, confirmar, archivar]
+    [variants, confirmar, archivar, t]
   );
 
   const handleArchive = useCallback(
@@ -406,14 +405,14 @@ export function useVariants(
           entityId: variant.id,
           entityName: etiquetaAtributos(variant) || "Variante",
         });
-        toast.success("Variante eliminada");
+        toast.success(t("deleted"));
         setDeleteConfirm(null);
         void refetch();
         onCambio?.();
         return true;
       } catch (error) {
         if (!esErrorDeHistorial(error)) {
-          toast.error("Error al eliminar la variante");
+          toast.error(t("deleteError"));
           // La fila deslizable del celular se colapsa ANTES de borrar: con
           // `false` sabe que tiene que reaparecer.
           return false;
@@ -422,7 +421,7 @@ export function useVariants(
         return confirmarYArchivar(variant, producto, true);
       }
     },
-    [refetch, onCambio, confirmarYArchivar]
+    [refetch, onCambio, confirmarYArchivar, t]
   );
 
   /**
@@ -467,7 +466,7 @@ export function useVariants(
         onCambio?.();
       } catch (error: unknown) {
         setVariants((prev) => prev.map((v) => (v.id === variant.id ? { ...v, [campo]: anterior } : v)));
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
       } finally {
         setGuardandoVariantes((prev) => {
           const sig = new Set(prev);
@@ -476,7 +475,7 @@ export function useVariants(
         });
       }
     },
-    [hayVarias, seleccionada, refetch, onCambio]
+    [hayVarias, seleccionada, refetch, onCambio, te]
   );
 
   /** Optimista: si falla, el corazon regresa y se avisa. */
@@ -499,10 +498,10 @@ export function useVariants(
           else rev.delete(variant.id);
           return rev;
         });
-        toast.error(mensajeDeError(error));
+        toast.error(mensajeDeError(error, te));
       }
     },
-    [tenantId, favoritas]
+    [tenantId, favoritas, te]
   );
 
   const filteredVariants = useMemo(

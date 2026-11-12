@@ -13,6 +13,7 @@
  * agregarlo.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,13 +41,14 @@ export function BotonEliminar({
   disabled = false,
   className,
 }: BotonEliminarProps) {
+  const t = useTranslations("common.deleteButton");
   const [borrando, setBorrando] = useState(false);
   const confirmar = useConfirmar();
-  const ayuda = `Mantén presionado para eliminar ${nombre}${detalle ? `. ${detalle}` : ""}`;
+  const ayuda = t("holdToDeleteNamed", { nombre }) + (detalle ? `. ${detalle}` : "");
 
   const eliminar = async () => {
     const si = await confirmar({
-      titulo: `¿Eliminar ${nombre}?`,
+      titulo: t("confirmTitle", { nombre }),
       descripcion: detalle ? `${detalle}.` : undefined,
     });
     if (!si) return;
@@ -72,13 +74,13 @@ export function BotonEliminar({
         // Al completarse NO muestra palomita: todavia falta confirmar en la
         // ventana, y una palomita diria que ya se borro.
         doneIcon={<Trash2 className="h-3.5 w-3.5" />}
-        doneLabel={conTexto ? "Eliminado" : undefined}
+        doneLabel={conTexto ? t("deleted") : undefined}
         disabled={disabled || borrando}
         onHold={() => void eliminar()}
-        onTap={() => toast.info("Mantén presionado para eliminar")}
+        onTap={() => toast.info(t("holdToDelete"))}
         className={cn(!conTexto && "!h-7 !px-2")}
       >
-        {conTexto ? "Mantén para eliminar" : null}
+        {conTexto ? t("holdShort") : null}
       </HoldButton>
     </span>
   );

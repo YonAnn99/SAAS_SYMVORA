@@ -2,23 +2,16 @@
  * Formatos de texto de las graficas. Logica pura (sin Chart.js) para poder
  * probarla: es lo que el comerciante lee en ejes y tooltips.
  */
-import { formatMXN } from "@/lib/money";
+import { formatMoneda, formatMonedaCompacto, type Moneda } from "@/lib/money";
 
-const MXN_COMPACTO = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
-/** Monto completo para tooltips: "$1,234.50". */
-export function montoCompleto(n: number): string {
-  return formatMXN(n);
+/** Monto completo para tooltips: "$1,234.50" (o en la moneda del negocio). */
+export function montoCompleto(n: number, moneda: Moneda = "MXN"): string {
+  return formatMoneda(n, moneda);
 }
 
 /** Monto corto para ejes, donde no cabe el completo: "$1.2 k", "$850". */
-export function montoEje(n: number): string {
-  return MXN_COMPACTO.format(n);
+export function montoEje(n: number, moneda: Moneda = "MXN"): string {
+  return formatMonedaCompacto(n, moneda);
 }
 
 /** Nombre recortado con "…" para que la etiqueta del eje no se coma la barra. */

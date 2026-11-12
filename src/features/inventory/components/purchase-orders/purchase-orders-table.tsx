@@ -1,5 +1,10 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { Check, FileText, Loader2, Pencil, Send } from "lucide-react";
 import { BotonEliminar } from "@/components/ui/boton-eliminar";
 import { WhatsAppLogo } from "@/components/marketing/whatsapp-logo";
@@ -24,7 +29,6 @@ import {
 import type { OrdenCompra } from "../../types/inventory.types";
 import {
   orderEstadoColors,
-  orderEstadoLabels,
 } from "../../services/purchase-order-service";
 import { PurchaseOrderSwipeList } from "./purchase-order-swipe-list";
 
@@ -68,30 +72,33 @@ export function PurchaseOrdersTable({
   onOpen,
   getSupplierPhone,
 }: PurchaseOrdersTableProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("purchaseOrders");
+  const locale = useLocale();
   return (
     <Card className="animate-fade-in-up stagger-3">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <CardTitle className="text-sm font-medium">
-            Órdenes de Compra
+            {t("title")}
           </CardTitle>
           <span className="text-xs text-muted-foreground font-mono">
-            {orders.length} órdenes
+            {t("list.count", { count: orders.length })}
           </span>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-            Cargando...
+            {t("list.loading")}
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <FileText className="h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
               {orders.length === 0
-                ? "No hay órdenes de compra"
-                : "No se encontraron órdenes"}
+                ? t("list.none")
+                : t("list.noneFound")}
             </p>
             <SpecularActionButton
               tone="add"
@@ -99,7 +106,7 @@ export function PurchaseOrdersTable({
               onClick={onAdd}
             >
 
-              Nueva orden
+              {t("new")}
             </SpecularActionButton>
           </div>
         ) : (
@@ -125,22 +132,22 @@ export function PurchaseOrdersTable({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    N° Orden
+                    {t("list.colNumber")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Proveedor
+                    {t("list.colSupplier")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Fecha
+                    {t("list.colDate")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Estado
+                    {t("list.colStatus")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
-                    Total
+                    {t("list.colTotal")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
-                    Acciones
+                    {t("list.colActions")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -166,17 +173,17 @@ export function PurchaseOrdersTable({
                         {getSupplierName(order.proveedor_id)}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {new Date(order.creado_en).toLocaleDateString("es-MX")}
+                        {new Date(order.creado_en).toLocaleDateString(localeIntl(locale))}
                       </TableCell>
                       <TableCell>
                         <Badge
                           className={`${orderEstadoColors[order.estado]} text-[10px] px-1.5 py-0`}
                         >
-                          {orderEstadoLabels[order.estado]}
+                          {t(`statuses.${order.estado}`)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right text-sm font-mono">
-                        ${order.total.toFixed(2)}
+                        {formatear(order.total)}
                       </TableCell>
                       {/* Los botones hacen su propia accion: sin esto, cada
                           clic abriria tambien el desglose. */}
@@ -191,7 +198,7 @@ export function PurchaseOrdersTable({
                                 onClick={() => onEdit(order)}
                               >
                                 <Pencil className="h-3 w-3 mr-1" />
-                                Editar
+                                {t("list.edit")}
                               </Button>
                               {!tieneWhatsApp && (
                                 <Button
@@ -199,10 +206,10 @@ export function PurchaseOrdersTable({
                                   size="sm"
                                   className="h-7 text-xs text-blue-600 hover:text-blue-600"
                                   onClick={() => onStatusChange(order, "ENVIADA")}
-                                  title="Marcar como enviada (el proveedor no tiene WhatsApp)"
+                                  title={t("list.markSentHint")}
                                 >
                                   <Send className="h-3 w-3 mr-1" />
-                                  Enviar
+                                  {t("list.send")}
                                 </Button>
                               )}
                             </>
@@ -222,8 +229,8 @@ export function PurchaseOrdersTable({
                                 disabled={enviando}
                                 title={
                                   order.estado === "BORRADOR"
-                                    ? "Enviar la orden en PDF por WhatsApp"
-                                    : "Reenviar la orden en PDF por WhatsApp"
+                                    ? t("list.sendWhatsApp")
+                                    : t("list.resendWhatsApp")
                                 }
                               >
                                 {enviando ? (
@@ -251,12 +258,12 @@ export function PurchaseOrdersTable({
                               onClick={() => onReceive(order)}
                             >
                               <Check className="h-3 w-3 mr-1" />
-                              Recibir
+                              {t("list.receive")}
                             </Button>
                           )}
                           <BotonEliminar
-                            nombre={`la orden ${order.numero_orden}`}
-                            detalle="No se puede deshacer"
+                            nombre={t("list.theOrder", { numero: order.numero_orden })}
+                            detalle={t("list.noUndo")}
                             onEliminar={async () => {
                               await onDelete(order);
                             }}

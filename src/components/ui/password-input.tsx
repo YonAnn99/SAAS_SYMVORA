@@ -1,17 +1,19 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Eye, EyeOff, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+/** Requisitos de la contraseña; `label` es la clave en `auth.passwordChecks`. */
 function getPasswordChecks(password: string) {
   return [
-    { label: "Mínimo 8 caracteres", met: password.length >= 8 },
-    { label: "1 letra mayúscula", met: /[A-Z]/.test(password) },
-    { label: "1 letra minúscula", met: /[a-z]/.test(password) },
-    { label: "1 número", met: /[0-9]/.test(password) },
-    { label: "1 carácter especial (!@#$%^&*)", met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+    { label: "length", met: password.length >= 8 },
+    { label: "upper", met: /[A-Z]/.test(password) },
+    { label: "lower", met: /[a-z]/.test(password) },
+    { label: "number", met: /[0-9]/.test(password) },
+    { label: "special", met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
   ];
 }
 
@@ -35,6 +37,7 @@ export function PasswordInput({
   required,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
+  const t = useTranslations("auth.passwordChecks");
   const checks = getPasswordChecks(value);
 
   return (
@@ -52,6 +55,7 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setVisible(!visible)}
+          aria-label={visible ? t("hide") : t("show")}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           tabIndex={-1}
         >
@@ -82,7 +86,7 @@ export function PasswordInput({
               >
                 {check.met && <Check className="h-2.5 w-2.5" />}
               </div>
-              {check.label}
+              {t(check.label)}
             </div>
           ))}
         </div>

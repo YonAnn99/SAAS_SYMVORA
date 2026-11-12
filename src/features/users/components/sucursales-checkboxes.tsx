@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useSucursal } from "@/contexts/sucursal-context";
@@ -21,13 +22,14 @@ export function SucursalesCheckboxes({
   idPrefix?: string;
 }) {
   const { activas } = useSucursal();
+  const t = useTranslations("users.ui");
 
   const alternar = (id: string, marcada: boolean) =>
     onChange(marcada ? [...new Set([...value, id])] : value.filter((x) => x !== id));
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">Sucursales</Label>
+      <Label className="text-xs">{t("branches")}</Label>
       <div className="grid gap-2 rounded-md border border-border p-2.5 sm:grid-cols-2">
         {activas.map((s) => {
           const id = `${idPrefix}-${s.id}`;
@@ -45,8 +47,8 @@ export function SucursalesCheckboxes({
       </div>
       <p className="text-[11px] text-muted-foreground">
         {value.length === 0
-          ? "Sin marcar ninguna, podrá trabajar en todas las sucursales."
-          : "Solo podrá abrir caja, mover inventario y ver cifras de las marcadas."}
+          ? t("branchesNone")
+          : t("branchesSome")}
       </p>
     </div>
   );

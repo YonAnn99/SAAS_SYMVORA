@@ -41,7 +41,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit, onDelete }: Suppliers
         </CardTitle>
         <SpecularActionButton tone="add" onClick={onAdd} className="h-8">
 
-          Agregar proveedor
+          {t("purchases.suppliers.add")}
         </SpecularActionButton>
       </CardHeader>
       <CardContent>
@@ -49,7 +49,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit, onDelete }: Suppliers
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <Truck className="h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
-              No hay proveedores registrados
+              {t("purchases.suppliers.none")}
             </p>
           </div>
         ) : (
@@ -69,7 +69,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit, onDelete }: Suppliers
                       manda el pedido. La columna "Contacto" se quitó al dejar de
                       capturarse — habría salido vacía en todo proveedor nuevo. */}
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Celular
+                    {t("purchases.suppliers.phone")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
                     {t("common.email")}
@@ -102,7 +102,7 @@ export function SuppliersTable({ suppliers, onAdd, onEdit, onDelete }: Suppliers
                       </Button>
                       <BotonEliminar
                         nombre={supplier.nombre}
-                        detalle="Sus productos se quedan, sin proveedor asignado"
+                        detalle={t("purchases.suppliers.deleteDetail")}
                         onEliminar={async () => {
                           await onDelete(supplier);
                         }}

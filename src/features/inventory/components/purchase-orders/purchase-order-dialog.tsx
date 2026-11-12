@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -112,6 +115,8 @@ export function PurchaseOrderDialog({
   saving,
   onSave,
 }: PurchaseOrderDialogProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations();
   const [formData, setFormData] = useState<OrdenFormData>(
     defaultOrdenFormData
   );
@@ -247,12 +252,12 @@ export function PurchaseOrderDialog({
 
   const handleSave = () => {
     if (!formData.proveedor_id) {
-      toast.error("Selecciona un proveedor");
+      toast.error(t("purchaseOrders.form.selectSupplierError"));
       return;
     }
 
     if (!formData.numero_orden) {
-      toast.error("Ingresa el número de orden");
+      toast.error(t("purchaseOrders.form.numberRequired"));
       return;
     }
 
@@ -269,12 +274,12 @@ export function PurchaseOrderDialog({
       }));
 
     if (details.length === 0) {
-      toast.error("Agrega al menos un producto a la orden");
+      toast.error(t("purchaseOrders.form.addOneProduct"));
       return;
     }
 
     if (hayVarias && !sucursalId) {
-      toast.error("Elige a qué sucursal va la mercancía");
+      toast.error(t("purchaseOrders.form.chooseBranch"));
       return;
     }
 
@@ -298,24 +303,24 @@ export function PurchaseOrderDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {editingOrder ? "Editar orden de compra" : "Nueva orden de compra"}
+            {editingOrder ? t("purchaseOrders.form.editTitle") : t("purchaseOrders.form.newTitle")}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {editingOrder
-              ? "Actualiza los datos de la orden"
-              : "Crea una nueva orden de compra a proveedor"}
+              ? t("purchaseOrders.form.editDesc")
+              : t("purchaseOrders.form.newDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Proveedor *</Label>
+              <Label className="text-xs">{t("purchaseOrders.form.supplier")}</Label>
               <Select
                 value={formData.proveedor_id}
                 onValueChange={(v) => updateField("proveedor_id", v ?? "")}
               >
                 <SelectTrigger className="h-8 w-full text-sm">
-                  <SelectValue placeholder="Seleccionar proveedor">
+                  <SelectValue placeholder={t("purchases.form.selectSupplier")}>
                     {selectedProveedorName}
                   </SelectValue>
                 </SelectTrigger>
@@ -329,7 +334,7 @@ export function PurchaseOrderDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Número de orden *</Label>
+              <Label className="text-xs">{t("purchaseOrders.form.number")}</Label>
               <Input
                 placeholder="OC-001"
                 value={formData.numero_orden}
@@ -343,13 +348,13 @@ export function PurchaseOrderDialog({
             id="orden-sucursal"
             value={sucursalId}
             onChange={setSucursalId}
-            etiqueta="Sucursal que recibe"
-            ayuda="Al recibir la orden, las unidades entran en este local."
+            etiqueta={t("purchases.form.receivingBranch")}
+            ayuda={t("purchaseOrders.form.branchHint")}
           />
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <Label className="text-xs">Productos</Label>
+              <Label className="text-xs">{t("purchases.form.products")}</Label>
               <div className="flex items-center gap-2">
                 <FiltroCategoriaCompra
                   categorias={categorias}
@@ -363,13 +368,13 @@ export function PurchaseOrderDialog({
                   onClick={addItem}
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" />
-                  Agregar producto
+                  {t("purchases.form.addProduct")}
                 </Button>
               </div>
             </div>
             {formData.items.length === 0 ? (
               <p className="text-xs text-muted-foreground py-4 text-center border rounded-lg">
-                Agrega productos a la orden
+                {t("purchaseOrders.form.empty")}
               </p>
             ) : (
               <div className="space-y-2">
@@ -383,7 +388,7 @@ export function PurchaseOrderDialog({
                         leer la lista entera para encontrar algo. */}
                     <div className="col-span-5 space-y-1 min-w-0">
                       <Label className="text-[10px] text-muted-foreground">
-                        Producto
+                        {t("purchases.detail.product")}
                       </Label>
                       <Combobox
                         items={opcionesFiltradas}
@@ -406,14 +411,14 @@ export function PurchaseOrderDialog({
                         }}
                       >
                         <ComboboxInputGroup className="h-8">
-                          <ComboboxInput placeholder="Buscar producto..." />
+                          <ComboboxInput placeholder={t("purchases.form.searchProduct")} />
                           <ComboboxTrigger />
                         </ComboboxInputGroup>
                         <ComboboxPortal>
                           <ComboboxPositioner>
                             {/* Mas ancho que el campo: nombre y categoria caben sin cortarse. */}
                             <ComboboxPopup className="min-w-64">
-                              <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                              <ComboboxEmpty>{t("purchases.form.noResults")}</ComboboxEmpty>
                               <ComboboxList>
                                 {(o: OpcionCompra) => (
                                   <ComboboxItem key={o.value} value={o.value}>
@@ -434,7 +439,7 @@ export function PurchaseOrderDialog({
                     </div>
                     <div className="col-span-2 space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
-                        Cantidad
+                        {t("purchases.form.quantity")}
                       </Label>
                       <Input
                         type="number"
@@ -452,7 +457,7 @@ export function PurchaseOrderDialog({
                     </div>
                     <div className="col-span-3 space-y-1">
                       <Label className="text-[10px] text-muted-foreground">
-                        Costo
+                        {t("purchases.detail.cost")}
                       </Label>
                       <Input
                         type="number"
@@ -482,9 +487,9 @@ export function PurchaseOrderDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Notas</Label>
+            <Label className="text-xs">{t("purchases.detail.notes")}</Label>
             <Textarea
-              placeholder="Notas adicionales..."
+              placeholder={t("purchases.form.notesPlaceholder")}
               value={formData.notas}
               onChange={(e) => updateField("notas", e.target.value)}
               className="text-sm min-h-[60px]"
@@ -493,7 +498,7 @@ export function PurchaseOrderDialog({
 
           <div className="flex flex-col gap-1 border-t pt-3 text-sm font-mono">
             <span className="self-end text-muted-foreground text-xs">
-              Subtotal: ${subtotal.toFixed(2)}
+              {t("purchases.detail.subtotal", { monto: `${formatear(subtotal)}` })}
             </span>
 
             {/* Mismo patrón que el carrito del Punto de Venta: la casilla a la
@@ -507,17 +512,17 @@ export function PurchaseOrderDialog({
                     updateField("incluye_iva", checked === true)
                   }
                 />
-                Incluir IVA (16%)
+                {t("purchases.form.includeTax")}
               </label>
               {formData.incluye_iva && (
                 <span className="text-muted-foreground">
-                  ${impuesto.toFixed(2)}
+                  {formatear(impuesto)}
                 </span>
               )}
             </div>
 
             <span className="self-end font-semibold">
-              Total: ${total.toFixed(2)}
+              {t("purchases.detail.total", { monto: `${formatear(total)}` })}
             </span>
           </div>
         </div>
@@ -528,7 +533,7 @@ export function PurchaseOrderDialog({
             className="h-8"
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <SpecularActionButton
             tone="add"
@@ -537,10 +542,10 @@ export function PurchaseOrderDialog({
             disabled={saving}
           >
             {saving
-              ? "Guardando..."
+              ? t("purchaseOrders.form.saving")
               : editingOrder
-                ? "Guardar cambios"
-                : "Crear orden"}
+                ? t("purchases.saveChanges")
+                : t("purchaseOrders.form.create")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

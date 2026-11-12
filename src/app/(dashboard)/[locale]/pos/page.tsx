@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -17,7 +19,12 @@ import {
   variantPrice,
 } from "@/features/pos/components/variant-picker-dialog";
 import { useOpenRegister } from "@/features/cash-register/hooks/use-open-register";
-import { OpenRegisterDialog, OpenRegisterRequiredDialog, abrirCaja } from "@/features/cash-register";
+import {
+  OpenRegisterDialog,
+  OpenRegisterRequiredDialog,
+  abrirCaja,
+  useTextosAbrirCaja,
+} from "@/features/cash-register";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useModulos } from "@/hooks/use-modulos";
@@ -123,7 +130,9 @@ function leerVistaPosConRespaldo(): PosViewMode {
 }
 
 export default function POSPage() {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  const textosAbrirCaja = useTextosAbrirCaja();
   const router = useRouter();
   const { tenantId, userId: usuarioContexto, role, userName, loading: tenantLoading } = useCurrentTenant();
   // "¡Hola, {nombre}!" solo para el cajero, que no entra al Dashboard; los
@@ -317,7 +326,7 @@ export default function POSPage() {
       // que cobra el servidor. Tampoco antes de restaurar el carrito guardado
       // de la pestaña: la restauracion reemplazaria lo agregado.
       if (loadingProducts || !carritoRestaurado) {
-        toast.info("Actualizando precios, intenta de nuevo en un momento");
+        toast.info(t("pos.msg.updatingPricesTryAgain"));
         return;
       }
       // La unidad de la variante si tiene la suya (migracion 104).
@@ -350,7 +359,7 @@ export default function POSPage() {
       });
       animarAlCarrito(origen, cartLineKey(product.id, variant?.id ?? null));
     },
-    [addItem, mapaLista, loadingProducts, carritoRestaurado]
+    [addItem, mapaLista, loadingProducts, carritoRestaurado, t]
   );
 
   // Conteo para el distintivo de la cuadrícula. Se deriva de la MISMA fuente
@@ -393,7 +402,7 @@ export default function POSPage() {
       origenVueloRef.current = origen ?? null;
       if (idsDeLista && !idsDeLista.has(product.id)) {
         toast.error(
-          `"${product.nombre}" no esta en ${nombreListaElegida}. Cambia a precios normales para venderlo.`
+          t("pos.msg.notInListSwitch", { nombre: product.nombre, lista: nombreListaElegida })
         );
         return;
       }
@@ -410,12 +419,12 @@ export default function POSPage() {
 
       // Un servicio se cobra sin existencias: no hay nada que se acabe.
       if (!product.es_servicio && product.stock_actual <= 0) {
-        toast.error("Sin stock disponible");
+        toast.error(t("pos.msg.noStock"));
         return;
       }
       addResolved(product, null);
     },
-    [variantsByProduct, addResolved, idsDeLista, nombreListaElegida]
+    [variantsByProduct, addResolved, idsDeLista, nombreListaElegida, t]
   );
 
   // Adjunta la tarjeta de lealtad leida (ya normalizada) y asigna su cliente a
@@ -425,14 +434,14 @@ export default function POSPage() {
       const meta = lealtad.programa?.sellos_meta ?? 0;
       void lealtad.adjuntarPorCodigo(codigoTarjeta).then((tarjeta) => {
         if (!tarjeta) {
-          toast.error("Esa tarjeta de lealtad no es de este negocio");
+          toast.error(t("pos.msg.cardNotFromBusiness"));
           return;
         }
         setSelectedCustomer(tarjeta.cliente_id);
-        toast.success(`Tarjeta de ${tarjeta.cliente?.nombre ?? "cliente"}: ${tarjeta.sellos}/${meta} sellos`);
+        toast.success(t("pos.msg.cardAttached", { nombre: tarjeta.cliente?.nombre ?? t("pos.msg.customerFallback"), sellos: tarjeta.sellos, meta }));
       });
     },
-    [lealtad]
+    [lealtad, t]
   );
 
   // Boton QR del POS: solo acepta tarjetas. Un codigo de producto suena mal y
@@ -440,11 +449,11 @@ export default function POSPage() {
   const leerTarjetaCamara = useCallback(
     (codigo: string): ResultadoEscaneo => {
       const codigoTarjeta = codigoDesdeEscaneo(codigo);
-      if (!codigoTarjeta) return { tipo: "error", mensaje: "Ese código no es una tarjeta de lealtad" };
+      if (!codigoTarjeta) return { tipo: "error", mensaje: t("pos.msg.notALoyaltyCard") };
       adjuntarTarjetaEscaneada(codigoTarjeta);
-      return { tipo: "salir", mensaje: "Tarjeta de lealtad leída" };
+      return { tipo: "salir", mensaje: t("pos.msg.loyaltyCardRead") };
     },
-    [adjuntarTarjetaEscaneada]
+    [adjuntarTarjetaEscaneada, t]
   );
 
   // Un codigo leido, venga del lector fisico (Enter en el buscador) o de la
@@ -458,7 +467,7 @@ export default function POSPage() {
       // Mismo candado que `addResolved`: con el catalogo de la cache aun sin
       // confirmar no se agrega (el aviso sale en el escaner, no un toast).
       if (loadingProducts || !carritoRestaurado) {
-        return { tipo: "error", mensaje: "Actualizando precios, escanea de nuevo" };
+        return { tipo: "error", mensaje: t("pos.msg.updatingPricesScanAgain") };
       }
       // Tarjeta de lealtad: su QR (la URL /tarjeta/...) o su codigo tecleado. Un
       // codigo de producto gana si coincide con uno del catalogo.
@@ -468,36 +477,36 @@ export default function POSPage() {
         (/\/tarjeta\//i.test(codigo) || !resolverCodigo(codigo, products, variantsByProduct))
       ) {
         adjuntarTarjetaEscaneada(codigoTarjeta);
-        return { tipo: "ok", mensaje: "Tarjeta de lealtad leída" };
+        return { tipo: "ok", mensaje: t("pos.msg.loyaltyCardRead") };
       }
       const encontrado = resolverCodigo(codigo, products, variantsByProduct);
       if (!encontrado) {
-        return { tipo: "error", mensaje: `Código ${codigo.trim()} no encontrado` };
+        return { tipo: "error", mensaje: t("pos.msg.codeNotFound", { codigo: codigo.trim() }) };
       }
       const { product, variant } = encontrado;
       if (idsDeLista && !idsDeLista.has(product.id)) {
-        return { tipo: "error", mensaje: `"${product.nombre}" no está en ${nombreListaElegida}` };
+        return { tipo: "error", mensaje: t("pos.msg.notInPriceList", { nombre: product.nombre, lista: nombreListaElegida }) };
       }
       const etiqueta = variant ? `${product.nombre} ${variantLabel(variant)}` : product.nombre;
 
       // El codigo del producto, que tiene tallas: hay que elegir cual.
       if (!variant && (variantsByProduct[product.id]?.length ?? 0) > 0) {
         setVariantPickerFor(product);
-        return { tipo: "salir", mensaje: `Elige la variante de ${product.nombre}` };
+        return { tipo: "salir", mensaje: t("pos.msg.chooseVariant", { nombre: product.nombre }) };
       }
       const stock = variant ? variant.stock_actual : product.stock_actual;
       if (!product.es_servicio && stock <= 0) {
-        return { tipo: "error", mensaje: `${etiqueta}: sin stock` };
+        return { tipo: "error", mensaje: t("pos.msg.itemNoStock", { etiqueta }) };
       }
       // Por medida (kg, l...) se pregunta la cantidad en su propia ventana.
       if (esFraccionable(unidadDeVenta(product, variant))) {
         addResolved(product, variant);
-        return { tipo: "salir", mensaje: `Captura la cantidad de ${etiqueta}` };
+        return { tipo: "salir", mensaje: t("pos.msg.enterQuantity", { etiqueta }) };
       }
       addResolved(product, variant);
-      return { tipo: "ok", mensaje: `${etiqueta} agregado` };
+      return { tipo: "ok", mensaje: t("pos.msg.itemAdded", { etiqueta }) };
     },
-    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado, lealtad, adjuntarTarjetaEscaneada]
+    [products, variantsByProduct, idsDeLista, nombreListaElegida, addResolved, loadingProducts, carritoRestaurado, lealtad, adjuntarTarjetaEscaneada, t]
   );
 
   // "Agregar articulo" se quito: Enter en el buscador (y el lector de codigos,
@@ -511,11 +520,11 @@ export default function POSPage() {
       if (id === sucursalMostrador) return;
       if (itemCount > 0) {
         clearCart();
-        toast.info("Se vació la venta en curso al cambiar de sucursal");
+        toast.info(t("pos.msg.cartClearedBranch"));
       }
       setSeleccionada(id);
     },
-    [sucursalMostrador, itemCount, clearCart, setSeleccionada]
+    [sucursalMostrador, itemCount, clearCart, setSeleccionada, t]
   );
 
   // Si no abre caja en el local elegido: vuelve a la que ya tiene abierta, o al
@@ -685,13 +694,13 @@ export default function POSPage() {
       toast.error(mensaje);
       throw new Error(mensaje);
     };
-    if (items.length === 0) fallar("El carrito está vacío");
-    if (!selectedPayment) fallar("Selecciona un método de pago");
+    if (items.length === 0) fallar(t("pos.emptyCart"));
+    if (!selectedPayment) fallar(t("pos.msg.selectPayment"));
     if (selectedPayment === "CREDITO" && selectedCustomer === "none") {
-      fallar("Selecciona un cliente para la venta a crédito");
+      fallar(t("pos.msg.selectCustomerCredit"));
     }
     if (isEfectivo && montoRecibidoInsuficiente) {
-      fallar("El monto recibido debe ser al menos el total de la venta");
+      fallar(t("pos.msg.amountTooLow"));
     }
 
     if (selectedPayment === "TARJETA_TERMINAL") {
@@ -763,7 +772,7 @@ export default function POSPage() {
         ? estadoLealtad.premio_canjeado
           ? `Premio canjeado: ${estadoLealtad.premio_descripcion}`
           : `Sellos: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}${
-              sinSelloPorMinima ? ` (compra menor a $${compraMinima.toFixed(2)})` : ""
+              sinSelloPorMinima ? ` (compra menor a ${formatear(compraMinima)})` : ""
             }`
         : null;
       const descuentoManual = Math.round((totalsCobro.descuento - (premioLealtad?.monto ?? 0)) * 100) / 100;
@@ -793,13 +802,13 @@ export default function POSPage() {
         subtotal: totalsCobro.subtotal,
         total: totalsCobro.total,
       };
-      toast.success(`Venta completada: $${totalsCobro.total.toFixed(2)}`);
+      toast.success(t("pos.msg.saleCompleted", { total: formatear(totalsCobro.total) }));
       if (estadoLealtad?.premio_canjeado) {
-        toast.success(`Premio canjeado: ${estadoLealtad.premio_descripcion}`);
+        toast.success(t("pos.msg.rewardRedeemed", { premio: estadoLealtad.premio_descripcion }));
       } else if (estadoLealtad?.sello_sumado) {
-        toast.success(`Sello sumado: ${estadoLealtad.sellos}/${estadoLealtad.sellos_meta}`);
+        toast.success(t("pos.msg.stampAdded", { sellos: estadoLealtad.sellos, meta: estadoLealtad.sellos_meta }));
       } else if (sinSelloPorMinima) {
-        toast.info(`No sumó sello: la compra mínima es $${compraMinima.toFixed(2)}`);
+        toast.info(t("pos.msg.noStampMinimum", { minimo: formatear(compraMinima) }));
       }
     } catch (error) {
       // Un fallo de red aqui deja la venta EN DUDA: la peticion pudo llegar al
@@ -821,11 +830,11 @@ export default function POSPage() {
 
       if (pareceFalloDeRed) {
         toast.error(
-          "No se pudo confirmar la venta por un problema de conexión. Búscala en Reportes antes de volver a cobrarla: puede que sí haya quedado registrada.",
+          t("pos.msg.saleUncertain"),
           { duration: 12000 }
         );
       } else {
-        toast.error(mensaje || "Error al procesar la venta");
+        toast.error(mensaje || t("pos.msg.saleError"));
       }
       throw error;
     } finally {
@@ -1021,7 +1030,7 @@ export default function POSPage() {
             origenVueloRef.current = origen ?? null;
             if (idsDeLista && !idsDeLista.has(product.id)) {
               toast.error(
-                `"${product.nombre}" no está en ${nombreListaElegida}. Cambia a precios normales para venderlo.`
+                t("pos.msg.notInListSwitch", { nombre: product.nombre, lista: nombreListaElegida })
               );
               return;
             }
@@ -1097,7 +1106,7 @@ export default function POSPage() {
               {t("pos.cart")}
               {itemCount > 0 && (
                 <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-                  · {itemCount} artículo{itemCount === 1 ? "" : "s"}
+                  · {t("pos.msg.itemCount", { count: itemCount })}
                 </span>
               )}
             </SheetTitle>
@@ -1218,7 +1227,7 @@ export default function POSPage() {
             !estaEnLista(mapaLista, variantPickerFor.id, variant?.id ?? null)
           ) {
             toast.error(
-              `Esa opcion de "${variantPickerFor.nombre}" no esta en ${nombreListaElegida}.`
+              t("pos.msg.optionNotInList", { nombre: variantPickerFor.nombre, lista: nombreListaElegida })
             );
             return;
           }
@@ -1265,7 +1274,7 @@ export default function POSPage() {
       }}
       onCancel={cancelarAperturaDueno}
       onConfirm={async (fondoInicial, sucursalId) => {
-        const caja = await abrirCaja(tenantId, fondoInicial, sucursalId);
+        const caja = await abrirCaja(tenantId, fondoInicial, sucursalId, textosAbrirCaja);
         // `abrirCaja` avisa y el catalogo se recarga solo. Se fija ademas la
         // sucursal elegida para que el POS se quede en ese local.
         if (caja?.sucursal_id) setSeleccionada(caja.sucursal_id);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
 /**
@@ -18,6 +18,7 @@ import { usePathname } from "next/navigation";
  */
 export function LegalFooter() {
   const locale = useLocale();
+  const t = useTranslations("layout.legalFooter");
   // En el Punto de Venta, por debajo de `lg` (celular y tablet, con dock), el
   // pie se quita: cada pixel es para productos y la barra del carrito. Los
   // enlaces siguen en cualquier otra pantalla del panel. Ver `ALTO_PANEL_POS`.
@@ -29,9 +30,9 @@ export function LegalFooter() {
   const MARKETING = "https://www.symvora.com.mx";
 
   const links = [
-    { href: `${MARKETING}/${locale}/terminos`, label: "Términos" },
-    { href: `${MARKETING}/${locale}/aviso-privacidad`, label: "Privacidad" },
-    { href: `${MARKETING}/${locale}/politica-cookies`, label: "Cookies" },
+    { href: `${MARKETING}/${locale}/terminos`, label: t("terms") },
+    { href: `${MARKETING}/${locale}/aviso-privacidad`, label: t("privacy") },
+    { href: `${MARKETING}/${locale}/politica-cookies`, label: t("cookies") },
   ];
 
   return (
@@ -45,11 +46,11 @@ export function LegalFooter() {
         <span>
           © 2026 SYMVORA.
           {/* La frase entera no cabe en 360px junto a los tres enlaces. */}
-          <span className="hidden sm:inline"> Todos los derechos reservados.</span>
+          <span className="hidden sm:inline"> {t("rights")}</span>
         </span>
 
         <nav
-          aria-label="Enlaces legales"
+          aria-label={t("legalLinks")}
           className="flex items-center gap-x-3 sm:gap-x-4"
         >
           {links.map((link) => (

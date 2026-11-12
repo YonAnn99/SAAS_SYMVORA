@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 /**
  * Los clientes en celular: una pastilla por cliente en lugar de la tabla
  * (ver `components/ui/fila-deslizable.tsx`).
@@ -13,6 +15,7 @@
  * escritorio): se avisa y la pastilla reaparece.
  */
 
+import { useTranslations } from "next-intl";
 import { CreditCard, HandCoins, Receipt, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +59,9 @@ export function CustomerSwipeList({
   onEliminar,
   onVerTarjeta,
 }: CustomerSwipeListProps) {
+  const { formatear } = useMoneda();
   const { verPista, alAbrir } = usePistaDeslizar();
+  const t = useTranslations("customers");
   const conTarjetas = metaSellos !== null;
 
   return (
@@ -64,8 +69,8 @@ export function CustomerSwipeList({
       {verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
           {conTarjetas
-            ? "Desliza ← para ver su cuenta o abonar, → para ver su tarjeta"
-            : "Desliza a la izquierda para ver su cuenta o abonar"}
+            ? t("swipeHintCards")
+            : t("swipeHint")}
         </p>
       )}
 
@@ -75,12 +80,12 @@ export function CustomerSwipeList({
 
         const eliminar: AccionFila = {
           id: "eliminar",
-          etiqueta: "Eliminar",
+          etiqueta: t("delete"),
           color: COLOR_ELIMINAR,
           icono: <Trash2 size={18} strokeWidth={2} />,
           alElegir: () => {
             if (debe) {
-              toast.error("Tiene saldo pendiente: registra su abono antes de eliminarlo");
+              toast.error(t("deleteHasBalance"));
               return Promise.resolve(false);
             }
             return onEliminar(c);
@@ -88,16 +93,16 @@ export function CustomerSwipeList({
           confirmar: debe
             ? undefined
             : {
-                titulo: `¿Eliminar a ${c.nombre}?`,
+                titulo: t("deleteTitle", { nombre: c.nombre }),
                 descripcion:
                   sellos !== null
-                    ? "También se borra su tarjeta de lealtad. No se puede deshacer"
-                    : "No se puede deshacer",
+                    ? t("deleteWithCard")
+                    : t("deleteNoUndo"),
               },
         };
         const abonar: AccionFila = {
           id: "abonar",
-          etiqueta: "Abonar",
+          etiqueta: t("pay"),
           color: COLOR_ABONO,
           icono: <HandCoins size={18} strokeWidth={2} />,
           alElegir: () => {
@@ -110,7 +115,7 @@ export function CustomerSwipeList({
 
         const cuenta: AccionFila = {
           id: "cuenta",
-          etiqueta: "Cuenta",
+          etiqueta: t("account"),
           color: COLOR_CUENTA,
           icono: <Receipt size={18} strokeWidth={2} />,
           alElegir: () => onEstadoCuenta(c),
@@ -126,7 +131,7 @@ export function CustomerSwipeList({
               conTarjetas
                 ? {
                     id: "tarjeta",
-                    etiqueta: sellos !== null ? "Tarjeta" : "Crear tarjeta",
+                    etiqueta: sellos !== null ? t("card") : t("createCard"),
                     color: COLOR_TARJETA,
                     icono: <CreditCard size={18} strokeWidth={2} />,
                     alElegir: () => onVerTarjeta(c),
@@ -146,18 +151,18 @@ export function CustomerSwipeList({
                 )}
               </p>
               <p className="truncate text-xs opacity-60">
-                Límite <span className="font-mono">${c.limite_credito.toFixed(2)}</span>
+                {t("limit")} <span className="font-mono">{formatear(c.limite_credito)}</span>
               </p>
             </div>
             <div className="shrink-0 text-right">
               {debe ? (
                 <Badge variant="destructive" className="px-1.5 py-0 font-mono text-[11px]">
-                  ${c.saldo_pendiente.toFixed(2)}
+                  {formatear(c.saldo_pendiente)}
                 </Badge>
               ) : (
-                <span className="font-mono text-sm opacity-50">$0.00</span>
+                <span className="font-mono text-sm opacity-50">{formatear(0)}</span>
               )}
-              <p className="text-[10px] opacity-50">Saldo</p>
+              <p className="text-[10px] opacity-50">{t("balance")}</p>
             </div>
           </FilaDeslizable>
         );

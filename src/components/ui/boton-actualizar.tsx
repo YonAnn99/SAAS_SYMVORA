@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ export function BotonActualizar({
   soloIcono?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("common.refresh");
   const [cargando, setCargando] = useState(false);
   const enCurso = useRef(false);
 
@@ -37,7 +39,7 @@ export function BotonActualizar({
     try {
       await onActualizar();
     } catch {
-      toast.error("No se pudieron actualizar los datos");
+      toast.error(t("error"));
     } finally {
       const resta = GIRO_MINIMO_MS - (Date.now() - inicio);
       if (resta > 0) await new Promise((r) => setTimeout(r, resta));
@@ -54,11 +56,11 @@ export function BotonActualizar({
       className={cn(soloIcono ? "h-8 w-8 shrink-0 p-0" : "h-8 gap-1.5", className)}
       onClick={() => void actualizar()}
       disabled={cargando}
-      aria-label="Actualizar datos"
-      title="Actualizar datos"
+      aria-label={t("aria")}
+      title={t("aria")}
     >
       <RefreshCw className={cn("h-3.5 w-3.5", cargando && "animate-spin")} aria-hidden="true" />
-      {!soloIcono && <span className="hidden sm:inline">{cargando ? "Actualizando…" : "Actualizar"}</span>}
+      {!soloIcono && <span className="hidden sm:inline">{cargando ? t("loading") : t("label")}</span>}
     </Button>
   );
 }

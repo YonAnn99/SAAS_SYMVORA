@@ -91,28 +91,28 @@ export function PolicyUpdateBanner() {
           <div className="max-w-5xl mx-auto flex items-start gap-3">
             <div className="flex-1 text-sm text-amber-900">
               <p className="font-medium">
-                Hemos actualizado nuestros documentos legales.
+                {t("legal.updateBanner.title")}
               </p>
               <p className="mt-1 text-amber-800">
-                Por favor revisa los{" "}
+                {t("legal.updateBanner.reviewThe")}{" "}
                 <Link
                   href={`/${locale}/terminos`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline font-medium"
                 >
-                  Términos y Condiciones
+                  {t("legal.updateBanner.terms")}
                 </Link>{" "}
-                y el{" "}
+                {t("legal.updateBanner.and")}{" "}
                 <Link
                   href={`/${locale}/aviso-privacidad`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline font-medium"
                 >
-                  Aviso de Privacidad
+                  {t("legal.updateBanner.privacy")}
                 </Link>{" "}
-                actualizados antes de continuar.
+                {t("legal.updateBanner.beforeContinue")}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -121,12 +121,12 @@ export function PolicyUpdateBanner() {
                 onClick={acceptCurrent}
                 className="text-xs font-medium bg-amber-900 text-white px-3 py-1.5 rounded-md hover:bg-amber-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
-                {t("notFound.home") === "Ir al inicio" ? "Aceptar" : "Accept"}
+                {t("legal.updateBanner.accept")}
               </button>
               <button
                 type="button"
                 onClick={dismiss}
-                aria-label="Cerrar"
+                aria-label={t("legal.updateBanner.close")}
                 className="p-1.5 rounded-md text-amber-900 hover:bg-amber-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
                 <X className="w-4 h-4" aria-hidden="true" />

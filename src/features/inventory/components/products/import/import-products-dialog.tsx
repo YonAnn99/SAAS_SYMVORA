@@ -201,7 +201,7 @@ export function ImportProductsDialog({
         created += outcome.createdCount;
         outcome.errors.forEach((chunkError) => {
           const message = chunkError.message.includes("uq_productos_tenant_codigo_barras")
-            ? "Código de barras duplicado (ya existe en tu catálogo o se repite en el archivo)"
+            ? t("inventory.errors.barcodeDuplicateImport")
             : chunkError.message;
           chunkError.rowIndexes.forEach((rowIndex) => {
             errors.push({ row: rowIndex, message });

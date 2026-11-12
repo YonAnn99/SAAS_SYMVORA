@@ -1,7 +1,19 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { animarAlCarrito, controlDelArco, framesDeArco } from "@/features/pos/vuelo-al-carrito";
-import { MobileCartBar } from "@/features/pos/components/mobile-cart-bar";
+import { NextIntlClientProvider } from "next-intl";
+import type { ComponentProps } from "react";
+import { MobileCartBar as BarraSinIdioma } from "@/features/pos/components/mobile-cart-bar";
+import mensajes from "@/messages/es.json";
+
+/** La barra usa next-intl: se prueba con los textos en espanol. */
+function MobileCartBar(props: ComponentProps<typeof BarraSinIdioma>) {
+  return (
+    <NextIntlClientProvider locale="es" messages={mensajes}>
+      <BarraSinIdioma {...props} />
+    </NextIntlClientProvider>
+  );
+}
 
 function traslado(frame: Keyframe): [number, number, number] {
   const m = String(frame.transform).match(/translate\((-?[\d.]+)px, (-?[\d.]+)px\) scale\((-?[\d.]+)\)/);

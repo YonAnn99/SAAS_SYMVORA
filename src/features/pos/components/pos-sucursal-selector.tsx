@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { Store } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ export function PosSucursalSelector({
   onChange: (id: string) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("pos.bar");
   const items = useMemo(
     () => Object.fromEntries(sucursales.map((s) => [s.id, s.nombre])),
     [sucursales]
@@ -46,9 +48,9 @@ export function PosSucursalSelector({
       }}
       disabled={disabled}
     >
-      <SelectTrigger className="w-full sm:w-44 h-9" aria-label="Sucursal donde cobras">
+      <SelectTrigger className="w-full sm:w-44 h-9" aria-label={t("branchCharging")}>
         <Store className="h-3.5 w-3.5 mr-2 shrink-0" aria-hidden="true" />
-        <SelectValue placeholder="Sucursal" />
+        <SelectValue placeholder={t("branch")} />
       </SelectTrigger>
       <SelectContent>
         {sucursales.map((s) => (

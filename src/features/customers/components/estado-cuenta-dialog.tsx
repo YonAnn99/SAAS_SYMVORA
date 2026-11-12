@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { ChevronRight, HandCoins, Loader2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { clavePagoI18n, numeroOperacion } from "@/features/pos/ticket-format";
 import { SaleDetailDialog, EstadoVentaBadge } from "@/features/sales/components/sale-detail-dialog";
 import type { Cliente } from "@/lib/types/database";
@@ -28,8 +29,8 @@ interface EstadoCuentaDialogProps {
   onAbonar: (cliente: Cliente) => void;
 }
 
-function fechaCorta(iso: string): string {
-  return new Date(iso).toLocaleString("es-MX", {
+function fechaCorta(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(localeIntl(locale), {
     timeZone: "America/Mexico_City",
     day: "numeric",
     month: "short",
@@ -49,7 +50,9 @@ function fechaCorta(iso: string): string {
  * `sales.view_all` solo se ven las propias, y se avisa.
  */
 export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCuentaDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  const locale = useLocale();
   const [estado, setEstado] = useState<EstadoCuenta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ventaAbierta, setVentaAbierta] = useState<string | null>(null);
@@ -65,11 +68,11 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
     });
     fetchEstadoCuenta(cliente.id)
       .then((e) => !cancelado && setEstado(e))
-      .catch(() => !cancelado && setError("No se pudo cargar el estado de cuenta."));
+      .catch(() => !cancelado && setError(t("customers.statementDialog.loadError")));
     return () => {
       cancelado = true;
     };
-  }, [cliente]);
+  }, [cliente, t]);
 
   const movimientos = useMemo(() => (estado ? movimientosDeCuenta(estado) : []), [estado]);
   const saldo = estado?.cliente.saldo_pendiente ?? cliente?.saldo_pendiente ?? 0;
@@ -81,24 +84,24 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-primary" aria-hidden />
-              Estado de cuenta
+              {t("customers.statement")}
             </DialogTitle>
             <DialogDescription>{cliente?.nombre}</DialogDescription>
           </DialogHeader>
 
           <div className="flex items-end justify-between gap-3 rounded-xl border border-border bg-muted/40 p-3">
             <div>
-              <p className="text-xs text-muted-foreground">Debe</p>
+              <p className="text-xs text-muted-foreground">{t("customers.statementDialog.owes")}</p>
               <p className={cn("text-2xl font-bold tabular-nums", saldo > 0 && "text-red-600 dark:text-red-400")}>
-                {formatMXN(saldo)}
+                {formatear(saldo)}
               </p>
             </div>
             {estado && estado.cliente.limite_credito > 0 && (
               <p className="text-right text-xs text-muted-foreground">
-                Límite de crédito
+                {t("customers.form.creditLimit")}
                 <br />
                 <span className="font-medium text-foreground tabular-nums">
-                  {formatMXN(estado.cliente.limite_credito)}
+                  {formatear(estado.cliente.limite_credito)}
                 </span>
               </p>
             )}
@@ -106,20 +109,20 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
 
           {estado?.ventas_parciales && (
             <p className="text-[11px] text-muted-foreground">
-              Solo ves las ventas a crédito que registraste tú. El saldo sí es el total del cliente.
+              {t("customers.statementDialog.partial")}
             </p>
           )}
 
           <div className="max-h-[50dvh] overflow-y-auto">
             {!estado && !error && (
               <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Cargando…
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> {t("customers.statementDialog.loading")}
               </p>
             )}
             {error && <p className="py-8 text-center text-sm text-red-600">{error}</p>}
             {estado && movimientos.length === 0 && (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Este cliente no tiene ventas a crédito ni abonos.
+                {t("customers.statementDialog.empty")}
               </p>
             )}
             <ul className="divide-y divide-border">
@@ -136,11 +139,11 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 text-sm font-medium">
-                          Venta #{numeroOperacion(m.venta.id)}
+                          {t("customers.statementDialog.sale", { numero: numeroOperacion(m.venta.id) ?? "" })}
                           <EstadoVentaBadge estado={m.venta.estado} />
                         </span>
                         <span className="block truncate text-[11px] text-muted-foreground">
-                          {fechaCorta(m.fecha)}
+                          {fechaCorta(m.fecha, locale)}
                           {m.venta.cajero ? ` · ${m.venta.cajero}` : ""}
                           {m.venta.sucursal ? ` · ${m.venta.sucursal}` : ""}
                         </span>
@@ -151,7 +154,7 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
                           m.venta.estado === "COMPLETADA" ? "text-foreground" : "text-muted-foreground line-through"
                         )}
                       >
-                        +{formatMXN(m.venta.total)}
+                        +{formatear(m.venta.total)}
                       </span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                     </button>
@@ -163,16 +166,16 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium">
-                        Abono · {t(clavePagoI18n(m.abono.metodo_pago))}
+                        {t("customers.statementDialog.payment")} · {t(clavePagoI18n(m.abono.metodo_pago))}
                       </span>
                       <span className="block truncate text-[11px] text-muted-foreground">
-                        {fechaCorta(m.fecha)}
+                        {fechaCorta(m.fecha, locale)}
                         {m.abono.registro ? ` · ${m.abono.registro}` : ""}
                         {m.abono.notas ? ` · ${m.abono.notas}` : ""}
                       </span>
                     </span>
                     <span className="shrink-0 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                      −{formatMXN(m.abono.monto)}
+                      −{formatear(m.abono.monto)}
                     </span>
                   </li>
                 )
@@ -182,12 +185,12 @@ export function EstadoCuentaDialog({ cliente, onOpenChange, onAbonar }: EstadoCu
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
+              {t("common.close")}
             </Button>
             {cliente && saldo > 0 && (
               <Button onClick={() => onAbonar(cliente)}>
                 <HandCoins className="mr-1.5 h-4 w-4" aria-hidden />
-                Registrar abono
+                {t("customers.statementDialog.addPayment")}
               </Button>
             )}
           </DialogFooter>

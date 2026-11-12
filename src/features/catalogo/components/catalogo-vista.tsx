@@ -1,7 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { monedaDe, type Moneda } from "@/lib/money";
 import { Loader2, MapPin, Minus, Package, Plus, Search, ShoppingBag, Sparkles, Star, Trash2, X } from "lucide-react";
 import { abreviatura, esFraccionable, normalizarCantidad, textoContenido } from "@/lib/unidades";
 import { urlWhatsApp } from "@/lib/whatsapp";
@@ -16,6 +26,9 @@ import {
   type LineaPedido,
 } from "../pedido";
 import type { CatalogoEncabezado, CatalogoPagina, CatalogoProducto, CatalogoVariante } from "../types";
+
+/** Moneda del negocio para todas las partes del catálogo (la pone `CatalogoVista`). */
+const MonedaCatalogo = createContext<Moneda>("MXN");
 
 const AZUL_SYMVORA = "#1E3A8A";
 const PASO_GRANEL = 0.25;
@@ -83,6 +96,8 @@ export function CatalogoVista({
   /** Dentro del módulo: no guarda el carrito ni abre WhatsApp. */
   vistaPrevia?: boolean;
 }) {
+  const moneda = monedaDe(encabezado.moneda);
+  const precio = (n: number) => formatearPrecio(n, moneda);
   const color = encabezado.color && /^#[0-9a-f]{6}$/i.test(encabezado.color) ? encabezado.color : AZUL_SYMVORA;
   const tinta = textoSobre(color);
   const whatsapp = (encabezado.whatsapp ?? "").replace(/\D/g, "");
@@ -180,6 +195,7 @@ export function CatalogoVista({
   };
 
   return (
+    <MonedaCatalogo.Provider value={moneda}>
     <div className={`${vistaPrevia ? "min-h-full" : "min-h-dvh"} bg-slate-50 text-slate-900`}>
       {/* Encabezado con la marca del negocio; con portada, la imagen detrás de un velo del color. */}
       <header
@@ -361,7 +377,7 @@ export function CatalogoVista({
               <ShoppingBag className="h-5 w-5" aria-hidden="true" />
               Ver pedido ({conteo})
             </span>
-            {estimado != null && <span>{formatearPrecio(estimado)}</span>}
+            {estimado != null && <span>{precio(estimado)}</span>}
           </button>
         </div>
       )}
@@ -390,6 +406,7 @@ export function CatalogoVista({
         />
       )}
     </div>
+    </MonedaCatalogo.Provider>
   );
 }
 
@@ -453,11 +470,13 @@ function TarjetaProducto({
   enCarrito: number;
   onElegir: () => void;
 }) {
+  const moneda = useContext(MonedaCatalogo);
   const especial = producto.precio_especial ?? null;
   const precio = especial != null
-    ? textoPrecio(especial, especial, producto.unidad_medida)
-    : textoPrecio(producto.precio_min, producto.precio_max, producto.unidad_medida);
-  const anterior = especial != null && producto.precio_min != null ? formatearPrecio(producto.precio_min) : null;
+    ? textoPrecio(especial, especial, producto.unidad_medida, moneda)
+    : textoPrecio(producto.precio_min, producto.precio_max, producto.unidad_medida, moneda);
+  const anterior =
+    especial != null && producto.precio_min != null ? formatearPrecio(producto.precio_min, moneda) : null;
   const contenido = textoContenido(producto);
   const conVariantes = producto.variantes.length > 0;
   return (
@@ -577,6 +596,8 @@ function HojaEleccion({
   onCerrar: () => void;
   onAgregar: (variante: CatalogoVariante | null, cantidad: number) => void;
 }) {
+  const moneda = useContext(MonedaCatalogo);
+  const precio = (n: number) => formatearPrecio(n, moneda);
   const disponibles = producto.variantes.filter((v) => v.disponible);
   const [varianteId, setVarianteId] = useState<string | null>(disponibles[0]?.id ?? null);
   const variante = producto.variantes.find((v) => v.id === varianteId) ?? null;
@@ -608,7 +629,7 @@ function HojaEleccion({
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 text-base font-semibold text-slate-500"
         >
           Agregar al pedido
-          {listo && precioUnitario != null && cantidad != null && <span>· {formatearPrecio(precioUnitario * cantidad)}</span>}
+          {listo && precioUnitario != null && cantidad != null && <span>· {precio(precioUnitario * cantidad)}</span>}
         </button>
       }
     >
@@ -631,7 +652,7 @@ function HojaEleccion({
                   className="min-h-10 rounded-xl border border-slate-200 px-3 py-1.5 text-left text-sm disabled:opacity-40 disabled:line-through"
                 >
                   {v.etiqueta}
-                  {v.precio != null && <span className="block text-xs opacity-80">{formatearPrecio(v.precio)}</span>}
+                  {v.precio != null && <span className="block text-xs opacity-80">{precio(v.precio)}</span>}
                 </button>
               ))}
             </div>
@@ -680,9 +701,11 @@ function HojaCarrito({
   despachar: React.Dispatch<Parameters<typeof reducirPedido>[1]>;
   onCerrar: () => void;
 }) {
+  const moneda = useContext(MonedaCatalogo);
+  const precio = (n: number) => formatearPrecio(n, moneda);
   const [nombre, setNombre] = useState("");
   const estimado = totalEstimado(lineas);
-  const mensaje = mensajePedido(negocio, lineas, nombre);
+  const mensaje = mensajePedido(negocio, lineas, nombre, moneda);
   const enlace = whatsapp ? urlWhatsApp(whatsapp, mensaje) : null;
 
   return (
@@ -695,7 +718,7 @@ function HojaCarrito({
             {estimado != null && (
               <p className="flex justify-between text-base font-semibold">
                 <span>Total estimado</span>
-                <span>{formatearPrecio(estimado)}</span>
+                <span>{precio(estimado)}</span>
               </p>
             )}
             {vistaPrevia || !enlace ? (
@@ -769,6 +792,8 @@ function LineaCarrito({
   linea: LineaPedido;
   despachar: React.Dispatch<Parameters<typeof reducirPedido>[1]>;
 }) {
+  const moneda = useContext(MonedaCatalogo);
+  const precio = (n: number) => formatearPrecio(n, moneda);
   const granel = esFraccionable(linea.unidad);
   const paso = granel ? PASO_GRANEL : 1;
   const [texto, setTexto] = useState(String(linea.cantidad));
@@ -786,8 +811,8 @@ function LineaCarrito({
         {linea.variante && <p className="truncate text-xs text-slate-500">{linea.variante}</p>}
         {linea.precio != null && (
           <p className="text-xs text-slate-500">
-            {formatearPrecio(linea.precio)}
-            {granel ? ` por ${abreviatura(linea.unidad, 1)}` : ""} · {formatearPrecio(linea.precio * linea.cantidad)}
+            {precio(linea.precio)}
+            {granel ? ` por ${abreviatura(linea.unidad, 1)}` : ""} · {precio(linea.precio * linea.cantidad)}
           </p>
         )}
       </div>

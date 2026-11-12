@@ -283,6 +283,7 @@ function PieNegocio({
   email: string | undefined;
 }) {
   const [perfilAbierto, setPerfilAbierto] = useState(false);
+  const t = useTranslations();
   const { salir, avisoCajaAbierta } = useCerrarSesion();
   const tamano = collapsed ? 36 : 64;
 
@@ -324,8 +325,8 @@ function PieNegocio({
           type="button"
           onClick={() => setPerfilAbierto(true)}
           className={boton}
-          aria-label="Mi perfil"
-          title="Mi perfil"
+          aria-label={t("layout.myProfile")}
+          title={t("layout.myProfile")}
         >
           <UserIcon className="h-4 w-4" />
         </button>
@@ -333,8 +334,8 @@ function PieNegocio({
           type="button"
           onClick={() => void salir({ confirmar: true })}
           className={cn(boton, "text-red-400 hover:text-red-300")}
-          aria-label="Cerrar sesión"
-          title="Cerrar sesión"
+          aria-label={t("auth.logout")}
+          title={t("auth.logout")}
         >
           <LogOut className="h-4 w-4" />
         </button>

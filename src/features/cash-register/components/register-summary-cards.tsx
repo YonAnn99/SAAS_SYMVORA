@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useTranslations } from "next-intl";
 import {
   ArrowDownCircle,
@@ -28,36 +30,37 @@ export function RegisterSummaryCards({
   totalSalidas,
   saldoEsperado,
 }: RegisterSummaryCardsProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
 
   const cards = [
     {
       title: t("pos.initialFund"),
-      value: `$${activeRegisterFondoInicial.toFixed(2)}`,
+      value: `${formatear(activeRegisterFondoInicial)}`,
       icon: Wallet,
       color: "",
     },
     {
-      title: "Ventas",
-      value: `+$${totalVentas.toFixed(2)}`,
+      title: t("finances.close.sales"),
+      value: `+${formatear(totalVentas)}`,
       icon: ArrowUpCircle,
       color: "text-blue-600 dark:text-blue-400",
     },
     {
       title: t("finances.movementTypes.ENTRADA"),
-      value: `+$${totalEntradas.toFixed(2)}`,
+      value: `+${formatear(totalEntradas)}`,
       icon: ArrowUpCircle,
       color: "text-[#346538] dark:text-[#7BC67E]",
     },
     {
       title: t("finances.movementTypes.SALIDA"),
-      value: `-$${totalSalidas.toFixed(2)}`,
+      value: `-${formatear(totalSalidas)}`,
       icon: ArrowDownCircle,
       color: "text-[#9F2F2D] dark:text-[#F2A5A4]",
     },
     {
       title: t("finances.balance"),
-      value: `$${saldoEsperado.toFixed(2)}`,
+      value: `${formatear(saldoEsperado)}`,
       icon: Wallet,
       color: "",
     },

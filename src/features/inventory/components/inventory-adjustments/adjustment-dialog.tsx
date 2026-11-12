@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { useModulos } from "@/hooks/use-modulos";
 import { useMemo, useState } from "react";
 import { useSucursal } from "@/contexts/sucursal-context";
@@ -60,6 +62,8 @@ export function AdjustmentDialog({
   onProductChange,
   onSave,
 }: AdjustmentDialogProps) {
+  const t = useTranslations("products.adjustments");
+  const locale = useLocale();
   // Sin el modulo de mermas no se ofrece ese motivo, y el formulario arranca
   // en "Conteo fisico" (el valor por defecto era justo "Merma").
   const { modulos } = useModulos();
@@ -101,9 +105,9 @@ export function AdjustmentDialog({
   );
 
   const etiquetaLote = (lot: (typeof lotesDelAjuste)[number]) => {
-    let display = `${lot.numero_lote} · ${lot.enSucursal} aquí`;
+    let display = t("lotHere", { numero: lot.numero_lote, cantidad: lot.enSucursal });
     if (lot.fecha_caducidad) {
-      display += ` (cad. ${new Date(`${lot.fecha_caducidad}T12:00:00`).toLocaleDateString("es-MX")})`;
+      display += ` ${t("lotExpires", { fecha: new Date(`${lot.fecha_caducidad}T12:00:00`).toLocaleDateString(localeIntl(locale)) })}`;
     }
     return display;
   };
@@ -135,19 +139,19 @@ export function AdjustmentDialog({
 
   const handleSave = () => {
     if (!formData.producto_id) {
-      toast.error("Selecciona un producto");
+      toast.error(t("selectProductError"));
       return;
     }
 
     if (!formData.cantidad_ajuste || parseFloat(formData.cantidad_ajuste) === 0) {
-      toast.error("La cantidad de ajuste no puede ser 0");
+      toast.error(t("qtyNotZero"));
       return;
     }
 
     // El ajuste se valida contra las existencias DE UN LOCAL (migracion 082):
     // sin saber cual, no hay contra que comparar.
     if (hayVarias && !sucursalId) {
-      toast.error("Elige qué sucursal se ajusta");
+      toast.error(t("chooseBranch"));
       return;
     }
 
@@ -167,10 +171,10 @@ export function AdjustmentDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">
-            Nuevo ajuste de inventario
+            {t("dialogTitle")}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Registra un ajuste de stock con el motivo correspondiente
+            {t("dialogDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -178,17 +182,17 @@ export function AdjustmentDialog({
             id="ajuste-sucursal"
             value={sucursalId}
             onChange={setSucursalElegida}
-            etiqueta="Sucursal *"
-            ayuda="El ajuste suma o resta en el inventario de este local."
+            etiqueta={t("branchLabel")}
+            ayuda={t("branchHint")}
           />
           <div className="space-y-1.5">
-            <Label className="text-xs">Producto *</Label>
+            <Label className="text-xs">{t("productLabel")}</Label>
             <Select
               value={formData.producto_id}
               onValueChange={(v) => handleProductChange(v ?? "")}
             >
               <SelectTrigger className="h-8 w-full text-sm">
-                <SelectValue placeholder="Seleccionar producto">
+                <SelectValue placeholder={t("selectProduct")}>
                   {selectedProductName}
                 </SelectValue>
               </SelectTrigger>
@@ -204,7 +208,7 @@ export function AdjustmentDialog({
 
           {variants.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Variante (opcional)</Label>
+              <Label className="text-xs">{t("variantLabel")}</Label>
               <Select
                 value={formData.variante_id}
                 onValueChange={(v) =>
@@ -212,12 +216,12 @@ export function AdjustmentDialog({
                 }
               >
                 <SelectTrigger className="h-8 w-full text-sm">
-                  <SelectValue placeholder="Sin variante">
-                    {selectedVariantName || "Sin variante"}
+                  <SelectValue placeholder={t("noVariant")}>
+                    {selectedVariantName || t("noVariant")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin variante</SelectItem>
+                  <SelectItem value="">{t("noVariant")}</SelectItem>
                   {variants.map((variant) => (
                     <SelectItem key={variant.id} value={variant.id}>
                       {variant.talla} - {variant.color} ({variant.sku || "N/A"})
@@ -230,18 +234,18 @@ export function AdjustmentDialog({
 
           {lotesDelAjuste.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Lote (opcional)</Label>
+              <Label className="text-xs">{t("lotLabel")}</Label>
               <Select
                 value={formData.lote_id}
                 onValueChange={(v) => updateField("lote_id", v ?? "")}
               >
                 <SelectTrigger className="h-8 w-full text-sm">
-                  <SelectValue placeholder="Sin lote">
-                    {selectedLotName || "Sin lote"}
+                  <SelectValue placeholder={t("noLot")}>
+                    {selectedLotName || t("noLot")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin lote</SelectItem>
+                  <SelectItem value="">{t("noLot")}</SelectItem>
                   {lotesDelAjuste.map((lot) => (
                     <SelectItem key={lot.id} value={lot.id}>
                       {etiquetaLote(lot)}
@@ -253,37 +257,39 @@ export function AdjustmentDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Motivo *</Label>
+            <Label className="text-xs">{t("reasonLabel")}</Label>
             <Select
               value={formData.motivo}
               onValueChange={(v) => updateField("motivo", v ?? "")}
             >
               <SelectTrigger className="h-8 w-full text-sm">
-                <SelectValue />
+                <SelectValue>
+                  {(v: string) => (v ? t(`reasons.${v}`) : "")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {(modulos.permite_mermas || formData.motivo === "MERMA") && (
-                  <SelectItem value="MERMA">Merma</SelectItem>
+                  <SelectItem value="MERMA">{t("reasons.MERMA")}</SelectItem>
                 )}
-                <SelectItem value="CONTEO_FISICO">Conteo Físico</SelectItem>
-                <SelectItem value="DEVOLUCION">Devolución</SelectItem>
-                <SelectItem value="DAÑO">Daño</SelectItem>
-                <SelectItem value="OTRO">Otro</SelectItem>
+                <SelectItem value="CONTEO_FISICO">{t("reasons.CONTEO_FISICO")}</SelectItem>
+                <SelectItem value="DEVOLUCION">{t("reasons.DEVOLUCION")}</SelectItem>
+                <SelectItem value="DAÑO">{t("reasons.DAÑO")}</SelectItem>
+                <SelectItem value="OTRO">{t("reasons.OTRO")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs">
-              Cantidad de ajuste *
+              {t("qtyLabel")}
               <span className="text-muted-foreground ml-2">
-                (positivo para agregar, negativo para reducir)
+                {t("qtyHint")}
               </span>
             </Label>
             <Input
               type="number"
               step="0.01"
-              placeholder="Ej: 10 o -5"
+              placeholder={t("qtyPlaceholder")}
               value={formData.cantidad_ajuste}
               onChange={(e) => updateField("cantidad_ajuste", e.target.value)}
               className="h-8 text-sm font-mono"
@@ -291,9 +297,9 @@ export function AdjustmentDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Notas</Label>
+            <Label className="text-xs">{t("notesLabel")}</Label>
             <Textarea
-              placeholder="Descripción del ajuste..."
+              placeholder={t("notesPlaceholder")}
               value={formData.notas}
               onChange={(e) => updateField("notas", e.target.value)}
               className="text-sm min-h-[60px]"
@@ -307,7 +313,7 @@ export function AdjustmentDialog({
             className="h-8"
             onClick={() => handleOpenChange(false)}
           >
-            Cancelar
+            {t("cancel")}
           </Button>
           <SpecularActionButton
             tone="add"
@@ -315,7 +321,7 @@ export function AdjustmentDialog({
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Guardando..." : "Registrar ajuste"}
+            {saving ? t("saving") : t("save")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

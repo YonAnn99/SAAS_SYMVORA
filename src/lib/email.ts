@@ -1,3 +1,4 @@
+import { formatMoneda, type Moneda } from "@/lib/money";
 import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
 import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SUPPORT_EMAIL } from "@/lib/contact";
@@ -1155,14 +1156,15 @@ export async function sendAutoCloseToUserEmail(params: {
   totalEntradas: number;
   totalSalidas: number;
   saldoEsperado: number;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!resendApiKey) {
     console.warn("[email] RESEND_API_KEY no configurada; se omite aviso de cierre automático al usuario");
     return { ok: false, error: "RESEND_API_KEY not configured" };
   }
 
-  const formatMXN = (n: number) =>
-    n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+  const formatMXN = (n: number) => formatMoneda(n, params.moneda ?? "MXN");
 
   const fecha = new Date(params.fechaApertura).toLocaleString("es-MX", {
     timeZone: "America/Mexico_City",
@@ -1225,14 +1227,15 @@ export async function sendAutoCloseToSuperAdminEmail(params: {
   totalEntradas: number;
   totalSalidas: number;
   saldoEsperado: number;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!resendApiKey) {
     console.warn("[email] RESEND_API_KEY no configurada; se omite aviso de cierre automático al super admin");
     return { ok: false, error: "RESEND_API_KEY not configured" };
   }
 
-  const formatMXN = (n: number) =>
-    n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+  const formatMXN = (n: number) => formatMoneda(n, params.moneda ?? "MXN");
 
   const fecha = new Date(params.fechaApertura).toLocaleString("es-MX", {
     timeZone: "America/Mexico_City",
@@ -1308,6 +1311,8 @@ export interface DatosCierreCaja {
   saldoReal: number;
   diferencia: number;
   notasCierre: string | null;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
 }
 
 /**
@@ -1315,7 +1320,7 @@ export interface DatosCierreCaja {
  * que ve el dueño: con y sin sucursal, cuadre o faltante, texto escapado.
  */
 export function construirCorreoCierreCaja(d: DatosCierreCaja): { subject: string; html: string } {
-  const mxn = (n: number) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+  const mxn = (n: number) => formatMoneda(n, d.moneda ?? "MXN");
   const hora = (iso: string) =>
     new Date(iso).toLocaleString("es-MX", {
       timeZone: "America/Mexico_City",

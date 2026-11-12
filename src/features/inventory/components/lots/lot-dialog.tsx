@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -86,6 +87,7 @@ export function LotDialog({
   onUpdate,
 }: LotDialogProps) {
   const { seleccionada, activas } = useSucursal();
+  const t = useTranslations("products.lots");
   const [form, setForm] = useState<Formulario>(VACIO);
 
   useEffect(() => {
@@ -123,7 +125,7 @@ export function LotDialog({
 
   const handleSave = () => {
     if (!form.numero_lote.trim()) {
-      toast.error("Ingresa el número de lote");
+      toast.error(t("enterNumber"));
       return;
     }
     const costo = parseFloat(form.costo_unitario) || 0;
@@ -139,20 +141,20 @@ export function LotDialog({
     }
 
     if (!form.producto_id) {
-      toast.error("Selecciona un producto");
+      toast.error(t("selectProduct"));
       return;
     }
     if (variantesDelProducto.length > 0 && !form.variante_id) {
-      toast.error("Elige la variante del lote");
+      toast.error(t("selectVariant"));
       return;
     }
     if (activas.length > 1 && !form.sucursal_id) {
-      toast.error("Elige la sucursal donde está el lote");
+      toast.error(t("selectBranch"));
       return;
     }
     const cantidad = parseFloat(form.cantidad);
     if (!cantidad || cantidad <= 0) {
-      toast.error("La cantidad debe ser mayor a 0");
+      toast.error(t("qtyAboveZero"));
       return;
     }
 
@@ -174,22 +176,22 @@ export function LotDialog({
       <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {editingLot ? "Editar lote" : "Registrar lote"}
+            {editingLot ? t("editTitle") : t("register")}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {editingLot
-              ? "La cantidad cambia sola con compras, ventas, traspasos y ajustes."
-              : "Cada lote se guarda en una sucursal; al vender sale primero el que caduca antes."}
+              ? t("editDesc")
+              : t("createDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Producto *</Label>
+            <Label className="text-xs">{t("product")} *</Label>
             {/* Con buscador: con cientos de productos una lista sin filtro no
                 sirve. Mismo patron que el selector de Nueva compra. */}
             {sinProductos ? (
               <p className="rounded-lg border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-                Primero agrega productos en la pestaña Catálogo.
+                {t("noProducts")}
               </p>
             ) : (
               <Combobox
@@ -216,13 +218,13 @@ export function LotDialog({
                 disabled={Boolean(editingLot)}
               >
                 <ComboboxInputGroup className="h-8 w-full">
-                  <ComboboxInput placeholder="Buscar producto..." />
+                  <ComboboxInput placeholder={t("searchProduct")} />
                   <ComboboxTrigger />
                 </ComboboxInputGroup>
                 <ComboboxPortal>
                   <ComboboxPositioner>
                     <ComboboxPopup>
-                      <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                      <ComboboxEmpty>{t("noResults")}</ComboboxEmpty>
                       <ComboboxList>
                         {(p: ProductoOption) => (
                           <ComboboxItem key={p.id} value={p.id}>
@@ -230,7 +232,7 @@ export function LotDialog({
                             <span className="min-w-0 flex-1 truncate">{p.nombre}</span>
                             {p.permite_lotes && (
                               <span className="shrink-0 text-[10px] text-muted-foreground/70">
-                                Con lotes
+                                {t("withLots")}
                               </span>
                             )}
                           </ComboboxItem>
@@ -243,18 +245,18 @@ export function LotDialog({
             )}
             {!editingLot && productoElegido && !productoElegido.permite_lotes && (
               <p className="text-[11px] text-muted-foreground">
-                Al guardar se activará &quot;Maneja lotes y caducidad&quot; en este producto.
+                {t("willEnableLots")}
               </p>
             )}
           </div>
 
           {!editingLot && variantesDelProducto.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Variante *</Label>
+              <Label className="text-xs">{t("variant")} *</Label>
               <SelectSimple
                 value={form.variante_id || null}
                 onChange={(v) => set("variante_id", v ?? "")}
-                placeholder="¿De qué variante es el lote?"
+                placeholder={t("whichVariant")}
                 opciones={variantesDelProducto.map((v) => ({ value: v.id, label: v.etiqueta }))}
               />
             </div>
@@ -265,14 +267,14 @@ export function LotDialog({
               id="lote-sucursal"
               value={form.sucursal_id}
               onChange={(id) => set("sucursal_id", id)}
-              etiqueta="Sucursal *"
-              ayuda="Dónde está físicamente el lote."
+              etiqueta={`${t("branch")} *`}
+              ayuda={t("branchHint")}
             />
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Número de lote *</Label>
+              <Label className="text-xs">{t("number")} *</Label>
               <Input
                 placeholder="LOTE-001"
                 value={form.numero_lote}
@@ -281,7 +283,7 @@ export function LotDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Cantidad {editingLot ? "" : "*"}</Label>
+              <Label className="text-xs">{t("quantity")} {editingLot ? "" : "*"}</Label>
               {editingLot ? (
                 <p className="flex h-8 items-center font-mono text-sm text-muted-foreground">
                   {Number(editingLot.cantidad)}
@@ -302,18 +304,18 @@ export function LotDialog({
 
           {!editingLot && (
             <div className="space-y-1.5">
-              <Label className="text-xs">¿De dónde salen estas piezas?</Label>
+              <Label className="text-xs">{t("whereFrom")}</Label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {[
                   {
                     valor: false,
-                    titulo: "Ya están en mi inventario",
-                    detalle: "Solo les pongo número de lote y caducidad.",
+                    titulo: t("inStockTitle"),
+                    detalle: t("inStockDetail"),
                   },
                   {
                     valor: true,
-                    titulo: "Es mercancía nueva",
-                    detalle: "Además se suman al inventario.",
+                    titulo: t("newTitle"),
+                    detalle: t("newDetail"),
                   },
                 ].map((op) => (
                   <button
@@ -338,7 +340,7 @@ export function LotDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Fecha de fabricación</Label>
+              <Label className="text-xs">{t("madeOn")}</Label>
               <Input
                 type="date"
                 value={form.fecha_fabricacion}
@@ -347,7 +349,7 @@ export function LotDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Fecha de caducidad</Label>
+              <Label className="text-xs">{t("expiresOn")}</Label>
               <Input
                 type="date"
                 value={form.fecha_caducidad}
@@ -357,7 +359,7 @@ export function LotDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Costo unitario</Label>
+            <Label className="text-xs">{t("unitCost")}</Label>
             <Input
               type="number"
               inputMode="decimal"
@@ -369,14 +371,13 @@ export function LotDialog({
               className="h-8 text-sm font-mono"
             />
             <p className="text-[11px] text-muted-foreground">
-              Lo que pagaste por cada pieza de este lote (de la factura del proveedor). Solo es
-              informativo: la ganancia se calcula con el costo del producto.
+              {t("unitCostHint")}
             </p>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" size="sm" className="h-8" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t("cancel")}
           </Button>
           <SpecularActionButton
             tone="add"
@@ -384,7 +385,7 @@ export function LotDialog({
             onClick={handleSave}
             disabled={saving || (!editingLot && sinProductos)}
           >
-            {saving ? "Guardando..." : editingLot ? "Guardar cambios" : "Registrar lote"}
+            {saving ? t("saving") : editingLot ? t("saveChanges") : t("register")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

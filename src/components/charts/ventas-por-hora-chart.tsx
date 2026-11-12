@@ -1,9 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import "./registro";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { useTemaGrafica } from "./use-tema-grafica";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 import { ejeCategorias, ejeMontos, opcionesBase, tooltipBase } from "./opciones";
 import { montoCompleto } from "./formato-grafica";
 import { TarjetaGrafica } from "./tarjeta-grafica";
@@ -26,6 +28,8 @@ export function BarrasPorBloque({
   ayuda: string;
 }) {
   const tema = useTemaGrafica();
+  const moneda = useMonedaDelNegocio();
+  const t = useTranslations("reports.charts");
   const maximo = Math.max(0, ...totales);
   const vacia = maximo === 0;
   const pico = totales.indexOf(maximo);
@@ -34,7 +38,7 @@ export function BarrasPorBloque({
     labels: etiquetas,
     datasets: [
       {
-        label: "Ventas",
+        label: t("sales"),
         data: totales,
         backgroundColor: totales.map((_, i) => (i === pico ? tema.serie[1] : tema.principal)),
         borderRadius: 4,
@@ -45,7 +49,7 @@ export function BarrasPorBloque({
 
   const opciones: ChartOptions<"bar"> = {
     ...opcionesBase<"bar">(tema),
-    scales: { x: ejeCategorias(tema), y: ejeMontos(tema) },
+    scales: { x: ejeCategorias(tema), y: ejeMontos(tema, moneda) },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -53,7 +57,7 @@ export function BarrasPorBloque({
         callbacks: {
           label: (ctx) => {
             const n = numeroVentas[ctx.dataIndex] ?? 0;
-            return ` ${montoCompleto(Number(ctx.parsed.y))} · ${n} ${n === 1 ? "venta" : "ventas"}`;
+            return ` ${montoCompleto(Number(ctx.parsed.y), moneda)} · ${t("salesCount", { count: n })}`;
           },
         },
       },
@@ -68,7 +72,7 @@ export function BarrasPorBloque({
         <p className="mt-3 text-xs text-muted-foreground">
           {ayuda}{" "}
           <span className="font-medium text-foreground">
-            {etiquetas[pico]} ({montoCompleto(maximo)})
+            {etiquetas[pico]} ({montoCompleto(maximo, moneda)})
           </span>
         </p>
       }
@@ -85,13 +89,14 @@ export function VentasPorHoraChart({
   data: { hora: string; total: number; ventas: number }[];
   title: string;
 }) {
+  const t = useTranslations("reports.charts");
   return (
     <BarrasPorBloque
       title={title}
       etiquetas={data.map((d) => d.hora)}
       totales={data.map((d) => d.total)}
       numeroVentas={data.map((d) => d.ventas)}
-      ayuda="Hora con más ventas:"
+      ayuda={t("peakHour")}
     />
   );
 }
@@ -103,13 +108,14 @@ export function VentasPorDiaSemanaChart({
   data: { dia: string; total: number; ventas: number }[];
   title: string;
 }) {
+  const t = useTranslations("reports.charts");
   return (
     <BarrasPorBloque
       title={title}
       etiquetas={data.map((d) => d.dia)}
       totales={data.map((d) => d.total)}
       numeroVentas={data.map((d) => d.ventas)}
-      ayuda="Día más fuerte:"
+      ayuda={t("peakDay")}
     />
   );
 }

@@ -1,5 +1,10 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 /**
  * Las ordenes de compra en celular: una pastilla por orden en lugar de la
  * tabla (ver `components/ui/fila-deslizable.tsx`).
@@ -30,7 +35,6 @@ import {
 import type { OrdenCompra } from "../../types/inventory.types";
 import {
   orderEstadoColors,
-  orderEstadoLabels,
 } from "../../services/purchase-order-service";
 
 const COLOR_WHATSAPP = "#25D366";
@@ -67,6 +71,9 @@ export function PurchaseOrderSwipeList({
   onStatusChange,
   onReceive,
 }: PurchaseOrderSwipeListProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("purchaseOrders");
+  const locale = useLocale();
   const { verPista, alAbrir } = usePistaDeslizar();
 
   // Aviso de "Recibir" (la pastilla se asoma a la derecha), UNA vez:
@@ -101,8 +108,7 @@ export function PurchaseOrderSwipeList({
     <div className="space-y-2">
       {verPista && (
         <p className="px-1 pb-1 text-[11px] leading-snug text-muted-foreground">
-          Toca para ver la orden · desliza a la izquierda para enviar o eliminar, a la
-          derecha para recibir
+          {t("list.swipeHint")}
         </p>
       )}
 
@@ -116,17 +122,17 @@ export function PurchaseOrderSwipeList({
         const acciones: AccionFila[] = [
           {
             id: "eliminar",
-            etiqueta: "Eliminar",
+            etiqueta: t("list.delete"),
             color: COLOR_ELIMINAR,
             icono: <Trash2 size={18} strokeWidth={2} />,
             alElegir: () => onDelete(order),
-            confirmar: { titulo: `¿Eliminar la orden ${order.numero_orden}?` },
+            confirmar: { titulo: t("list.deleteTitle", { numero: order.numero_orden }) },
           },
         ];
         if ((borrador || order.estado === "ENVIADA") && tieneWhatsApp) {
           acciones.push({
             id: "whatsapp",
-            etiqueta: borrador ? "WhatsApp" : "Reenviar",
+            etiqueta: borrador ? "WhatsApp" : t("list.resend"),
             color: COLOR_WHATSAPP,
             icono: enviando ? (
               <Loader2 size={18} className="animate-spin" />
@@ -138,7 +144,7 @@ export function PurchaseOrderSwipeList({
         } else if (borrador) {
           acciones.push({
             id: "enviar",
-            etiqueta: "Enviar",
+            etiqueta: t("list.send"),
             color: COLOR_EDITAR,
             icono: <Send size={18} strokeWidth={2} />,
             alElegir: () => onStatusChange(order, "ENVIADA"),
@@ -148,14 +154,14 @@ export function PurchaseOrderSwipeList({
         return (
           <FilaDeslizable
             key={order.id}
-            label={`Orden ${order.numero_orden}`}
+            label={t("list.orderLabel", { numero: order.numero_orden })}
             acciones={acciones}
             avisoInicio={avisos[order.id] ?? 0}
             accionInicio={
               puedeRecibir(order)
                 ? {
                     id: "recibir",
-                    etiqueta: "Recibir",
+                    etiqueta: t("list.receive"),
                     color: COLOR_RECIBIR,
                     icono: <Check size={18} strokeWidth={2.5} />,
                     alElegir: () => onReceive(order),
@@ -172,7 +178,7 @@ export function PurchaseOrderSwipeList({
                 {getSupplierName(order.proveedor_id)}
               </p>
               <p className="truncate text-xs opacity-60">
-                {new Date(order.creado_en).toLocaleDateString("es-MX", {
+                {new Date(order.creado_en).toLocaleDateString(localeIntl(locale), {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
@@ -182,10 +188,10 @@ export function PurchaseOrderSwipeList({
 
             <div className="flex shrink-0 flex-col items-end gap-1">
               <span className="font-mono text-sm tabular-nums">
-                ${order.total.toFixed(2)}
+                {formatear(order.total)}
               </span>
               <Badge className={`${orderEstadoColors[order.estado]} text-[10px] px-1.5 py-0`}>
-                {orderEstadoLabels[order.estado]}
+                {t(`statuses.${order.estado}`)}
               </Badge>
             </div>
 
@@ -201,8 +207,8 @@ export function PurchaseOrderSwipeList({
                     e.stopPropagation();
                     onEdit(order);
                   }}
-                  aria-label={`Editar la orden ${order.numero_orden}`}
-                  title="Editar orden"
+                  aria-label={t("list.editOrderNamed", { numero: order.numero_orden })}
+                  title={t("list.editOrder")}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>

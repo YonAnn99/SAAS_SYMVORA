@@ -33,17 +33,17 @@ export function InviteKeySwipeList({ claves, onEliminar }: InviteKeySwipeListPro
         return (
           <FilaDeslizable
             key={key.id}
-            label={`Clave de ${quien}`}
+            label={t("users.ui.keyOf", { nombre: quien })}
             acciones={[
               {
                 id: "eliminar",
-                etiqueta: "Eliminar",
+                etiqueta: t("users.ui.delete"),
                 color: COLOR_ELIMINAR,
                 icono: <Trash2 size={18} strokeWidth={2} />,
                 alElegir: () => onEliminar(key),
                 confirmar: {
-                  titulo: `¿Eliminar la clave de ${quien}?`,
-                  descripcion: "Ya no servirá para entrar. Esta acción no se puede deshacer.",
+                  titulo: t("users.ui.deleteKeyTitle", { nombre: quien }),
+                  descripcion: t("users.ui.deleteKeyDesc"),
                 },
               },
             ]}

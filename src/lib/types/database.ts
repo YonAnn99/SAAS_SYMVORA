@@ -28,6 +28,8 @@ export type Database = {
           creado_en: string;
           /** Migracion 112: negocio demo de un visitante (se borra al vencer). NULL = real. */
           demo_expira_en?: string | null;
+          /** Migracion 133: moneda en que se muestran los montos (MXN, USD, EUR). */
+          moneda?: string;
         };
         Insert: {
           id?: string;
@@ -62,6 +64,7 @@ export type Database = {
           codigo_postal?: string | null;
           subscription_status?: "trial" | "active" | "past_due" | "canceled" | "expired" | null;
           creado_en?: string;
+          moneda?: string;
         };
       };
       tenant_settings: {

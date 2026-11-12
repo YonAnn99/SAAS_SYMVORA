@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,6 +52,7 @@ export function InsumosVentaDialog({
   onGuardar: (insumos: InsumoLinea[] | null) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("pos.supplies");
   const [filas, setFilas] = useState<InsumoLinea[]>([]);
   const [opciones, setOpciones] = useState<OpcionCompra[]>([]);
   const abierto = Boolean(item);
@@ -66,11 +68,11 @@ export function InsumosVentaDialog({
     let vigente = true;
     fetchOpcionesInsumo(tenantId)
       .then((o) => vigente && setOpciones(o))
-      .catch(() => vigente && toast.error("No se pudo cargar el catálogo de insumos"));
+      .catch(() => vigente && toast.error(t("loadError")));
     return () => {
       vigente = false;
     };
-  }, [abierto, tenantId, opciones.length]);
+  }, [abierto, tenantId, opciones.length, t]);
 
   const elegidos = useMemo(
     () => new Set(filas.map((f) => `${f.productId}::${f.varianteId ?? ""}`)),
@@ -90,7 +92,7 @@ export function InsumosVentaDialog({
 
   const guardar = () => {
     if (filas.some((f) => !(Number(f.cantidad) >= 0))) {
-      toast.error("Revisa las cantidades");
+      toast.error(t("checkQuantities"));
       return;
     }
     onGuardar(normalizarInsumos(filas));
@@ -100,17 +102,16 @@ export function InsumosVentaDialog({
     <Dialog open={abierto} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Insumos de esta venta</DialogTitle>
+          <DialogTitle className="text-base">{t("title")}</DialogTitle>
           <DialogDescription className="text-xs">
             {item?.nombre}
-            {item && item.cantidad !== 1 ? ` ×${item.cantidad}` : ""}: cantidades totales que se
-            descontarán del inventario al cobrar.
+            {item && item.cantidad !== 1 ? ` ×${item.cantidad}` : ""}: {t("description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           {filas.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Esta venta no descontará insumos.</p>
+            <p className="text-xs text-muted-foreground">{t("none")}</p>
           ) : (
             <ul className="space-y-1.5">
               {filas.map((f, i) => (
@@ -121,7 +122,7 @@ export function InsumosVentaDialog({
                     inputMode="decimal"
                     min="0"
                     step="any"
-                    aria-label={`Cantidad de ${f.nombre}`}
+                    aria-label={t("quantityOf", { nombre: f.nombre })}
                     value={Number.isFinite(f.cantidad) ? String(f.cantidad) : ""}
                     onChange={(e) =>
                       setFilas((prev) =>
@@ -135,7 +136,7 @@ export function InsumosVentaDialog({
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9"
-                    aria-label={`Quitar ${f.nombre}`}
+                    aria-label={t("removeItem", { nombre: f.nombre })}
                     onClick={() => setFilas((prev) => prev.filter((_, j) => j !== i))}
                   >
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -155,13 +156,13 @@ export function InsumosVentaDialog({
             }
           >
             <ComboboxInputGroup className="h-9 w-full">
-              <ComboboxInput placeholder="Agregar insumo…" />
+              <ComboboxInput placeholder={t("add")} />
               <ComboboxTrigger />
             </ComboboxInputGroup>
             <ComboboxPortal>
               <ComboboxPositioner>
                 <ComboboxPopup className="min-w-64">
-                  <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                  <ComboboxEmpty>{t("noResults")}</ComboboxEmpty>
                   <ComboboxList>
                     {(o: OpcionCompra) => (
                       <ComboboxItem key={o.value} value={o.value}>
@@ -179,17 +180,17 @@ export function InsumosVentaDialog({
         <DialogFooter className="gap-2 sm:justify-between">
           {item?.insumos ? (
             <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => onGuardar(null)}>
-              Usar la receta
+              {t("useRecipe")}
             </Button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" className="h-9" onClick={onClose}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button type="button" size="sm" className="h-9" onClick={guardar}>
-              Aplicar
+              {t("apply")}
             </Button>
           </div>
         </DialogFooter>

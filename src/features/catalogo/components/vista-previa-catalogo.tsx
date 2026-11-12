@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ const fuentePrevia: FuenteCatalogo = async (busqueda, categoria, offset) => {
 export function VistaPreviaCatalogo() {
   const [datos, setDatos] = useState<{ encabezado: CatalogoEncabezado; pagina: CatalogoPagina } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("onlineCatalog.preview");
+  const te = useTranslations("onlineCatalog.errors");
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -34,16 +37,16 @@ export function VistaPreviaCatalogo() {
       try {
         const [encabezado, pagina] = await Promise.all([obtenerVistaPrevia(), obtenerVistaPreviaProductos("", null, 0)]);
         if (!vigente) return;
-        if (!encabezado) setError("No se encontró tu negocio.");
+        if (!encabezado) setError(t("notFound"));
         else setDatos({ encabezado, pagina });
       } catch (e) {
-        if (vigente) setError(mensajeErrorCatalogo(e));
+        if (vigente) setError(mensajeErrorCatalogo(e, te));
       }
     })();
     return () => {
       vigente = false;
     };
-  }, [version]);
+  }, [version, t, te]);
 
   if (error) return <p className="py-8 text-center text-sm text-muted-foreground">{error}</p>;
   if (!datos) {
@@ -59,9 +62,9 @@ export function VistaPreviaCatalogo() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
           {datos.encabezado.activo
-            ? "Así lo ven tus clientes ahora."
-            : "Tu catálogo está apagado: así se verá cuando lo publiques."}{" "}
-          El botón de WhatsApp no envía nada aquí.
+            ? t("live")
+            : t("offline")}{" "}
+          {t("noSend")}
         </p>
         <Button
           size="sm"
@@ -71,7 +74,7 @@ export function VistaPreviaCatalogo() {
             setVersion((v) => v + 1);
           }}
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Actualizar
+          <RefreshCw className="h-3.5 w-3.5" /> {t("refresh")}
         </Button>
       </div>
       <div

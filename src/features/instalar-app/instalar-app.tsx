@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, Download, Monitor, RefreshCw, Smartphone } from "lucide-react";
@@ -9,10 +10,11 @@ import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 import { detectarPlataforma, pasosParaInstalar, type Plataforma } from "./plataforma";
 import { useInstalarApp } from "./use-instalar-app";
 
+/** Texto de cada ventaja: `install.benefits.<n>`. */
 const VENTAJAS = [
-  { icono: Monitor, texto: "Ícono en tu escritorio y en el menú Inicio, con su propia ventana." },
-  { icono: RefreshCw, texto: "Se actualiza sola: siempre tienes la versión más nueva." },
-  { icono: Smartphone, texto: "Las mismas cuentas y datos que en el navegador y el celular." },
+  { icono: Monitor, clave: "0" },
+  { icono: RefreshCw, clave: "1" },
+  { icono: Smartphone, clave: "2" },
 ];
 
 /**
@@ -24,6 +26,7 @@ export function InstalarApp() {
   const enAppAndroid = useEsAppAndroid();
   const [plataforma, setPlataforma] = useState<Plataforma | null>(null);
   const [aceptada, setAceptada] = useState(false);
+  const t = useTranslations("install");
 
   useEffect(() => {
     // El userAgent solo existe en el navegador: diferido para no chocar con el render del servidor.
@@ -39,14 +42,14 @@ export function InstalarApp() {
       <div className="flex flex-col items-center gap-3 text-center">
         <Image src="/icons/icon-maskable-192.png" alt="" width={72} height={72} className="rounded-2xl" />
         <h1 className="text-2xl font-bold tracking-tight">
-          {lista ? "SYMVORA ya está instalada" : "Instala SYMVORA en tu computadora"}
+          {lista ? t("installed") : t("title")}
         </h1>
         <p className="text-sm text-muted-foreground">
           {enAppAndroid
-            ? "Ya estás usando la app de SYMVORA."
+            ? t("usingApp")
             : lista
-              ? "Búscala en tu escritorio, en el menú Inicio o en el Dock."
-              : "Funciona en Windows y Mac. Es gratis y no ocupa casi espacio."}
+              ? t("findIt")
+              : t("worksOn")}
         </p>
       </div>
 
@@ -54,7 +57,7 @@ export function InstalarApp() {
         <div className="flex flex-col items-center gap-3">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" aria-hidden />
           <Link href="/dashboard" className={buttonVariants({ className: "w-full" })}>
-            Abrir SYMVORA
+            {t("open")}
           </Link>
         </div>
       ) : puedeInstalar ? (
@@ -63,15 +66,15 @@ export function InstalarApp() {
           onClick={async () => setAceptada(await instalar())}
         >
           <Download className="h-5 w-5" aria-hidden />
-          Instalar SYMVORA
+          {t("install")}
         </Button>
       ) : (
         instrucciones && (
           <div className="rounded-2xl bg-muted/50 p-4">
-            <p className="mb-2 text-sm font-semibold">{instrucciones.titulo}</p>
+            <p className="mb-2 text-sm font-semibold">{t(`steps.${plataforma}.title`)}</p>
             <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
-              {instrucciones.pasos.map((p) => (
-                <li key={p}>{p}</li>
+              {instrucciones.pasos.map((p, i) => (
+                <li key={p}>{t(`steps.${plataforma}.${i}`)}</li>
               ))}
             </ol>
           </div>
@@ -80,10 +83,10 @@ export function InstalarApp() {
 
       {!lista && (
         <ul className="space-y-2.5 border-t border-border pt-5">
-          {VENTAJAS.map(({ icono: Icono, texto }) => (
-            <li key={texto} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+          {VENTAJAS.map(({ icono: Icono, clave }) => (
+            <li key={clave} className="flex items-start gap-2.5 text-sm text-muted-foreground">
               <Icono className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-              {texto}
+              {t(`benefits.${clave}`)}
             </li>
           ))}
         </ul>

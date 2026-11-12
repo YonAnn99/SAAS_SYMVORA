@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { aplicarPorcentaje, type Direccion } from "../../price-list";
+import { aplicarPorcentaje, CLAVE_ERROR_PRECIO, type Direccion } from "../../price-list";
 
 /**
  * Sube o baja de golpe el precio de las filas seleccionadas.
@@ -45,18 +46,20 @@ export function BulkPriceDialog({
   saving,
   onApply,
 }: BulkPriceDialogProps) {
+  const t = useTranslations("products.priceLists.bulk");
+  const te = useTranslations("products.priceLists.errors");
   const [direccion, setDireccion] = useState<Direccion>("aumentar");
   const [porcentaje, setPorcentaje] = useState("10");
   const [redondear, setRedondear] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    const t = window.setTimeout(() => {
+    const id = window.setTimeout(() => {
       setDireccion("aumentar");
       setPorcentaje("10");
       setRedondear(false);
     }, 0);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(id);
   }, [open]);
 
   // Se valida con la misma función que hará el cálculo, sobre un precio de
@@ -69,18 +72,18 @@ export function BulkPriceDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-base">
-            Actualiza el precio de esta lista
+            {t("title")}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Se aplica sobre el precio base de cada producto.
+            {t("desc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-2">
           {(
             [
-              ["aumentar", "Aumentar precio", TrendingUp],
-              ["disminuir", "Disminuir precio", TrendingDown],
+              ["aumentar", "increase", TrendingUp],
+              ["disminuir", "decrease", TrendingDown],
             ] as const
           ).map(([valor, etiqueta, Icono]) => (
             <button
@@ -94,13 +97,13 @@ export function BulkPriceDialog({
               }`}
             >
               <Icono className="h-3.5 w-3.5" />
-              {etiqueta}
+              {t(etiqueta)}
             </button>
           ))}
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Porcentaje</Label>
+          <Label className="text-xs">{t("percentage")}</Label>
           <div className="relative">
             <Input
               type="number"
@@ -115,7 +118,9 @@ export function BulkPriceDialog({
             </span>
           </div>
           {!valido && !prueba.ok && (
-            <p className="text-xs text-destructive">{prueba.error}</p>
+            <p className="text-xs text-destructive">
+              {prueba.error in CLAVE_ERROR_PRECIO ? te(CLAVE_ERROR_PRECIO[prueba.error]) : prueba.error}
+            </p>
           )}
         </div>
 
@@ -138,14 +143,15 @@ export function BulkPriceDialog({
 
         <label className="flex items-center gap-2.5 text-xs cursor-pointer select-none">
           <Switch checked={redondear} onCheckedChange={setRedondear} />
-          Redondear a números enteros. No usar decimales.
+          {t("round")}
         </label>
 
         <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-          Aplicaremos {direccion === "aumentar" ? "un aumento" : "un descuento"} del{" "}
-          <strong className="text-foreground">{porcentaje || 0}%</strong> sobre los
-          precios base de {cuantas} {cuantas === 1 ? "producto" : "productos"}{" "}
-          {cuantas === 1 ? "seleccionado" : "seleccionados"}.
+          {t.rich(direccion === "aumentar" ? "summaryIncrease" : "summaryDecrease", {
+            pct: porcentaje || 0,
+            count: cuantas,
+            b: (chunks) => <strong className="text-foreground">{chunks}</strong>,
+          })}
         </p>
 
         <DialogFooter>
@@ -154,13 +160,13 @@ export function BulkPriceDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancelar
+            {t("cancel")}
           </Button>
           <Button
             onClick={() => onApply(Number(porcentaje), direccion, redondear)}
             disabled={!valido || saving || cuantas === 0}
           >
-            {saving ? "Actualizando..." : "Actualizar"}
+            {saving ? t("applying") : t("apply")}
           </Button>
         </DialogFooter>
       </DialogContent>

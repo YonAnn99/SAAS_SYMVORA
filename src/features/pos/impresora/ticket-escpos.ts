@@ -5,11 +5,13 @@
  * y lo que sale en papel no pueden diferir.
  */
 
+import type { Moneda } from "@/lib/money";
 import { abreviatura, formatearCantidad } from "@/lib/unidades";
 import {
   desgloseTicket,
   fechaTicket,
   formatearImporte,
+  marcaMonedaTicket,
   importeLinea,
   muestraEfectivo,
   numeroOperacion,
@@ -21,6 +23,8 @@ import { TicketEscPos, columnas, izquierdaDerecha, type AnchoPapel } from "./esc
 export interface DatosNegocioTicket {
   nombre: string;
   direccion?: string | null;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
 }
 
 export interface LogoTicket {
@@ -45,6 +49,9 @@ export function ticketVentaEscPos({
 }): Uint8Array {
   const t = new TicketEscPos(ancho);
   const cols = t.columnas;
+  const moneda = negocio.moneda ?? "MXN";
+  const marca = marcaMonedaTicket(moneda, true);
+  const importe = (n: number) => formatearImporte(n, moneda);
   // Montos: "precio/u" y "subtotal". El resto del renglon, la cantidad.
   const anchoMonto = ancho === 58 ? 11 : 16;
   const anchoSubtotal = ancho === 58 ? 10 : 14;
@@ -79,8 +86,8 @@ export function ticketVentaEscPos({
       columnas(
         [
           `x${formatearCantidad(item.cantidad, item.unidad_medida)}`,
-          `${formatearImporte(item.precioUnitario)}/${abreviatura(item.unidad_medida, 1)}`,
-          formatearImporte(importeLinea(item)),
+          `${importe(item.precioUnitario)}/${abreviatura(item.unidad_medida, 1)}`,
+          importe(importeLinea(item)),
         ],
         [0, anchoMonto, anchoSubtotal],
         cols
@@ -94,29 +101,29 @@ export function ticketVentaEscPos({
   // Mismo desglose que el ticket en pantalla: solo con descuento o IVA.
   const desglose = desgloseTicket(receipt.items, receipt.total);
   if (desglose.descuento > 0 || desglose.impuesto > 0) {
-    t.linea(izquierdaDerecha("Subtotal $", formatearImporte(desglose.subtotal), cols));
+    t.linea(izquierdaDerecha(`Subtotal ${marca}`, importe(desglose.subtotal), cols));
     if (desglose.descuento > 0) {
       t.linea(
         izquierdaDerecha(
-          `${receipt.descuentoEtiqueta ?? "Descuento"} $`,
-          `-${formatearImporte(desglose.descuento)}`,
+          `${receipt.descuentoEtiqueta ?? "Descuento"} ${marca}`,
+          `-${importe(desglose.descuento)}`,
           cols
         )
       );
     }
     if (desglose.impuesto > 0) {
-      t.linea(izquierdaDerecha("IVA $", formatearImporte(desglose.impuesto), cols));
+      t.linea(izquierdaDerecha(`IVA ${marca}`, importe(desglose.impuesto), cols));
     }
   }
 
   // Total en letra grande: ocupa el doble, asi que se arma a media anchura.
   t.negritas(true).grande(true)
-    .linea(izquierdaDerecha("Total $", formatearImporte(receipt.total), Math.floor(cols / 2)))
+    .linea(izquierdaDerecha(`Total ${marca}`, importe(receipt.total), Math.floor(cols / 2)))
     .grande(false).negritas(false);
 
   if (muestraEfectivo(receipt.paymentMethod, receipt.montoRecibido)) {
-    t.linea(izquierdaDerecha("Efectivo $", formatearImporte(receipt.montoRecibido ?? 0), cols));
-    t.linea(izquierdaDerecha("Cambio $", formatearImporte(receipt.cambio ?? 0), cols));
+    t.linea(izquierdaDerecha(`Efectivo ${marca}`, importe(receipt.montoRecibido ?? 0), cols));
+    t.linea(izquierdaDerecha(`Cambio ${marca}`, importe(receipt.cambio ?? 0), cols));
   } else {
     t.linea(izquierdaDerecha("Método de pago", metodoPagoTexto, cols));
   }

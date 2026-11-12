@@ -13,7 +13,7 @@ import {
 } from "@/features/cash-register/services/cash-register-server-service";
 import { destinatariosCierreAutomatico } from "@/features/cash-register/avisos-cierre";
 import { avisarCorteDeCaja } from "@/lib/avisos-celular";
-import { formatMXN } from "@/lib/money";
+import { formatMoneda, monedaDe, type Moneda } from "@/lib/money";
 
 /**
  * Cierre automático de cajas a las 4:30 a. m. (hora CDMX).
@@ -54,6 +54,8 @@ const MAX_POR_EJECUCION = 100;
 interface SuperAdminInfo {
   email: string;
   businessName: string;
+  /** Moneda del negocio (`tenants.moneda`). */
+  moneda: Moneda;
 }
 
 /** Busca el SUPER_ADMIN del tenant para notificarle. */
@@ -77,13 +79,14 @@ async function getSuperAdmin(
 
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("nombre_comercial")
+    .select("nombre_comercial, moneda")
     .eq("id", tenantId)
     .maybeSingle();
 
   return {
     email,
     businessName: tenant?.nombre_comercial || "tu negocio",
+    moneda: monedaDe(tenant?.moneda),
   };
 }
 
@@ -185,6 +188,7 @@ export async function GET(request: Request) {
             totalEntradas: reg.totalEntradas,
             totalSalidas: reg.totalSalidas,
             saldoEsperado: reg.saldoEsperado,
+            moneda: superAdmin?.moneda,
           })
         );
       }
@@ -204,6 +208,7 @@ export async function GET(request: Request) {
             totalEntradas: reg.totalEntradas,
             totalSalidas: reg.totalSalidas,
             saldoEsperado: reg.saldoEsperado,
+            moneda: superAdmin?.moneda,
           })
         );
       }
@@ -215,7 +220,7 @@ export async function GET(request: Request) {
         negocio: superAdmin?.businessName ?? reg.tenantName,
         sucursal: reg.sucursalNombre || "caja principal",
         quien: `la caja de ${reg.userName} se cerró automáticamente`,
-        ventas: formatMXN(reg.totalVentas),
+        ventas: formatMoneda(reg.totalVentas, superAdmin?.moneda ?? "MXN"),
         diferencia: "sin conteo (cierre automático)",
       });
 

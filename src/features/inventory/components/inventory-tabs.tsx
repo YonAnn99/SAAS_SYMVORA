@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ export function LotsSection({
   abrirCrear,
   onAbrirCrearAtendido,
 }: InventorySectionProps) {
+  const t = useTranslations("products");
   const {
     lots,
     products,
@@ -79,7 +81,7 @@ export function LotsSection({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por número de lote o producto..."
+            placeholder={t("lots.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-8 text-sm"
@@ -92,7 +94,7 @@ export function LotsSection({
             className="h-8 flex-1 active:scale-[0.98] transition-transform sm:flex-none"
             onClick={openCreateDialog}
           >
-            Registrar lote
+            {t("lots.register")}
           </SpecularActionButton>
         </div>
       </div>
@@ -137,6 +139,7 @@ export function AdjustmentsSection({
   abrirCrear,
   onAbrirCrearAtendido,
 }: InventorySectionProps) {
+  const t = useTranslations("products");
   const {
     adjustments,
     products,
@@ -164,7 +167,7 @@ export function AdjustmentsSection({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por producto o motivo..."
+            placeholder={t("adjustments.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-8 text-sm"
@@ -177,7 +180,7 @@ export function AdjustmentsSection({
             className="h-8 flex-1 active:scale-[0.98] transition-transform sm:flex-none"
             onClick={openCreateDialog}
           >
-            Nuevo ajuste
+            {t("adjustments.new")}
           </SpecularActionButton>
         </div>
       </div>

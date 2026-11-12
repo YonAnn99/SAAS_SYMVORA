@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +26,7 @@ export function PaymentMethodPicker({
   mpReady,
   tarjetaLista,
 }: PaymentMethodPickerProps) {
+  const t = useTranslations("pos.checkout");
   return (
     // En la hoja del celular (debajo de `lg`) los botones crecen a 48 px: es lo
     // que el cajero toca con el pulgar en cada venta.
@@ -42,9 +44,9 @@ export function PaymentMethodPicker({
             disabled={terminalDisabled || tarjetaDisabled}
             title={
               terminalDisabled
-                ? "Configura Mercado Pago Point en Métodos de pago"
+                ? t("setupMercadoPago")
                 : tarjetaDisabled
-                  ? "Activa tu terminal en Configuración → Métodos de pago"
+                  ? t("enableTerminal")
                   : undefined
             }
             onClick={() => onSelect(method.key)}
@@ -52,7 +54,7 @@ export function PaymentMethodPicker({
             <method.icon className="h-3 w-3 mr-1 max-lg:h-4 max-lg:w-4 max-lg:mr-1.5" />
             {method.label}
             {tarjetaDisabled && (
-              <span className="ml-1 text-[11px] font-normal lg:hidden">· Sin terminal</span>
+              <span className="ml-1 text-[11px] font-normal lg:hidden">· {t("noTerminalShort")}</span>
             )}
           </Button>
         );

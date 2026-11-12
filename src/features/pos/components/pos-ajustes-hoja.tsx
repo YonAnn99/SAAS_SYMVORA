@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Check, Layers, LayoutGrid } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,8 @@ export function PosAjustesHoja({
   viewMode: PosViewMode;
   onViewModeChange: (mode: PosViewMode) => void;
 }) {
-  const opcionesLista = [{ id: SIN_LISTA, nombre: "Precios normales" }, ...priceLists];
+  const t = useTranslations("pos.bar");
+  const opcionesLista = [{ id: SIN_LISTA, nombre: t("regularPrices") }, ...priceLists];
 
   const vista = (modo: PosViewMode, etiqueta: string, Icono: typeof Layers) => (
     <button
@@ -53,13 +55,13 @@ export function PosAjustesHoja({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh] gap-0 overflow-y-auto rounded-t-3xl p-0 sm:hidden">
         <SheetHeader className="px-5 pb-2 pt-5">
-          <SheetTitle className="text-lg">Ajustes del mostrador</SheetTitle>
+          <SheetTitle className="text-lg">{t("counterSettingsTitle")}</SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col gap-6 px-5 pb-6 pt-2">
           {sucursalSlot && (
             <section className="flex flex-col gap-2">
-              <p className="text-[13px] font-semibold text-muted-foreground">Sucursal</p>
+              <p className="text-[13px] font-semibold text-muted-foreground">{t("branch")}</p>
               {/* El mismo selector de la barra de escritorio. */}
               <div className="[&_button]:h-12 [&_button]:rounded-xl [&_button]:text-base">{sucursalSlot}</div>
             </section>
@@ -67,7 +69,7 @@ export function PosAjustesHoja({
 
           {priceLists.length > 0 && (
             <section className="flex flex-col gap-2">
-              <p className="text-[13px] font-semibold text-muted-foreground">Lista de precios</p>
+              <p className="text-[13px] font-semibold text-muted-foreground">{t("priceList")}</p>
               <div className="overflow-hidden rounded-xl border border-border">
                 {opcionesLista.map((lista, i) => {
                   const elegida = selectedPriceList === lista.id;
@@ -90,18 +92,18 @@ export function PosAjustesHoja({
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                Al cobrar, la lista regresa a Precios normales.
+                {t("listResets")}
               </p>
             </section>
           )}
 
           <section className="flex flex-col gap-2">
             <p className="text-[13px] font-semibold text-muted-foreground">
-              Vista de productos con variantes
+              {t("variantsView")}
             </p>
             <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-background p-1">
-              {vista("grouped", "Agrupado", Layers)}
-              {vista("unbundled", "Desglosado", LayoutGrid)}
+              {vista("grouped", t("grouped"), Layers)}
+              {vista("unbundled", t("unbundled"), LayoutGrid)}
             </div>
           </section>
 
@@ -110,7 +112,7 @@ export function PosAjustesHoja({
             onClick={() => onOpenChange(false)}
             className="h-12 rounded-xl bg-foreground text-base font-semibold text-background"
           >
-            Listo
+            {t("done")}
           </button>
         </div>
       </SheetContent>

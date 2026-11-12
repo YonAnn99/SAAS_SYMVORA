@@ -2,6 +2,7 @@
 
 import { useTenantContext } from "@/contexts/tenant-context";
 import type { UserRole } from "@/lib/types/database";
+import type { Moneda } from "@/lib/money";
 
 interface TenantInfo {
   tenantId: string;
@@ -15,6 +16,8 @@ interface TenantInfo {
   tenantAddress: string | null;
   /** `tenants.giro_comercial` (ROPA, ABARROTES...). */
   tenantGiro: string | null;
+  /** Moneda del negocio (`tenants.moneda`). */
+  moneda: Moneda;
   role: UserRole | null;
   loading: boolean;
   error: string | null;
@@ -29,6 +32,7 @@ export function useCurrentTenant(): TenantInfo {
     tenantLogo,
     tenantAddress,
     tenantGiro,
+    moneda,
     role,
     loading,
     error,
@@ -41,6 +45,7 @@ export function useCurrentTenant(): TenantInfo {
     tenantLogo,
     tenantAddress,
     tenantGiro,
+    moneda,
     role,
     loading,
     error,

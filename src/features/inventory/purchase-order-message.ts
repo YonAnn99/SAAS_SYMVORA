@@ -1,3 +1,5 @@
+import { formatMoneda, type Moneda } from "@/lib/money";
+
 /**
  * El texto del pedido que se manda al proveedor por WhatsApp.
  *
@@ -11,6 +13,8 @@
  */
 
 export interface DatosMensaje {
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
   numeroOrden: string;
   proveedor: string;
   negocio: string;
@@ -29,8 +33,7 @@ export interface DatosMensaje {
   enlacePdf: string;
 }
 
-const money = (n: number) =>
-  n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+const money = (n: number, moneda: Moneda = "MXN") => formatMoneda(n, moneda);
 
 export function mensajeParaProveedor(datos: DatosMensaje): string {
   const partes: string[] = [];
@@ -44,7 +47,7 @@ export function mensajeParaProveedor(datos: DatosMensaje): string {
   );
   partes.push("");
   partes.push(
-    `Total: *${money(datos.total)}* ${
+    `Total: *${money(datos.total, datos.moneda)}* ${
       datos.incluyeIva ? "(IVA incluido)" : "(sin IVA)"
     }`
   );

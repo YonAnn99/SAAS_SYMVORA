@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Caja, MovimientoCaja } from "../types/cash-register.types";
 import {
@@ -54,20 +55,21 @@ export interface CashRegisterHookState {
 export async function abrirCaja(
   tenantId: string | null,
   fondoInicial: number,
-  sucursalId: string | null = null
+  sucursalId: string | null = null,
+  textos: TextosAbrirCaja = TEXTOS_ABRIR_CAJA_ES
 ): Promise<Caja | null> {
   if (!tenantId) {
-    toast.error("No se pudo identificar el tenant");
+    toast.error(textos.sinNegocio);
     return null;
   }
   if (!(fondoInicial >= 0)) {
-    toast.error("El fondo inicial no puede ser negativo");
+    toast.error(textos.fondoNegativo);
     return null;
   }
   try {
     const userId = await getCurrentUserId();
     if (!userId) {
-      toast.error("No se pudo identificar el usuario");
+      toast.error(textos.sinUsuario);
       return null;
     }
 
@@ -78,7 +80,7 @@ export async function abrirCaja(
       entityId: register.id,
       details: { fondo_inicial: fondoInicial, sucursal_id: sucursalId },
     });
-    toast.success("Caja abierta correctamente. ¡Listo para vender!");
+    toast.success(textos.abierta);
     notifyCashRegisterChanged();
     return register;
   } catch (error) {
@@ -86,13 +88,45 @@ export async function abrirCaja(
     const code = (error as { code?: string } | null)?.code;
     toast.error(
       code === "23505"
-        ? "Ya tienes una caja abierta en esa sucursal"
+        ? textos.yaAbierta
         : error instanceof Error
           ? error.message
-          : (error as { message?: string } | null)?.message ?? "Error al abrir la caja"
+          : (error as { message?: string } | null)?.message ?? textos.error
     );
     return null;
   }
+}
+
+/** Los avisos de `abrirCaja` (no es hook: el punto de venta tambien la llama). */
+export interface TextosAbrirCaja {
+  sinNegocio: string;
+  fondoNegativo: string;
+  sinUsuario: string;
+  abierta: string;
+  yaAbierta: string;
+  error: string;
+}
+
+export const TEXTOS_ABRIR_CAJA_ES: TextosAbrirCaja = {
+  sinNegocio: "No se pudo identificar el tenant",
+  fondoNegativo: "El fondo inicial no puede ser negativo",
+  sinUsuario: "No se pudo identificar el usuario",
+  abierta: "Caja abierta correctamente. ¡Listo para vender!",
+  yaAbierta: "Ya tienes una caja abierta en esa sucursal",
+  error: "Error al abrir la caja",
+};
+
+/** Los avisos de `abrirCaja` en el idioma de la interfaz. */
+export function useTextosAbrirCaja(): TextosAbrirCaja {
+  const t = useTranslations("finances.openMsg");
+  return {
+    sinNegocio: t("noTenant"),
+    fondoNegativo: t("negativeFloat"),
+    sinUsuario: t("noUser"),
+    abierta: t("opened"),
+    yaAbierta: t("alreadyOpen"),
+    error: t("error"),
+  };
 }
 
 /**
@@ -106,6 +140,8 @@ export function useCashRegister(
   tenantId: string | null,
   sucursalId: string | null = null
 ): CashRegisterHookState {
+  const t = useTranslations("finances.movementMsg");
+  const textosAbrir = useTextosAbrirCaja();
   const [activeRegister, setActiveRegister] = useState<Caja | null>(null);
   const [movements, setMovements] = useState<MovimientoCaja[]>([]);
   const [totalVentas, setTotalVentas] = useState(0);
@@ -169,7 +205,7 @@ export function useCashRegister(
       fondoInicial: number,
       sucursalId: string | null = null
     ): Promise<Caja | null> => {
-      const register = await abrirCaja(tenantId, fondoInicial, sucursalId);
+      const register = await abrirCaja(tenantId, fondoInicial, sucursalId, textosAbrir);
       if (register) {
         setActiveRegister(register);
         setShowOpenDialog(false);
@@ -177,7 +213,7 @@ export function useCashRegister(
       }
       return register;
     },
-    [tenantId, refetch]
+    [tenantId, refetch, textosAbrir]
   );
 
   const handleAddMovement = useCallback(
@@ -189,11 +225,11 @@ export function useCashRegister(
     ) => {
       if (!activeRegister) return;
       if (!(monto > 0)) {
-        toast.error("El monto debe ser mayor a 0");
+        toast.error(t("amountPositive"));
         return;
       }
       if (!descripcion.trim()) {
-        toast.error("La descripción es requerida");
+        toast.error(t("descriptionRequired"));
         return;
       }
       await addMovement(activeRegister.id, tipo, monto, descripcion, concepto);
@@ -206,7 +242,7 @@ export function useCashRegister(
       setShowMovementDialog(false);
       void refetch();
     },
-    [activeRegister, refetch]
+    [activeRegister, refetch, t]
   );
 
   const { totalEntradas, totalSalidas } = useMemo(

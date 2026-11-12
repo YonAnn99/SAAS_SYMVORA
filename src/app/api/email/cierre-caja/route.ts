@@ -3,7 +3,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { requireTenantAccess } from "@/lib/supabase/auth";
 import { sendCierreCajaToSuperAdminEmail } from "@/lib/email";
 import { avisarCorteDeCaja } from "@/lib/avisos-celular";
-import { formatMXN } from "@/lib/money";
+import { formatMoneda, monedaDe } from "@/lib/money";
 import { debeAvisarCierreManual } from "@/features/cash-register/avisos-cierre";
 import { fetchSucursalParaAviso } from "@/features/cash-register/services/cash-register-server-service";
 
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       .eq("role", "SUPER_ADMIN")
       .limit(1)
       .maybeSingle(),
-    supabase.from("tenants").select("nombre_comercial").eq("id", caja.tenant_id).maybeSingle(),
+    supabase.from("tenants").select("nombre_comercial, moneda").eq("id", caja.tenant_id).maybeSingle(),
     supabase.auth.admin.getUserById(auth.userId),
     fetchSucursalParaAviso(supabase, caja.tenant_id, caja.sucursal_id ?? null),
   ]);
@@ -94,6 +94,9 @@ export async function POST(request: Request) {
     ? (await supabase.auth.admin.getUserById(owner.user_id)).data.user?.email ?? null
     : null;
   const userEmail = quien.user?.email ?? "";
+
+  const moneda = monedaDe(tenant?.moneda);
+  const dinero = (n: number) => formatMoneda(n, moneda);
 
   const desmarcar = () =>
     supabase.from("cajas").update({ aviso_cierre_enviado_en: null }).eq("id", cajaId);
@@ -123,6 +126,7 @@ export async function POST(request: Request) {
     saldoReal: Number(caja.saldo_real),
     diferencia: Number(caja.diferencia),
     notasCierre: caja.notas_cierre,
+    moneda,
   });
 
   // Si Resend fallo se quita la marca: el siguiente intento puede enviarlo.
@@ -140,9 +144,9 @@ export async function POST(request: Request) {
       quien: `${
         (quien.user?.user_metadata?.nombre as string | undefined) || userEmail.split("@")[0] || "Un usuario"
       } cerró su caja`,
-      ventas: formatMXN(Number(caja.total_ventas)),
+      ventas: dinero(Number(caja.total_ventas)),
       diferencia:
-        diferencia === 0 ? "cuadró exacto" : `${diferencia > 0 ? "sobran" : "faltan"} ${formatMXN(Math.abs(diferencia))}`,
+        diferencia === 0 ? "cuadró exacto" : `${diferencia > 0 ? "sobran" : "faltan"} ${dinero(Math.abs(diferencia))}`,
     });
   }
 

@@ -194,7 +194,7 @@ export function DockMovil() {
               key="panel"
               ref={panelRef}
               role="dialog"
-              aria-label="Más módulos"
+              aria-label={t("layout.dock.moreModules")}
               className={cn(
                 "fixed left-3 right-4 z-[44] flex flex-col overflow-y-auto rounded-3xl rounded-br-none bg-popover p-3 pb-11 text-popover-foreground lg:hidden",
                 enPos ? PANEL_MAS.pos : PANEL_MAS.normal
@@ -278,8 +278,8 @@ export function DockMovil() {
                       setPerfilAbierto(true);
                     }}
                     className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-background transition-colors active:bg-muted"
-                    aria-label="Mi perfil"
-                    title="Mi perfil"
+                    aria-label={t("layout.myProfile")}
+                    title={t("layout.myProfile")}
                   >
                     <UserIcon className="h-4 w-4" />
                   </button>
@@ -290,8 +290,8 @@ export function DockMovil() {
                       void salir({ confirmar: true });
                     }}
                     className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-background text-red-500 transition-colors active:bg-muted"
-                    aria-label="Cerrar sesión"
-                    title="Cerrar sesión"
+                    aria-label={t("auth.logout")}
+                    title={t("auth.logout")}
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
@@ -305,7 +305,7 @@ export function DockMovil() {
       {/* Pegado al borde inferior, de lado a lado; solo las esquinas de arriba
           redondeadas. El safe area deja libre la barra de gestos del teléfono. */}
       <nav
-        aria-label="Módulos"
+        aria-label={t("layout.dock.modules")}
         className="fixed inset-x-0 bottom-0 z-[45] rounded-t-[28px] bg-[var(--nav-bg)] pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_rgba(0,0,0,0.18)] lg:hidden"
       >
         <div ref={barraRef} className="relative mx-1.5 flex h-16 items-stretch py-1.5">
@@ -348,7 +348,7 @@ export function DockMovil() {
           ref={botonMasRef}
           type="button"
           aria-expanded={masAbierto}
-          aria-label={masAbierto ? "Cerrar" : hayNuevoEnMas ? "Más módulos (hay uno nuevo)" : "Más módulos"}
+          aria-label={masAbierto ? t("common.close") : hayNuevoEnMas ? t("layout.dock.moreModulesNew") : t("layout.dock.moreModules")}
           aria-current={enMas && !masAbierto ? "page" : undefined}
           onClick={() => (masAbierto ? cerrarMas() : setMasAbierto(true))}
           className={cn(

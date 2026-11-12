@@ -6,6 +6,7 @@ import { fijarAlcanceCache, vaciarCache } from "@/lib/cache-datos";
 import { vaciarCarritoGuardado } from "@/features/pos/stores/cart";
 import type { UserRole } from "@/lib/types/database";
 import { nombreCompleto } from "@/lib/nombre-usuario";
+import { MONEDA_POR_DEFECTO, monedaDe, type Moneda } from "@/lib/money";
 
 export interface TenantInfo {
   tenantId: string;
@@ -19,6 +20,8 @@ export interface TenantInfo {
   tenantAddress: string | null;
   /** `tenants.giro_comercial` (ROPA, ABARROTES...): sugiere atributos de variante. */
   tenantGiro: string | null;
+  /** `tenants.moneda` (migración 133): cómo se pintan los montos. MXN por defecto. */
+  moneda: Moneda;
   role: UserRole | null;
   loading: boolean;
   error: string | null;
@@ -36,6 +39,7 @@ const EMPTY_STATE: TenantInfo = {
   tenantLogo: null,
   tenantAddress: null,
   tenantGiro: null,
+  moneda: MONEDA_POR_DEFECTO,
   role: null,
   loading: true,
   error: null,
@@ -67,7 +71,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         .from("tenant_memberships")
         .select(
           `tenant_id, role,
-           tenants!inner(nombre_comercial, logo_url, direccion, giro_comercial)`
+           tenants!inner(nombre_comercial, logo_url, direccion, giro_comercial, moneda)`
         )
         .eq("user_id", user.id)
         .limit(1)
@@ -87,6 +91,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         logo_url: string | null;
         direccion: string | null;
         giro_comercial: string | null;
+        moneda?: string | null;
       };
 
       const resuelto = {
@@ -97,6 +102,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         tenantLogo: tenantData?.logo_url || null,
         tenantAddress: tenantData?.direccion || null,
         tenantGiro: tenantData?.giro_comercial || null,
+        moneda: monedaDe(tenantData?.moneda),
         role: membership.role as UserRole,
       };
 
@@ -140,6 +146,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       {children}
     </TenantContext.Provider>
   );
+}
+
+/**
+ * La moneda del negocio, sin exigir el proveedor: fuera del panel (pruebas,
+ * páginas públicas) devuelve MXN en vez de romper.
+ */
+export function useMonedaDelNegocio(): Moneda {
+  return useContext(TenantContext)?.moneda ?? MONEDA_POR_DEFECTO;
 }
 
 export function useTenantContext(): TenantContextValue {

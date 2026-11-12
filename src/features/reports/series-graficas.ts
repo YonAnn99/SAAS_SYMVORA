@@ -31,27 +31,27 @@ function generateHourSlots(): string[] {
   return slots;
 }
 
-function generateDaySlots(start: Date, end: Date): string[] {
+function generateDaySlots(start: Date, end: Date, locale: string): string[] {
   const slots: string[] = [];
   const current = startOfDay(start);
   const last = startOfDay(end);
   while (current.getTime() <= last.getTime()) {
     slots.push(
-      current.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" })
+      current.toLocaleDateString(locale, { weekday: "short", day: "numeric" })
     );
     current.setDate(current.getDate() + 1);
   }
   return slots;
 }
 
-function generateWeekSlots(start: Date, end: Date): string[] {
+function generateWeekSlots(start: Date, end: Date, locale: string): string[] {
   const slots: string[] = [];
   const current = startOfDay(start);
   const last = startOfDay(end);
   while (current.getTime() <= last.getTime()) {
     const weekStart = new Date(current);
     weekStart.setDate(current.getDate() - current.getDay() + (current.getDay() === 0 ? -6 : 1));
-    const key = weekStart.toLocaleDateString("es-MX", {
+    const key = weekStart.toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
     });
@@ -63,13 +63,13 @@ function generateWeekSlots(start: Date, end: Date): string[] {
   return slots;
 }
 
-function generateMonthSlots(start: Date, end: Date): string[] {
+function generateMonthSlots(start: Date, end: Date, locale: string): string[] {
   const slots: string[] = [];
   const current = new Date(start.getFullYear(), start.getMonth(), 1);
   const last = new Date(end.getFullYear(), end.getMonth(), 1);
   while (current.getTime() <= last.getTime()) {
     slots.push(
-      current.toLocaleDateString("es-MX", { month: "short", year: "numeric" })
+      current.toLocaleDateString(locale, { month: "short", year: "numeric" })
     );
     current.setMonth(current.getMonth() + 1);
   }
@@ -77,28 +77,28 @@ function generateMonthSlots(start: Date, end: Date): string[] {
 }
 
 /** Etiqueta de la cubeta a la que pertenece una fecha. */
-function claveDeCubeta(date: Date, groupBy: Agrupacion): string {
+function claveDeCubeta(date: Date, groupBy: Agrupacion, locale: string): string {
   if (groupBy === "hour") {
     return `${String(date.getHours()).padStart(2, "0")}:00`;
   }
   if (groupBy === "day") {
-    return date.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
+    return date.toLocaleDateString(locale, { weekday: "short", day: "numeric" });
   }
   if (groupBy === "week") {
     const d = new Date(date);
     const dayOfWeek = d.getDay();
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     d.setDate(d.getDate() + mondayOffset);
-    return d.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+    return d.toLocaleDateString(locale, { day: "numeric", month: "short" });
   }
-  return date.toLocaleDateString("es-MX", { month: "short", year: "numeric" });
+  return date.toLocaleDateString(locale, { month: "short", year: "numeric" });
 }
 
-function cubetas(startDate: Date, endDate: Date, groupBy: Agrupacion): string[] {
+function cubetas(startDate: Date, endDate: Date, groupBy: Agrupacion, locale: string): string[] {
   if (groupBy === "hour") return generateHourSlots();
-  if (groupBy === "day") return generateDaySlots(startDate, endDate);
-  if (groupBy === "week") return generateWeekSlots(startDate, endDate);
-  return generateMonthSlots(startDate, endDate);
+  if (groupBy === "day") return generateDaySlots(startDate, endDate, locale);
+  if (groupBy === "week") return generateWeekSlots(startDate, endDate, locale);
+  return generateMonthSlots(startDate, endDate, locale);
 }
 
 /** Como agrupar segun el periodo y el largo del rango (regla de Reportes). */
@@ -114,19 +114,21 @@ export function agrupacionDe(esDia: boolean, desde: Date, hasta: Date): Agrupaci
 // Series
 // ---------------------------------------------------------------------------
 
+/** `locale`: idioma de las etiquetas de fecha (`localeIntl`); México por defecto. */
 export function groupSalesByPeriod(
   ventas: VentaParaSerie[],
   startDate: Date,
   endDate: Date,
-  groupBy: Agrupacion
+  groupBy: Agrupacion,
+  locale = "es-MX"
 ): { date: string; ventas: number }[] {
   const salesMap = new Map<string, number>();
   ventas.forEach((v) => {
-    const key = claveDeCubeta(new Date(v.fecha_venta), groupBy);
+    const key = claveDeCubeta(new Date(v.fecha_venta), groupBy, locale);
     salesMap.set(key, (salesMap.get(key) || 0) + v.total);
   });
 
-  return cubetas(startDate, endDate, groupBy).map((slot) => ({
+  return cubetas(startDate, endDate, groupBy, locale).map((slot) => ({
     date: slot,
     ventas: salesMap.get(slot) || 0,
   }));
@@ -147,11 +149,15 @@ export function ventasPorHora(
 
 const DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-/** Total y numero de ventas por dia de la semana, de lunes a domingo. */
+/**
+ * Total y numero de ventas por dia de la semana, de lunes a domingo. `dias`:
+ * los nombres cortos de lunes a domingo en el idioma de la interfaz.
+ */
 export function ventasPorDiaSemana(
-  ventas: VentaParaSerie[]
+  ventas: VentaParaSerie[],
+  dias: readonly string[] = DIAS_SEMANA
 ): { dia: string; total: number; ventas: number }[] {
-  const filas = DIAS_SEMANA.map((dia) => ({ dia, total: 0, ventas: 0 }));
+  const filas = dias.map((dia) => ({ dia, total: 0, ventas: 0 }));
   for (const v of ventas) {
     const domingoCero = new Date(v.fecha_venta).getDay();
     const fila = filas[(domingoCero + 6) % 7];
@@ -176,11 +182,12 @@ export function ingresosYGananciaPorPeriodo(
   detalle: LineaConVenta[],
   startDate: Date,
   endDate: Date,
-  groupBy: Agrupacion
+  groupBy: Agrupacion,
+  locale = "es-MX"
 ): { date: string; ingresos: number; ganancia: number }[] {
   const cubetaDeVenta = new Map<string, string>();
   for (const v of ventas) {
-    cubetaDeVenta.set(v.id, claveDeCubeta(new Date(v.fecha_venta), groupBy));
+    cubetaDeVenta.set(v.id, claveDeCubeta(new Date(v.fecha_venta), groupBy, locale));
   }
 
   const lineasPorCubeta = new Map<string, LineaConVenta[]>();
@@ -192,7 +199,7 @@ export function ingresosYGananciaPorPeriodo(
     else lineasPorCubeta.set(clave, [linea]);
   }
 
-  return cubetas(startDate, endDate, groupBy).map((slot) => {
+  return cubetas(startDate, endDate, groupBy, locale).map((slot) => {
     const resumen = calcularGanancia(lineasPorCubeta.get(slot) ?? []);
     return { date: slot, ingresos: resumen.ingresos, ganancia: resumen.ganancia };
   });
@@ -219,13 +226,14 @@ export function alinearComparacion(largoActual: number, anterior: number[]): num
 export function ventasPorCategoria(
   detalle: Array<{ producto_id: string; subtotal: number; descuento: number }>,
   productos: Array<{ id: string; categoria: string | null }>,
-  maximo = 5
+  maximo = 5,
+  textos: { sinCategoria: string; otras: string } = { sinCategoria: "Sin categoría", otras: "Otras" }
 ): { name: string; value: number }[] {
   const categoriaDe = new Map(productos.map((p) => [p.id, p.categoria?.trim() || ""]));
 
   const porCategoria = new Map<string, number>();
   for (const linea of detalle) {
-    const categoria = categoriaDe.get(linea.producto_id) || "Sin categoría";
+    const categoria = categoriaDe.get(linea.producto_id) || textos.sinCategoria;
     const monto = linea.subtotal - (linea.descuento ?? 0);
     porCategoria.set(categoria, (porCategoria.get(categoria) ?? 0) + monto);
   }
@@ -239,5 +247,5 @@ export function ventasPorCategoria(
   if (ordenadas.length <= maximo) return ordenadas;
 
   const resto = ordenadas.slice(maximo).reduce((suma, c) => suma + c.value, 0);
-  return [...ordenadas.slice(0, maximo), { name: "Otras", value: redondear(resto) }];
+  return [...ordenadas.slice(0, maximo), { name: textos.otras, value: redondear(resto) }];
 }

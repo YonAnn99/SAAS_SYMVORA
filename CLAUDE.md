@@ -97,6 +97,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   | `lib/profit.ts` | ganancia: sin IVA; costo nulo se excluye |
   | `lib/http/timeout.ts` | timeouts de todo proveedor externo |
   | `lib/periodo.ts` | rangos de fecha de reportes |
+  | `lib/money.ts` | formato de dinero por moneda (`formatMoneda`; `useMoneda()` en el panel) |
 
 - **Rendimiento** (plan en `docs/plan-rendimiento-escalabilidad.md`; fase 1 hecha el 2026-10-04):
   - El POS carga todo en paralelo y usa el `userId` del contexto (sin `auth.getUser()`). Tras cobrar llama
@@ -313,6 +314,25 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     que cambie el literal en `ejecutar_baja`** (como la 132; lo vigila `eliminar-cuenta.test.ts`). Términos en `v1.3-2026-10-06`
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
     Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba; la **edad** es opcional y se captura en Mi perfil (`user_metadata.edad`, 18-120).
+
+## Moneda del negocio (migración 133, 2026-11-12)
+- Pedido de un cliente de España. `tenants.moneda` (`MXN` por defecto, `USD`, `EUR`; CHECK) se elige en Configuración →
+  General (permiso `org.manage_settings`, el mismo del nombre del negocio). **Solo formato: NO convierte montos.** Si ya
+  hay ventas, se confirma antes de cambiarla.
+- Fuente única `lib/money.ts`: `formatMoneda`, `formatMonedaCompacto`, `formatMonedaEntero`, `monedaDe`; MXN en `es-MX`,
+  USD en `en-US`, EUR en `es-ES` («1234,50 €»). En el panel, `useMoneda()` (`formatear`, `entero`, `compacto`, `simbolo`)
+  lee la moneda del contexto del negocio (`useMonedaDelNegocio`, MXN fuera del proveedor). **REGLA:** nada de
+  `` `$${n.toFixed(2)}` `` ni `formatMXN` en pantallas del negocio; `formatMXN` queda para la suscripción de SYMVORA
+  (siempre en pesos), correos internos y la landing.
+- Lo puro recibe la moneda o un `formatear` con MXN por defecto (`rangoDePrecio`, `TextosResumen.precio`, `montosRapidos`
+  con billetes por moneda, gráficas, `exportar-reporte`, PDF de orden, mensaje al proveedor, etiquetas, `pedido.ts`).
+  `ContadorAnimado` usa la prop `dinero`. Los mensajes con monto lo reciben ya formateado (`{monto}`, sin `$`).
+- Ticket: HTML con «$»/«€»; ESC/POS escribe «EUR» (muchas térmicas no traen «€»). Correos y avisos del corte leen
+  `tenants.moneda` en el servidor. El catálogo público la recibe en `_catalogo_encabezado` (contexto `MonedaCatalogo`).
+- **Mercado Pago Point solo con MXN:** con otra moneda, Configuración muestra un aviso y el POS no ofrece «Tarjeta
+  (terminal)» (`mpReady` falso en `use-cash-drawer`); la tarjeta manual sigue con terminal externa.
+- **Pendiente (fase 2):** tasa de IVA por negocio (hoy 16 % fijo en el POS y en `_crear_venta_desde_items`,
+  `registrar_compra_directa`, órdenes de compra y terminal). España usa 21 %.
 
 ## Tarjetas de lealtad (migración 115, 2026-10-09)
 - **Vive dentro de Clientes** (`/customers`, pestaña «Tarjetas de lealtad», `?tab=lealtad`): configuración del
@@ -629,9 +649,48 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 132; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 133; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
+- **Inglés del sistema (por fases, desde el 2026-11-12):**
+  - **Estado de las fases:**
+    - Fase 1 hecha: encabezado (bandera con `useLocale`), menús, Dashboard, POS y abrir caja.
+    - Fase 2 hecha (2026-11-12): Productos completo (catálogo, formulario, variantes, etiquetas, archivados, lotes,
+      ajustes, listas de precios, exportar CSV/PDF). Errores de inventario por código (`codigoDeError` en
+      `error-message.ts`); los de `price-list.ts` se traducen con `CLAVE_ERROR_PRECIO`. Siguen en español a propósito:
+      validaciones de zod, la plantilla y los mensajes del importador por renglón, y la Bitácora.
+    - Fase 3 hecha (2026-11-12): Clientes (lista, celular, alta/edición, abono, estado de cuenta) y la pestaña
+      Tarjetas de lealtad (panel, gráfica, programa, QR del mostrador, ventana de la tarjeta, tira del POS). Siguen en
+      español a propósito: lo que ve el cliente final (tarjeta pública, alta con QR, mensaje de WhatsApp, cartel PDF,
+      nombre y premio por defecto del programa) y los datos fiscales (CFDI oculto).
+    - Fase 4 hecha (2026-11-12): Finanzas (caja: abrir, cerrar, movimientos, avisos de «abre tu caja», tiempo abierta
+      con `duracionAbierta`) y Compras (compras directas, proveedores, órdenes de compra, recepción, detalles). `abrirCaja`
+      no es hook: recibe sus avisos con `useTextosAbrirCaja()` (POS y Finanzas). Siguen en español a propósito: el PDF
+      de la orden y el mensaje de WhatsApp al proveedor, los correos del corte y el cierre automático.
+    - Fase 5 hecha (2026-11-12): Reportes (pestañas, periodos, calendario, tarjetas, ganancia, gráficas, clientes
+      frecuentes, historial de ventas, detalle de venta, «Compras del periodo»). Las etiquetas de las gráficas se arman
+      ya traducidas (`series-graficas.ts` recibe `locale`; `ventasPorDiaSemana` y `ventasPorCategoria`, sus textos), así
+      que la clave de caché del reporte lleva el idioma. El Excel/PDF exportado sigue en español (encabezados), pero
+      sus fechas y nombres de método/día salen como se ven en pantalla.
+    - Fase 6 hecha (2026-11-12): Configuración (general, módulos, Mercado Pago Point, impresora), Sucursales (resumen,
+      existencias, traspasos, alta y cierre, selector), Usuarios (invitar, roles, permisos con los módulos de
+      `lib/modules.ts` traducidos por `key`, sucursales, nombre, claves), Suscripción (`/billing`, aviso de prueba o pago
+      vencido, descarga de datos), Catálogo en línea (panel: estado, productos, personalizar, vista previa;
+      `mensajeErrorCatalogo` acepta traductor), campana de notificaciones (`tiempoTranscurrido`), eliminar cuenta y baja
+      pendiente (la palabra de confirmación es «ELIMINAR»/«DELETE»), escáner, aviso de documentos legales, sugerencias,
+      instalar la app, ventana de novedades (`news.<id>.*`, con respaldo al texto de `NOVEDADES`) y piezas compartidas
+      (`FilaDeslizable`, `useTextoPistaDeslizar`, subir archivo, contraseña).
+    - Siguen en español a propósito: la página pública del catálogo y la tarjeta de lealtad, la landing y páginas
+      legales, CFDI (oculto), la Bitácora, tickets/PDF/correos, y los textos que llegan del servidor (errores de RPC).
+  - **Reglas:**
+    - Texto visible nuevo SIEMPRE con `useTranslations` y la clave en `es.json` y `en.json`; `mensajes-es-en.test.ts`
+      exige paridad.
+    - Lógica pura devuelve códigos, no frases. Ejemplo: `errorDescuento` en `features/pos/descuento-ticket.ts`.
+    - Fechas con `localeIntl(locale)` de `lib/idioma.ts`.
+    - Lo impreso (tickets, PDFs, correos) y los datos del negocio se quedan en español.
+  - **`next dev` no relee los JSON de mensajes:** reinícialo o saldrán las claves crudas.
+  - **Pruebas que renderizan componentes con `useTranslations`:** los envuelven en `NextIntlClientProvider` con
+    `@/messages/es.json`.
 
 # Pendientes
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { Store } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ import { useSucursal } from "@/contexts/sucursal-context";
 const TODAS = "__todas";
 
 export function SucursalSelector({ className }: { className?: string }) {
+  const t = useTranslations("branches.selector");
   const { activas, sucursales, seleccionada, setSeleccionada, hayVarias } =
     useSucursal();
 
@@ -47,12 +49,12 @@ export function SucursalSelector({ className }: { className?: string }) {
   );
 
   const items = useMemo(() => {
-    const mapa: Record<string, string> = { [TODAS]: "Todas las sucursales" };
+    const mapa: Record<string, string> = { [TODAS]: t("all") };
     for (const s of opciones) {
-      mapa[s.id] = s.activa ? s.nombre : `${s.nombre} (cerrada)`;
+      mapa[s.id] = s.activa ? s.nombre : `${s.nombre} (${t("closed")})`;
     }
     return mapa;
-  }, [opciones]);
+  }, [opciones, t]);
 
   // Después de los hooks: llamarlos condicionalmente rompería su orden.
   if (!hayVarias) return null;
@@ -73,8 +75,8 @@ export function SucursalSelector({ className }: { className?: string }) {
               // En celular el selector va en media columna: junto al icono de
               // tienda, "Todas" se entiende y no se corta.
               <>
-                <span className="sm:hidden">Todas</span>
-                <span className="hidden sm:inline">Todas las sucursales</span>
+                <span className="sm:hidden">{t("allShort")}</span>
+                <span className="hidden sm:inline">{t("all")}</span>
               </>
             ) : (
               items[v] ?? v
@@ -83,11 +85,11 @@ export function SucursalSelector({ className }: { className?: string }) {
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={TODAS}>Todas las sucursales</SelectItem>
+        <SelectItem value={TODAS}>{t("all")}</SelectItem>
         {opciones.map((s) => (
           <SelectItem key={s.id} value={s.id}>
             {s.nombre}
-            {!s.activa && " (cerrada)"}
+            {!s.activa && ` (${t("closed")})`}
           </SelectItem>
         ))}
       </SelectContent>

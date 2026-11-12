@@ -97,18 +97,24 @@ export function etiquetaDescuento(descuento: DescuentoTicket | null): string {
  * Valida lo que se escribió antes de aplicarlo. Devuelve el mensaje de error
  * o `null` si está bien.
  */
-export function validarDescuento(
+export type ErrorDescuento =
+  | { codigo: "cero" }
+  | { codigo: "mas-de-100" }
+  | { codigo: "mayor-que-subtotal" }
+  | { codigo: "tope"; topePct: number };
+
+/**
+ * Valida lo que se escribio antes de aplicarlo. Devuelve el codigo del error
+ * (la interfaz lo traduce) o `null` si se puede aplicar.
+ */
+export function errorDescuento(
   descuento: DescuentoTicket,
   subtotal: number,
   topePct: number | null
-): string | null {
-  if (!(descuento.valor > 0)) return "Escribe un descuento mayor que cero";
-  if (descuento.tipo === "porcentaje" && descuento.valor > 100) {
-    return "El porcentaje no puede pasar de 100";
-  }
-  if (descuento.tipo === "monto" && descuento.valor > subtotal) {
-    return "El descuento no puede ser mayor que el subtotal";
-  }
+): ErrorDescuento | null {
+  if (!(descuento.valor > 0)) return { codigo: "cero" };
+  if (descuento.tipo === "porcentaje" && descuento.valor > 100) return { codigo: "mas-de-100" };
+  if (descuento.tipo === "monto" && descuento.valor > subtotal) return { codigo: "mayor-que-subtotal" };
   if (topePct !== null) {
     const pct =
       descuento.tipo === "porcentaje"
@@ -116,9 +122,27 @@ export function validarDescuento(
         : subtotal > 0
           ? (descuento.valor / subtotal) * 100
           : 0;
-    if (pct > topePct + 1e-9) {
-      return `Puedes descontar como máximo ${topePct} % del ticket`;
-    }
+    if (pct > topePct + 1e-9) return { codigo: "tope", topePct };
   }
   return null;
+}
+
+/** El mismo error en espanol (lo usan las pruebas y quien no tiene traductor). */
+export function validarDescuento(
+  descuento: DescuentoTicket,
+  subtotal: number,
+  topePct: number | null
+): string | null {
+  const error = errorDescuento(descuento, subtotal, topePct);
+  if (!error) return null;
+  switch (error.codigo) {
+    case "cero":
+      return "Escribe un descuento mayor que cero";
+    case "mas-de-100":
+      return "El porcentaje no puede pasar de 100";
+    case "mayor-que-subtotal":
+      return "El descuento no puede ser mayor que el subtotal";
+    case "tope":
+      return `Puedes descontar como máximo ${error.topePct} % del ticket`;
+  }
 }

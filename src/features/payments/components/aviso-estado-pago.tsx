@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 /**
  * Aviso fijo arriba del panel cuando la cuenta no tiene acceso completo
  * (migracion 096):
@@ -23,9 +26,9 @@ import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 import { PRECIO_PROMO_MXN, precioListaMXN } from "@/features/payments/promocion";
 import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 
-const fechaLarga = (d: Date) =>
-  d.toLocaleDateString("es-MX", { day: "numeric", month: "long" });
-const miles = (n: number) => n.toLocaleString("es-MX");
+const fechaLarga = (d: Date, locale: string) =>
+  d.toLocaleDateString(locale, { day: "numeric", month: "long" });
+const miles = (n: number, locale: string) => n.toLocaleString(locale);
 
 export function AvisoEstadoPago() {
   const { tenantId } = useCurrentTenant();
@@ -35,6 +38,8 @@ export function AvisoEstadoPago() {
   const { loading, acceso, estado, diasGracia, limiteDatos, ofertaRegresoHasta, prueba } =
     useAccesoCuenta();
   const [guardado, setGuardado] = useState<{ productos: number; ventas: number } | null>(null);
+  const t = useTranslations("billing.notice");
+  const li = localeIntl(useLocale());
 
   const soloLectura = !loading && acceso === "solo_lectura";
 
@@ -69,7 +74,7 @@ export function AvisoEstadoPago() {
       href="/billing"
       className="shrink-0 rounded-md border border-current/30 px-3 py-1.5 text-xs font-medium hover:opacity-90"
     >
-      Ver mi suscripción
+      {t("viewSubscription")}
     </Link>
   );
 
@@ -78,8 +83,8 @@ export function AvisoEstadoPago() {
   if (acceso === "completo") {
     if (!prueba) return null;
     const cuando = prueba.hoy
-      ? `hoy a las ${prueba.fin.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}`
-      : `en ${prueba.dias} ${prueba.dias === 1 ? "día" : "días"} (el ${fechaLarga(prueba.fin)})`;
+      ? t("todayAt", { hora: prueba.fin.toLocaleTimeString(li, { hour: "numeric", minute: "2-digit" }) })
+      : t("inDays", { count: prueba.dias, fecha: fechaLarga(prueba.fin, li) });
     return (
       <div
         role="status"
@@ -89,10 +94,10 @@ export function AvisoEstadoPago() {
           <p className="flex items-start gap-2 text-sm">
             <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
-              <strong className="font-medium">Tu prueba gratis termina {cuando}.</strong>{" "}
+              <strong className="font-medium">{t("trialEnds", { cuando })}</strong>{" "}
               {puedePagar
-                ? "Elige tu plan para seguir vendiendo sin interrupciones."
-                : "Después la cuenta quedará en solo lectura hasta que se active un plan."}
+                ? t("choosePlanHint")
+                : t("readOnlyAfter")}
             </span>
           </p>
           {puedePagar ? (
@@ -100,12 +105,12 @@ export function AvisoEstadoPago() {
               href="/billing"
               className="shrink-0 rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90"
             >
-              Elegir plan
+              {t("choosePlan")}
             </Link>
           ) : esDueno ? (
             enlaceNeutro
           ) : (
-            <span className="shrink-0 text-xs opacity-80">Avísale al dueño de la cuenta.</span>
+            <span className="shrink-0 text-xs opacity-80">{t("tellOwner")}</span>
           )}
         </div>
       </div>
@@ -116,17 +121,17 @@ export function AvisoEstadoPago() {
       href="/billing"
       className="shrink-0 rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90"
     >
-      {soloLectura ? "Reactivar mi plan" : "Pagar ahora"}
+      {soloLectura ? t("reactivate") : t("payNow")}
     </Link>
   ) : esDueno ? (
     enlaceNeutro
   ) : (
-    <span className="shrink-0 text-xs opacity-80">Avísale al dueño de la cuenta.</span>
+    <span className="shrink-0 text-xs opacity-80">{t("tellOwner")}</span>
   );
 
   if (!soloLectura) {
     const titulo =
-      estado === "past_due" ? "No pudimos cobrar tu mensualidad." : "Tu mensualidad venció.";
+      estado === "past_due" ? t("chargeFailed") : t("expired");
     return (
       <div
         role="status"
@@ -139,11 +144,11 @@ export function AvisoEstadoPago() {
               <strong className="font-medium">{titulo}</strong>{" "}
               {enAppAndroid
                 ? diasGracia > 0
-                  ? `Tu acceso sigue ${diasGracia} ${diasGracia === 1 ? "día" : "días"} más.`
-                  : "Hoy es el último día de acceso."
+                  ? t("accessContinues", { count: diasGracia })
+                  : t("lastDay")
                 : diasGracia > 0
-                  ? `Tienes ${diasGracia} ${diasGracia === 1 ? "día" : "días"} para pagar sin perder el acceso.`
-                  : "Paga hoy para no perder el acceso."}
+                  ? t("daysToPay", { count: diasGracia })
+                  : t("payToday")}
             </span>
           </p>
           {accion}
@@ -162,23 +167,22 @@ export function AvisoEstadoPago() {
           <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div className="space-y-0.5">
             <p>
-              <strong className="font-medium">Tu cuenta está en solo lectura.</strong>{" "}
-              Puedes ver y descargar tu información, pero no registrar ventas ni cambios.
+              <strong className="font-medium">{t("readOnlyTitle")}</strong>{" "}
+              {t("readOnlyDesc")}
             </p>
             <p className="text-xs opacity-90">
               {guardado
-                ? `Todo sigue intacto: ${miles(guardado.productos)} productos y ${miles(guardado.ventas)} ventas. `
-                : "Todo sigue intacto. "}
-              {enAppAndroid ? "Al reactivar tu plan continúas donde te quedaste" : "Reactiva tu plan y continúas donde te quedaste"}
-              {limiteDatos ? ` (tus datos se conservan hasta el ${fechaLarga(limiteDatos)})` : ""}.
+                ? `${t("intactCounts", { productos: miles(guardado.productos, li), ventas: miles(guardado.ventas, li) })} `
+                : `${t("intact")} `}
+              {enAppAndroid ? t("continueAndroid") : t("continue")}
+              {limiteDatos ? ` ${t("dataUntil", { fecha: fechaLarga(limiteDatos, li) })}` : ""}.
               {ofertaRegresoHasta && !enAppAndroid && (
                 <>
                   {" "}
                   <strong className="font-medium">
-                    Regresa con tu primer mes a ${PRECIO_PROMO_MXN} en vez de $
-                    {precioListaMXN("monthly")}
+                    {t("comeback", { promo: `$${PRECIO_PROMO_MXN}`, normal: `$${precioListaMXN("monthly")}` })}
                   </strong>{" "}
-                  hasta el {fechaLarga(ofertaRegresoHasta)}.
+                  {t("comebackUntil", { fecha: fechaLarga(ofertaRegresoHasta, li) })}
                 </>
               )}
             </p>

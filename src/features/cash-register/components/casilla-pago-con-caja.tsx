@@ -1,9 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { cajaParaPago, type CajaAbierta } from "../conceptos";
 import { fetchMisCajasAbiertas } from "../services/cash-register-service";
 
@@ -60,6 +61,8 @@ export function CasillaPagoConCaja({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("finances.payWithCash");
   const sinCaja = !cargando && !caja;
 
   return (
@@ -75,18 +78,18 @@ export function CasillaPagoConCaja({
           onCheckedChange={(v) => onCheckedChange(v === true)}
         />
         <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-        Pagada con efectivo de la caja
+        {t("label")}
       </label>
       <p className="mt-1 pl-6 text-xs text-muted-foreground">
         {cargando
-          ? "Buscando tu caja abierta..."
+          ? t("searching")
           : !caja
-            ? "Abre tu caja en Finanzas para descontar el pago de ella."
+            ? t("openFirst")
             : checked
-              ? `Se registrará una salida de ${formatMXN(total)} en tu caja${
-                  caja.sucursal?.nombre ? ` de ${caja.sucursal.nombre}` : ""
-                }.`
-              : "Márcala si le pagas al proveedor con dinero del cajón."}
+              ? caja.sucursal?.nombre
+                ? t("willRecordAt", { monto: formatear(total), sucursal: caja.sucursal.nombre })
+                : t("willRecord", { monto: formatear(total) })
+              : t("hint")}
       </p>
     </div>
   );

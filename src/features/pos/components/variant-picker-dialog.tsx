@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 /**
@@ -56,6 +59,8 @@ export function VariantPickerDialog({
   onOpenChange,
   onSelect,
 }: VariantPickerDialogProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("pos.variantPicker");
   if (!product) return null;
 
   const sinClasificar = Number(product.stock_actual);
@@ -66,7 +71,7 @@ export function VariantPickerDialog({
         <DialogHeader>
           <DialogTitle>{product.nombre}</DialogTitle>
           <DialogDescription>
-            Este producto tiene variantes. Elige cuál vas a vender.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -102,12 +107,12 @@ export function VariantPickerDialog({
                 </span>
                 <span className="shrink-0 text-right">
                   <span className="block font-mono text-sm">
-                    ${(precioDe ? precioDe(v) : variantPrice(v, product)).toFixed(2)}
+                    {formatear((precioDe ? precioDe(v) : variantPrice(v, product)))}
                   </span>
                   <span
                     className={`block text-xs ${agotado ? "text-red-500" : "text-muted-foreground"}`}
                   >
-                    {servicio ? "Servicio" : agotado ? "Agotado" : `${stock} disponibles`}
+                    {servicio ? t("service") : agotado ? t("soldOut") : t("available", { stock })}
                   </span>
                 </span>
               </button>
@@ -126,18 +131,18 @@ export function VariantPickerDialog({
               <span className="flex min-w-0 items-center gap-2">
                 <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="truncate text-sm">
-                  Producto general
+                  {t("generalProduct")}
                   <span className="ml-1.5 text-xs text-muted-foreground">
-                    sin clasificar
+                    {t("unclassified")}
                   </span>
                 </span>
               </span>
               <span className="shrink-0 text-right">
                 <span className="block font-mono text-sm">
-                  ${(precioDe ? precioDe(null) : Number(product.precio_venta)).toFixed(2)}
+                  {formatear((precioDe ? precioDe(null) : Number(product.precio_venta)))}
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  {sinClasificar} disponibles
+                  {t("available", { stock: sinClasificar })}
                 </span>
               </span>
             </button>

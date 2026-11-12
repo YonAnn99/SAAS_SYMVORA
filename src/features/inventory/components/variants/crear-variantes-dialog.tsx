@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useEffect, useState } from "react";
 import { Copy, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -29,8 +31,8 @@ import { unidadesOfrecidas } from "@/lib/modulos";
 import {
   contenidoDesdeTexto,
   enUnidad,
+  abreviatura,
   esFraccionable,
-  porUnidad,
   type UnidadMedida,
 } from "@/lib/unidades";
 import { AvisoEmpaquetado, CampoContenido, OpcionesUnidad } from "../unidad-y-contenido";
@@ -61,6 +63,7 @@ import {
   resumenTarjeta,
   tarjetaRepetida,
   type TarjetaVariante,
+  type TextosResumen,
 } from "../../tarjetas-variante";
 
 /**
@@ -124,6 +127,7 @@ export function CrearVariantesDialog({
   onSaveMany,
 }: CrearVariantesDialogProps) {
   const t = useTranslations();
+  const textos = useTextosResumen();
   const { tenantGiro, tenantId } = useCurrentTenant();
   const { modulos } = useModulos();
 
@@ -208,14 +212,14 @@ export function CrearVariantesDialog({
     const nombreGeneral = nombre.trim();
     if (!destino) {
       if (!nombreGeneral) {
-        toast.error("Escribe el nombre general del producto");
+        toast.error(t("products.variants.enterGeneralName"));
         return false;
       }
       const repetido = products.find(
         (p) => p.nombre.trim().toLowerCase() === nombreGeneral.toLowerCase()
       );
       if (repetido) {
-        toast.error(`Ya existe «${repetido.nombre}»: agrégale variantes desde su fila en la tabla`);
+        toast.error(t("products.variants.alreadyExists", { nombre: repetido.nombre }));
         return false;
       }
     }
@@ -225,7 +229,7 @@ export function CrearVariantesDialog({
         // Abre la tarjeta Y la seccion donde se corrige.
         setAbierta(i);
         setSecciones((prev) => ({ ...prev, [tarjetas[i].id]: SECCION[problema.seccion] }));
-        toast.error(`Variante ${i + 1}: ${problema.mensaje}`);
+        toast.error(t("products.variants.cardProblem", { numero: i + 1, mensaje: problema.mensaje }));
         return false;
       }
     }
@@ -233,7 +237,7 @@ export function CrearVariantesDialog({
     if (repetida >= 0) {
       setAbierta(repetida);
       setSecciones((prev) => ({ ...prev, [tarjetas[repetida].id]: SECCION.datos }));
-      toast.error(`La variante ${repetida + 1} repite los atributos de otra`);
+      toast.error(t("products.variants.duplicateAttrs", { numero: repetida + 1 }));
       return false;
     }
     if (!tenantId) return false;
@@ -246,7 +250,7 @@ export function CrearVariantesDialog({
         imagenes.push(tarjeta.imagenFile ? await subirImagenProducto(tarjeta.imagenFile, tenantId) : null);
       }
     } catch {
-      toast.error("No se pudo subir una foto. Revisa tu conexión e intenta de nuevo.");
+      toast.error(t("products.variants.photoError"));
       return false;
     } finally {
       setSubiendo(false);
@@ -274,7 +278,7 @@ export function CrearVariantesDialog({
           permite_lotes: manejaLotes,
         });
       } catch {
-        toast.error("No se pudo crear el producto. Revisa tu conexión e intenta de nuevo.");
+        toast.error(t("products.variants.createError"));
         return false;
       }
       setCreado({
@@ -311,7 +315,7 @@ export function CrearVariantesDialog({
   };
 
   const crearDeslizando = async () => {
-    if (!(await guardar())) throw new Error("No se guardó");
+    if (!(await guardar())) throw new Error(t("products.form.notSaved"));
   };
   const trasCrear = (origen: DOMRect | null) => {
     celebrarAlta(origen);
@@ -325,12 +329,12 @@ export function CrearVariantesDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {destino ? `Agregar variantes a «${destino.nombre}»` : "Producto con variantes"}
+            {destino ? t("products.variants.addTo", { nombre: destino.nombre }) : t("products.variants.title")}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {destino
-              ? "Cada tarjeta es una variante con su precio, stock y código."
-              : "Escribe el nombre general (ej. Coca Cola) y agrega sus variantes: cada tarjeta es una variante."}
+              ? t("products.variants.descAdd")
+              : t("products.variants.descCreate")}
           </DialogDescription>
         </DialogHeader>
 
@@ -339,10 +343,10 @@ export function CrearVariantesDialog({
               la categoria van en las variantes. */}
           {!destino && (
             <div className="space-y-1.5">
-              <Label htmlFor="producto-general" className="text-xs">Nombre general *</Label>
+              <Label htmlFor="producto-general" className="text-xs">{t("products.variants.generalName")} *</Label>
               <Input
                 id="producto-general"
-                placeholder="Ej. Coca Cola"
+                placeholder={t("products.variants.generalNamePlaceholder")}
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 maxLength={120}
@@ -359,8 +363,8 @@ export function CrearVariantesDialog({
                 <AccordionItem
                   key={tarjeta.id}
                   index={i}
-                  title={`Variante ${i + 1}`}
-                  resumen={resumenTarjeta(tarjeta, servicio)}
+                  title={t("products.variants.cardTitle", { numero: i + 1 })}
+                  resumen={resumenTarjeta(tarjeta, servicio, textos)}
                 >
                   <FormularioTarjeta
                     tarjeta={tarjeta}
@@ -394,7 +398,7 @@ export function CrearVariantesDialog({
                   <div className="mt-3 flex justify-end gap-1">
                     <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => duplicar(i)}>
                       <Copy className="h-3.5 w-3.5" />
-                      Duplicar
+                      {t("products.variants.duplicate")}
                     </Button>
                     {n > 1 && (
                       <Button
@@ -405,7 +409,7 @@ export function CrearVariantesDialog({
                         onClick={() => quitar(i)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Quitar
+                        {t("products.variants.remove")}
                       </Button>
                     )}
                   </div>
@@ -416,15 +420,15 @@ export function CrearVariantesDialog({
 
           <Button type="button" variant="outline" size="sm" className="h-8 w-full gap-1.5 text-xs" onClick={agregarTarjeta}>
             <Plus className="h-3.5 w-3.5" />
-            Agregar nueva variante
+            {t("products.variants.addNew")}
           </Button>
         </div>
 
         <div className="flex flex-col items-stretch gap-2">
           <DeslizarParaConfirmar
-            label={n === 1 ? "Desliza para crear la variante" : `Desliza para crear ${n} variantes`}
-            doneLabel={n === 1 ? "Variante creada" : "Variantes creadas"}
-            errorLabel="No se guardó"
+            label={t("products.variants.slideCreate", { count: n })}
+            doneLabel={t("products.variants.created", { count: n })}
+            errorLabel={t("products.form.notSaved")}
             successColor={COLOR_ALTA}
             disabled={saving || subiendo}
             onConfirm={crearDeslizando}
@@ -437,7 +441,7 @@ export function CrearVariantesDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancelar
+            {t("common.cancel")}
           </Button>
         </div>
       </DialogContent>
@@ -485,6 +489,11 @@ function FormularioTarjeta({
   /** "Es servicio" y "Maneja lotes" (del producto); `undefined` = no se muestran. */
   interruptores?: Interruptores;
 }) {
+  const t = useTranslations();
+  const textos = useTextosResumen();
+  // " por kg" en las de medida (el precio se captura por unidad).
+  const porU = (u: string | null) =>
+    esFraccionable(u) ? t("products.form.perUnit", { unidad: abreviatura(u, 1) }) : "";
   const cambiarAtributo = (indice: number, cambio: Partial<TarjetaVariante["atributos"][number]>) =>
     onCambio({
       atributos: tarjeta.atributos.map((a, i) => (i === indice ? { ...a, ...cambio } : a)),
@@ -525,9 +534,9 @@ function FormularioTarjeta({
     <div>
       <Accordion variante="panel" activeIndex={seccion} onActiveIndexChange={onSeccion}>
         <AccordionItem
-          title="Datos de la variante"
+          title={t("products.variants.secData")}
           index={SECCION.datos}
-          resumen={resumenAtributos(tarjeta) || "Sin atributo"}
+          resumen={resumenAtributos(tarjeta) || t("products.variants.noAttribute")}
         >
           <div className="space-y-3 pt-1">
             {/* Atributos: un valor por tipo (ej. Capacidad 600 ml, o Talla M + Color Rojo) */}
@@ -545,13 +554,13 @@ function FormularioTarjeta({
                 <div key={i} className="space-y-2 rounded-lg border border-border p-2.5">
                   <div className="flex items-end gap-2">
                     <div className="min-w-0 flex-1 space-y-1.5">
-                      <Label className="text-xs">Tipo de atributo</Label>
+                      <Label className="text-xs">{t("products.variants.attrType")}</Label>
                       <Select
                         items={Object.fromEntries(opciones.map((tipo) => [tipo, tipo]))}
                         value={atributo.tipo}
                         onValueChange={(v) => typeof v === "string" && cambiarAtributo(i, { tipo: v, valor: "" })}
                       >
-                        <SelectTrigger className="h-8 w-full" aria-label="Tipo de atributo">
+                        <SelectTrigger className="h-8 w-full" aria-label={t("products.variants.attrType")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -570,7 +579,7 @@ function FormularioTarjeta({
                         size="icon"
                         className="h-8 w-8 shrink-0 text-muted-foreground"
                         onClick={() => onCambio({ atributos: tarjeta.atributos.filter((_, j) => j !== i) })}
-                        aria-label="Quitar atributo"
+                        aria-label={t("products.variants.removeAttr")}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -578,16 +587,16 @@ function FormularioTarjeta({
                   </div>
                   {atributo.tipo === TIPO_PERSONALIZADO && (
                     <Input
-                      placeholder="Nombre del atributo (ej. Material)"
+                      placeholder={t("products.variants.attrNamePlaceholder")}
                       value={atributo.nombre}
                       onChange={(e) => cambiarAtributo(i, { nombre: e.target.value })}
                       className="h-8 text-sm"
                     />
                   )}
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Valor</Label>
+                    <Label className="text-xs">{t("products.variants.value")}</Label>
                     <Input
-                      placeholder="Escribe un valor"
+                      placeholder={t("products.variants.valuePlaceholder")}
                       value={atributo.valor}
                       onChange={(e) => cambiarAtributo(i, { valor: e.target.value })}
                       className="h-8 text-sm"
@@ -618,16 +627,16 @@ function FormularioTarjeta({
             {tarjeta.atributos.length < MAX_ATRIBUTOS && (
               <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={agregarAtributo}>
                 <Plus className="h-3.5 w-3.5" />
-                Agregar otro atributo
+                {t("products.variants.addAttr")}
               </Button>
             )}
 
             <div className="space-y-1.5">
               <Label className="text-xs">
-                Descripción <span className="text-muted-foreground">(opcional)</span>
+                {t("products.form.description")} <span className="text-muted-foreground">({t("products.variants.optional")})</span>
               </Label>
               <Input
-                placeholder="Ej. Botella retornable"
+                placeholder={t("products.variants.descriptionPlaceholder")}
                 value={tarjeta.descripcion}
                 onChange={(e) => onCambio({ descripcion: e.target.value })}
                 maxLength={200}
@@ -640,13 +649,13 @@ function FormularioTarjeta({
               <div className={`grid grid-cols-1 gap-3 ${!servicio && categoria ? "sm:grid-cols-2" : ""}`}>
                 {!servicio && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">¿Cómo se vende?</Label>
+                    <Label className="text-xs">{t("products.form.howSold")}</Label>
                     <Select
                       items={Object.fromEntries(unidades.map((u) => [u, etiquetaUnidad(u)]))}
                       value={tarjeta.unidad}
                       onValueChange={(v) => typeof v === "string" && onCambio({ unidad: v })}
                     >
-                      <SelectTrigger className="h-8 w-full text-sm" aria-label="Cómo se vende la variante">
+                      <SelectTrigger className="h-8 w-full text-sm" aria-label={t("products.variants.howSoldAria")}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -658,7 +667,7 @@ function FormularioTarjeta({
                 {categoria && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">
-                      Categoría <span className="text-muted-foreground">(opcional)</span>
+                      {t("products.form.category")} <span className="text-muted-foreground">({t("products.variants.optional")})</span>
                     </Label>
                     <SelectorCategoria value={categoria.valor} onChange={categoria.onChange} categorias={categoria.opciones} />
                   </div>
@@ -698,36 +707,35 @@ function FormularioTarjeta({
           </div>
         </AccordionItem>
 
-        <AccordionItem title="Precio y costo" index={SECCION.precio} resumen={resumenPrecio(tarjeta)}>
+        <AccordionItem title={t("products.form.secPrice")} index={SECCION.precio} resumen={resumenPrecio(tarjeta, textos)}>
           <div className="grid grid-cols-2 gap-3 pt-1">
-            {campoNumero("precio", `Precio de venta${porUnidad(unidadTarjeta)} *`, "0.01", "0.00")}
-            {campoNumero("costo", `Costo de compra${porUnidad(unidadTarjeta)}`, "0.01", "0.00")}
+            {campoNumero("precio", `${t("products.form.salePrice")}${porU(unidadTarjeta)} *`, "0.01", "0.00")}
+            {campoNumero("costo", `${t("products.form.cost")}${porU(unidadTarjeta)}`, "0.01", "0.00")}
           </div>
         </AccordionItem>
 
-        <AccordionItem title="Inventario" index={SECCION.inventario} resumen={resumenInventario(tarjeta, servicio)}>
+        <AccordionItem title={t("products.form.secInventory")} index={SECCION.inventario} resumen={resumenInventario(tarjeta, servicio, textos)}>
           <div className="space-y-4 pt-1">
             {/* En un servicio el stock DESAPARECE: su venta no descuenta existencias. */}
             {!servicio && (
               <div className="grid grid-cols-2 gap-3">
-                {campoNumero("stock", `Stock actual${enUnidad(unidadTarjeta)}`, "any", "0")}
-                {campoNumero("stockMinimo", `Stock mínimo${enUnidad(unidadTarjeta)}`, "any", "0")}
+                {campoNumero("stock", `${t("products.form.stock")}${enUnidad(unidadTarjeta)}`, "any", "0")}
+                {campoNumero("stockMinimo", `${t("products.form.minStock")}${enUnidad(unidadTarjeta)}`, "any", "0")}
               </div>
             )}
             {servicio && !interruptores && (
               <p className="text-[11px] text-muted-foreground">
-                Este producto es un servicio: sus variantes se venden sin descontar existencias.
+                {t("products.variants.serviceNote")}
               </p>
             )}
             {interruptores?.mostrarServicio && (
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Switch checked={interruptores.esServicio} onCheckedChange={(v) => interruptores.onServicio(v)} />
-                  <Label className="text-xs">Es servicio (no maneja stock)</Label>
+                  <Label className="text-xs">{t("products.form.isService")}</Label>
                 </div>
                 <p className="ml-11 text-[11px] text-muted-foreground">
-                  Se vende sin descontar existencias: asesorías, instalación, envío a domicilio. Aplica a todas las
-                  variantes.
+                  {t("products.form.isServiceHint")} {t("products.variants.appliesAll")}
                 </p>
               </div>
             )}
@@ -735,23 +743,22 @@ function FormularioTarjeta({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Switch checked={interruptores.manejaLotes} onCheckedChange={(v) => interruptores.onLotes(v)} />
-                  <Label className="text-xs">Maneja lotes y fecha de caducidad</Label>
+                  <Label className="text-xs">{t("products.form.hasLots")}</Label>
                 </div>
                 <p className="ml-11 text-[11px] text-muted-foreground">
-                  Al guardar, el producto aparece en la pestaña Lotes para registrar sus caducidades. Aplica a todas
-                  las variantes.
+                  {t("products.form.hasLotsHint")} {t("products.variants.appliesAll")}
                 </p>
               </div>
             )}
           </div>
         </AccordionItem>
 
-        <AccordionItem title="Códigos" index={SECCION.codigos} resumen={resumenCodigos(tarjeta)}>
+        <AccordionItem title={t("products.form.secCodes")} index={SECCION.codigos} resumen={resumenCodigos(tarjeta, textos)}>
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="space-y-1.5">
               <Label className="text-xs">SKU</Label>
               <Input
-                placeholder="Automático"
+                placeholder={t("products.form.auto")}
                 value={tarjeta.sku}
                 onChange={(e) => onCambio({ sku: e.target.value })}
                 className="h-8 text-sm font-mono"
@@ -759,26 +766,26 @@ function FormularioTarjeta({
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <Label className="text-xs">Código de barras</Label>
+                <Label className="text-xs">{t("products.form.barcode")}</Label>
                 <BotonGenerarCodigo onCodigo={(codigo) => onCambio({ codigo })} />
               </div>
               <div className="relative">
                 <Input
-                  placeholder="Escanea o genera"
+                  placeholder={t("products.form.scanOrGenerate")}
                   value={tarjeta.codigo}
                   onChange={(e) => onCambio({ codigo: e.target.value })}
                   className="h-8 pr-9 text-sm font-mono"
                 />
-                <BotonEscanear modo="uno" titulo="Escanear código de la variante" onCodigo={(codigo) => onCambio({ codigo })} />
+                <BotonEscanear modo="uno" titulo={t("products.variants.scanCode")} onCodigo={(codigo) => onCambio({ codigo })} />
               </div>
             </div>
           </div>
         </AccordionItem>
 
         <AccordionItem
-          title="Imagen"
+          title={t("products.form.secImage")}
           index={SECCION.imagen}
-          resumen={tarjeta.imagenPreview ? "Con foto" : "Sin foto"}
+          resumen={tarjeta.imagenPreview ? t("products.form.withPhoto") : t("products.form.noPhoto")}
           className="border-b-0"
         >
           <div className="pt-1">
@@ -786,8 +793,8 @@ function FormularioTarjeta({
               preview={tarjeta.imagenPreview}
               onFileSelect={(file) => onCambio({ imagenFile: file, imagenPreview: URL.createObjectURL(file) })}
               onFileRemove={() => onCambio({ imagenFile: null, imagenPreview: null })}
-              dragDropText="Arrastra una foto de la variante o haz clic para seleccionar"
-              maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
+              dragDropText={t("products.variants.dragPhoto")}
+              maxSizeText={t("products.form.photoHint")}
               opciones={IMAGEN_PRODUCTO}
               accept="image/*"
               allowCamera
@@ -797,4 +804,18 @@ function FormularioTarjeta({
       </Accordion>
     </div>
   );
+}
+
+/** Textos de los resumenes de las tarjetas en el idioma activo. */
+function useTextosResumen(): TextosResumen {
+  const t = useTranslations();
+  const { formatear } = useMoneda();
+  return {
+    precio: formatear,
+    sinPrecio: t("products.form.noPrice"),
+    servicio: t("products.badges.service"),
+    enStock: (cantidad) => t("products.table.inStock", { stock: cantidad }),
+    automatico: t("products.form.auto"),
+    sinDatos: t("products.variants.noData"),
+  };
 }

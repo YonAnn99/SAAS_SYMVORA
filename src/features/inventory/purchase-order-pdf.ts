@@ -1,3 +1,4 @@
+import { formatMoneda, type Moneda } from "@/lib/money";
 import { etiquetaVariante } from "./purchase-order-items";
 import { ordenLlevaIva } from "./purchase-order-totals";
 
@@ -19,6 +20,8 @@ export interface RenglonPdf {
 
 export interface DatosPdfOrden {
   negocio: string;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
   numeroOrden: string;
   /** ISO de `creado_en`. */
   fecha: string;
@@ -47,6 +50,7 @@ export function nombreConVariante(
  */
 export function datosPdfDeOrden(params: {
   negocio: string;
+  moneda?: Moneda;
   proveedor: string;
   orden: {
     numero_orden: string;
@@ -68,6 +72,7 @@ export function datosPdfDeOrden(params: {
   const { orden } = params;
   return {
     negocio: params.negocio,
+    moneda: params.moneda,
     numeroOrden: orden.numero_orden,
     fecha: orden.creado_en,
     proveedor: params.proveedor,
@@ -98,8 +103,7 @@ export function descargarPdf(pdf: Blob, nombreArchivo: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const money = (n: number) =>
-  n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+const money = (n: number, moneda: Moneda = "MXN") => formatMoneda(n, moneda);
 
 const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleDateString("es-MX", { dateStyle: "long" });
@@ -164,8 +168,8 @@ export async function generarPdfOrdenCompra(datos: DatosPdfOrden): Promise<Blob>
     body: datos.renglones.map((r) => [
       r.nombre,
       cantidad(r.cantidad),
-      money(r.costoUnitario),
-      money(r.importe),
+      money(r.costoUnitario, datos.moneda),
+      money(r.importe, datos.moneda),
     ]),
     styles: { fontSize: 9, cellPadding: 2.5 },
     // Azul SYMVORA en la cabecera de la tabla.
@@ -186,16 +190,16 @@ export async function generarPdfOrdenCompra(datos: DatosPdfOrden): Promise<Blob>
   doc.setFontSize(9);
   doc.setTextColor(60);
   doc.text("Subtotal", 160, y, { align: "right" });
-  doc.text(money(datos.subtotal), DER, y, { align: "right" });
+  doc.text(money(datos.subtotal, datos.moneda), DER, y, { align: "right" });
   y += 5.5;
   doc.text(datos.incluyeIva ? "IVA (16%)" : "IVA", 160, y, { align: "right" });
-  doc.text(datos.incluyeIva ? money(datos.impuesto) : "Sin IVA", DER, y, { align: "right" });
+  doc.text(datos.incluyeIva ? money(datos.impuesto, datos.moneda) : "Sin IVA", DER, y, { align: "right" });
   y += 7;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(17);
   doc.text("Total", 160, y, { align: "right" });
-  doc.text(money(datos.total), DER, y, { align: "right" });
+  doc.text(money(datos.total, datos.moneda), DER, y, { align: "right" });
   doc.setFont("helvetica", "normal");
 
   if (datos.notas?.trim()) {

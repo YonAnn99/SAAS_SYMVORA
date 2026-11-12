@@ -12,6 +12,7 @@
  * pastilla reaparece y se explica por que.
  */
 
+import { useTranslations } from "next-intl";
 import { Pencil, Trash2 } from "lucide-react";
 import {
   COLOR_EDITAR,
@@ -29,13 +30,14 @@ interface SupplierSwipeListProps {
 }
 
 export function SupplierSwipeList({ proveedores, onEdit, onDelete }: SupplierSwipeListProps) {
+  const t = useTranslations("purchases.suppliers");
   const { verPista, alAbrir } = usePistaDeslizar();
 
   return (
     <div className="space-y-2">
       {verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
-          Desliza a la izquierda para editar o eliminar
+          {t("swipeHint")}
         </p>
       )}
 
@@ -46,18 +48,18 @@ export function SupplierSwipeList({ proveedores, onEdit, onDelete }: SupplierSwi
           acciones={[
             {
               id: "eliminar",
-              etiqueta: "Eliminar",
+              etiqueta: t("delete"),
               color: COLOR_ELIMINAR,
               icono: <Trash2 size={18} strokeWidth={2} />,
               alElegir: () => onDelete(supplier),
               confirmar: {
-                titulo: `¿Eliminar a ${supplier.nombre}?`,
-                descripcion: "Sus productos se quedan, sin proveedor asignado.",
+                titulo: t("deleteTitle", { nombre: supplier.nombre }),
+                descripcion: t("deleteDetailDot"),
               },
             },
             {
               id: "editar",
-              etiqueta: "Editar",
+              etiqueta: t("edit"),
               color: COLOR_EDITAR,
               icono: <Pencil size={18} strokeWidth={2} />,
               alElegir: () => onEdit(supplier),

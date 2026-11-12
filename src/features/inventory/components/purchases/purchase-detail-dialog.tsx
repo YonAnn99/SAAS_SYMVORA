@@ -7,7 +7,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import {
   correoDeMiembro,
   fetchPurchaseDetail,
@@ -40,7 +41,9 @@ export function PurchaseDetailDialog({
   tenantId,
   onOpenChange,
 }: PurchaseDetailDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  const locale = useLocale();
   const [compra, setCompra] = useState<CompraDetalle | null>(null);
   const [registro, setRegistro] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -76,8 +79,8 @@ export function PurchaseDetailDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            Compra
-            {compra?.numero_factura && ` · Factura ${compra.numero_factura}`}
+            {t("purchases.detail.title")}
+            {compra?.numero_factura && ` · ${t("purchases.detail.invoice", { numero: compra.numero_factura })}`}
             {compra && (
               <Badge
                 className={`${purchaseStatusColors[compra.estado]} px-1.5 py-0 text-[10px]`}
@@ -87,7 +90,7 @@ export function PurchaseDetailDialog({
             )}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {compra ? fechaLarga(compra.fecha_compra) : "Cargando..."}
+            {compra ? fechaLarga(compra.fecha_compra, localeIntl(locale)) : t("common.loading")}
           </DialogDescription>
         </DialogHeader>
 
@@ -99,14 +102,14 @@ export function PurchaseDetailDialog({
 
         {!cargando && !compra && compraId && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No se encontró la compra.
+            {t("purchases.detail.notFound")}
           </p>
         )}
 
         {!cargando && compra && (
           <div className="space-y-4 text-sm">
             <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-              <DatoDetalle etiqueta="Proveedor">
+              <DatoDetalle etiqueta={t("purchases.supplier")}>
                 {compra.proveedor?.nombre ?? "—"}
                 {compra.proveedor?.telefono && (
                   <span className="block font-normal text-muted-foreground">
@@ -114,20 +117,20 @@ export function PurchaseDetailDialog({
                   </span>
                 )}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Número de factura">
+              <DatoDetalle etiqueta={t("purchases.invoiceNumber")}>
                 {compra.numero_factura || "—"}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Origen">
+              <DatoDetalle etiqueta={t("purchases.detail.origin")}>
                 {compra.orden
-                  ? `Orden ${compra.orden.numero_orden}`
-                  : "Compra directa"}
+                  ? t("purchases.detail.order", { numero: compra.orden.numero_orden })
+                  : t("purchases.detail.direct")}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Sucursal que recibió">
+              <DatoDetalle etiqueta={t("purchases.detail.receivingBranch")}>
                 {compra.sucursal?.nombre ?? "—"}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Registró">{registro ?? "—"}</DatoDetalle>
-              <DatoDetalle etiqueta="Recepción">
-                {compra.fecha_recepcion ? fechaLarga(compra.fecha_recepcion) : "—"}
+              <DatoDetalle etiqueta={t("purchases.detail.recordedBy")}>{registro ?? "—"}</DatoDetalle>
+              <DatoDetalle etiqueta={t("purchases.detail.reception")}>
+                {compra.fecha_recepcion ? fechaLarga(compra.fecha_recepcion, localeIntl(locale)) : "—"}
               </DatoDetalle>
             </div>
 
@@ -135,8 +138,7 @@ export function PurchaseDetailDialog({
               // Cabeceras de la pantalla vieja, que pedia solo un total: no
               // tienen productos y no movieron inventario.
               <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-                Registrada antes del desglose: esta compra no tiene productos
-                y no sumó existencias.
+                {t("purchases.detail.legacy")}
               </p>
             ) : (
               <TablaRenglones
@@ -153,21 +155,21 @@ export function PurchaseDetailDialog({
             <div className="flex flex-col items-end gap-0.5 font-mono text-xs">
               {compra.subtotal !== null && (
                 <span className="text-muted-foreground">
-                  Subtotal: {formatMXN(Number(compra.subtotal))}
+                  {t("purchases.detail.subtotal", { monto: formatear(Number(compra.subtotal)) })}
                 </span>
               )}
               {compra.subtotal !== null && (
                 <span className="text-muted-foreground">
-                  {impuesto > 0 ? `IVA: ${formatMXN(impuesto)}` : "Sin IVA"}
+                  {impuesto > 0 ? t("purchases.detail.tax", { monto: formatear(impuesto) }) : t("purchases.detail.noTax")}
                 </span>
               )}
               <span className="text-sm font-semibold">
-                Total: {formatMXN(Number(compra.total))}
+                {t("purchases.detail.total", { monto: formatear(Number(compra.total)) })}
               </span>
             </div>
 
             {compra.notas?.trim() && (
-              <DatoDetalle etiqueta="Notas">
+              <DatoDetalle etiqueta={t("purchases.detail.notes")}>
                 <span className="whitespace-pre-line font-normal">
                   {compra.notas}
                 </span>
@@ -178,7 +180,7 @@ export function PurchaseDetailDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cerrar
+            {t("common.close")}
           </Button>
         </DialogFooter>
       </DialogContent>

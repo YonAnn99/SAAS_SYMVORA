@@ -116,7 +116,7 @@ export function PosSearchBar({
           {onCodigoCamara && (
             <BotonEscanear
               modo="continuo"
-              titulo="Escanear productos"
+              titulo={t("pos.bar.scanProducts")}
               onCodigo={onCodigoCamara}
               className="max-sm:h-10 max-sm:w-10 max-sm:rounded-lg max-sm:bg-primary max-sm:text-primary-foreground max-sm:hover:bg-primary/90 max-sm:hover:text-primary-foreground"
             />
@@ -126,8 +126,8 @@ export function PosSearchBar({
           <BotonEscanear
             modo="continuo"
             variante="suelto"
-            titulo="Escanear tarjeta de lealtad"
-            descripcion="Apunta la cámara al QR de la tarjeta del cliente."
+            titulo={t("pos.bar.scanLoyaltyCard")}
+            descripcion={t("pos.bar.scanLoyaltyCardDesc")}
             icono={<QrCode className="h-5 w-5 sm:h-4 sm:w-4" />}
             onCodigo={onTarjetaCamara}
             className="max-sm:h-12 max-sm:w-12 max-sm:rounded-xl max-sm:border-border max-sm:bg-card max-sm:text-foreground sm:h-9 sm:w-9"
@@ -136,7 +136,7 @@ export function PosSearchBar({
         <button
           type="button"
           onClick={() => setAjustesAbiertos(true)}
-          aria-label="Ajustes del mostrador: sucursal, lista de precios y vista"
+          aria-label={t("pos.bar.counterSettings")}
           className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground sm:hidden"
         >
           <SlidersHorizontal className="h-5 w-5" />
@@ -150,13 +150,13 @@ export function PosSearchBar({
         <p className="text-xs text-muted-foreground sm:hidden">
           {sucursalNombre && (
             <>
-              Sucursal <strong className="font-semibold text-foreground">{sucursalNombre}</strong>
+              {t("pos.bar.branch")} <strong className="font-semibold text-foreground">{sucursalNombre}</strong>
             </>
           )}
           {sucursalNombre && listaActiva && " · "}
           {listaActiva && (
             <>
-              Lista <strong className="font-semibold text-primary">{listaActiva}</strong>
+              {t("pos.bar.list")} <strong className="font-semibold text-primary">{listaActiva}</strong>
             </>
           )}
         </p>
@@ -165,7 +165,7 @@ export function PosSearchBar({
       {showCategorySelect && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden">
           <button type="button" className={chip(selectedCategory === "all")} onClick={() => onCategoryChange("all")}>
-            Todas
+            {t("pos.bar.all")}
           </button>
           {favoritosCount > 0 && (
             <button
@@ -174,7 +174,7 @@ export function PosSearchBar({
               onClick={() => onCategoryChange("favorites")}
             >
               <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" aria-hidden="true" />
-              Favoritos
+              {t("pos.bar.favorites")}
             </button>
           )}
           {categories.map((cat) => (
@@ -209,28 +209,28 @@ export function PosSearchBar({
           onValueChange={(v) => onCategoryChange(v ?? "all")}
         >
           <SelectTrigger className="w-full sm:w-44 h-9">
-            <SelectValue placeholder="Categoría">
+            <SelectValue placeholder={t("pos.bar.category")}>
               {/* Con render function: evita que @base-ui muestre 'all' crudo al recargar */}
               {(value: unknown) => {
-                if (value === "all") return "Todas";
+                if (value === "all") return t("pos.bar.all");
                 if (value === "favorites") {
                   return (
                     <span className="flex items-center gap-1.5">
                       <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500" />
-                      Favoritos ({favoritosCount})
+                      {t("pos.bar.favorites")} ({favoritosCount})
                     </span>
                   );
                 }
-                return (value as string) || "Categoría";
+                return (value as string) || t("pos.bar.category");
               }}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="all">{t("pos.bar.all")}</SelectItem>
             <SelectItem value="favorites">
               <span className="flex items-center gap-1.5">
                 <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500" />
-                Favoritos ({favoritosCount})
+                {t("pos.bar.favorites")} ({favoritosCount})
               </span>
             </SelectItem>
             {categories.map((cat) => (
@@ -256,20 +256,20 @@ export function PosSearchBar({
             }`}
           >
             <Tag className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-            <SelectValue placeholder="Lista de precios">
+            <SelectValue placeholder={t("pos.bar.priceList")}>
               {/* Con render function: el SDK solo conoce las etiquetas cuando
                   el desplegable se ha abierto una vez, y sin esto la barra
                   mostraria el UUID crudo al recargar. */}
               {(value: unknown) =>
                 value === SIN_LISTA
-                  ? "Precios normales"
+                  ? t("pos.bar.regularPrices")
                   : priceLists.find((l) => l.id === value)?.nombre ??
-                    "Lista de precios"
+                    t("pos.bar.priceList")
               }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={SIN_LISTA}>Precios normales</SelectItem>
+            <SelectItem value={SIN_LISTA}>{t("pos.bar.regularPrices")}</SelectItem>
             {priceLists.map((lista) => (
               <SelectItem key={lista.id} value={lista.id}>
                 {lista.nombre}
@@ -289,10 +289,10 @@ export function PosSearchBar({
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
-          title="Vista agrupada: Productos con selector de variantes"
+          title={t("pos.bar.groupedTitle")}
         >
           <Layers className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Agrupado</span>
+          <span className="hidden md:inline">{t("pos.bar.grouped")}</span>
         </button>
         <button
           type="button"
@@ -302,10 +302,10 @@ export function PosSearchBar({
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
-          title="Vista desglosada: Cada variante como tarjeta individual"
+          title={t("pos.bar.unbundledTitle")}
         >
           <LayoutGrid className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Desglosado</span>
+          <span className="hidden md:inline">{t("pos.bar.unbundled")}</span>
         </button>
       </div>
       </div>

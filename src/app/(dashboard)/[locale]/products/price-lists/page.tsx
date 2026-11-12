@@ -1,7 +1,9 @@
 "use client";
 
 import { useConfirmar } from "@/components/ui/confirmar";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
+import { localeIntl } from "@/lib/idioma";
 import { useRouter } from "@/i18n/navigation";
 import { ArrowLeft, MoreVertical, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,8 @@ import { usePriceLists } from "@/features/inventory/hooks/use-price-lists";
 const MAX_NOMBRE = 30;
 
 export default function PriceListsPage() {
+  const t = useTranslations("products.priceLists");
+  const locale = useLocale();
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { listas, loading, saving, refetch, crear, alternarActiva, eliminar } =
@@ -42,8 +46,8 @@ export default function PriceListsPage() {
   // Borrar una lista no se deshace (sus precios especiales se pierden).
   async function eliminarConfirmado(lista: Parameters<typeof eliminar>[0]) {
     const si = await confirmar({
-      titulo: `¿Eliminar la lista ${lista.nombre}?`,
-      descripcion: "Se pierden sus precios especiales. Esta acción no se puede deshacer.",
+      titulo: t("deleteTitle", { nombre: lista.nombre }),
+      descripcion: t("deleteDesc"),
     });
     if (si) await eliminar(lista);
   }
@@ -69,14 +73,13 @@ export default function PriceListsPage() {
             onClick={() => router.push("/products")}
           >
             <ArrowLeft className="mr-1 h-3.5 w-3.5" />
-            Productos
+            {t("back")}
           </Button>
           <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            Listas de precios
+            {t("title")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Agrupa productos con precios propios: liquidaciones, mayoreo o
-            precios de distribuidor
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -86,27 +89,27 @@ export default function PriceListsPage() {
             className="h-8 active:scale-[0.98] transition-transform"
             onClick={() => setCreando(true)}
           >
-            Crear lista
+            {t("create")}
           </SpecularActionButton>
         </div>
       </div>
 
       {loading ? (
         <p className="py-16 text-center text-sm text-muted-foreground">
-          Cargando...
+          {t("loading")}
         </p>
       ) : listas.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border py-16 animate-fade-in-up stagger-2">
           <Tag className="h-8 w-8 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
-            Todavía no tienes listas de precios
+            {t("empty")}
           </p>
           <SpecularActionButton
             tone="money"
             className="h-8 mt-1"
             onClick={() => setCreando(true)}
           >
-            Crear la primera
+            {t("createFirst")}
           </SpecularActionButton>
         </div>
       ) : (
@@ -127,12 +130,11 @@ export default function PriceListsPage() {
                       {l.nombre}
                     </span>
                     <Badge variant={l.activa ? "default" : "secondary"}>
-                      {l.activa ? "Activa" : "Borrador"}
+                      {l.activa ? t("active") : t("draft")}
                     </Badge>
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {l.productos}{" "}
-                    {l.productos === 1 ? "producto" : "productos"}
+                    {t("products", { count: l.productos })}
                   </span>
                 </button>
                 <DropdownMenu>
@@ -145,20 +147,20 @@ export default function PriceListsPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => void alternarActiva(l)}>
-                      {l.activa ? "Desactivar" : "Activar"}
+                      {l.activa ? t("deactivate") : t("activate")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => void eliminarConfirmado(l)}
                     >
-                      Eliminar
+                      {t("delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
               <p className="mt-3 text-[11px] text-muted-foreground">
-                Última modificación:{" "}
-                {new Date(l.actualizado_en).toLocaleDateString("es-MX", {
+                {t("lastModified")}{" "}
+                {new Date(l.actualizado_en).toLocaleDateString(localeIntl(locale), {
                   day: "numeric",
                   month: "short",
                 })}
@@ -171,13 +173,13 @@ export default function PriceListsPage() {
       <Dialog open={creando} onOpenChange={setCreando}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base">Nueva lista de precios</DialogTitle>
+            <DialogTitle className="text-base">{t("newTitle")}</DialogTitle>
             <DialogDescription className="text-xs">
-              Completa los datos básicos de la lista
+              {t("newDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label className="text-xs">Nombre</Label>
+            <Label className="text-xs">{t("name")}</Label>
             <Input
               autoFocus
               value={nombre}
@@ -186,7 +188,7 @@ export default function PriceListsPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && nombre.trim()) void confirmarCreacion();
               }}
-              placeholder="LIQUIDACIÓN"
+              placeholder={t("namePlaceholder")}
               className="h-8 text-sm"
             />
             <p className="text-right text-[11px] text-muted-foreground">
@@ -199,13 +201,13 @@ export default function PriceListsPage() {
               onClick={() => setCreando(false)}
               disabled={saving}
             >
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button
               onClick={() => void confirmarCreacion()}
               disabled={!nombre.trim() || saving}
             >
-              {saving ? "Creando..." : "Continuar"}
+              {saving ? t("creating") : t("continue")}
             </Button>
           </DialogFooter>
         </DialogContent>

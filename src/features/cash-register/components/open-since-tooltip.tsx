@@ -1,12 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatearApertura, tiempoAbierta } from "../open-since";
+import { duracionAbierta, formatearApertura } from "../open-since";
 
 interface OpenSinceTooltipProps {
   /** `fecha_apertura` de la caja activa. Sin ella no se muestra nada. */
@@ -28,6 +30,8 @@ export function OpenSinceTooltip({
   fechaApertura,
   children,
 }: OpenSinceTooltipProps) {
+  const t = useTranslations("finances.openSince");
+  const locale = useLocale();
   // Sin caja abierta no hay apertura que previsualizar, y la pantalla ya
   // muestra el botón "Abrir caja" bien visible. Se devuelve el contenido tal
   // cual para no alterar el layout.
@@ -35,7 +39,18 @@ export function OpenSinceTooltip({
     return <div>{children}</div>;
   }
 
-  const transcurrido = tiempoAbierta(fechaApertura);
+  const duracion = duracionAbierta(fechaApertura);
+  const transcurrido = !duracion
+    ? ""
+    : duracion.tipo === "momento"
+      ? t("moment")
+      : duracion.tipo === "minutos"
+        ? t("minutes", { count: duracion.n })
+        : duracion.tipo === "horas"
+          ? duracion.min > 0
+            ? t("hoursMinutes", { count: duracion.n, min: duracion.min })
+            : t("hours", { count: duracion.n })
+          : t("days", { count: duracion.n });
 
   return (
     <Tooltip trackCursorAxis="both">
@@ -58,7 +73,9 @@ export function OpenSinceTooltip({
         className="flex-col items-start gap-0.5 [&_[data-side]]:hidden"
         sideOffset={16}
       >
-        <span className="font-medium">Caja abierta el {formatearApertura(fechaApertura)}</span>
+        <span className="font-medium">
+          {t("openedOn", { fecha: formatearApertura(fechaApertura, localeIntl(locale), t("noDate")) })}
+        </span>
         {transcurrido && (
           <span className="opacity-70">{transcurrido}</span>
         )}

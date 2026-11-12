@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { User, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -41,15 +42,20 @@ export function CustomerSelector({
   selectedCustomer,
   onSelectCustomer,
   onNewCustomer,
-  label = "Cliente (opcional)",
+  label,
   showLabel = true,
   allowGeneral = true,
-  placeholder = allowGeneral ? "Cliente general" : "Selecciona cliente",
-  emptyText = "No se encontraron clientes",
+  placeholder,
+  emptyText,
 }: CustomerSelectorProps) {
+  // Sin texto propio, los del idioma activo.
+  const t = useTranslations("customers.selector");
+  label ??= t("label");
+  placeholder ??= allowGeneral ? t("general") : t("select");
+  emptyText ??= t("empty");
   const options: CustomerOption[] = [
     ...(allowGeneral
-      ? [{ value: "none", label: "Cliente general", keywords: "" }]
+      ? [{ value: "none", label: t("general"), keywords: "" }]
       : []),
     ...customers.map((customer) => ({
       value: customer.id,
@@ -108,7 +114,7 @@ export function CustomerSelector({
           size="icon"
           className="h-8 w-8 flex-shrink-0"
           onClick={onNewCustomer}
-          title="Nuevo cliente"
+          title={t("new")}
         >
           <UserPlus className="h-4 w-4" />
         </Button>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useModulos } from "@/hooks/use-modulos";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -88,6 +90,7 @@ import { descargarPlantillaProductos } from "@/features/inventory/plantilla-prod
 import { toast } from "sonner";
 
 export default function ProductsPage() {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
@@ -280,18 +283,18 @@ export default function ProductsPage() {
   );
 
   const exportColumns = [
-    { header: "Nombre", accessor: (p: Producto) => p.nombre },
+    { header: t("products.page.colName"), accessor: (p: Producto) => p.nombre },
     {
-      header: "Código de barras",
+      header: t("products.page.colBarcode"),
       accessor: (p: Producto) => p.codigo_barras || "-",
     },
-    { header: "Unidad", accessor: (p: Producto) => p.unidad_medida },
+    { header: t("products.page.colUnit"), accessor: (p: Producto) => p.unidad_medida },
     {
-      header: "Precio de venta",
-      accessor: (p: Producto) => `$${p.precio_venta.toFixed(2)}`,
+      header: t("products.page.colPrice"),
+      accessor: (p: Producto) => `${formatear(p.precio_venta)}`,
     },
-    { header: "Stock actual", accessor: (p: Producto) => p.stock_actual },
-    { header: "Stock mínimo", accessor: (p: Producto) => p.stock_minimo },
+    { header: t("products.page.colStock"), accessor: (p: Producto) => p.stock_actual },
+    { header: t("products.page.colMinStock"), accessor: (p: Producto) => p.stock_minimo },
   ];
 
   return (
@@ -303,7 +306,7 @@ export default function ProductsPage() {
           <div className="min-w-0">
             <EncabezadoModulo
               titulo={t("products.title")}
-              descripcion="Gestiona tu catálogo de productos"
+              descripcion={t("products.page.subtitle")}
             />
           </div>
           {/* En celular la sucursal va junto al titulo, en el espacio libre de
@@ -329,7 +332,7 @@ export default function ProductsPage() {
               className="order-3 h-8 w-full active:scale-[0.98] transition-transform sm:order-none sm:w-auto"
               onClick={() => router.push("/products/price-lists")}
             >
-              Lista de precios
+              {t("products.page.priceList")}
             </SpecularActionButton>
           )}
           {canImport && (
@@ -378,10 +381,10 @@ export default function ProductsPage() {
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
                       <Package className="h-3.5 w-3.5" />
-                      Producto único
+                      {t("products.page.singleProduct")}
                     </span>
                     <span className="pl-5.5 text-xs text-muted-foreground">
-                      Un artículo con un solo precio y existencia
+                      {t("products.page.singleProductDesc")}
                     </span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -390,10 +393,10 @@ export default function ProductsPage() {
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
                       <Palette className="h-3.5 w-3.5" />
-                      Producto variante
+                      {t("products.page.variantProduct")}
                     </span>
                     <span className="pl-5.5 text-xs text-muted-foreground">
-                      Tallas, colores o presentaciones de un producto
+                      {t("products.page.variantProductDesc")}
                     </span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -416,21 +419,21 @@ export default function ProductsPage() {
           <TabsList className="mb-4">
             <TabsTrigger value="catalog" className="gap-1.5 text-xs">
               <Package className="h-3.5 w-3.5 max-sm:hidden" />
-              Catálogo
+              {t("products.page.tabCatalog")}
             </TabsTrigger>
             {modulos.permite_lotes_caducidad && (
               <TabsTrigger value="lots" className="gap-1.5 text-xs">
                 <Calendar className="h-3.5 w-3.5 max-sm:hidden" />
-                Lotes
+                {t("products.page.tabLots")}
               </TabsTrigger>
             )}
             <TabsTrigger value="adjustments" className="gap-1.5 text-xs">
               <Wrench className="h-3.5 w-3.5 max-sm:hidden" />
-              Ajustes
+              {t("products.page.tabAdjustments")}
             </TabsTrigger>
             <TabsTrigger value="archived" className="gap-1.5 text-xs">
               <Archive className="h-3.5 w-3.5 max-sm:hidden" />
-              Archivados
+              {t("products.page.tabArchived")}
             </TabsTrigger>
           </TabsList>
         )}
@@ -462,17 +465,17 @@ export default function ProductsPage() {
               onClick={() => setEtiquetasAbiertas(true)}
             >
               <Barcode className="h-4 w-4" />
-              Etiquetas
+              {t("products.page.labels")}
             </Button>
           }
           exportar={
             <DataTableToolbar
               data={filteredProducts}
               columns={exportColumns}
-              title="Productos"
+              title={t("products.page.exportTitle")}
               filename="productos"
               seleccion={productosSeleccionados}
-              nombreFilas="productos"
+              nombreFilas={t("products.page.rowsName")}
             />
           }
         />
@@ -489,7 +492,7 @@ export default function ProductsPage() {
             className="pl-8 pr-9 h-8 text-sm"
           />
           {/* La busqueda ya filtra por codigo de barras: el leido se escribe ahi. */}
-          <BotonEscanear modo="uno" titulo="Buscar por código" onCodigo={setSearch} />
+          <BotonEscanear modo="uno" titulo={t("products.page.searchByCode")} onCodigo={setSearch} />
         </div>
         <Button
           variant="outline"
@@ -498,7 +501,7 @@ export default function ProductsPage() {
           onClick={() => setShowFilters(true)}
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtros
+          {t("products.page.filters")}
           {activeFilterCount > 0 && (
             <span className="ml-0.5 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
               {activeFilterCount}
@@ -513,12 +516,12 @@ export default function ProductsPage() {
           onClick={() => setEtiquetasAbiertas(true)}
           title={
             productosSeleccionados.length > 0
-              ? `Imprimir etiquetas de ${productosSeleccionados.length} seleccionados`
-              : "Imprimir etiquetas con código de barras"
+              ? t("products.page.labelsSelected", { count: productosSeleccionados.length })
+              : t("products.page.labelsTitle")
           }
         >
           <Barcode className="h-3.5 w-3.5" />
-          Etiquetas
+          {t("products.page.labels")}
           {productosSeleccionados.length > 0 && (
             <span className="ml-0.5 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
               {productosSeleccionados.length}
@@ -528,10 +531,10 @@ export default function ProductsPage() {
         <DataTableToolbar
           data={filteredProducts}
           columns={exportColumns}
-          title="Productos"
+          title={t("products.page.exportTitle")}
           filename="productos"
           seleccion={productosSeleccionados}
-          nombreFilas="productos"
+          nombreFilas={t("products.page.rowsName")}
         />
         <QuickFilters
           filters={filters}

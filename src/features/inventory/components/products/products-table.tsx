@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { Fragment, useState, type ReactNode } from "react";
 import { textoContenido } from "@/lib/unidades";
 import { useTranslations } from "next-intl";
@@ -121,6 +123,7 @@ export function ProductsTable({
   guardandoVariantes = new Set<string>(),
   onAgregarVariante,
 }: ProductsTableProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const { modulos } = useModulos();
   // Escritorio: productos con sus variantes desplegadas (varios a la vez).
@@ -175,14 +178,14 @@ export function ProductsTable({
               <>
                 <span className="font-medium text-foreground">
                   {seleccionados.size}{" "}
-                  {seleccionados.size === 1 ? "seleccionado" : "seleccionados"}
+                  {t("products.table.selected", { count: seleccionados.size })}
                 </span>
                 <button
                   type="button"
                   onClick={onLimpiarSeleccion}
                   className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                 >
-                  Quitar selección
+                  {t("products.table.clearSelection")}
                 </button>
                 <span className="text-muted-foreground">·</span>
               </>
@@ -262,7 +265,7 @@ export function ProductsTable({
                       checked={todosVisibles}
                       indeterminate={algunosVisibles}
                       onCheckedChange={() => onSeleccionarVisibles(!todosVisibles)}
-                      aria-label="Seleccionar todos los productos visibles"
+                      aria-label={t("products.table.selectAllVisible")}
                     />
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
@@ -335,7 +338,7 @@ export function ProductsTable({
                             onClick={() => alternar(product.id)}
                             aria-expanded={abierto}
                             aria-controls={idPanel}
-                            aria-label={`${abierto ? "Ocultar" : "Ver"} variantes de ${product.nombre}`}
+                            aria-label={abierto ? t("products.table.hideVariants", { nombre: product.nombre }) : t("products.table.showVariants", { nombre: product.nombre })}
                             className="-ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           >
                             <ChevronRight
@@ -370,7 +373,7 @@ export function ProductsTable({
                             className="shrink-0 rounded-full bg-[#1e3a8a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#1e3a8a]/15 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/25"
                             tabIndex={-1}
                           >
-                            {variantes.length === 1 ? "1 variante" : `${variantes.length} variantes`}
+                            {t("pos.grid.variants", { count: variantes.length })}
                           </button>
                         )}
                       </div>
@@ -416,14 +419,14 @@ export function ProductsTable({
                       {resumen ? (
                         // El rango de sus variantes. No se edita aqui: el
                         // precio del padre no se cobra (se elige variante).
-                        <span className="whitespace-nowrap tabular-nums">{rangoDePrecio(resumen)}</span>
+                        <span className="whitespace-nowrap tabular-nums">{rangoDePrecio(resumen, formatear)}</span>
                       ) : (
                         <EditableTextCell
                           {...celda("precio_venta")}
                           numerico
                           className="text-right font-mono tabular-nums"
                         >
-                          ${product.precio_venta.toFixed(2)}
+                          {formatear(product.precio_venta)}
                         </EditableTextCell>
                       )}
                     </TableCell>
@@ -446,7 +449,7 @@ export function ProductsTable({
                       ) : resumen ? (
                         // Total: el propio (si tiene) + sus variantes. Se
                         // edita en cada variante.
-                        <span className="tabular-nums" title="Suma de sus variantes">
+                        <span className="tabular-nums" title={t("products.table.variantsSum")}>
                           {resumen.stockTotal}
                         </span>
                       ) : (
@@ -478,8 +481,8 @@ export function ProductsTable({
                             size="icon"
                             className="h-7 w-7 text-muted-foreground"
                             onClick={() => onAgregarVariante?.(product)}
-                            title="Agregar variantes"
-                            aria-label={`Agregar variantes a ${product.nombre}`}
+                            title={t("products.table.addVariants")}
+                            aria-label={t("products.table.addVariantsTo", { nombre: product.nombre })}
                           >
                             <Layers className="h-3.5 w-3.5" />
                           </Button>
@@ -499,8 +502,8 @@ export function ProductsTable({
                             size="icon"
                             className="h-7 w-7 text-muted-foreground"
                             onClick={() => void onArchive(product)}
-                            title="Archivar"
-                            aria-label={`Archivar ${product.nombre}`}
+                            title={t("products.table.archive")}
+                            aria-label={t("products.table.archiveNamed", { nombre: product.nombre })}
                           >
                             <Archive className="h-3.5 w-3.5" />
                           </Button>
@@ -509,7 +512,7 @@ export function ProductsTable({
                             dialogo "¿Seguro?" (ver `BotonEliminar`). */}
                         <BotonEliminar
                           nombre={product.nombre}
-                          detalle="No se puede deshacer"
+                          detalle={t("products.table.cannotUndo")}
                           onEliminar={async () => {
                             await onDelete(product);
                           }}
@@ -577,7 +580,7 @@ export function ProductsTable({
                           numerico
                           className="text-right font-mono tabular-nums"
                         >
-                          ${v.precio_venta.toFixed(2)}
+                          {formatear(v.precio_venta)}
                         </EditableTextCell>
                       </CeldaPlegable>
                       <CeldaPlegable abierta={abierto} className="text-right text-[13px] font-mono">
@@ -622,15 +625,15 @@ export function ProductsTable({
                               size="icon"
                               className="h-7 w-7 text-muted-foreground"
                               onClick={() => void onArchiveVariante(v)}
-                              title="Archivar"
-                              aria-label={`Archivar ${product.nombre} ${etiquetaAtributos(v)}`.trim()}
+                              title={t("products.table.archive")}
+                              aria-label={t("products.table.archiveNamed", { nombre: `${product.nombre} ${etiquetaAtributos(v)}`.trim() })}
                             >
                               <Archive className="h-3.5 w-3.5" />
                             </Button>
                           )}
                           <BotonEliminar
-                            nombre={`la variante ${etiquetaAtributos(v) || product.nombre}`}
-                            detalle="No se puede deshacer"
+                            nombre={t("products.table.theVariant", { nombre: etiquetaAtributos(v) || product.nombre })}
+                            detalle={t("products.table.cannotUndo")}
                             onEliminar={async () => {
                               await onDeleteVariante?.(v);
                             }}
@@ -655,7 +658,7 @@ export function ProductsTable({
                             onClick={() => onAgregarVariante?.(product)}
                           >
                             <Plus className="h-3.5 w-3.5" />
-                            Agregar variante
+                            {t("products.table.addVariant")}
                           </Button>
                         </div>
                       </CeldaPlegable>
@@ -720,11 +723,13 @@ function ProductMarginCell({
 }: {
   product: { precio_venta: number; costo_compra: number | null };
 }) {
+  const { formatear } = useMoneda();
+  const tm = useTranslations("products.table");
   const margen = calcularMargenProducto(product.precio_venta, product.costo_compra);
 
   if (!margen) {
     return (
-      <span className="text-muted-foreground" title="Sin costo capturado">
+      <span className="text-muted-foreground" title={tm("noCost")}>
         —
       </span>
     );
@@ -738,7 +743,7 @@ function ProductMarginCell({
       : "text-foreground";
 
   return (
-    <span className={tone} title={`Ganas $${margen.gananciaUnitaria.toFixed(2)} por unidad`}>
+    <span className={tone} title={tm("earnPerUnit", { monto: formatear(margen.gananciaUnitaria) })}>
       {margen.margenPct.toFixed(1)}%
     </span>
   );

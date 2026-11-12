@@ -3,6 +3,7 @@
  * (como los demas PDF). Las barras van como rectangulos vectoriales: quedan
  * nitidas en cualquier impresora, siempre que se imprima al 100 %.
  */
+import type { Moneda } from "@/lib/money";
 import type { jsPDF as JsPDF } from "jspdf";
 import { ZONA_SILENCIO, dibujarCodigo } from "@/lib/codigo-barras";
 import {
@@ -18,6 +19,8 @@ export interface OpcionesEtiqueta {
   mostrarSku: boolean;
   /** Nombre del negocio arriba de cada etiqueta (null = no se muestra). */
   negocio: string | null;
+  /** Moneda del negocio (`tenants.moneda`). Sin ella, pesos. */
+  moneda?: Moneda;
 }
 
 const PT = 0.3528; // mm por punto tipografico
@@ -89,7 +92,7 @@ function dibujarEtiqueta(
   if (op.mostrarPrecio) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(t.precio);
-    doc.text(textoPrecio(item.precio, item.unidad), izq, cursor, { baseline: "top" });
+    doc.text(textoPrecio(item.precio, item.unidad, op.moneda), izq, cursor, { baseline: "top" });
   }
   if (op.mostrarSku && item.sku) {
     doc.setFont("helvetica", "normal");

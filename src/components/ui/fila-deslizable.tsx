@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 /**
  * La fila de una tabla en celular: una "pastilla" que se desliza a la
  * izquierda (Swipe Row de React Bits, `swipe-row.tsx`).
@@ -98,6 +100,7 @@ export function FilaDeslizable({
   // la fila sigue existiendo (`permanece`), otra `key` la vuelve a montar.
   const [intento, setIntento] = useState(0);
   const confirmar = useConfirmar();
+  const tf = useTranslations("common.swipe");
   const ejecutar = useCallback(
     async (accion: AccionFila) => {
       if (accion.confirmar && !(await confirmar(accion.confirmar))) {
@@ -113,15 +116,15 @@ export function FilaDeslizable({
   const lista: AccionFila[] = accionesAMedida ?? [
     {
       id: "eliminar",
-      etiqueta: "Eliminar",
+      etiqueta: tf("delete"),
       color: COLOR_ELIMINAR,
       icono: <Trash2 size={18} strokeWidth={2} />,
       alElegir: () => onEliminar?.(),
-      confirmar: { titulo: `¿Eliminar ${label}?` },
+      confirmar: { titulo: tf("deleteTitle", { nombre: label }) },
     },
     {
       id: "editar",
-      etiqueta: "Editar",
+      etiqueta: tf("edit"),
       color: COLOR_EDITAR,
       icono: <Pencil size={18} strokeWidth={2} />,
       alElegir: () => onEditar?.(),
@@ -213,6 +216,8 @@ export function usePistaDeslizar() {
   return { verPista, alAbrir };
 }
 
-export const TEXTO_PISTA_DESLIZAR = "Desliza a la izquierda para editar o eliminar";
-/** Para las listas que ademas archivan al deslizar a la derecha. */
-export const TEXTO_PISTA_DESLIZAR_ARCHIVAR = "Desliza ← para editar o eliminar, → para archivar";
+/** Pista de las listas deslizables, en el idioma de la interfaz. */
+export function useTextoPistaDeslizar(conArchivar = false): string {
+  const t = useTranslations("common.swipe");
+  return conArchivar ? t("hintArchive") : t("hint");
+}

@@ -5,6 +5,7 @@
  * lista deslizable (celular, `product-swipe-list.tsx`).
  */
 
+import { useTranslations } from "next-intl";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,12 +30,13 @@ export function StockBadge({
   /** Para un producto con variantes: el de `resumenConVariantes`. */
   estado?: StockStatus;
 }) {
+  const t = useTranslations("products.badges");
   const status = estado ?? stockStatus(product);
 
   if (status === "servicio") {
     return (
       <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-        Servicio
+        {t("service")}
       </Badge>
     );
   }
@@ -42,7 +44,7 @@ export function StockBadge({
   if (status === "agotado") {
     return (
       <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-        Agotado
+        {t("soldOut")}
       </Badge>
     );
   }
@@ -53,7 +55,7 @@ export function StockBadge({
         variant="secondary"
         className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
       >
-        Stock bajo
+        {t("lowStock")}
       </Badge>
     );
   }
@@ -88,6 +90,7 @@ export function FavoriteButton({
   onToggle: () => void;
   nombre: string;
 }) {
+  const tf = useTranslations("products.favorite");
   return (
     <Button
       variant="ghost"
@@ -97,10 +100,10 @@ export function FavoriteButton({
       aria-pressed={esFavorito}
       aria-label={
         esFavorito
-          ? `Quitar ${nombre} de favoritos`
-          : `Marcar ${nombre} como favorito`
+          ? tf("removeNamed", { nombre })
+          : tf("addNamed", { nombre })
       }
-      title={esFavorito ? "Quitar de favoritos" : "Marcar como favorito"}
+      title={esFavorito ? tf("remove") : tf("add")}
     >
       <Heart
         className={`h-3.5 w-3.5 ${

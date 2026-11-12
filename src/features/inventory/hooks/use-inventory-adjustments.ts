@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type {
@@ -22,6 +23,7 @@ export function useInventoryAdjustments(
   tenantId: string | null,
   tenantLoading: boolean
 ) {
+  const t = useTranslations("products.adjustments");
   // Cache entre modulos (`lib/cache-datos.ts`). Las variantes y lotes del
   // producto elegido no: se piden al elegirlo, como siempre.
   const [enCache] = useState(() =>
@@ -99,27 +101,27 @@ export function useInventoryAdjustments(
       setSaving(true);
       try {
         await createAdjustment(input);
-        toast.success("Inventario ajustado correctamente");
+        toast.success(t("msg.saved"));
         setShowDialog(false);
         void refetch();
       } catch (error: unknown) {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Error al ajustar inventario"
+            : t("msg.saveError")
         );
       } finally {
         setSaving(false);
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   const getProductName = useCallback(
     (productId: string) =>
       products.find((p) => p.id === productId)?.nombre ||
-      "Producto desconocido",
-    [products]
+      t("unknownProduct"),
+    [products, t]
   );
 
   const filteredAdjustments = useMemo(

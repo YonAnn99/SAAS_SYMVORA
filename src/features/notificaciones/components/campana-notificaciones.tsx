@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState } from "react";
 import {
   ArrowLeftRight,
@@ -31,7 +33,7 @@ import {
 } from "@/components/ui/fila-deslizable";
 import { cn } from "@/lib/utils";
 import { useEsEscritorio } from "@/hooks/use-es-movil";
-import { etiquetaGlobo, haceCuanto, type Notificacion, type TipoNotificacion } from "@/lib/notificaciones";
+import { etiquetaGlobo, tiempoTranscurrido, type Notificacion, type TipoNotificacion } from "@/lib/notificaciones";
 import { useNotificaciones } from "@/features/notificaciones/hooks/use-notificaciones";
 
 const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
@@ -53,6 +55,7 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
 
 /** Icono del tipo, con el punto de "nueva" en su esquina. */
 function IconoNotificacion({ n, nueva }: { n: Notificacion; nueva: boolean }) {
+  const t = useTranslations("notifications");
   const estilo = ESTILO[n.tipo] ?? ESTILO.producto;
   const Icono = estilo.icono;
   return (
@@ -66,7 +69,7 @@ function IconoNotificacion({ n, nueva }: { n: Notificacion; nueva: boolean }) {
       {nueva && (
         <span
           className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-popover"
-          aria-label="Nueva"
+          aria-label={t("new")}
         />
       )}
     </span>
@@ -84,6 +87,11 @@ function IconoNotificacion({ n, nueva }: { n: Notificacion; nueva: boolean }) {
  *   (`FilaDeslizable`), sin confirmación: quitar un aviso no borra nada.
  */
 export function CampanaNotificaciones() {
+  const t = useTranslations("notifications");
+  const hace = (iso: string) => {
+    const { clave, n } = tiempoTranscurrido(iso);
+    return t(`ago.${clave}`, { count: n });
+  };
   const { lista, leidoHasta, noLeidas, cargando, marcarLeidas, ocultar } = useNotificaciones();
   const esEscritorio = useEsEscritorio();
   const router = useRouter();
@@ -118,7 +126,7 @@ export function CampanaNotificaciones() {
             variant="ghost"
             size="icon"
             className="relative h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200"
-            aria-label={globo ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
+            aria-label={globo ? t("unreadAria", { count: noLeidas }) : t("title")}
           />
         }
       >
@@ -132,27 +140,27 @@ export function CampanaNotificaciones() {
       <PopoverContent align="end" sideOffset={8} className="w-[22rem] max-w-[calc(100vw-2rem)] p-0">
         <div className="border-b border-border/60 px-4 py-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Notificaciones</p>
+            <p className="text-sm font-semibold">{t("title")}</p>
             {lista.length > 0 && (
-              <span className="text-xs text-muted-foreground">Últimas {lista.length}</span>
+              <span className="text-xs text-muted-foreground">{t("latest", { n: lista.length })}</span>
             )}
           </div>
           {!esEscritorio && verPista && lista.length > 0 && (
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Desliza a la izquierda para eliminar
+              {t("swipeHint")}
             </p>
           )}
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto">
           {cargando && lista.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">Cargando…</p>
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t("loading")}</p>
           ) : lista.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
               <Bell className="h-6 w-6 text-muted-foreground/60" />
-              <p className="text-sm font-medium">Sin notificaciones</p>
+              <p className="text-sm font-medium">{t("empty")}</p>
               <p className="text-xs text-muted-foreground">
-                Aquí verás el stock que se acaba y lo que hace tu equipo.
+                {t("emptyDesc")}
               </p>
             </div>
           ) : esEscritorio ? (
@@ -168,7 +176,7 @@ export function CampanaNotificaciones() {
                       {n.mensaje && (
                         <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.mensaje}</p>
                       )}
-                      <p className="mt-1 text-[11px] text-muted-foreground/80">{haceCuanto(n.creado_en)}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground/80">{hace(n.creado_en)}</p>
                     </div>
                   </div>
                 );
@@ -190,8 +198,8 @@ export function CampanaNotificaciones() {
                     <button
                       type="button"
                       onClick={() => void ocultar(n.id)}
-                      aria-label="Descartar notificación"
-                      title="Descartar"
+                      aria-label={t("dismissAria")}
+                      title={t("dismiss")}
                       className="absolute right-2 top-2.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                     >
                       <X className="h-4 w-4" />
@@ -212,7 +220,7 @@ export function CampanaNotificaciones() {
                   acciones={[
                     {
                       id: "eliminar",
-                      etiqueta: "Eliminar",
+                      etiqueta: t("delete"),
                       color: COLOR_ELIMINAR,
                       icono: <Trash2 size={18} strokeWidth={2} />,
                       alElegir: () => ocultar(n.id),
@@ -223,7 +231,7 @@ export function CampanaNotificaciones() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{n.titulo}</p>
                     {n.mensaje && <p className="truncate text-xs text-muted-foreground">{n.mensaje}</p>}
-                    <p className="text-[11px] opacity-60">{haceCuanto(n.creado_en)}</p>
+                    <p className="text-[11px] opacity-60">{hace(n.creado_en)}</p>
                   </div>
                 </FilaDeslizable>
               ))}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { History } from "lucide-react";
@@ -43,6 +45,7 @@ export function OpenRegisterDialog({
   sucursalInicial = null,
   onCancel,
 }: OpenRegisterDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const { tenantId } = useCurrentTenant();
   const { activas, hayVarias, loading: loadingSucursales } = useSucursal();
@@ -96,25 +99,25 @@ export function OpenRegisterDialog({
         <DialogHeader>
           <DialogTitle className="text-base">{t("pos.openRegister")}</DialogTitle>
           <DialogDescription className="text-xs">
-            Ingresa el fondo inicial para abrir la caja
+            {t("pos.openRegisterDialog.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           {hayVarias && (
             <div className="space-y-1.5">
               <Label className="text-xs" htmlFor="caja-sucursal">
-                Sucursal
+                {t("pos.bar.branch")}
               </Label>
               <SelectSimple
                 id="caja-sucursal"
                 value={sucursalId}
                 onChange={setSucursalId}
-                placeholder="Selecciona una sucursal…"
+                placeholder={t("pos.openRegisterDialog.selectBranch")}
                 opciones={activas.map((s) => ({ value: s.id, label: s.nombre }))}
                 className="h-8"
               />
               <p className="text-[11px] text-muted-foreground">
-                Todas las ventas de este turno se contarán en esta sucursal.
+                {t("pos.openRegisterDialog.branchHint")}
               </p>
             </div>
           )}
@@ -139,10 +142,10 @@ export function OpenRegisterDialog({
               >
                 <History className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                 <span className="text-muted-foreground group-hover:text-foreground">
-                  Usar saldo de cierre anterior:
+                  {t("pos.openRegisterDialog.usePrevious")}
                 </span>
                 <span className="font-mono font-semibold text-primary">
-                  ${lastClosedAmount.toFixed(2)}
+                  {formatear(lastClosedAmount)}
                 </span>
               </button>
             </div>

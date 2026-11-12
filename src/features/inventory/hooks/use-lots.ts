@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
@@ -27,14 +28,15 @@ interface DatosLotes {
 }
 
 /** El mensaje del servidor ya viene en espanol ("Solo hay 3 sin lote..."). */
-function mensajeDeError(error: unknown, porDefecto: string): string {
+function mensajeDeError(error: unknown, porDefecto: string, duplicado: string): string {
   const e = error as { code?: string; message?: string } | null;
-  if (e?.code === "23505") return "Ya existe un lote con ese número para este producto";
+  if (e?.code === "23505") return duplicado;
   return e?.message?.trim() || porDefecto;
 }
 
 export function useLots(tenantId: string | null, tenantLoading: boolean) {
   const { sucursales, seleccionada } = useSucursal();
+  const t = useTranslations("products.lots");
   // Cache entre modulos (`lib/cache-datos.ts`).
   const [enCache] = useState(() => leerCache<DatosLotes>(["lotes", tenantId]));
   const [lots, setLots] = useState<LoteConExistencias[]>(() => enCache?.lotes ?? []);
@@ -64,11 +66,11 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
         variantes: variantsData,
       });
     } catch {
-      toast.error("No se pudieron cargar los lotes");
+      toast.error(t("msg.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, t]);
 
   useEffect(() => {
     if (tenantLoading) return;
@@ -96,16 +98,16 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
           entity: "producto",
           entityName: `Lote ${input.numero_lote.trim()}`,
         });
-        toast.success(input.suma_stock ? "Lote registrado y sumado al inventario" : "Lote registrado");
+        toast.success(input.suma_stock ? t("msg.createdAdded") : t("msg.created"));
         setShowDialog(false);
         void refetch();
       } catch (error: unknown) {
-        toast.error(mensajeDeError(error, "Error al guardar el lote"));
+        toast.error(mensajeDeError(error, t("msg.saveError"), t("msg.duplicate")));
       } finally {
         setSaving(false);
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   const handleUpdate = useCallback(
@@ -120,16 +122,16 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
           entityId: editingLot.id,
           entityName: `Lote ${input.numero_lote.trim()}`,
         });
-        toast.success("Lote actualizado");
+        toast.success(t("msg.updated"));
         setShowDialog(false);
         void refetch();
       } catch (error: unknown) {
-        toast.error(mensajeDeError(error, "Error al guardar el lote"));
+        toast.error(mensajeDeError(error, t("msg.saveError"), t("msg.duplicate")));
       } finally {
         setSaving(false);
       }
     },
-    [editingLot, refetch]
+    [editingLot, refetch, t]
   );
 
   const handleDelete = useCallback(
@@ -142,28 +144,28 @@ export function useLots(tenantId: string | null, tenantLoading: boolean) {
           entityId: lot.id,
           entityName: `Lote ${lot.numero_lote}`,
         });
-        toast.success("Lote eliminado");
+        toast.success(t("msg.deleted"));
         void refetch();
       } catch (error: unknown) {
-        toast.error(mensajeDeError(error, "Error al eliminar el lote"));
+        toast.error(mensajeDeError(error, t("msg.deleteError"), t("msg.duplicate")));
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   const getProductName = useCallback(
     (lot: Pick<LoteConExistencias, "producto_id" | "variante_id">) => {
-      const nombre = products.find((p) => p.id === lot.producto_id)?.nombre ?? "Producto desconocido";
+      const nombre = products.find((p) => p.id === lot.producto_id)?.nombre ?? t("unknownProduct");
       if (!lot.variante_id) return nombre;
       const variante = variants.find((v) => v.id === lot.variante_id)?.etiqueta;
       return variante ? `${nombre} · ${variante}` : nombre;
     },
-    [products, variants]
+    [products, variants, t]
   );
 
   const nombreSucursal = useCallback(
-    (id: string) => sucursales.find((s) => s.id === id)?.nombre ?? "Sucursal",
-    [sucursales]
+    (id: string) => sucursales.find((s) => s.id === id)?.nombre ?? t("branch"),
+    [sucursales, t]
   );
 
   // Con una sucursal elegida arriba, solo los lotes que tienen algo en ella

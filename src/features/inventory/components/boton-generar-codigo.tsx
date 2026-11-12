@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import { generateNextBarcode } from "../services/product-service";
  */
 export function BotonGenerarCodigo({ onCodigo }: { onCodigo: (codigo: string) => void }) {
   const { tenantId } = useCurrentTenant();
+  const t = useTranslations("products.generateCode");
   const [generando, setGenerando] = useState(false);
 
   const generar = async () => {
@@ -20,7 +22,7 @@ export function BotonGenerarCodigo({ onCodigo }: { onCodigo: (codigo: string) =>
     try {
       onCodigo(await generateNextBarcode(tenantId));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo generar el código");
+      toast.error(error instanceof Error ? error.message : t("error"));
     } finally {
       setGenerando(false);
     }
@@ -32,10 +34,10 @@ export function BotonGenerarCodigo({ onCodigo }: { onCodigo: (codigo: string) =>
       onClick={generar}
       disabled={generando || !tenantId}
       className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-50"
-      title="Generar un código de barras interno para imprimirlo en etiquetas"
+      title={t("title")}
     >
       {generando ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
-      Generar
+      {t("label")}
     </button>
   );
 }

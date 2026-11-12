@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Boxes, Loader2, Printer, Search, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -109,7 +110,8 @@ export function ImprimirEtiquetasDialog({
   puedeGenerar,
   onCodigosGenerados,
 }: Props) {
-  const { tenantId, tenantName } = useCurrentTenant();
+  const { tenantId, tenantName, moneda } = useCurrentTenant();
+  const t = useTranslations("products.labels");
   // La pagina monta esta ventana solo al abrirla: el estado inicial sale de la
   // seleccion de la tabla y del ultimo formato usado.
   const [renglones, setRenglones] = useState<Renglon[]>(() =>
@@ -177,13 +179,13 @@ export function ImprimirEtiquetasDialog({
       );
       if (asignados.size > 0) {
         toast.success(
-          asignados.size === 1 ? "Se generó 1 código de barras" : `Se generaron ${asignados.size} códigos de barras`
+          t("generated", { count: asignados.size })
         );
         onCodigosGenerados();
       }
-      if (errores.length > 0) toast.error(`No se pudieron guardar ${errores.length}: ${errores[0]}`);
+      if (errores.length > 0) toast.error(t("saveErrors", { count: errores.length, error: errores[0] }));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudieron generar los códigos");
+      toast.error(error instanceof Error ? error.message : t("generateError"));
     } finally {
       setGenerando(false);
       setConfirmarGenerar(false);
@@ -198,7 +200,7 @@ export function ImprimirEtiquetasDialog({
       const blob = await generarPdfEtiquetas(
         renglones,
         formato,
-        { mostrarPrecio, mostrarSku, negocio: mostrarNegocio ? tenantName || null : null },
+        { mostrarPrecio, mostrarSku, negocio: mostrarNegocio ? tenantName || null : null, moneda },
         inicio
       );
       const url = URL.createObjectURL(blob);
@@ -207,9 +209,9 @@ export function ImprimirEtiquetasDialog({
       a.download = `etiquetas-${formato.id}.pdf`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      toast.success("PDF listo. Imprímelo al 100 % (tamaño real), sin «Ajustar a la página».");
+      toast.success(t("pdfReady"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo generar el PDF");
+      toast.error(error instanceof Error ? error.message : t("pdfError"));
     } finally {
       setDescargando(false);
     }
@@ -222,9 +224,9 @@ export function ImprimirEtiquetasDialog({
           de lado. */}
       <DialogContent className="grid-cols-[minmax(0,1fr)] max-w-2xl sm:max-w-2xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Imprimir etiquetas</DialogTitle>
+          <DialogTitle className="text-base">{t("title")}</DialogTitle>
           <DialogDescription className="text-xs">
-            Código de barras, nombre y precio para pegar en tus productos.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -232,7 +234,7 @@ export function ImprimirEtiquetasDialog({
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Agregar producto: nombre, código o SKU"
+            placeholder={t("addPlaceholder")}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="h-8 pl-8 text-sm"
@@ -249,8 +251,8 @@ export function ImprimirEtiquetasDialog({
                   <span className="truncate">{p.nombre}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {variantesPorProducto[p.id]?.length
-                      ? `${variantesPorProducto[p.id].length} variantes`
-                      : p.codigo_barras || "Sin código"}
+                      ? t("variantsCount", { count: variantesPorProducto[p.id].length })
+                      : p.codigo_barras || t("noCode")}
                   </span>
                 </button>
               ))}
@@ -261,18 +263,17 @@ export function ImprimirEtiquetasDialog({
         {/* Lista */}
         {renglones.length === 0 ? (
           <p className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-            Marca productos en la tabla o búscalos arriba para agregarlos.
+            {t("empty")}
           </p>
         ) : (
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
-                {renglones.length} {renglones.length === 1 ? "artículo" : "artículos"} · {total}{" "}
-                {total === 1 ? "etiqueta" : "etiquetas"}
+                {t("itemsCount", { count: renglones.length })} · {t("labelsCount", { count: total })}
               </p>
               <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={usarExistencias}>
                 <Boxes className="h-3.5 w-3.5" />
-                Copias = existencias
+                {t("copiesStock")}
               </Button>
             </div>
             <div className="max-h-48 divide-y overflow-y-auto rounded-md border sm:max-h-56">
@@ -284,11 +285,11 @@ export function ImprimirEtiquetasDialog({
                       {r.detalle && <span className="font-normal text-muted-foreground"> · {r.detalle}</span>}
                     </p>
                     <p className="truncate text-[11px] text-muted-foreground">
-                      {textoPrecio(r.precio, r.unidad)} ·{" "}
+                      {textoPrecio(r.precio, r.unidad, moneda)} ·{" "}
                       {r.codigo ? (
                         <span className="font-mono">{r.codigo}</span>
                       ) : (
-                        <span className="font-medium text-amber-600 dark:text-amber-400">Sin código</span>
+                        <span className="font-medium text-amber-600 dark:text-amber-400">{t("noCode")}</span>
                       )}
                     </p>
                   </div>
@@ -296,7 +297,7 @@ export function ImprimirEtiquetasDialog({
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    aria-label={`Copias de ${r.nombre}`}
+                    aria-label={t("copiesOf", { nombre: r.nombre })}
                     value={r.copias}
                     onChange={(e) => cambiarCopias(r.clave, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                     className="h-7 w-16 text-center text-sm"
@@ -305,7 +306,7 @@ export function ImprimirEtiquetasDialog({
                     type="button"
                     onClick={() => quitar(r.clave)}
                     className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    aria-label={`Quitar ${r.nombre}`}
+                    aria-label={t("removeItem", { nombre: r.nombre })}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -317,14 +318,12 @@ export function ImprimirEtiquetasDialog({
               <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-xs">
                 {!puedeGenerar ? (
                   <p>
-                    {sinCodigo.length === 1 ? "1 artículo no tiene" : `${sinCodigo.length} artículos no tienen`} código
-                    de barras: su etiqueta sale solo con nombre y precio. Un administrador puede generarles código.
+                    {t("missingNoPermission", { count: sinCodigo.length })}
                   </p>
                 ) : confirmarGenerar ? (
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p>
-                      Se guardará un código nuevo en {sinCodigo.length === 1 ? "1 artículo" : `${sinCodigo.length} artículos`}{" "}
-                      de tu catálogo. Los códigos que ya existen no cambian.
+                      {t("confirmGenerate", { count: sinCodigo.length })}
                     </p>
                     <div className="flex gap-1.5">
                       <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setConfirmarGenerar(false)}>
@@ -332,15 +331,14 @@ export function ImprimirEtiquetasDialog({
                       </Button>
                       <Button size="sm" className="h-7 gap-1.5 text-xs" onClick={generarFaltantes} disabled={generando}>
                         {generando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                        Generar y guardar
+                        {t("generateAndSave")}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p>
-                      {sinCodigo.length === 1 ? "1 artículo no tiene" : `${sinCodigo.length} artículos no tienen`} código
-                      de barras.
+                      {t("missing", { count: sinCodigo.length })}
                     </p>
                     <Button
                       variant="outline"
@@ -349,7 +347,7 @@ export function ImprimirEtiquetasDialog({
                       onClick={() => setConfirmarGenerar(true)}
                     >
                       <Wand2 className="h-3.5 w-3.5" />
-                      Generar código a los que no tienen
+                      {t("generateMissing")}
                     </Button>
                   </div>
                 )}
@@ -362,19 +360,19 @@ export function ImprimirEtiquetasDialog({
         <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Formato</Label>
+              <Label className="text-xs">{t("format")}</Label>
               <SelectSimple
                 value={formatoId}
                 onChange={(v) => v && elegirFormato(v as IdFormato)}
-                opciones={FORMATOS.map((f) => ({ value: f.id, label: f.nombre }))}
-                ariaLabel="Formato de etiqueta"
+                opciones={FORMATOS.map((f) => ({ value: f.id, label: t(`formats.${f.id}.name`) }))}
+                ariaLabel={t("formatAria")}
               />
-              <p className="text-[11px] text-muted-foreground">{formato.descripcion}</p>
+              <p className="text-[11px] text-muted-foreground">{t(`formats.${formato.id}.desc`)}</p>
             </div>
             {formato.tipo === "hoja" && (
               <div className="flex flex-wrap items-center gap-2">
                 <Label htmlFor="inicio-etiqueta" className="shrink-0 text-xs">
-                  Empezar en la etiqueta
+                  {t("startAt")}
                 </Label>
                 <Input
                   id="inicio-etiqueta"
@@ -388,14 +386,14 @@ export function ImprimirEtiquetasDialog({
                   }
                   className="h-7 w-16 text-center text-sm"
                 />
-                <span className="text-[11px] text-muted-foreground">para usar una hoja ya empezada</span>
+                <span className="text-[11px] text-muted-foreground">{t("startAtHint")}</span>
               </div>
             )}
             <div className="flex flex-wrap gap-x-4 gap-y-2">
-              <Opcion id="et-precio" etiqueta="Precio" valor={mostrarPrecio} onCambio={setMostrarPrecio} />
-              <Opcion id="et-sku" etiqueta="SKU" valor={mostrarSku} onCambio={setMostrarSku} />
+              <Opcion id="et-precio" etiqueta={t("optPrice")} valor={mostrarPrecio} onCambio={setMostrarPrecio} />
+              <Opcion id="et-sku" etiqueta={t("optSku")} valor={mostrarSku} onCambio={setMostrarSku} />
               {formato.renglonesNombre > 0 && (
-                <Opcion id="et-negocio" etiqueta="Nombre del negocio" valor={mostrarNegocio} onCambio={setMostrarNegocio} />
+                <Opcion id="et-negocio" etiqueta={t("optBusiness")} valor={mostrarNegocio} onCambio={setMostrarNegocio} />
               )}
             </div>
           </div>
@@ -412,13 +410,13 @@ export function ImprimirEtiquetasDialog({
           <p className="text-[11px] text-muted-foreground">
             {total > 0 &&
               (formato.tipo === "hoja"
-                ? `${hojas} ${hojas === 1 ? "hoja" : "hojas"} carta`
-                : `${total} ${total === 1 ? "etiqueta" : "etiquetas"} en el rollo`)}
-            {total > 0 && " · imprime al 100 %"}
+                ? t("sheets", { count: hojas })
+                : t("onRoll", { count: total }))}
+            {total > 0 && ` · ${t("print100")}`}
           </p>
           <SpecularActionButton tone="add" className="h-8 gap-1.5" onClick={descargar} disabled={total === 0 || descargando}>
             {descargando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
-            Descargar PDF{total > 0 ? ` (${total})` : ""}
+            {t("download")}{total > 0 ? ` (${total})` : ""}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>
@@ -461,6 +459,8 @@ function VistaPrevia({
   mostrarSku: boolean;
   negocio: string | null;
 }) {
+  const t = useTranslations("products.labels");
+  const { moneda } = useCurrentTenant();
   const { ancho: w, alto: h } = formato;
   const codigo = dibujarCodigo(renglon?.codigo);
   const pad = h >= 20 ? 1.6 : 0.9;
@@ -481,7 +481,7 @@ function VistaPrevia({
         viewBox={`0 0 ${w} ${h}`}
         className="w-48 rounded-sm border bg-white shadow-sm"
         role="img"
-        aria-label="Vista previa de la etiqueta"
+        aria-label={t("previewAria")}
       >
         {renglon ? (
           <>
@@ -497,7 +497,7 @@ function VistaPrevia({
             )}
             {mostrarPrecio && (
               <text x={pad} y={precioY} fontSize={tam.precio} fontWeight="bold" fill="#000">
-                {textoPrecio(renglon.precio, renglon.unidad)}
+                {textoPrecio(renglon.precio, renglon.unidad, moneda)}
               </text>
             )}
             {mostrarSku && renglon.sku && (
@@ -517,7 +517,7 @@ function VistaPrevia({
           </>
         ) : (
           <text x={w / 2} y={h / 2} fontSize={2.4} textAnchor="middle" fill="#999">
-            Vista previa
+            {t("preview")}
           </text>
         )}
       </svg>

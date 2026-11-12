@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 // Con idioma (`/es/...`): `next/link` con "/products" pasaba dos veces por el
 // middleware (verificacion completa + redireccion de next-intl).
@@ -18,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { mensajeDeError } from "@/features/inventory/error-message";
 import {
@@ -57,7 +60,11 @@ export function ResumenSucursales({
   /** Sube con "Actualizar" de la pagina: vuelve a cargar. */
   version?: number;
 }) {
+  const { formatear } = useMoneda();
   const { sucursales, seleccionada, setSeleccionada } = useSucursal();
+  const t = useTranslations("branches.summary");
+  const te = useTranslations("inventory.errors");
+  const li = localeIntl(useLocale());
   // Cache entre modulos (`lib/cache-datos.ts`), por negocio y mes: solo para
   // mostrar; `cargar` lo reemplaza en cuanto llega.
   const [enCache] = useState(() => leerCache<ResumenEnCache>(claveResumen(tenantId)));
@@ -109,11 +116,11 @@ export function ResumenSucursales({
       setCajas(datos.cajas);
       guardarCache(claveResumen(tenantId), datos);
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     } finally {
       setCargando(false);
     }
-  }, [tenantId, sucursales]);
+  }, [tenantId, sucursales, te]);
 
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargar(), 0);
@@ -121,8 +128,12 @@ export function ResumenSucursales({
   }, [cargar, version]);
 
   const { filas, total } = useMemo(
-    () => resumenPorSucursal(sucursales, ventas, stock, cajas),
-    [sucursales, ventas, stock, cajas]
+    () =>
+      resumenPorSucursal(sucursales, ventas, stock, cajas, {
+        sinSucursal: t("noBranch"),
+        total: t("wholeBusiness"),
+      }),
+    [sucursales, ventas, stock, cajas, t]
   );
 
   const nombreElegida = sucursales.find((s) => s.id === seleccionada)?.nombre;
@@ -130,14 +141,14 @@ export function ResumenSucursales({
   const celdas = (f: FilaResumen) => (
     <>
       <TableCell className="text-right font-mono text-xs tabular-nums">
-        {formatMXN(f.ventas)}
+        {formatear(f.ventas)}
       </TableCell>
       <TableCell className="text-right text-xs tabular-nums">{f.tickets}</TableCell>
       <TableCell className="text-right font-mono text-xs tabular-nums">
-        {formatMXN(f.ticketPromedio)}
+        {formatear(f.ticketPromedio)}
       </TableCell>
       <TableCell className="text-right text-xs tabular-nums">
-        {f.unidades.toLocaleString("es-MX")}
+        {f.unidades.toLocaleString(li)}
       </TableCell>
       <TableCell className="text-right text-xs tabular-nums">{f.cajasAbiertas}</TableCell>
       <TableCell
@@ -145,7 +156,7 @@ export function ResumenSucursales({
           f.diferenciaCortes < 0 ? "text-red-600 dark:text-red-400" : ""
         }`}
       >
-        {formatMXN(f.diferenciaCortes)}
+        {formatear(f.diferenciaCortes)}
       </TableCell>
     </>
   );
@@ -154,13 +165,13 @@ export function ResumenSucursales({
   const cifras = (f: FilaResumen) => (
     <dl className="mt-2 grid grid-cols-3 gap-x-3 gap-y-2 text-left">
       {[
-        { etiqueta: "Tickets", valor: f.tickets.toLocaleString("es-MX") },
-        { etiqueta: "Ticket prom.", valor: formatMXN(f.ticketPromedio), mono: true },
-        { etiqueta: "Unidades", valor: f.unidades.toLocaleString("es-MX") },
-        { etiqueta: "Cajas abiertas", valor: String(f.cajasAbiertas) },
+        { etiqueta: t("tickets"), valor: f.tickets.toLocaleString(li) },
+        { etiqueta: t("avgTicket"), valor: formatear(f.ticketPromedio), mono: true },
+        { etiqueta: t("units"), valor: f.unidades.toLocaleString(li) },
+        { etiqueta: t("openRegisters"), valor: String(f.cajasAbiertas) },
         {
-          etiqueta: "Dif. en cortes",
-          valor: formatMXN(f.diferenciaCortes),
+          etiqueta: t("closingDiff"),
+          valor: formatear(f.diferenciaCortes),
           mono: true,
           rojo: f.diferenciaCortes < 0,
         },
@@ -187,12 +198,11 @@ export function ResumenSucursales({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <BarChart3 className="h-4 w-4" aria-hidden="true" />
-            Este mes, por sucursal
+            {t("title")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Ventas completadas del mes, existencias actuales y cortes de caja. La
-            última fila es la suma de todos los locales.
-            <span className="md:hidden"> Toca un local para verlo en todo el panel.</span>
+            {t("desc")}
+            <span className="md:hidden"> {t("tapHint")}</span>
           </p>
         </CardHeader>
         <CardContent>
@@ -212,7 +222,7 @@ export function ResumenSucursales({
                     onClick={() => f.sucursalId && setSeleccionada(f.sucursalId)}
                     disabled={!f.sucursalId || elegida}
                     aria-pressed={elegida}
-                    aria-label={`Ver ${f.nombre} en todo el panel`}
+                    aria-label={t("viewInPanel", { nombre: f.nombre })}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -221,17 +231,17 @@ export function ResumenSucursales({
                           {elegida ? (
                             <span className="inline-flex items-center gap-1 font-medium text-primary">
                               <Eye className="h-3 w-3" aria-hidden="true" />
-                              Viendo
+                              {t("viewing")}
                             </span>
                           ) : !f.activa ? (
-                            "Cerrada"
+                            t("closed")
                           ) : f.sucursalId ? (
-                            "Toca para ver"
+                            t("tapToView")
                           ) : null}
                         </p>
                       </div>
                       <span className="shrink-0 font-mono text-base font-semibold tabular-nums">
-                        {formatMXN(f.ventas)}
+                        {formatear(f.ventas)}
                       </span>
                     </div>
                     {cifras(f)}
@@ -243,7 +253,7 @@ export function ResumenSucursales({
               <div className="flex items-start justify-between gap-3">
                 <p className="text-sm font-semibold">{total.nombre}</p>
                 <span className="shrink-0 font-mono text-base font-semibold tabular-nums">
-                  {formatMXN(total.ventas)}
+                  {formatear(total.ventas)}
                 </span>
               </div>
               {cifras(total)}
@@ -254,14 +264,14 @@ export function ResumenSucursales({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Sucursal</TableHead>
-                  <TableHead className="text-right">Ventas</TableHead>
-                  <TableHead className="text-right">Tickets</TableHead>
-                  <TableHead className="text-right">Ticket prom.</TableHead>
-                  <TableHead className="text-right">Unidades</TableHead>
-                  <TableHead className="text-right">Cajas abiertas</TableHead>
-                  <TableHead className="text-right" title="Sobrante (+) o faltante (−) acumulado en los cortes del mes">
-                    Dif. en cortes
+                  <TableHead>{t("colBranch")}</TableHead>
+                  <TableHead className="text-right">{t("colSales")}</TableHead>
+                  <TableHead className="text-right">{t("tickets")}</TableHead>
+                  <TableHead className="text-right">{t("avgTicket")}</TableHead>
+                  <TableHead className="text-right">{t("units")}</TableHead>
+                  <TableHead className="text-right">{t("openRegisters")}</TableHead>
+                  <TableHead className="text-right" title={t("closingDiffHint")}>
+                    {t("closingDiff")}
                   </TableHead>
                   <TableHead />
                 </TableRow>
@@ -275,7 +285,7 @@ export function ResumenSucursales({
                     <TableCell className="text-xs font-medium">
                       {f.nombre}
                       {!f.activa && (
-                        <span className="ml-1.5 text-[10px] text-muted-foreground">(cerrada)</span>
+                        <span className="ml-1.5 text-[10px] text-muted-foreground">({t("closedLower")})</span>
                       )}
                     </TableCell>
                     {celdas(f)}
@@ -289,7 +299,7 @@ export function ResumenSucursales({
                           disabled={f.sucursalId === seleccionada}
                         >
                           <Eye className="h-3 w-3" aria-hidden="true" />
-                          Ver
+                          {t("view")}
                         </Button>
                       )}
                     </TableCell>
@@ -304,7 +314,7 @@ export function ResumenSucursales({
             </Table>
           </div>
           {cargando && (
-            <p className="pt-3 text-center text-xs text-muted-foreground">Cargando…</p>
+            <p className="pt-3 text-center text-xs text-muted-foreground">{t("loading")}</p>
           )}
         </CardContent>
       </Card>
@@ -314,25 +324,24 @@ export function ResumenSucursales({
           <p className="text-sm">
             {nombreElegida ? (
               <>
-                Estás viendo <span className="font-semibold">{nombreElegida}</span> en todo el
-                panel.
+                {t.rich("viewingOne", { nombre: nombreElegida, b: (chunks) => <span className="font-semibold">{chunks}</span> })}
               </>
             ) : (
-              <>Estás viendo <span className="font-semibold">todas las sucursales</span> juntas.</>
+              <>{t.rich("viewingAll", { b: (chunks) => <span className="font-semibold">{chunks}</span> })}</>
             )}
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/dashboard" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 gap-1.5")}>
               <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
-              Estadísticas
+              {t("linkStats")}
             </Link>
             <Link href="/products" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 gap-1.5")}>
               <Package className="h-3.5 w-3.5" aria-hidden="true" />
-              Productos
+              {t("linkProducts")}
             </Link>
             <Link href="/reports" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 gap-1.5")}>
               <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-              Reportes
+              {t("linkReports")}
             </Link>
           </div>
         </CardContent>

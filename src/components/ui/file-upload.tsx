@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, Upload, X } from "lucide-react";
@@ -54,6 +55,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("common.fileUpload");
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -69,13 +71,13 @@ export function FileUpload({
     (file: File) => {
       const resultado = validarImagenElegida(file, opciones);
       if (!resultado.ok) {
-        setError(resultado.mensaje ?? "No se pudo usar esa imagen.");
+        setError(resultado.mensaje ?? t("cantUse"));
         return;
       }
       setError(null);
       onFileSelect(file);
     },
-    [onFileSelect, opciones]
+    [onFileSelect, opciones, t]
   );
 
   const handleDrop = useCallback(
@@ -147,10 +149,10 @@ export function FileUpload({
           >
             <Upload className="h-6 w-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground text-center">
-              {dragDropText || "Arrastra tu logo aquí o haz clic para seleccionar"}
+              {dragDropText || t("dragDrop")}
             </p>
             <p className="text-xs text-muted-foreground/60">
-              {maxSizeText || "Máximo 2MB · JPG, PNG, SVG"}
+              {maxSizeText || t("maxSize")}
             </p>
           </button>
 
@@ -163,7 +165,7 @@ export function FileUpload({
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted md:hidden"
             >
               <Camera className="h-4 w-4" />
-              Tomar foto
+              {t("takePhoto")}
             </button>
           )}
         </div>

@@ -9,12 +9,16 @@ const MINUTO = 60_000;
 const HORA = 60 * MINUTO;
 const DIA = 24 * HORA;
 
-/** Fecha y hora de apertura en formato local de Mexico. */
-export function formatearApertura(fecha: string | Date | null | undefined): string {
+/** Fecha y hora de apertura en el formato del idioma (Mexico por defecto). */
+export function formatearApertura(
+  fecha: string | Date | null | undefined,
+  locale = "es-MX",
+  sinFecha = "Fecha no disponible"
+): string {
   const d = aFecha(fecha);
-  if (!d) return "Fecha no disponible";
+  if (!d) return sinFecha;
 
-  return d.toLocaleString("es-MX", {
+  return d.toLocaleString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -34,31 +38,49 @@ export function tiempoAbierta(
   fecha: string | Date | null | undefined,
   ahora: Date = new Date()
 ): string {
-  const d = aFecha(fecha);
+  const d = duracionAbierta(fecha, ahora);
   if (!d) return "";
+  switch (d.tipo) {
+    case "momento":
+      return "Abierta hace un momento";
+    case "minutos":
+      return `Abierta hace ${d.n} ${plural(d.n, "minuto", "minutos")}`;
+    case "horas": {
+      const base = `Abierta hace ${d.n} ${plural(d.n, "hora", "horas")}`;
+      return d.min > 0 ? `${base} ${d.min} min` : base;
+    }
+    case "dias":
+      return `Abierta hace ${d.n} ${plural(d.n, "día", "días")}`;
+  }
+}
+
+/** Lo que lleva abierta, sin texto: la interfaz lo traduce (`tiempoAbierta` es el español). */
+export type DuracionAbierta =
+  | { tipo: "momento" }
+  | { tipo: "minutos"; n: number }
+  | { tipo: "horas"; n: number; min: number }
+  | { tipo: "dias"; n: number };
+
+export function duracionAbierta(
+  fecha: string | Date | null | undefined,
+  ahora: Date = new Date()
+): DuracionAbierta | null {
+  const d = aFecha(fecha);
+  if (!d) return null;
 
   const ms = ahora.getTime() - d.getTime();
 
-  // Una caja recien abierta: "hace 0 min" se lee como un error.
-  if (ms < MINUTO) return "Abierta hace un momento";
+  // Una caja recien abierta: "hace 0 min" se lee como un error. Tambien un
+  // reloj adelantado o fecha futura: no se inventa un "hace -3 min".
+  if (ms < MINUTO) return { tipo: "momento" };
 
-  // Reloj adelantado o fecha futura: no se inventa un "hace -3 min".
-  if (ms < 0) return "Abierta hace un momento";
-
-  if (ms < HORA) {
-    const min = Math.floor(ms / MINUTO);
-    return `Abierta hace ${min} ${plural(min, "minuto", "minutos")}`;
-  }
+  if (ms < HORA) return { tipo: "minutos", n: Math.floor(ms / MINUTO) };
 
   if (ms < DIA) {
-    const horas = Math.floor(ms / HORA);
-    const min = Math.floor((ms % HORA) / MINUTO);
-    const base = `Abierta hace ${horas} ${plural(horas, "hora", "horas")}`;
-    return min > 0 ? `${base} ${min} min` : base;
+    return { tipo: "horas", n: Math.floor(ms / HORA), min: Math.floor((ms % HORA) / MINUTO) };
   }
 
-  const dias = Math.floor(ms / DIA);
-  return `Abierta hace ${dias} ${plural(dias, "día", "días")}`;
+  return { tipo: "dias", n: Math.floor(ms / DIA) };
 }
 
 function plural(n: number, singular: string, plural_: string): string {

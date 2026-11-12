@@ -2,9 +2,11 @@
 
 import "./registro";
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Doughnut } from "react-chartjs-2";
 import type { Chart, ChartData, ChartOptions } from "chart.js";
 import { useTemaGrafica } from "./use-tema-grafica";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 import { opcionesBase, tooltipBase } from "./opciones";
 import { montoCompleto, porcentaje } from "./formato-grafica";
 import { TarjetaGrafica } from "./tarjeta-grafica";
@@ -29,7 +31,9 @@ export function DonaConLeyenda({
   mostrarMonto = false,
   simple = false,
 }: DonaConLeyendaProps) {
+  const t = useTranslations("charts");
   const tema = useTemaGrafica();
+  const moneda = useMonedaDelNegocio();
   const graficaRef = useRef<Chart<"doughnut"> | null>(null);
   // Ocultos por nombre: si cambia el periodo y el orden de los datos, lo
   // oculto sigue siendo el mismo elemento.
@@ -86,7 +90,7 @@ export function DonaConLeyenda({
         ...tooltipBase(tema),
         callbacks: {
           label: (ctx) =>
-            ` ${ctx.label}: ${montoCompleto(Number(ctx.parsed))} (${porcentaje(
+            ` ${ctx.label}: ${montoCompleto(Number(ctx.parsed), moneda)} (${porcentaje(
               Number(ctx.parsed),
               totalVisible
             )}%)`,
@@ -114,7 +118,7 @@ export function DonaConLeyenda({
                   type="button"
                   onClick={() => alternar(entry.name)}
                   aria-pressed={!oculto}
-                  title={oculto ? "Mostrar en la gráfica" : "Ocultar de la gráfica"}
+                  title={oculto ? t("showInChart") : t("hideFromChart")}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted"
                 >
                   <span
@@ -131,7 +135,7 @@ export function DonaConLeyenda({
                       "—"
                     ) : mostrarMonto ? (
                       <>
-                        <span className="font-mono text-xs">{montoCompleto(entry.value)}</span>
+                        <span className="font-mono text-xs">{montoCompleto(entry.value, moneda)}</span>
                         <span className="ml-1.5 text-xs text-muted-foreground">
                           {porcentaje(entry.value, totalVisible)}%
                         </span>

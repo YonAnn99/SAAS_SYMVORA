@@ -1,7 +1,10 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   cancelTerminalOrder,
   createTerminalOrder,
@@ -45,6 +48,8 @@ export function useCashDrawer({
   onSaleCompleted,
   onTerminalStarted,
 }: UseCashDrawerParams): CashDrawerState {
+  const { formatear, moneda } = useMoneda();
+  const t = useTranslations("pos.terminal");
   const [mpReady, setMpReady] = useState<boolean | null>(null);
   const [terminalOrder, setTerminalOrder] = useState<TerminalOrderState | null>(
     null
@@ -140,7 +145,7 @@ export function useCashDrawer({
           const pagado = await cancelTerminalOrderIfPending();
           if (pagado) {
             setTerminalStatus("pagado");
-            toast.success("El pago ya fue procesado en la terminal");
+            toast.success(t("alreadyProcessed"));
             onSaleCompleted(pagado.ventaId);
           }
           return;
@@ -150,7 +155,7 @@ export function useCashDrawer({
           if (status.estado === "PAGADA") {
             stopPolling();
             setTerminalStatus("pagado");
-            toast.success(`Pago recibido en terminal: $${monto.toFixed(2)}`);
+            toast.success(t("paymentReceived", { monto: formatear(monto) }));
             onSaleCompleted(status.venta_id ?? null);
           } else if (status.estado === "RECHAZADA") {
             stopPolling();
@@ -164,7 +169,7 @@ export function useCashDrawer({
         }
       }, POLL_INTERVAL_MS);
     },
-    [tenantId, stopPolling, cancelTerminalOrderIfPending, onSaleCompleted]
+    [tenantId, stopPolling, cancelTerminalOrderIfPending, onSaleCompleted, t, formatear]
   );
 
   const startTerminalSale = useCallback(
@@ -208,7 +213,7 @@ export function useCashDrawer({
         toast.error(
           error instanceof Error
             ? error.message
-            : "Error al iniciar el cobro con terminal"
+            : t("startError")
         );
       }
     },
@@ -219,6 +224,7 @@ export function useCashDrawer({
       cancelTerminalOrderIfPending,
       onTerminalStarted,
       startPolling,
+      t,
     ]
   );
 
@@ -234,13 +240,13 @@ export function useCashDrawer({
         // El cobro ya esta en la terminal: se le pidio cancelar o se cancela
         // ahi. Se sigue consultando: el servidor le pregunta a Mercado Pago y
         // esta ventana se cierra sola al quedar cancelada (o pagada).
-        toast.info(result.message ?? "Cancela el cobro en la terminal");
+        toast.info(result.message ?? t("cancelOnTerminal"));
         return;
       }
       stopPolling();
       if (result.pagado) {
         setTerminalStatus("pagado");
-        toast.success("El pago ya fue procesado en la terminal");
+        toast.success(t("alreadyProcessed"));
         onSaleCompleted(result.venta_id ?? null);
       } else {
         setTerminalStatus("cancelada");
@@ -248,12 +254,12 @@ export function useCashDrawer({
       }
     } catch (error: unknown) {
       toast.error(
-        error instanceof Error ? error.message : "Error al cancelar el cobro"
+        error instanceof Error ? error.message : t("cancelError")
       );
     } finally {
       setCancellingTerminal(false);
     }
-  }, [tenantId, terminalOrder, stopPolling, onSaleCompleted]);
+  }, [tenantId, terminalOrder, stopPolling, onSaleCompleted, t]);
 
   const closeTerminalDialog = useCallback(async () => {
     if (terminalStatus === "waiting") return;
@@ -261,7 +267,7 @@ export function useCashDrawer({
     if (terminalStatus === "timeout") {
       const pagado = await cancelTerminalOrderIfPending();
       if (pagado) {
-        toast.success("El pago ya fue procesado en la terminal");
+        toast.success(t("alreadyProcessed"));
         onSaleCompleted(pagado.ventaId);
       }
     }
@@ -272,10 +278,13 @@ export function useCashDrawer({
     stopPolling,
     cancelTerminalOrderIfPending,
     onSaleCompleted,
+    t,
   ]);
 
   return {
-    mpReady,
+    // Mercado Pago Point solo cobra en pesos mexicanos: con otra moneda no se
+    // ofrece «Tarjeta (terminal)» (la tarjeta manual sigue con terminal externa).
+    mpReady: moneda === "MXN" ? mpReady : false,
     terminalOrder,
     terminalStatus,
     cancellingTerminal,

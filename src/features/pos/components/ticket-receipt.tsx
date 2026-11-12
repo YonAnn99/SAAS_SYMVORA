@@ -24,6 +24,7 @@ import {
   desgloseTicket,
   fechaTicket,
   formatearImporte,
+  marcaMonedaTicket,
   importeLinea,
   muestraEfectivo,
   numeroOperacion,
@@ -52,7 +53,9 @@ export function TicketReceipt({
   autoImprimir = false,
 }: TicketReceiptProps) {
   const t = useTranslations();
-  const { tenantName, tenantLogo, tenantAddress } = useCurrentTenant();
+  const { tenantName, tenantLogo, tenantAddress, moneda } = useCurrentTenant();
+  const marca = marcaMonedaTicket(moneda);
+  const importe = (n: number) => formatearImporte(n, moneda);
   const impresora = useImpresora();
   const { can } = usePermissions();
   // Directo solo si hay impresora guardada y ESTE navegador tiene su conexion
@@ -70,15 +73,15 @@ export function TicketReceipt({
       await imprimirTicketVenta({
         config: impresora.config,
         receipt,
-        negocio: { nombre: tenantName ?? "", direccion: tenantAddress },
+        negocio: { nombre: tenantName ?? "", direccion: tenantAddress, moneda },
         metodoPagoTexto: t(clavePagoI18n(receipt.paymentMethod)),
         logoUrl: tenantLogo,
       });
       setImpreso(receipt.reference ?? "impreso");
     } catch {
       // Apagada o fuera de alcance: la ventana normal queda como respaldo.
-      toast.error("No se pudo imprimir en la impresora de tickets", {
-        action: { label: "Usar ventana de impresión", onClick: () => window.print() },
+      toast.error(t("pos.receipt.printError"), {
+        action: { label: t("pos.receipt.usePrintWindow"), onClick: () => window.print() },
       });
     } finally {
       setImprimiendo(false);
@@ -183,10 +186,10 @@ export function TicketReceipt({
                 <span className="ticket-producto-linea">
                   <span className="ticket-col-izq">x{formatearCantidad(item.cantidad, item.unidad_medida)}</span>
                   <span className="ticket-col-der">
-                    {formatearImporte(item.precioUnitario)}/{abreviatura(item.unidad_medida, 1)}
+                    {importe(item.precioUnitario)}/{abreviatura(item.unidad_medida, 1)}
                   </span>
                   <span className="ticket-col-der">
-                    {formatearImporte(importeLinea(item))}
+                    {importe(importeLinea(item))}
                   </span>
                 </span>
               </td>
@@ -203,38 +206,38 @@ export function TicketReceipt({
       {conDesglose && (
         <>
           <div className="ticket-fila">
-            <span>Subtotal $</span>
-            <span>{formatearImporte(desglose.subtotal)}</span>
+            <span>Subtotal {marca}</span>
+            <span>{importe(desglose.subtotal)}</span>
           </div>
           {desglose.descuento > 0 && (
             <div className="ticket-fila">
-              <span>{receipt.descuentoEtiqueta ?? "Descuento"} $</span>
-              <span>-{formatearImporte(desglose.descuento)}</span>
+              <span>{receipt.descuentoEtiqueta ?? "Descuento"} {marca}</span>
+              <span>-{importe(desglose.descuento)}</span>
             </div>
           )}
           {desglose.impuesto > 0 && (
             <div className="ticket-fila">
-              <span>IVA $</span>
-              <span>{formatearImporte(desglose.impuesto)}</span>
+              <span>IVA {marca}</span>
+              <span>{importe(desglose.impuesto)}</span>
             </div>
           )}
         </>
       )}
 
       <div className="ticket-total">
-        <span>Total $</span>
-        <span>{formatearImporte(receipt.total)}</span>
+        <span>Total {marca}</span>
+        <span>{importe(receipt.total)}</span>
       </div>
 
       {conEfectivo ? (
         <>
           <div className="ticket-fila">
-            <span>Efectivo $</span>
-            <span>{formatearImporte(receipt.montoRecibido ?? 0)}</span>
+            <span>Efectivo {marca}</span>
+            <span>{importe(receipt.montoRecibido ?? 0)}</span>
           </div>
           <div className="ticket-fila">
-            <span>Cambio $</span>
-            <span>{formatearImporte(receipt.cambio ?? 0)}</span>
+            <span>Cambio {marca}</span>
+            <span>{importe(receipt.cambio ?? 0)}</span>
           </div>
         </>
       ) : (
@@ -276,7 +279,7 @@ export function TicketReceipt({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Check className="h-4 w-4 text-emerald-500" />
-              Venta completada
+              {t("pos.checkout.saleDone")}
             </DialogTitle>
           </DialogHeader>
 
@@ -290,7 +293,7 @@ export function TicketReceipt({
               className="h-8 w-full sm:w-auto"
               onClick={() => onOpenChange(false)}
             >
-              Aceptar
+              {t("pos.terminal.accept")}
             </Button>
             <SpecularActionButton
               tone="money"
@@ -303,26 +306,26 @@ export function TicketReceipt({
               ) : (
                 <Printer className="h-3.5 w-3.5 mr-1.5" />
               )}
-              {impreso === (receipt.reference ?? "impreso") ? "Reimprimir" : "Imprimir"}
+              {impreso === (receipt.reference ?? "impreso") ? t("pos.receipt.reprint") : t("pos.receipt.print")}
             </SpecularActionButton>
           </DialogFooter>
           {/* Sin impresora pero con un navegador que podria usarla: se dice
               donde conectarla (el boton dejo de estar en la barra del POS). */}
           {!directo && impresora.soportadas.length > 0 && can("org.manage_settings") && (
             <p className="-mt-2 text-center text-[11px] text-muted-foreground">
-              ¿Tienes impresora de tickets?{" "}
+              {t("pos.receipt.havePrinter")}{" "}
               <Link href="/settings?tab=printer" className="underline hover:text-foreground">
-                Conéctala en Configuración → Impresora
+                {t("pos.receipt.connectPrinter")}
               </Link>
             </p>
           )}
           {directo && (
             <p className="-mt-2 text-center text-[11px] text-muted-foreground">
               {imprimiendo
-                ? `Imprimiendo en ${impresora.config?.nombre ?? "la impresora"}…`
+                ? t("pos.receipt.printingOn", { nombre: impresora.config?.nombre ?? t("pos.receipt.thePrinter") })
                 : impreso === (receipt.reference ?? "impreso")
-                  ? `Impreso en ${impresora.config?.nombre ?? "la impresora"}`
-                  : `Se imprime directo en ${impresora.config?.nombre ?? "la impresora"}`}
+                  ? t("pos.receipt.printedOn", { nombre: impresora.config?.nombre ?? t("pos.receipt.thePrinter") })
+                  : t("pos.receipt.printsDirect", { nombre: impresora.config?.nombre ?? t("pos.receipt.thePrinter") })}
             </p>
           )}
         </DialogContent>

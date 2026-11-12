@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -41,6 +42,7 @@ const caducidadesRevisadas = new Set<string>();
 
 export function useNotificaciones() {
   const { tenantId, userId } = useTenantContext();
+  const t = useTranslations("notifications");
   const [lista, setLista] = useState<Notificacion[]>([]);
   const [leidoHasta, setLeidoHasta] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -209,10 +211,10 @@ export function useNotificaciones() {
       } catch (err) {
         console.error("[notificaciones] no se pudo descartar:", err);
         setLista((actual) => fusionarNotificacion(actual, quitada, LIMITE));
-        toast.error("No se pudo quitar la notificación. Intenta de nuevo.");
+        toast.error(t("dismissError"));
       }
     },
-    [lista]
+    [lista, t]
   );
 
   const noLeidas = useMemo(() => contarNoLeidas(lista, leidoHasta), [lista, leidoHasta]);

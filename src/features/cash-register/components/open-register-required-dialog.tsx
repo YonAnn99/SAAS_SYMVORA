@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Wallet } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function OpenRegisterRequiredDialog({
   onCancel,
 }: OpenRegisterRequiredDialogProps) {
   const router = useRouter();
+  const t = useTranslations("finances.required");
 
   const handleGoToFinances = () => {
     onOpenChange(false);
@@ -51,12 +53,10 @@ export function OpenRegisterRequiredDialog({
           </div>
           <div className="space-y-1">
             <DialogTitle className="text-base font-semibold">
-              Apertura de caja requerida
+              {t("dialogTitle")}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Para utilizar el Punto de Venta necesitas tener una caja abierta.
-              Esto asegura que todas las ventas y cobros queden registrados
-              correctamente en el corte del día.
+              {t("dialogDesc")}
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -69,14 +69,14 @@ export function OpenRegisterRequiredDialog({
             className="h-8 text-xs cursor-pointer"
             onClick={handleCancel}
           >
-            Cancelar
+            {t("cancel")}
           </Button>
           <SpecularActionButton
             tone="money"
             className="h-8 text-xs font-medium cursor-pointer"
             onClick={handleGoToFinances}
           >
-            Ir a Finanzas y abrir caja
+            {t("goOpen")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

@@ -19,6 +19,8 @@ export interface CatalogoEncabezado {
   whatsapp: string | null;
   mensaje: string | null;
   mostrar_precios: boolean;
+  /** Moneda del negocio (133). Ausente en respuestas anteriores: pesos. */
+  moneda?: string | null;
   total: number;
   categorias: { nombre: string; total: number }[];
   /** Hasta 12, para la fila de arriba (125). */

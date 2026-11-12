@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Store, Plus, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ import {
  */
 export function SucursalesCard() {
   const { tenantId } = useCurrentTenant();
+  const t = useTranslations("branches.card");
   const { can, loading: permisosLoading } = usePermissions();
   const { sucursales, refetch, loading } = useSucursal();
   const [nombre, setNombre] = useState("");
@@ -53,7 +55,7 @@ export function SucursalesCard() {
   async function agregar() {
     const limpio = nombre.trim();
     if (!limpio) {
-      toast.error("Escribe un nombre para la sucursal");
+      toast.error(t("nameRequired"));
       return;
     }
     if (!tenantId) return;
@@ -61,7 +63,7 @@ export function SucursalesCard() {
     // El choque con el nombre ya existente se detecta aquí para poder decirlo
     // en castellano; la restricción UNIQUE de la base sigue siendo la que manda.
     if (sucursales.some((s) => s.nombre.toLowerCase() === limpio.toLowerCase())) {
-      toast.error(`Ya tienes una sucursal llamada "${limpio}"`);
+      toast.error(t("duplicate", { nombre: limpio }));
       return;
     }
 
@@ -71,9 +73,9 @@ export function SucursalesCard() {
       setNombre("");
       setDireccion("");
       await refetch();
-      toast.success(`Sucursal "${limpio}" creada`);
+      toast.success(t("created", { nombre: limpio }));
     } catch {
-      toast.error("No se pudo crear la sucursal. Revisa tus permisos.");
+      toast.error(t("createError"));
     } finally {
       setGuardando(false);
     }
@@ -85,11 +87,11 @@ export function SucursalesCard() {
       await refetch();
       toast.success(
         activa
-          ? `"${nombreSucursal}" cerrada. Su historial se conserva.`
-          : `"${nombreSucursal}" reabierta`
+          ? t("closed", { nombre: nombreSucursal })
+          : t("reopened", { nombre: nombreSucursal })
       );
     } catch {
-      toast.error("No se pudo cambiar la sucursal. Revisa tus permisos.");
+      toast.error(t("toggleError"));
     }
   }
 
@@ -102,20 +104,17 @@ export function SucursalesCard() {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Store className="h-4 w-4" aria-hidden="true" />
-          Sucursales
+          {t("title")}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Cada local tiene sus propias existencias y sus propias cifras: la venta
-          descuenta del local de la caja donde se cobró. El catálogo y los
-          proveedores son comunes a todo el negocio.
+          {t("desc")}
         </p>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {!loading && sucursales.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Todavía no tienes sucursales. Si tu negocio es un solo local, no
-            necesitas crear ninguna.
+            {t("none")}
           </p>
         )}
 
@@ -149,12 +148,12 @@ export function SucursalesCard() {
                   {s.activa ? (
                     <>
                       <PowerOff className="h-3 w-3" aria-hidden="true" />
-                      Cerrar
+                      {t("close")}
                     </>
                   ) : (
                     <>
                       <Power className="h-3 w-3" aria-hidden="true" />
-                      Reabrir
+                      {t("reopen")}
                     </>
                   )}
                 </Button>
@@ -166,25 +165,25 @@ export function SucursalesCard() {
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
           <div className="space-y-1.5">
             <Label className="text-xs" htmlFor="sucursal-nombre">
-              Nombre
+              {t("name")}
             </Label>
             <Input
               id="sucursal-nombre"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Centro"
+              placeholder={t("namePlaceholder")}
               className="h-8 text-sm"
             />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs" htmlFor="sucursal-direccion">
-              Dirección (opcional)
+              {t("address")}
             </Label>
             <Input
               id="sucursal-direccion"
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
-              placeholder="Av. Juárez 12"
+              placeholder={t("addressPlaceholder")}
               className="h-8 text-sm"
             />
           </div>
@@ -195,7 +194,7 @@ export function SucursalesCard() {
             onClick={() => void agregar()}
           >
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-            Agregar
+            {t("addShort")}
           </SpecularActionButton>
         </div>
       </CardContent>

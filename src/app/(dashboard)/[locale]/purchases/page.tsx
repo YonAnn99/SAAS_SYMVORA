@@ -69,7 +69,7 @@ export default function PurchasesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up stagger-1">
         <EncabezadoModulo
           titulo={t("purchases.title")}
-          descripcion="Gestiona compras y proveedores"
+          descripcion={t("purchases.subtitle")}
         />
         <BotonActualizar className="self-start sm:self-auto" onActualizar={refetch} />
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { ScanBarcode } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -79,6 +80,7 @@ export function BotonEscanear({
   descripcion,
   className,
 }: BotonEscanearProps) {
+  const t = useTranslations("scanner");
   const hay = useHayCamara();
   const [abierto, setAbierto] = useState(false);
   if (!hay) return null;
@@ -88,8 +90,8 @@ export function BotonEscanear({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        aria-label={titulo ?? "Escanear con la cámara"}
-        title={titulo ?? "Escanear con la cámara"}
+        aria-label={titulo ?? t("button")}
+        title={titulo ?? t("button")}
         className={cn(
           "inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
           variante === "dentro"

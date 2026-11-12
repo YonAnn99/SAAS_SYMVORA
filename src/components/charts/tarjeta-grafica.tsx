@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Alto de la zona de la grafica; el esqueleto de `dynamic-charts` usa el mismo. */
@@ -33,13 +34,14 @@ export function TarjetaGrafica({
   simple?: boolean;
   alto?: string;
 }) {
+  const t = useTranslations("charts");
   const contenido = (
     <>
       {vacia ? (
         <div
           className={`flex ${alto} items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground`}
         >
-          Sin datos disponibles
+          {t("noData")}
         </div>
       ) : sinContenedor ? (
         children

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ArrowLeftRight, BarChart3, Plus, Store, Warehouse } from "lucide-react";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +37,7 @@ const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-
  * entre ellos.
  */
 export default function BranchesPage() {
+  const t = useTranslations("branches");
   const { tenantId, loading } = useCurrentTenant();
   const { hayVarias, refetch: refetchSucursales } = useSucursal();
   const [pestana, setPestana] = useState("resumen");
@@ -72,8 +74,8 @@ export default function BranchesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up stagger-1">
         <div>
           <EncabezadoModulo
-            titulo="Sucursales"
-            descripcion="Compara tus locales, revisa sus existencias y mueve mercancía entre ellos"
+            titulo={t("title")}
+            descripcion={t("subtitle")}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -101,12 +103,11 @@ export default function BranchesPage() {
               </div>
               <div className="space-y-1.5">
                 <p className="text-base">
-                  <span className="text-muted-foreground">¿Abriste otro local?</span>{" "}
-                  <span className="font-medium">Da de alta tu segunda sucursal</span>
+                  <span className="text-muted-foreground">{t("emptyQuestion")}</span>{" "}
+                  <span className="font-medium">{t("emptyCta")}</span>
                 </p>
                 <p className="mx-auto max-w-md text-sm text-muted-foreground">
-                  Con dos o más locales podrás comparar sus ventas, repartir existencias
-                  y hacer traspasos entre ellos. Cada local lleva su propio inventario.
+                  {t("emptyDesc")}
                 </p>
               </div>
               <SpecularActionButton
@@ -115,7 +116,7 @@ export default function BranchesPage() {
                 onClick={irAlAlta}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
-                Dar de alta sucursal
+                {t("add")}
               </SpecularActionButton>
             </CardContent>
           </Card>
@@ -130,20 +131,20 @@ export default function BranchesPage() {
           <TabsList className="w-full sm:w-fit">
             <TabsTrigger value="resumen" className={CLASE_PESTANA}>
               <BarChart3 className="h-3.5 w-3.5 max-sm:hidden" />
-              Resumen
+              {t("tabs.summary")}
             </TabsTrigger>
             <TabsTrigger value="existencias" className={CLASE_PESTANA}>
               <Warehouse className="h-3.5 w-3.5 max-sm:hidden" />
-              Existencias
+              {t("tabs.stock")}
             </TabsTrigger>
             <TabsTrigger value="traspasos" className={CLASE_PESTANA}>
               <ArrowLeftRight className="h-3.5 w-3.5 max-sm:hidden" />
-              Traspasos
+              {t("tabs.transfers")}
             </TabsTrigger>
             <TabsTrigger value="locales" className={CLASE_PESTANA}>
               <Store className="h-3.5 w-3.5 max-sm:hidden" />
-              <span className="sm:hidden">Locales</span>
-              <span className="max-sm:hidden">Alta y cierre</span>
+              <span className="sm:hidden">{t("tabs.locationsShort")}</span>
+              <span className="max-sm:hidden">{t("tabs.locations")}</span>
             </TabsTrigger>
           </TabsList>
 

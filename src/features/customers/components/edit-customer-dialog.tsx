@@ -81,15 +81,15 @@ function Formulario({
     const email = form.email.trim();
     const limite = Number(form.limite_credito || 0);
     if (!nombre) {
-      toast.error("El nombre del cliente es requerido");
+      toast.error(t("customers.form.nameRequired"));
       return;
     }
     if (email && !CORREO.test(email)) {
-      toast.error("Revisa el correo: no parece válido");
+      toast.error(t("customers.form.emailInvalid"));
       return;
     }
     if (!Number.isFinite(limite) || limite < 0) {
-      toast.error("El límite de crédito debe ser 0 o más");
+      toast.error(t("customers.form.limitInvalid"));
       return;
     }
 
@@ -108,12 +108,12 @@ function Formulario({
         entityId: cliente.id,
         entityName: actualizado.nombre,
       });
-      toast.success(`Cliente ${actualizado.nombre} actualizado`);
+      toast.success(t("customers.form.updated", { nombre: actualizado.nombre }));
       onSaved(actualizado);
       onOpenChange(false);
     } catch (error: unknown) {
       const mensaje = (error as { message?: string } | null)?.message;
-      toast.error(mensaje || "No se pudo actualizar el cliente");
+      toast.error(mensaje || t("customers.form.updateError"));
     } finally {
       setSaving(false);
     }
@@ -123,16 +123,16 @@ function Formulario({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Editar cliente</DialogTitle>
-          <DialogDescription>Corrige sus datos de contacto.</DialogDescription>
+          <DialogTitle>{t("customers.edit")}</DialogTitle>
+          <DialogDescription>{t("customers.form.editDesc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="ec-nombre">Nombre*</Label>
+            <Label htmlFor="ec-nombre">{t("customers.form.name")}</Label>
             <Input id="ec-nombre" value={form.nombre} onChange={(e) => cambiar("nombre", e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ec-tel">Teléfono</Label>
+            <Label htmlFor="ec-tel">{t("customers.form.phone")}</Label>
             <Input
               id="ec-tel"
               inputMode="tel"
@@ -142,22 +142,22 @@ function Formulario({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ec-email">Correo</Label>
+            <Label htmlFor="ec-email">{t("customers.form.email")}</Label>
             <Input
               id="ec-email"
               type="email"
               value={form.email}
               onChange={(e) => cambiar("email", e.target.value)}
-              placeholder="cliente@correo.com"
+              placeholder={t("customers.form.emailPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ec-dir">Dirección</Label>
+            <Label htmlFor="ec-dir">{t("customers.form.address")}</Label>
             <Input id="ec-dir" value={form.direccion} onChange={(e) => cambiar("direccion", e.target.value)} />
           </div>
           {verLimite && (
             <div className="space-y-1.5">
-              <Label htmlFor="ec-limite">Límite de crédito</Label>
+              <Label htmlFor="ec-limite">{t("customers.form.creditLimit")}</Label>
               <Input
                 id="ec-limite"
                 type="number"
@@ -175,7 +175,7 @@ function Formulario({
             {t("common.cancel")}
           </Button>
           <SpecularActionButton tone="add" className="h-8" onClick={guardar} disabled={saving}>
-            {saving ? "Guardando..." : "Guardar cambios"}
+            {saving ? t("customers.form.saving") : t("customers.form.saveChanges")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

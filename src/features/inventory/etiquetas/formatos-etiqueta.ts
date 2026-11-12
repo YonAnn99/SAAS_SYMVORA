@@ -7,7 +7,7 @@
  * - Rollo: una etiqueta por pagina del tamano de la etiqueta (impresoras de
  *   etiquetas Zebra, Xprinter, Brother...). Se imprime al 100 %.
  */
-import { formatMXN } from "@/lib/money";
+import { formatMoneda, type Moneda } from "@/lib/money";
 import { abreviatura, esFraccionable } from "@/lib/unidades";
 
 export type IdFormato = "carta-3x10" | "carta-4x20" | "rollo-50x25" | "rollo-40x30" | "rollo-58x40";
@@ -175,7 +175,7 @@ export function totalEtiquetas(items: ItemEtiqueta[]): number {
 }
 
 /** "$18.00" o, a granel, "$180.00 /kg" (el precio se captura por unidad). */
-export function textoPrecio(precio: number, unidad: string | null): string {
-  const base = formatMXN(precio);
+export function textoPrecio(precio: number, unidad: string | null, moneda: Moneda = "MXN"): string {
+  const base = formatMoneda(precio, moneda);
   return esFraccionable(unidad) ? `${base} /${abreviatura(unidad, 1)}` : base;
 }

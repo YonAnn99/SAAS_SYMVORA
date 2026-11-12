@@ -43,11 +43,11 @@ export function NewCustomerDialog({
   const handleCreate = async () => {
     if (!tenantId) return;
     if (!form.nombre.trim()) {
-      toast.error("El nombre del cliente es requerido");
+      toast.error(t("customers.form.nameRequired"));
       return;
     }
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      toast.error("Revisa el correo: no parece válido");
+      toast.error(t("customers.form.emailInvalid"));
       return;
     }
     setSaving(true);
@@ -59,13 +59,13 @@ export function NewCustomerDialog({
         entityName: customer.nombre,
         details: { telefono: form.telefono },
       });
-      toast.success(`Cliente ${customer.nombre} creado`);
+      toast.success(t("customers.form.created", { nombre: customer.nombre }));
       onCreated(customer);
       onOpenChange(false);
       setForm(EMPTY_NEW_CUSTOMER);
     } catch (error: unknown) {
       toast.error(
-        error instanceof Error ? error.message : "Error al crear el cliente"
+        error instanceof Error ? error.message : t("customers.form.createError")
       );
     } finally {
       setSaving(false);
@@ -76,21 +76,21 @@ export function NewCustomerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Nuevo cliente</DialogTitle>
-          <DialogDescription>Crea un cliente para tus ventas.</DialogDescription>
+          <DialogTitle>{t("customers.selector.new")}</DialogTitle>
+          <DialogDescription>{t("customers.form.newDesc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="nc-nombre">Nombre*</Label>
+            <Label htmlFor="nc-nombre">{t("customers.form.name")}</Label>
             <Input
               id="nc-nombre"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              placeholder="Nombre o razón de la persona"
+              placeholder={t("customers.form.namePlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="nc-tel">Teléfono</Label>
+            <Label htmlFor="nc-tel">{t("customers.form.phone")}</Label>
             <Input
               id="nc-tel"
               value={form.telefono}
@@ -102,13 +102,13 @@ export function NewCustomerDialog({
           </div>
           {/* Para mandarle su tarjeta de lealtad por correo, entre otras cosas. */}
           <div className="space-y-1.5">
-            <Label htmlFor="nc-email">Correo (opcional)</Label>
+            <Label htmlFor="nc-email">{t("customers.form.emailOptional")}</Label>
             <Input
               id="nc-email"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="cliente@correo.com"
+              placeholder={t("customers.form.emailPlaceholder")}
             />
           </div>
         </div>
@@ -128,7 +128,7 @@ export function NewCustomerDialog({
             onClick={handleCreate}
             disabled={saving}
           >
-            {saving ? "Guardando..." : "Crear cliente"}
+            {saving ? t("customers.form.saving") : t("customers.form.create")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

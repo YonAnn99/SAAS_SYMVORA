@@ -1,6 +1,8 @@
 "use client";
 
 import { Analytics, type BeforeSendEvent } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { useConsentimiento } from "@/hooks/use-consentimiento";
 
 /**
  * Vercel Web Analytics (visitas y paginas vistas; sin cookies). Va en el layout
@@ -39,6 +41,16 @@ export function limpiarEvento(event: BeforeSendEvent): BeforeSendEvent {
   return { ...event, url: limpiarUrl(event.url) };
 }
 
+/** Visitas y paginas vistas, salvo que la persona rechace la medicion anonima. */
 export function AnaliticaVercel() {
+  const { medicion } = useConsentimiento();
+  if (!medicion) return null;
   return <Analytics beforeSend={limpiarEvento} />;
+}
+
+/** Core Web Vitals (Speed Insights), con la misma eleccion que Analytics. */
+export function RendimientoVercel() {
+  const { medicion } = useConsentimiento();
+  if (!medicion) return null;
+  return <SpeedInsights />;
 }

@@ -1,10 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/supabase/activity-logger";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { notifyCashRegisterChanged } from "@/features/cash-register/hooks/use-open-register";
 import type { OrdenCompra, DetalleOrdenCompra } from "../types/inventory.types";
 import { normalizarTelefonoMx, urlWhatsApp } from "@/lib/whatsapp";
@@ -22,7 +23,6 @@ import {
   fetchOrderProducts,
   fetchOrders,
   fetchOrderSuppliers,
-  orderEstadoLabels,
   updateOrder,
   updateOrderStatus,
   receiveOrder,
@@ -58,6 +58,9 @@ export function usePurchaseOrders(
   /** Para firmar el mensaje de WhatsApp con el nombre de la tienda. */
   nombreNegocio: string = "nuestro negocio"
 ) {
+  const { formatear, moneda } = useMoneda();
+  const t = useTranslations("purchaseOrders.msg");
+  const tEstado = useTranslations("purchaseOrders.statuses");
   // Cache entre modulos (`lib/cache-datos.ts`): se pinta lo ultimo cargado y
   // `refetch` lo reemplaza en cuanto llega.
   const [enCache] = useState(() =>
@@ -130,7 +133,7 @@ export function usePurchaseOrders(
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) throw new Error("No se pudo identificar el usuario");
+        if (!user) throw new Error(t("noUser"));
 
         // La MISMA funcion que usa el dialogo para pintar los totales. Antes
         // aqui habia un `subtotal * 0.16` suelto: dos cuentas separadas que
@@ -171,7 +174,7 @@ export function usePurchaseOrders(
             entityName: input.numero_orden,
             details: { total, items: details.length },
           });
-          toast.success("Orden actualizada");
+          toast.success(t("updated"));
         } else {
           await createOrder(tenantId, user.id, orderData, details);
           await logActivity({
@@ -180,17 +183,17 @@ export function usePurchaseOrders(
             entityName: input.numero_orden,
             details: { proveedor_id: input.proveedor_id, total, items: details.length },
           });
-          toast.success("Orden creada");
+          toast.success(t("created"));
         }
         setShowDialog(false);
         void refetch();
       } catch {
-        toast.error("Error al guardar la orden");
+        toast.error(t("saveError"));
       } finally {
         setSaving(false);
       }
     },
-    [tenantId, editingOrder, refetch]
+    [tenantId, editingOrder, refetch, t]
   );
 
   const handleStatusChange = useCallback(
@@ -204,13 +207,13 @@ export function usePurchaseOrders(
           entityName: order.numero_orden,
           details: { nuevo_estado: newStatus },
         });
-        toast.success(`Orden marcada como ${orderEstadoLabels[newStatus]}`);
+        toast.success(t("markedAs", { estado: tEstado(newStatus) }));
         void refetch();
       } catch {
-        toast.error("Error al actualizar el estado");
+        toast.error(t("statusError"));
       }
     },
-    [refetch]
+    [refetch, t, tEstado]
   );
 
   // ---- Recepción de mercancía ----
@@ -259,13 +262,13 @@ export function usePurchaseOrders(
           },
         });
         const pagoCaja = cajaId
-          ? ` Se descontaron ${formatMXN(resultado.total)} del efectivo de tu caja.`
+          ? ` ${t("paidFromCash", { monto: formatear(resultado.total) })}`
           : "";
         if (cajaId) notifyCashRegisterChanged();
         toast.success(
           (resultado.nuevo_estado === "RECIBIDA_TOTAL"
-            ? "Orden recibida completa. Se registró la compra y subió el stock."
-            : "Recepción parcial registrada. La orden sigue abierta.") + pagoCaja
+            ? t("receivedFull")
+            : t("receivedPartial")) + pagoCaja
         );
         setReceivingOrder(null);
         void refetch();
@@ -275,13 +278,13 @@ export function usePurchaseOrders(
             ? error.message
             : typeof error === "object" && error !== null && "message" in error
               ? String((error as { message: unknown }).message)
-              : "No se pudo registrar la recepción"
+              : t("receiveError")
         );
       } finally {
         setReceiving(false);
       }
     },
-    [receivingOrder, refetch]
+    [receivingOrder, refetch, t, formatear]
   );
 
   // ---- Envío al proveedor por WhatsApp ----
@@ -309,7 +312,7 @@ export function usePurchaseOrders(
       const proveedor = suppliers.find((s) => s.id === order.proveedor_id);
       const telefono = normalizarTelefonoMx(proveedor?.telefono);
       if (!telefono || !tenantId) {
-        toast.error("Este proveedor no tiene un teléfono válido");
+        toast.error(t("noPhone"));
         return;
       }
 
@@ -329,6 +332,7 @@ export function usePurchaseOrders(
           );
         const datosPdf = datosPdfDeOrden({
           negocio: nombreNegocio,
+          moneda,
           proveedor: proveedor?.nombre ?? "",
           orden: order,
           renglones: details.map((d) => ({ ...d, nombre: nombreRenglon(d) })),
@@ -352,6 +356,7 @@ export function usePurchaseOrders(
         const url = urlWhatsApp(
           telefono,
           mensajeParaProveedor({
+            moneda,
             numeroOrden: order.numero_orden,
             proveedor: proveedor?.nombre ?? "",
             negocio: nombreNegocio,
@@ -372,18 +377,18 @@ export function usePurchaseOrders(
 
         toast.success(
           order.estado === "BORRADOR"
-            ? `Orden ${order.numero_orden} enviada por WhatsApp`
-            : `Orden ${order.numero_orden} reenviada por WhatsApp`
+            ? t("sentWhatsApp", { numero: order.numero_orden })
+            : t("resentWhatsApp", { numero: order.numero_orden })
         );
         void refetch();
       } catch {
         pestana?.close();
-        toast.error("No se pudo preparar la orden para WhatsApp");
+        toast.error(t("whatsAppError"));
       } finally {
         setEnviandoId(null);
       }
     },
-    [suppliers, products, variants, nombreNegocio, tenantId, refetch]
+    [suppliers, products, variants, nombreNegocio, tenantId, refetch, t, moneda]
   );
 
   const handleDelete = useCallback(
@@ -396,25 +401,25 @@ export function usePurchaseOrders(
           entityId: order.id,
           entityName: order.numero_orden,
         });
-        toast.success("Orden eliminada");
+        toast.success(t("deleted"));
         setDeleteConfirm(null);
         void refetch();
         return true;
       } catch {
-        toast.error("Error al eliminar la orden");
+        toast.error(t("deleteError"));
         // La fila deslizable del celular se colapsa ANTES de borrar: con
         // `false` sabe que tiene que reaparecer.
         return false;
       }
     },
-    [refetch]
+    [refetch, t]
   );
 
   const getSupplierName = useCallback(
     (supplierId: string) =>
       suppliers.find((s) => s.id === supplierId)?.nombre ||
-      "Proveedor desconocido",
-    [suppliers]
+      t("unknownSupplier"),
+    [suppliers, t]
   );
 
   const filteredOrders = useMemo(

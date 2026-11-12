@@ -1,3 +1,4 @@
+import { formatMoneda, type Moneda } from "@/lib/money";
 import { esFraccionable, formatearCantidad, normalizarCantidad } from "@/lib/unidades";
 
 /**
@@ -85,8 +86,9 @@ export function totalEstimado(lineas: LineaPedido[]): number | null {
   return Math.round(total * 100) / 100;
 }
 
-export function formatearPrecio(monto: number): string {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(monto);
+/** Monto en la moneda del negocio (`tenants.moneda`, llega en el encabezado del catálogo). */
+export function formatearPrecio(monto: number, moneda: Moneda = "MXN"): string {
+  return formatMoneda(monto, moneda);
 }
 
 /**
@@ -94,11 +96,16 @@ export function formatearPrecio(monto: number): string {
  * negocio, así que va en segunda persona y aclara que los precios los
  * confirma el negocio (el catálogo puede ir un paso atrás del inventario).
  */
-export function mensajePedido(negocio: string, lineas: LineaPedido[], nombreCliente?: string): string {
+export function mensajePedido(
+  negocio: string,
+  lineas: LineaPedido[],
+  nombreCliente?: string,
+  moneda: Moneda = "MXN"
+): string {
   const renglones = lineas.map((l) => {
     const nombre = l.variante ? `${l.nombre} (${l.variante})` : l.nombre;
     const cantidad = formatearCantidad(l.cantidad, l.unidad);
-    const subtotal = l.precio != null ? ` — ${formatearPrecio(l.precio * l.cantidad)}` : "";
+    const subtotal = l.precio != null ? ` — ${formatearPrecio(l.precio * l.cantidad, moneda)}` : "";
     return `• ${cantidad} ${nombre}${subtotal}`;
   });
   const total = totalEstimado(lineas);
@@ -110,7 +117,7 @@ export function mensajePedido(negocio: string, lineas: LineaPedido[], nombreClie
     "",
     ...renglones,
     "",
-    ...(total != null ? [`Total estimado: ${formatearPrecio(total)}`] : []),
+    ...(total != null ? [`Total estimado: ${formatearPrecio(total, moneda)}`] : []),
     "¿Me confirman disponibilidad y precio? Gracias.",
     "",
     "(Pedido desde su catálogo en línea)",
@@ -133,12 +140,13 @@ export function precioDeLinea(
 export function textoPrecio(
   min: number | null,
   max: number | null,
-  unidad: string
+  unidad: string,
+  moneda: Moneda = "MXN"
 ): string | null {
   if (min == null) return null;
   const sufijo = esFraccionable(unidad) ? ` por ${unidadCorta(unidad)}` : "";
-  if (max != null && max > min) return `desde ${formatearPrecio(min)}${sufijo}`;
-  return `${formatearPrecio(min)}${sufijo}`;
+  if (max != null && max > min) return `desde ${formatearPrecio(min, moneda)}${sufijo}`;
+  return `${formatearPrecio(min, moneda)}${sufijo}`;
 }
 
 function unidadCorta(unidad: string): string {

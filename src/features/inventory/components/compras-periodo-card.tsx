@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 /**
  * "Compras del periodo" en Reportes: cuánto se compró, a quién, cuánto salió
  * del efectivo de la caja y cuánto está pedido sin llegar.
@@ -13,7 +15,7 @@ import { Loader2, Truck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ContadorAnimado } from "@/components/ui/contador-animado";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { rangoDePeriodo, type Periodo } from "@/lib/periodo";
 import { useSucursal } from "@/contexts/sucursal-context";
 import {
@@ -46,7 +48,9 @@ export function ComprasPeriodoCard({
   fechaElegida,
   totalVentas,
 }: ComprasPeriodoCardProps) {
+  const { formatear } = useMoneda();
   const { seleccionada: sucursalId } = useSucursal();
+  const t = useTranslations("reports.purchases");
   const [datos, setDatos] = useState<{
     compras: CompraConPagos[];
     ordenes: OrdenAbiertaParaResumen[];
@@ -122,11 +126,10 @@ export function ComprasPeriodoCard({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
           <Truck className="h-4 w-4 text-muted-foreground" />
-          Compras del periodo
+          {t("title")}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Lo invertido en mercancía. No se resta de la ganancia: esa ya
-          descuenta el costo de lo vendido.
+          {t("desc")}
         </p>
       </CardHeader>
       <CardContent>
@@ -138,29 +141,25 @@ export function ComprasPeriodoCard({
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <Cifra
-                etiqueta="Total comprado"
+                etiqueta={t("total")}
                 monto={resumen.totalComprado}
-                detalle={`${resumen.numeroCompras} ${
-                  resumen.numeroCompras === 1 ? "compra" : "compras"
-                }`}
+                detalle={t("count", { count: resumen.numeroCompras })}
               />
               <Cifra
-                etiqueta="Pagado con efectivo de caja"
+                etiqueta={t("paidCash")}
                 monto={resumen.pagadoConCaja}
-                detalle="Salió del cajón"
+                detalle={t("fromDrawer")}
               />
               <Cifra
-                etiqueta="Ventas − compras"
+                etiqueta={t("salesMinus")}
                 monto={resumen.diferencia}
-                detalle={`Ventas: ${formatMXN(totalVentas)}`}
+                detalle={t("salesAmount", { monto: formatear(totalVentas) })}
                 negativo={resumen.diferencia < 0}
               />
               <Cifra
-                etiqueta="Pendiente por recibir"
+                etiqueta={t("pending")}
                 monto={resumen.pendientePorRecibir}
-                detalle={`${resumen.ordenesAbiertas} ${
-                  resumen.ordenesAbiertas === 1 ? "orden abierta" : "órdenes abiertas"
-                } · al día de hoy`}
+                detalle={t("openOrders", { count: resumen.ordenesAbiertas })}
               />
             </div>
 
@@ -168,27 +167,27 @@ export function ComprasPeriodoCard({
               <div className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <VentasVsComprasChart
-                    title="Ventas vs compras"
+                    title={t("salesVsPurchases")}
                     ventas={totalVentas}
                     compras={resumen.totalComprado}
                   />
                   <DonaConLeyenda
-                    title="Cómo se pagaron las compras"
-                    data={comoSePagaron(resumen)}
+                    title={t("howPaid")}
+                    data={comoSePagaron(resumen, { caja: t("cashRegister"), otros: t("otherMeans") })}
                     mostrarMonto
                     simple
                   />
                 </div>
                 {resumen.topProveedores.length > 0 && (
                   <ProveedoresChart
-                    title="Proveedores con más compras"
+                    title={t("topSuppliers")}
                     data={resumen.topProveedores}
                   />
                 )}
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
-                Sin compras en este periodo
+                {t("none")}
               </p>
             )}
           </div>
@@ -203,11 +202,14 @@ export function ComprasPeriodoCard({
  * resto (transferencia, tarjeta, credito del proveedor...). Los vacios no van:
  * una dona con un segmento en 0 solo agrega una fila "0%" a la leyenda.
  */
-function comoSePagaron(resumen: ResumenCompras): { name: string; value: number }[] {
+function comoSePagaron(
+  resumen: ResumenCompras,
+  nombres: { caja: string; otros: string }
+): { name: string; value: number }[] {
   const otros = Math.max(0, Math.round((resumen.totalComprado - resumen.pagadoConCaja) * 100) / 100);
   return [
-    { name: "Efectivo de caja", value: resumen.pagadoConCaja },
-    { name: "Otros medios", value: otros },
+    { name: nombres.caja, value: resumen.pagadoConCaja },
+    { name: nombres.otros, value: otros },
   ].filter((s) => s.value > 0);
 }
 
@@ -233,7 +235,7 @@ function Cifra({
           negativo ? "text-[#9F2F2D] dark:text-[#F2A5A4]" : ""
         }`}
       >
-        <ContadorAnimado valor={monto} prefijo="$" decimales={2} />
+        <ContadorAnimado valor={monto} dinero />
       </p>
       <p className="text-xs text-muted-foreground">{detalle}</p>
     </div>

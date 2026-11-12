@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -47,6 +48,8 @@ export function PersonalizarCatalogo({
   borrador: CatalogoConfig;
   guardar: (config: CatalogoConfig) => Promise<CatalogoConfig>;
 }) {
+  const t = useTranslations("onlineCatalog.customize");
+  const te = useTranslations("onlineCatalog.errors");
   const telefono = desdeE164(borrador.whatsapp);
   const [color, setColor] = useState(borrador.color ?? "");
   const [portada, setPortada] = useState<string | null>(borrador.portada_url);
@@ -63,9 +66,9 @@ export function PersonalizarCatalogo({
   const slugListo = slug.replace(/-+$/, "");
   const whatsapp = numero.trim() ? aE164(pais, numero) : null;
   const colorListo = color.trim() ? color.trim() : null;
-  const errorSlug = slugValido(slugListo) ? null : `Usa de ${SLUG_MIN} a 40 letras, números o guiones (ejemplo: mi-tienda).`;
-  const errorWhatsapp = numero.trim() && !whatsapp ? "Revisa el número: no parece un celular válido." : null;
-  const errorColor = colorListo && !PATRON_COLOR.test(colorListo) ? "Usa un color como #1E3A8A." : null;
+  const errorSlug = slugValido(slugListo) ? null : t("slugInvalid", { min: SLUG_MIN });
+  const errorWhatsapp = numero.trim() && !whatsapp ? t("phoneInvalid") : null;
+  const errorColor = colorListo && !PATRON_COLOR.test(colorListo) ? t("colorInvalid") : null;
   const colorVista = colorListo && !errorColor ? colorListo : AZUL_SYMVORA;
 
   const cambios =
@@ -80,12 +83,12 @@ export function PersonalizarCatalogo({
 
   const elegirPortada = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) return toast.error("Elige una imagen");
+    if (!file.type.startsWith("image/")) return toast.error(t("pickImage"));
     setSubiendo(true);
     try {
       setPortada(await subirPortadaCatalogo(file, tenantId));
     } catch {
-      toast.error("No se pudo subir la portada");
+      toast.error(t("uploadError"));
     } finally {
       setSubiendo(false);
       if (archivo.current) archivo.current.value = "";
@@ -97,7 +100,7 @@ export function PersonalizarCatalogo({
     if (errorWhatsapp) return toast.error(errorWhatsapp);
     if (errorColor) return toast.error(errorColor);
     const activo = guardado?.activo ?? false;
-    if (activo && !whatsapp) return toast.error("Un catálogo publicado necesita el WhatsApp que recibe los pedidos");
+    if (activo && !whatsapp) return toast.error(t("whatsappNeeded"));
     setGuardando(true);
     try {
       await guardar({
@@ -112,9 +115,9 @@ export function PersonalizarCatalogo({
         portada_url: portada,
       });
       setSlug(slugListo);
-      toast.success("Catálogo guardado");
+      toast.success(t("saved"));
     } catch (error) {
-      toast.error(mensajeErrorCatalogo(error));
+      toast.error(mensajeErrorCatalogo(error, te));
     } finally {
       setGuardando(false);
     }
@@ -124,7 +127,7 @@ export function PersonalizarCatalogo({
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Imagen y color</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("imageColor")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Vista de cómo queda el encabezado */}
@@ -141,11 +144,11 @@ export function PersonalizarCatalogo({
                 />
               </>
             )}
-            <p className="relative text-lg font-bold">Así se ve el encabezado</p>
+            <p className="relative text-lg font-bold">{t("headerPreview")}</p>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs">Portada (opcional)</Label>
+            <Label className="text-xs">{t("cover")}</Label>
             <div className="flex flex-wrap gap-2">
               <input
                 ref={archivo}
@@ -156,11 +159,11 @@ export function PersonalizarCatalogo({
               />
               <Button size="sm" variant="outline" disabled={subiendo} onClick={() => archivo.current?.click()}>
                 {subiendo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
-                {portada ? "Cambiar portada" : "Subir portada"}
+                {portada ? t("changeCover") : t("uploadCover")}
               </Button>
               {portada && (
                 <Button size="sm" variant="outline" onClick={() => setPortada(null)}>
-                  <Trash2 className="h-3.5 w-3.5" /> Quitar
+                  <Trash2 className="h-3.5 w-3.5" /> {t("remove")}
                 </Button>
               )}
             </div>
@@ -171,7 +174,7 @@ export function PersonalizarCatalogo({
 
           <div className="space-y-2">
             <Label htmlFor="catalogo-color" className="text-xs">
-              Color del catálogo
+              {t("color")}
             </Label>
             <div className="flex flex-wrap items-center gap-2">
               {MUESTRAS.map((m) => (
@@ -179,7 +182,7 @@ export function PersonalizarCatalogo({
                   key={m}
                   type="button"
                   onClick={() => setColor(m)}
-                  aria-label={`Color ${m}`}
+                  aria-label={t("colorNamed", { color: m })}
                   aria-pressed={colorVista.toLowerCase() === m.toLowerCase()}
                   className="h-8 w-8 rounded-full border-2 border-transparent ring-offset-2 aria-pressed:ring-2 aria-pressed:ring-foreground"
                   style={{ backgroundColor: m }}
@@ -191,11 +194,11 @@ export function PersonalizarCatalogo({
                 value={colorVista}
                 onChange={(e) => setColor(e.target.value.toUpperCase())}
                 className="h-8 w-10 cursor-pointer rounded border border-input bg-transparent"
-                aria-label="Elegir otro color"
+                aria-label={t("otherColor")}
               />
               {colorListo && (
                 <button type="button" onClick={() => setColor("")} className="text-xs text-muted-foreground underline">
-                  Usar el de mi negocio
+                  {t("useBusinessColor")}
                 </button>
               )}
             </div>
@@ -204,7 +207,7 @@ export function PersonalizarCatalogo({
             ) : (
               !contrastaConBlanco(colorVista) && (
                 <p className="text-[11px] text-amber-600">
-                  Es un color claro: el texto del encabezado se pondrá oscuro. Con portada, mejor uno oscuro.
+                  {t("lightColor")}
                 </p>
               )
             )}
@@ -214,12 +217,12 @@ export function PersonalizarCatalogo({
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Enlace y contacto</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("linkContact")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="catalogo-slug" className="text-xs">
-              Enlace de tu catálogo
+              {t("link")}
             </Label>
             <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-input focus-within:ring-2 focus-within:ring-ring/40">
               <span className="shrink-0 bg-muted px-2.5 py-2 text-xs text-muted-foreground max-sm:hidden">
@@ -238,13 +241,13 @@ export function PersonalizarCatalogo({
             {errorSlug ? (
               <p className="text-[11px] text-destructive">{errorSlug}</p>
             ) : (
-              <p className="text-[11px] text-muted-foreground">Si lo cambias, el enlace anterior deja de funcionar.</p>
+              <p className="text-[11px] text-muted-foreground">{t("linkChangeHint")}</p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="catalogo-whatsapp" className="text-xs">
-              WhatsApp que recibe los pedidos
+              {t("whatsapp")}
             </Label>
             <TelefonoInput
               id="catalogo-whatsapp"
@@ -265,7 +268,7 @@ export function PersonalizarCatalogo({
                   rel="noopener noreferrer"
                   className="text-[11px] text-primary underline-offset-2 hover:underline"
                 >
-                  Probar que abre el chat correcto
+                  {t("testChat")}
                 </a>
               )
             )}
@@ -273,7 +276,7 @@ export function PersonalizarCatalogo({
 
           <div className="space-y-1.5">
             <Label htmlFor="catalogo-mensaje" className="text-xs">
-              Mensaje de bienvenida (opcional)
+              {t("welcome")}
             </Label>
             <Textarea
               id="catalogo-mensaje"
@@ -281,7 +284,7 @@ export function PersonalizarCatalogo({
               maxLength={MENSAJE_MAX}
               rows={2}
               onChange={(e) => setMensaje(e.target.value)}
-              placeholder="Ej. Entregas a domicilio en la colonia. Horario de 9 a 8."
+              placeholder={t("welcomePlaceholder")}
             />
             <p className="text-right text-[11px] text-muted-foreground">
               {mensaje.length}/{MENSAJE_MAX}
@@ -290,18 +293,18 @@ export function PersonalizarCatalogo({
 
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <Label className="text-xs">Mostrar precios</Label>
-              <p className="text-[11px] text-muted-foreground">Apagado, tus clientes preguntan el precio en el pedido.</p>
+              <Label className="text-xs">{t("showPrices")}</Label>
+              <p className="text-[11px] text-muted-foreground">{t("showPricesHint")}</p>
             </div>
-            <Switch checked={mostrarPrecios} onCheckedChange={setMostrarPrecios} aria-label="Mostrar precios" />
+            <Switch checked={mostrarPrecios} onCheckedChange={setMostrarPrecios} aria-label={t("showPrices")} />
           </div>
 
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <Label className="text-xs">Mostrar productos agotados</Label>
-              <p className="text-[11px] text-muted-foreground">Salen al final, marcados como «Agotado».</p>
+              <Label className="text-xs">{t("showSoldOut")}</Label>
+              <p className="text-[11px] text-muted-foreground">{t("showSoldOutHint")}</p>
             </div>
-            <Switch checked={mostrarAgotados} onCheckedChange={setMostrarAgotados} aria-label="Mostrar productos agotados" />
+            <Switch checked={mostrarAgotados} onCheckedChange={setMostrarAgotados} aria-label={t("showSoldOut")} />
           </div>
         </CardContent>
       </Card>
@@ -309,7 +312,7 @@ export function PersonalizarCatalogo({
       <div className="flex justify-end">
         <Button onClick={() => void guardarCambios()} disabled={guardando || subiendo || !cambios}>
           {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
-          Guardar cambios
+          {t("save")}
         </Button>
       </div>
     </div>

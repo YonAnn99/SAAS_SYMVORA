@@ -1,5 +1,7 @@
 "use client";
 
+import { localeIntl } from "@/lib/idioma";
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -343,19 +345,19 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       case "paid":
         return (
           <Badge variant="outline" className="border-green-500/40 text-green-600 text-[10px]">
-            Pagado
+            {t("billing.page.paid")}
           </Badge>
         );
       case "pending":
         return (
           <Badge variant="outline" className="text-amber-600 border-amber-500/40 text-[10px]">
-            Pendiente
+            {t("billing.page.pending")}
           </Badge>
         );
       case "failed":
         return (
           <Badge variant="outline" className="text-destructive border-destructive/40 text-[10px]">
-            Fallido
+            {t("billing.page.failed")}
           </Badge>
         );
       case "credited":
@@ -376,13 +378,13 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
       case "card":
-        return "Tarjeta";
+        return t("billing.page.methods.card");
       case "cash":
-        return "Efectivo";
+        return t("billing.page.methods.cash");
       case "bank_transfer":
-        return "Transferencia";
+        return t("billing.page.methods.transfer");
       case "pay_by_bank":
-        return "Pago directo BBVA";
+        return t("billing.page.methods.bbva");
       case "spei":
         return "SPEI";
       case "apple":
@@ -390,9 +392,9 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       case "google":
         return "Google Pay";
       case "bnpl":
-        return "Crédito directo";
+        return t("billing.page.methods.bnpl");
       case "default":
-        return "Tarjeta";
+        return t("billing.page.methods.card");
       default:
         return method;
     }
@@ -420,7 +422,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   if (!tenantLoading && !tenantId) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
-        No se encontró la suscripción del tenant.
+        {t("billing.page.notFound")}
       </div>
     );
   }
@@ -459,11 +461,10 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
         >
           <strong className="font-medium">
             {enAppAndroid
-              ? "Tu plan no está activo: por ahora solo puedes consultar tu información."
-              : "Para volver a vender y registrar cambios, reactiva tu plan."}
+              ? t("billing.page.readOnlyAndroid")
+              : t("billing.page.readOnly")}
           </strong>{" "}
-          Tu información sigue intacta: productos, ventas, clientes e inventario te
-          esperan tal como los dejaste.
+          {t("billing.page.dataIntact")}
         </div>
       )}
 
@@ -541,7 +542,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   :{" "}
                   {new Date(
                     subscription.current_period_end
-                  ).toLocaleDateString()}
+                  ).toLocaleDateString(localeIntl(locale))}
                 </span>
               </div>
             )}
@@ -553,7 +554,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   {t("billing.lastPayment")}:{" "}
                   {new Date(
                     subscription.last_payment_at
-                  ).toLocaleDateString()}
+                  ).toLocaleDateString(localeIntl(locale))}
                 </span>
               </div>
             )}
@@ -585,7 +586,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Los pagos de la suscripción no se hacen desde la app de Android.
+                {t("billing.page.noAndroidPayments")}
               </p>
               {subscription?.status !== "canceled" && (
                 <>
@@ -615,7 +616,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   {t("billing.plan")}:
                 </span>
                 <span className="flex items-center gap-1.5 text-sm font-medium">
-                  SYMVORA Basico -{" "}
+                  {t("billing.page.planName")} -{" "}
                   {/* El mismo numero que anuncia la landing. Si aqui apareciera
                       $399 despues de haber visto $199 en la portada, el checkout
                       se abandonaria antes de empezar. */}
@@ -639,9 +640,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               {promoEnCheckout && (
                 <p className="-mt-2 text-xs text-red-600 dark:text-red-400">
                   {ofertaRegreso
-                    ? `Oferta de regreso: tu primer mes a $${PRECIO_PROMO_MXN}, después $${precioListaMXN("monthly")} al mes. Válida hasta el ${new Date(
-                        subscription!.oferta_regreso_hasta as string
-                      ).toLocaleDateString("es-MX", { day: "numeric", month: "long" })}.`
+                    ? t("billing.page.comeback", {
+                        promo: `$${PRECIO_PROMO_MXN}`,
+                        normal: `$${precioListaMXN("monthly")}`,
+                        fecha: new Date(subscription!.oferta_regreso_hasta as string).toLocaleDateString(
+                          localeIntl(locale),
+                          { day: "numeric", month: "long" }
+                        ),
+                      })
                     : t("landing.cta.promoNota", {
                         meses: PROMO_LANZAMIENTO.cobros,
                         normal: `$${precioListaMXN("monthly")}`,
@@ -651,7 +657,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
 
               <div
                 role="radiogroup"
-                aria-label="Periodo de facturación"
+                aria-label={t("billing.page.period")}
                 className="inline-flex items-center bg-muted rounded-full p-1 border"
               >
                 <button
@@ -896,18 +902,18 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs uppercase tracking-wider">Fecha</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Método</TableHead>
-                    <TableHead className="text-right text-xs uppercase tracking-wider">Monto</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Estado</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Referencia</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("billing.page.colDate")}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("billing.page.colMethod")}</TableHead>
+                    <TableHead className="text-right text-xs uppercase tracking-wider">{t("billing.page.colAmount")}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("billing.page.colStatus")}</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">{t("billing.page.colReference")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(payment.paid_at || payment.created_at).toLocaleString("es-MX", {
+                        {new Date(payment.paid_at || payment.created_at).toLocaleString(localeIntl(locale), {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}

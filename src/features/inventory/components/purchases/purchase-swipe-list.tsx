@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 /**
  * Las compras en celular: una pastilla deslizable por compra en lugar de la
  * tabla (ver `components/ui/fila-deslizable.tsx`).
@@ -11,7 +13,8 @@
  */
 
 import { CheckCircle, Pencil, Trash2, Undo2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 import { Badge } from "@/components/ui/badge";
 import {
   COLOR_EDITAR,
@@ -46,7 +49,9 @@ export function PurchaseSwipeList({
   onCancel,
   onDelete,
 }: PurchaseSwipeListProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  const locale = useLocale();
   const { verPista, alAbrir } = usePistaDeslizar();
 
   const accionesDe = (compra: PurchaseWithRelations): AccionFila[] => {
@@ -55,7 +60,7 @@ export function PurchaseSwipeList({
     const principal: AccionFila = movioInventario(compra)
       ? {
           id: "devolver",
-          etiqueta: "Devolver",
+          etiqueta: t("purchases.ui.return"),
           color: COLOR_DEVOLVER,
           icono: <Undo2 size={18} strokeWidth={2} />,
           alElegir: async () => {
@@ -64,22 +69,22 @@ export function PurchaseSwipeList({
           // La compra sigue ahi, ahora CANCELADA: la fila debe reaparecer.
           permanece: true,
           confirmar: {
-            titulo: `¿Devolver la compra de ${compra.proveedor?.nombre || "este proveedor"}?`,
-            descripcion: "La compra se cancela y el stock regresa al inventario. Si se pagó con la caja todavía abierta, el efectivo vuelve a la caja.",
-            accion: "Devolver",
+            titulo: t("purchases.ui.returnTitle", { proveedor: compra.proveedor?.nombre || t("purchases.ui.thisSupplier") }),
+            descripcion: t("purchases.ui.returnDesc"),
+            accion: t("purchases.ui.return"),
             tono: "aviso",
           },
         }
       : {
           id: "eliminar",
-          etiqueta: "Eliminar",
+          etiqueta: t("purchases.ui.delete"),
           color: COLOR_ELIMINAR,
           icono: <Trash2 size={18} strokeWidth={2} />,
           alElegir: async () => {
             await onDelete(compra.id);
           },
           confirmar: {
-            titulo: `¿Eliminar la compra de ${compra.proveedor?.nombre || "este proveedor"}?`,
+            titulo: t("purchases.ui.deleteTitle", { proveedor: compra.proveedor?.nombre || t("purchases.ui.thisSupplier") }),
           },
         };
 
@@ -89,14 +94,14 @@ export function PurchaseSwipeList({
       principal,
       {
         id: "editar",
-        etiqueta: "Editar",
+        etiqueta: t("purchases.ui.edit"),
         color: COLOR_EDITAR,
         icono: <Pencil size={18} strokeWidth={2} />,
         alElegir: () => onEdit(compra),
       },
       {
         id: "recibida",
-        etiqueta: "Recibida",
+        etiqueta: t("purchases.statuses.RECIBIDA"),
         color: COLOR_RECIBIDA,
         icono: <CheckCircle size={18} strokeWidth={2} />,
         alElegir: () => onUpdateStatus(compra.id, "RECIBIDA"),
@@ -108,16 +113,16 @@ export function PurchaseSwipeList({
     <div className="space-y-2">
       {verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
-          Toca para ver el desglose · desliza a la izquierda para devolver
+          {t("purchases.ui.swipeHint")}
         </p>
       )}
 
       {compras.map((compra) => {
-        const proveedor = compra.proveedor?.nombre || "Sin proveedor";
+        const proveedor = compra.proveedor?.nombre || t("purchases.ui.noSupplier");
         return (
           <FilaDeslizable
             key={compra.id}
-            label={`Compra de ${proveedor}`}
+            label={t("purchases.ui.purchaseFrom", { proveedor })}
             acciones={accionesDe(compra)}
             onTap={() => onOpen(compra)}
             onOpenChange={alAbrir}
@@ -125,17 +130,17 @@ export function PurchaseSwipeList({
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{proveedor}</p>
               <p className="truncate text-xs opacity-60">
-                {new Date(compra.fecha_compra).toLocaleDateString("es-MX", {
+                {new Date(compra.fecha_compra).toLocaleDateString(localeIntl(locale), {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
                 })}
-                {!movioInventario(compra) && " · sin desglose"}
+                {!movioInventario(compra) && ` · ${t("purchases.ui.noBreakdown")}`}
               </p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <span className="font-mono text-sm tabular-nums">
-                ${Number(compra.total).toFixed(2)}
+                {formatear(Number(compra.total))}
               </span>
               <Badge
                 className={`${purchaseStatusColors[compra.estado]} text-[10px] px-1.5 py-0`}

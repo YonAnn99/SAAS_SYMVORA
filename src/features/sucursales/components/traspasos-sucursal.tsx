@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeftRight, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,8 +35,8 @@ interface Linea {
 
 const LINEA_VACIA: Linea = { valor: "", cantidad: "" };
 
-function fechaCorta(iso: string): string {
-  return new Date(iso).toLocaleString("es-MX", {
+function fechaCorta(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(locale, {
     day: "2-digit",
     month: "short",
     hour: "numeric",
@@ -59,6 +62,9 @@ export function TraspasosSucursal({
   version?: number;
 }) {
   const { todasActivas, sucursales, seleccionada, permitidas } = useSucursal();
+  const tt = useTranslations("branches.transfers");
+  const te = useTranslations("inventory.errors");
+  const li = localeIntl(useLocale());
   const { can } = usePermissions();
   const puedeTraspasar = can("inventory.manage");
 
@@ -108,17 +114,17 @@ export function TraspasosSucursal({
       setOpciones(opcionesDeTraspaso(prods.data ?? [], vars.data ?? [], filas));
       setLotesOrigen(lotes);
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     }
-  }, [tenantId, origen]);
+  }, [tenantId, origen, te]);
 
   const cargarHistorial = useCallback(async () => {
     try {
       setHistorial(await fetchTraspasos(tenantId));
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     }
-  }, [tenantId]);
+  }, [tenantId, te]);
 
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargarOpciones(), 0);
@@ -153,12 +159,12 @@ export function TraspasosSucursal({
 
   async function enviar() {
     if (!origen || !destino) {
-      toast.error("Elige la sucursal de origen y la de destino");
+      toast.error(tt("chooseBoth"));
       return;
     }
     const validas = lineas.filter((l) => l.valor);
     if (validas.length === 0) {
-      toast.error("Agrega al menos un producto");
+      toast.error(tt("addOne"));
       return;
     }
     for (const l of validas) {
@@ -166,11 +172,11 @@ export function TraspasosSucursal({
       const cant = Number(l.cantidad);
       if (!op) continue;
       if (!Number.isFinite(cant) || cant <= 0) {
-        toast.error(`Escribe una cantidad para «${op.etiqueta}»`);
+        toast.error(tt("qtyFor", { producto: op.etiqueta }));
         return;
       }
       if (cant > op.disponible) {
-        toast.error(`Solo hay ${op.disponible} de «${op.etiqueta}» en el origen`);
+        toast.error(tt("onlyHave", { disponible: op.disponible, producto: op.etiqueta }));
         return;
       }
     }
@@ -194,12 +200,12 @@ export function TraspasosSucursal({
         entityName: `${nombreDe(origen)} → ${nombreDe(destino)}`,
         details: { lineas: res.lineas },
       });
-      toast.success(`Traspaso registrado: ${res.lineas} producto(s) a ${nombreDe(destino)}`);
+      toast.success(tt("saved", { count: res.lineas, destino: nombreDe(destino) }));
       setLineas([LINEA_VACIA]);
       setNotas("");
       await Promise.all([cargarOpciones(), cargarHistorial()]);
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     } finally {
       setEnviando(false);
     }
@@ -212,36 +218,35 @@ export function TraspasosSucursal({
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
-              Nuevo traspaso
+              {tt("newTitle")}
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Se descuenta del origen y se suma al destino en una sola operación: o pasan
-              todos los productos, o ninguno.
+              {tt("newDesc")}
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
               <div className="space-y-1.5">
-                <Label className="text-xs" htmlFor="traspaso-origen">Desde</Label>
+                <Label className="text-xs" htmlFor="traspaso-origen">{tt("from")}</Label>
                 <SelectSimple
                   id="traspaso-origen"
                   value={origen}
                   onChange={(v) => cambiarOrigen(v ?? "")}
-                  placeholder="Sucursal de origen…"
+                  placeholder={tt("fromPlaceholder")}
                   opciones={origenes.map((s) => ({
                     value: s.id,
-                    label: `${s.nombre}${!s.activa ? " (cerrada)" : ""}`,
+                    label: `${s.nombre}${!s.activa ? ` (${tt("closed")})` : ""}`,
                   }))}
                 />
               </div>
               <ArrowRight className="mx-auto hidden h-4 w-4 text-muted-foreground sm:block sm:mb-2.5" aria-hidden="true" />
               <div className="space-y-1.5">
-                <Label className="text-xs" htmlFor="traspaso-destino">Hacia</Label>
+                <Label className="text-xs" htmlFor="traspaso-destino">{tt("to")}</Label>
                 <SelectSimple
                   id="traspaso-destino"
                   value={destino}
                   onChange={(v) => setDestino(v ?? "")}
-                  placeholder="Sucursal de destino…"
+                  placeholder={tt("toPlaceholder")}
                   opciones={destinos.map((s) => ({ value: s.id, label: s.nombre }))}
                 />
               </div>
@@ -249,10 +254,10 @@ export function TraspasosSucursal({
 
             {origen && (
               <div className="space-y-2">
-                <Label className="text-xs">Productos</Label>
+                <Label className="text-xs">{tt("products")}</Label>
                 {opciones.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    No hay existencias en esta sucursal para traspasar.
+                    {tt("noStock")}
                   </p>
                 )}
                 {lineas.map((l, i) => {
@@ -271,21 +276,21 @@ export function TraspasosSucursal({
                     <div key={i} className="space-y-1">
                     <div className="flex items-center gap-2">
                       <SelectSimple
-                        ariaLabel="Producto"
+                        ariaLabel={tt("product")}
                         value={l.valor}
                         onChange={(v) => actualizar(i, "valor", v ?? "")}
-                        placeholder="Producto…"
+                        placeholder={tt("productPlaceholder")}
                         opciones={opciones.map((o) => ({
                           value: o.valor,
-                          label: `${o.etiqueta} (${o.disponible} disp.)`,
+                          label: tt("optionLabel", { producto: o.etiqueta, disponible: o.disponible }),
                         }))}
                         className="min-w-0 flex-1"
                       />
                       <Input
                         type="number"
                         min="0"
-                        aria-label="Cantidad"
-                        placeholder={op ? `máx. ${op.disponible}` : "Cant."}
+                        aria-label={tt("quantity")}
+                        placeholder={op ? tt("max", { n: op.disponible }) : tt("qtyShort")}
                         value={l.cantidad}
                         onChange={(e) => actualizar(i, "cantidad", e.target.value)}
                         className="h-9 w-28 text-sm font-mono"
@@ -294,7 +299,7 @@ export function TraspasosSucursal({
                         variant="ghost"
                         size="sm"
                         className="h-9 w-9 p-0"
-                        aria-label="Quitar producto"
+                        aria-label={tt("removeProduct")}
                         onClick={() =>
                           setLineas((prev) => (prev.length === 1 ? [LINEA_VACIA] : prev.filter((_, j) => j !== i)))
                         }
@@ -304,13 +309,13 @@ export function TraspasosSucursal({
                     </div>
                     {salen && (
                       <p className="pl-1 text-[11px] text-muted-foreground">
-                        Salen:{" "}
+                        {tt("goingOut")}{" "}
                         {[
                           ...salen.lotes.map(
-                            (t) =>
-                              `lote ${t.numero_lote} ×${t.cantidad}${t.vencido ? " (caducado)" : ""}`
+                            (x) =>
+                              `${tt("lot", { numero: x.numero_lote })} ×${x.cantidad}${x.vencido ? ` (${tt("expired")})` : ""}`
                           ),
-                          ...(salen.sinLote > 0 ? [`sin lote ×${salen.sinLote}`] : []),
+                          ...(salen.sinLote > 0 ? [`${tt("noLot")} ×${salen.sinLote}`] : []),
                         ].join(" · ")}
                       </p>
                     )}
@@ -325,25 +330,25 @@ export function TraspasosSucursal({
                   disabled={opciones.length === 0}
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Otro producto
+                  {tt("anotherProduct")}
                 </Button>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-xs" htmlFor="traspaso-notas">Notas (opcional)</Label>
+              <Label className="text-xs" htmlFor="traspaso-notas">{tt("notes")}</Label>
               <Input
                 id="traspaso-notas"
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
-                placeholder="Ej. reposición de fin de semana"
+                placeholder={tt("notesPlaceholder")}
                 className="h-8 text-sm"
               />
             </div>
 
             <div className="flex justify-end">
               <SpecularActionButton tone="add" className="h-9" disabled={enviando} onClick={() => void enviar()}>
-                {enviando ? "Registrando…" : "Registrar traspaso"}
+                {enviando ? tt("saving") : tt("save")}
               </SpecularActionButton>
             </div>
           </CardContent>
@@ -352,11 +357,11 @@ export function TraspasosSucursal({
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Últimos traspasos</CardTitle>
+          <CardTitle className="text-sm font-medium">{tt("recent")}</CardTitle>
         </CardHeader>
         <CardContent>
           {historial.length === 0 ? (
-            <p className="py-6 text-center text-xs text-muted-foreground">Todavía no hay traspasos.</p>
+            <p className="py-6 text-center text-xs text-muted-foreground">{tt("none")}</p>
           ) : (
             <ul className="divide-y divide-border">
               {historial.map((t) => (
@@ -365,7 +370,7 @@ export function TraspasosSucursal({
                     <span className="font-medium">{t.origen}</span>
                     <ArrowRight className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     <span className="font-medium">{t.destino}</span>
-                    <span className="text-muted-foreground">· {fechaCorta(t.creado_en)}</span>
+                    <span className="text-muted-foreground">· {fechaCorta(t.creado_en, li)}</span>
                   </div>
                   <p className="mt-0.5 text-muted-foreground">
                     {t.lineas.map((l) => `${l.cantidad} × ${l.producto}`).join(", ")}
@@ -373,7 +378,7 @@ export function TraspasosSucursal({
                   </p>
                   {t.lotes.length > 0 && (
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      Lotes: {t.lotes.map((x) => `${x.numero} ×${x.cantidad}`).join(", ")}
+                      {tt("lots", { lotes: t.lotes.map((x) => `${x.numero} ×${x.cantidad}`).join(", ") })}
                     </p>
                   )}
                 </li>

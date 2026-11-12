@@ -10,6 +10,7 @@
  * POS ofrecia "1/4 l" de un refresco.
  */
 
+import { useTranslations } from "next-intl";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export function OpcionesUnidad({
   etiqueta: (u: UnidadMedida) => string;
   extra?: { valor: string; texto: string };
 }) {
+  const t = useTranslations("products.unitField");
   const conteo = unidades.filter((u) => !esFraccionable(u) && u !== "SERVICIO");
   const granel = unidades.filter((u) => esFraccionable(u));
   const servicio = unidades.filter((u) => u === "SERVICIO");
@@ -61,7 +63,7 @@ export function OpcionesUnidad({
       {extra && <SelectItem value={extra.valor}>{extra.texto}</SelectItem>}
       {conteo.length > 0 && (
         <SelectGroup>
-          <SelectLabel>Por pieza / empaquetado</SelectLabel>
+          <SelectLabel>{t("byPiece")}</SelectLabel>
           {conteo.map((u) => (
             <SelectItem key={u} value={u}>
               {etiqueta(u)}
@@ -71,7 +73,7 @@ export function OpcionesUnidad({
       )}
       {granel.length > 0 && (
         <SelectGroup>
-          <SelectLabel>Suelto, a granel (el POS pregunta cuánto)</SelectLabel>
+          <SelectLabel>{t("bulk")}</SelectLabel>
           {granel.map((u) => (
             <SelectItem key={u} value={u}>
               {etiqueta(u)}
@@ -106,28 +108,29 @@ export function CampoContenido({
   /** Medida leida del nombre o de un atributo ("2.5 L"), para llenarla con un clic. */
   sugerencia?: Contenido | null;
 }) {
+  const t = useTranslations("products.unitField");
   const textoSugerencia = sugerencia ? formatearContenido(sugerencia.cantidad, sugerencia.unidad) : "";
   const mostrarSugerencia = Boolean(textoSugerencia) && cantidad.trim() === "";
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">Contenido (opcional)</Label>
+      <Label className="text-xs">{t("content")}</Label>
       <div className="flex gap-2">
         <Input
           type="text"
           inputMode="decimal"
-          placeholder={heredado ? `${heredado} (del producto)` : "Ej. 600"}
+          placeholder={heredado ? t("inherited", { valor: heredado }) : t("contentPlaceholder")}
           value={cantidad}
           onChange={(e) => onCambio({ cantidad: e.target.value })}
           className="h-8 min-w-0 flex-1 text-sm"
-          aria-label="Cantidad del contenido"
+          aria-label={t("contentQty")}
         />
         <Select
           items={Object.fromEntries(UNIDADES_CONTENIDO.map((u) => [u, NOMBRE_MEDIDA[u]]))}
           value={unidad || null}
           onValueChange={(v) => onCambio({ unidad: v ?? "" })}
         >
-          <SelectTrigger className="h-8 w-20 text-sm" aria-label="Medida del contenido">
+          <SelectTrigger className="h-8 w-20 text-sm" aria-label={t("contentUnit")}>
             <SelectValue placeholder="—" />
           </SelectTrigger>
           <SelectContent>
@@ -145,11 +148,11 @@ export function CampoContenido({
           className="text-xs text-primary underline-offset-2 hover:underline"
           onClick={() => onCambio({ cantidad: String(sugerencia.cantidad), unidad: sugerencia.unidad })}
         >
-          Usar {textoSugerencia}
+          {t("use", { valor: textoSugerencia })}
         </button>
       ) : (
         <p className="text-[11px] text-muted-foreground">
-          Lo que trae el envase: 600 ml, 2.5 L, 45 g. Solo se muestra; no cambia cómo se cobra.
+          {t("contentHint")}
         </p>
       )}
     </div>
@@ -167,18 +170,17 @@ export function AvisoEmpaquetado({
   sugerencia: Contenido | null;
   onVenderPorPieza: () => void;
 }) {
+  const t = useTranslations("products.unitField");
   const texto = sugerencia ? formatearContenido(sugerencia.cantidad, sugerencia.unidad) : "";
   return (
     <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
       <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div className="space-y-1.5">
         <p>
-          ¿Viene embotellado o empaquetado? Con esta unidad el punto de venta preguntará
-          «¿Cuánto?» al venderlo. Si se vende por pieza, elige «Pieza» y pon
-          {texto ? ` ${texto}` : " la medida"} en Contenido.
+          {t("packagedWarning", { medida: texto || t("theMeasure") })}
         </p>
         <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={onVenderPorPieza}>
-          Vender por pieza{texto ? ` · contenido ${texto}` : ""}
+          {texto ? t("sellByPieceWith", { medida: texto }) : t("sellByPiece")}
         </Button>
       </div>
     </div>

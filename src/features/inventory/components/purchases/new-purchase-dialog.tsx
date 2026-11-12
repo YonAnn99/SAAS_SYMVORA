@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useTranslations } from "next-intl";
 import { useState, useMemo, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -96,6 +98,7 @@ export function NewPurchaseDialog({
   onConfirm,
   editingPurchase = null,
 }: NewPurchaseDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
@@ -206,7 +209,7 @@ export function NewPurchaseDialog({
     // Con varios locales, una compra sin destino entraria en el local por
     // defecto sin que nadie lo decidiera. Mejor preguntar que adivinar.
     if (!editingPurchase && hayVarias && !sucursalId) {
-      toast.error("Elige a qué sucursal llegó la mercancía");
+      toast.error(t("purchases.form.chooseBranch"));
       return;
     }
     onConfirm(
@@ -234,8 +237,8 @@ export function NewPurchaseDialog({
           </DialogTitle>
           <DialogDescription className="text-xs">
             {editingPurchase
-              ? "Corrige el proveedor o el número de factura. Los importes salen del desglose y no se editan aquí."
-              : "Mercancía que ya llegó y se pagó, sin orden previa. Al guardar se suma al inventario."}
+              ? t("purchases.form.editDesc")
+              : t("purchases.form.newDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -248,7 +251,7 @@ export function NewPurchaseDialog({
                 onValueChange={(v) => setSelectedSupplier(v || "")}
               >
                 <SelectTrigger className="h-8 w-full text-sm">
-                  <SelectValue placeholder="Seleccionar proveedor">
+                  <SelectValue placeholder={t("purchases.form.selectSupplier")}>
                     {selectedSupplierName}
                   </SelectValue>
                 </SelectTrigger>
@@ -264,7 +267,7 @@ export function NewPurchaseDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">{t("purchases.invoiceNumber")}</Label>
               <Input
-                placeholder="Número de factura"
+                placeholder={t("purchases.invoiceNumber")}
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
                 className="h-8 text-sm"
@@ -277,8 +280,8 @@ export function NewPurchaseDialog({
               id="compra-sucursal"
               value={sucursalId}
               onChange={setSucursalId}
-              etiqueta="Sucursal que recibe"
-              ayuda="Las unidades se suman al inventario de este local."
+              etiqueta={t("purchases.form.receivingBranch")}
+              ayuda={t("purchases.form.receivingHint")}
             />
           )}
 
@@ -289,7 +292,7 @@ export function NewPurchaseDialog({
             <>
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-xs">Productos</Label>
+                  <Label className="text-xs">{t("purchases.form.products")}</Label>
                   <div className="flex items-center gap-2">
                     <FiltroCategoriaCompra
                       categorias={categorias}
@@ -305,7 +308,7 @@ export function NewPurchaseDialog({
                       }
                     >
                       <Plus className="mr-1 h-3.5 w-3.5" />
-                      Agregar producto
+                      {t("purchases.form.addProduct")}
                     </Button>
                   </div>
                 </div>
@@ -315,7 +318,7 @@ export function NewPurchaseDialog({
                     <div key={index} className="grid grid-cols-12 items-end gap-2">
                       <div className="col-span-5 min-w-0 space-y-1">
                         <Label className="text-[10px] text-muted-foreground">
-                          Producto
+                          {t("purchases.detail.product")}
                         </Label>
                         <Combobox
                           items={opcionesFiltradas}
@@ -338,14 +341,14 @@ export function NewPurchaseDialog({
                           }}
                         >
                           <ComboboxInputGroup className="h-8">
-                            <ComboboxInput placeholder="Buscar producto..." />
+                            <ComboboxInput placeholder={t("purchases.form.searchProduct")} />
                             <ComboboxTrigger />
                           </ComboboxInputGroup>
                           <ComboboxPortal>
                             <ComboboxPositioner>
                               {/* Mas ancho que el campo: nombre y categoria caben sin cortarse. */}
                               <ComboboxPopup className="min-w-64">
-                                <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                                <ComboboxEmpty>{t("purchases.form.noResults")}</ComboboxEmpty>
                                 <ComboboxList>
                                   {(o: OpcionCompra) => (
                                     <ComboboxItem key={o.value} value={o.value}>
@@ -366,7 +369,7 @@ export function NewPurchaseDialog({
                       </div>
                       <div className="col-span-2 space-y-1">
                         <Label className="text-[10px] text-muted-foreground">
-                          Cantidad
+                          {t("purchases.form.quantity")}
                         </Label>
                         <Input
                           type="number"
@@ -380,7 +383,7 @@ export function NewPurchaseDialog({
                       </div>
                       <div className="col-span-3 space-y-1">
                         <Label className="text-[10px] text-muted-foreground">
-                          Costo
+                          {t("purchases.detail.cost")}
                         </Label>
                         <Input
                           type="number"
@@ -419,10 +422,10 @@ export function NewPurchaseDialog({
                         <div className="col-span-12 grid grid-cols-2 gap-2 rounded-md bg-muted/40 px-2 py-1.5">
                           <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground">
-                              Lote
+                              {t("purchases.form.lot")}
                             </Label>
                             <Input
-                              placeholder="Opcional"
+                              placeholder={t("purchases.form.optional")}
                               value={renglon.numero_lote ?? ""}
                               onChange={(e) =>
                                 actualizarRenglon(index, "numero_lote", e.target.value)
@@ -432,7 +435,7 @@ export function NewPurchaseDialog({
                           </div>
                           <div className="space-y-1">
                             <Label className="text-[10px] text-muted-foreground">
-                              Caducidad
+                              {t("purchases.form.expiry")}
                             </Label>
                             <Input
                               type="date"
@@ -451,9 +454,9 @@ export function NewPurchaseDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Notas</Label>
+                <Label className="text-xs">{t("purchases.detail.notes")}</Label>
                 <Textarea
-                  placeholder="Notas adicionales..."
+                  placeholder={t("purchases.form.notesPlaceholder")}
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
                   className="min-h-[60px] text-sm"
@@ -462,7 +465,7 @@ export function NewPurchaseDialog({
 
               <div className="flex flex-col gap-1 border-t pt-3 font-mono text-sm">
                 <span className="self-end text-xs text-muted-foreground">
-                  Subtotal: ${subtotal.toFixed(2)}
+                  {t("purchases.detail.subtotal", { monto: `${formatear(subtotal)}` })}
                 </span>
 
                 {/* Mismo patrón que el carrito del Punto de Venta y que la
@@ -476,17 +479,17 @@ export function NewPurchaseDialog({
                         setIncluyeIva(checked === true)
                       }
                     />
-                    Incluir IVA (16%)
+                    {t("purchases.form.includeTax")}
                   </label>
                   {incluyeIva && (
                     <span className="text-muted-foreground">
-                      ${impuesto.toFixed(2)}
+                      {formatear(impuesto)}
                     </span>
                   )}
                 </div>
 
                 <span className="self-end font-semibold">
-                  Total: ${total.toFixed(2)}
+                  {t("purchases.detail.total", { monto: `${formatear(total)}` })}
                 </span>
               </div>
 

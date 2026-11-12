@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { vaciarCache } from "@/lib/cache-datos";
@@ -29,6 +30,7 @@ import { useOpenRegister } from "@/features/cash-register/hooks/use-open-registe
  * abierta abre el aviso de cerrar caja, igual que sin confirmar.
  */
 export function useCerrarSesion() {
+  const t = useTranslations("layout.logout");
   const router = useRouter();
   const { tenantId } = useCurrentTenant();
   const { hasOpenRegister } = useOpenRegister(tenantId);
@@ -62,9 +64,9 @@ export function useCerrarSesion() {
     if (
       confirmar &&
       !(await confirmarDialogo({
-        titulo: "¿Cerrar sesión?",
-        descripcion: "Tendrás que volver a iniciar sesión para usar el sistema.",
-        accion: "Cerrar sesión",
+        titulo: t("confirmTitle"),
+        descripcion: t("confirmDesc"),
+        accion: t("confirmAction"),
         tono: "aviso",
       }))
     ) {
@@ -77,11 +79,9 @@ export function useCerrarSesion() {
     <Dialog open={aviso} onOpenChange={setAviso}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base">Tienes la caja abierta</DialogTitle>
+          <DialogTitle className="text-base">{t("openRegisterTitle")}</DialogTitle>
           <DialogDescription className="text-sm">
-            Si sales sin cerrarla, el corte del día quedará sin cuadrar y el
-            siguiente turno arrancará sobre tu caja. Puedes cerrarla ahora o
-            salir de todos modos.
+            {t("openRegisterDesc")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -90,7 +90,7 @@ export function useCerrarSesion() {
             className="h-8 w-full sm:w-auto"
             onClick={() => void cerrarSesion()}
           >
-            Salir de todos modos
+            {t("leaveAnyway")}
           </Button>
           <Button
             className="h-8 w-full sm:w-auto"
@@ -99,7 +99,7 @@ export function useCerrarSesion() {
               router.push("/finances");
             }}
           >
-            Ir a cerrar caja
+            {t("goCloseRegister")}
           </Button>
         </DialogFooter>
       </DialogContent>

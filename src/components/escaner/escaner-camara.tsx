@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CameraOff, Check, Flashlight, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,16 +44,17 @@ interface EscanerCamaraProps {
 const INTERVALO_MS = 150;
 
 export function EscanerCamara({ open, onOpenChange, modo, titulo, descripcion, onCodigo }: EscanerCamaraProps) {
+  const t = useTranslations("scanner");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{titulo ?? "Escanear código"}</DialogTitle>
+          <DialogTitle>{titulo ?? t("title")}</DialogTitle>
           <DialogDescription>
             {descripcion ??
               (modo === "continuo"
-                ? "Apunta a cada código; se agregan solos con un bip."
-                : "Apunta la cámara al código de barras.")}
+                ? t("continuous")
+                : t("single"))}
           </DialogDescription>
         </DialogHeader>
         {/* Montado solo abierto: cada apertura empieza limpia y, al cerrar, el
@@ -65,21 +67,14 @@ export function EscanerCamara({ open, onOpenChange, modo, titulo, descripcion, o
 
 type Estado = { tipo: "iniciando" } | { tipo: "activo" } | { tipo: "error"; mensaje: string };
 
-function mensajeDeError(e: unknown): string {
-  if (faltaHttps()) {
-    return "La cámara solo funciona en páginas seguras (HTTPS). Abre SYMVORA desde su dirección https.";
-  }
+/** Por qué no abrió la cámara: la clave de `scanner.errors`. */
+function codigoDeError(e: unknown): "https" | "permission" | "notFound" | "busy" | "generic" {
+  if (faltaHttps()) return "https";
   const nombre = e instanceof DOMException ? e.name : "";
-  if (nombre === "NotAllowedError" || nombre === "SecurityError") {
-    return "No hay permiso para usar la cámara. Actívalo en el candado de la barra de direcciones (o en los ajustes del navegador) y vuelve a abrir el escáner.";
-  }
-  if (nombre === "NotFoundError" || nombre === "OverconstrainedError") {
-    return "No se encontró una cámara en este equipo.";
-  }
-  if (nombre === "NotReadableError") {
-    return "La cámara está ocupada por otra aplicación. Ciérrala y vuelve a intentar.";
-  }
-  return "No se pudo abrir la cámara.";
+  if (nombre === "NotAllowedError" || nombre === "SecurityError") return "permission";
+  if (nombre === "NotFoundError" || nombre === "OverconstrainedError") return "notFound";
+  if (nombre === "NotReadableError") return "busy";
+  return "generic";
 }
 
 function Visor({
@@ -91,6 +86,7 @@ function Visor({
   onCodigo: EscanerCamaraProps["onCodigo"];
   cerrar: () => void;
 }) {
+  const t = useTranslations("scanner");
   const videoRef = useRef<HTMLVideoElement>(null);
   const pistaRef = useRef<MediaStreamTrack | null>(null);
   const [estado, setEstado] = useState<Estado>({ tipo: "iniciando" });
@@ -190,7 +186,7 @@ function Visor({
         };
         void leer();
       } catch (e) {
-        if (vivo) setEstado({ tipo: "error", mensaje: mensajeDeError(e) });
+        if (vivo) setEstado({ tipo: "error", mensaje: t(`errors.${codigoDeError(e)}`) });
       }
     })();
 
@@ -202,7 +198,7 @@ function Visor({
       flujo?.getTracks().forEach((t) => t.stop());
       pistaRef.current = null;
     };
-  }, [modo]);
+  }, [modo, t]);
 
   const alternarLinterna = async () => {
     const pista = pistaRef.current;
@@ -243,7 +239,7 @@ function Visor({
         {estado.tipo === "iniciando" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/80">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-xs">Abriendo cámara…</span>
+            <span className="text-xs">{t("opening")}</span>
           </div>
         )}
 

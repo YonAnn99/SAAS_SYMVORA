@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Warehouse } from "lucide-react";
 import { toast } from "sonner";
@@ -54,6 +55,8 @@ export function ExistenciasSucursal({
   version?: number;
 }) {
   const { seleccionada, sucursales } = useSucursal();
+  const t = useTranslations("branches.stock");
+  const te = useTranslations("inventory.errors");
   const { can } = usePermissions();
   const puedeEditar = can("inventory.manage");
   const [productos, setProductos] = useState<ProductoLocal[]>([]);
@@ -81,11 +84,11 @@ export function ExistenciasSucursal({
       setProductos(conStockDeSucursal((data ?? []) as ProductoLocal[], filas));
       setBorradores({});
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     } finally {
       setCargando(false);
     }
-  }, [tenantId, seleccionada]);
+  }, [tenantId, seleccionada, te]);
 
   useEffect(() => {
     const t0 = window.setTimeout(() => void cargar(), 0);
@@ -106,7 +109,7 @@ export function ExistenciasSucursal({
     if (texto === undefined) return;
     const cantidad = Number(texto);
     if (!Number.isFinite(cantidad) || cantidad < 0) {
-      toast.error("Escribe una cantidad válida (0 o más)");
+      toast.error(t("invalidQty"));
       return;
     }
     if (cantidad === p.stock_actual) {
@@ -123,10 +126,10 @@ export function ExistenciasSucursal({
         productoId: p.id,
         cantidad,
       });
-      toast.success(`${p.nombre}: ${cantidad} en ${nombre ?? "la sucursal"}`);
+      toast.success(t("saved", { producto: p.nombre, cantidad, sucursal: nombre ?? t("theBranch") }));
       await cargar();
     } catch (error) {
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     }
   }
 
@@ -138,7 +141,7 @@ export function ExistenciasSucursal({
       await establecerStockSucursal({ sucursalId: seleccionada, productoId: p.id, seVende: valor });
     } catch (error) {
       setProductos((prev) => prev.map((x) => (x.id === p.id ? { ...x, se_vende: !valor } : x)));
-      toast.error(mensajeDeError(error));
+      toast.error(mensajeDeError(error, te));
     }
   }
 
@@ -152,7 +155,7 @@ export function ExistenciasSucursal({
         type="number"
         min="0"
         inputMode="decimal"
-        aria-label={`Existencias de ${p.nombre}`}
+        aria-label={t("stockOf", { nombre: p.nombre })}
         value={borradores[p.id] ?? String(p.stock_actual)}
         onChange={(e) => setBorradores((b) => ({ ...b, [p.id]: e.target.value }))}
         onBlur={() => void guardarCantidad(p)}
@@ -169,7 +172,7 @@ export function ExistenciasSucursal({
     return (
       <Card>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          Elige una sucursal en el selector de arriba para ver y ajustar sus existencias.
+          {t("pickBranch")}
         </CardContent>
       </Card>
     );
@@ -180,19 +183,17 @@ export function ExistenciasSucursal({
       <CardHeader className="pb-3 space-y-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Warehouse className="h-4 w-4" aria-hidden="true" />
-          Existencias en {nombre}
+          {t("title", { nombre: nombre ?? "" })}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Corrige aquí un conteo. Para mover mercancía entre locales usa{" "}
-          <span className="font-medium">Traspasos</span>: así no se crean ni se pierden unidades.
-          Apagar «Se vende aquí» oculta el producto en el punto de venta de este local.
+          {t.rich("desc", { b: (chunks) => <span className="font-medium">{chunks}</span> })}
         </p>
         <div className="relative sm:max-w-xs">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar producto o SKU"
+            placeholder={t("search")}
             className="h-8 pl-8 text-sm"
           />
         </div>
@@ -213,12 +214,12 @@ export function ExistenciasSucursal({
                 <div className="shrink-0">{cantidad(p, "h-9 w-20 text-sm")}</div>
               </div>
               <div className="mt-2 flex items-center justify-between gap-3 border-t border-border/60 pt-2">
-                <span className="text-xs text-muted-foreground">Se vende aquí</span>
+                <span className="text-xs text-muted-foreground">{t("soldHere")}</span>
                 <Switch
                   checked={p.se_vende}
                   disabled={!puedeEditar}
                   onCheckedChange={(v) => void alternarSeVende(p, v)}
-                  aria-label={`Se vende ${p.nombre} en ${nombre}`}
+                  aria-label={t("soldHereAria", { producto: p.nombre, sucursal: nombre ?? "" })}
                 />
               </div>
             </li>
@@ -229,9 +230,9 @@ export function ExistenciasSucursal({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead className="w-[140px] text-right">Existencias</TableHead>
-                <TableHead className="w-[130px] text-center">Se vende aquí</TableHead>
+                <TableHead>{t("colProduct")}</TableHead>
+                <TableHead className="w-[140px] text-right">{t("colStock")}</TableHead>
+                <TableHead className="w-[130px] text-center">{t("soldHere")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -249,7 +250,7 @@ export function ExistenciasSucursal({
                       checked={p.se_vende}
                       disabled={!puedeEditar}
                       onCheckedChange={(v) => void alternarSeVende(p, v)}
-                      aria-label={`Se vende ${p.nombre} en ${nombre}`}
+                      aria-label={t("soldHereAria", { producto: p.nombre, sucursal: nombre ?? "" })}
                     />
                   </TableCell>
                 </TableRow>
@@ -258,10 +259,10 @@ export function ExistenciasSucursal({
           </Table>
         </div>
         {cargando && (
-          <p className="pt-3 text-center text-xs text-muted-foreground">Cargando…</p>
+          <p className="pt-3 text-center text-xs text-muted-foreground">{t("loading")}</p>
         )}
         {!cargando && visibles.length === 0 && (
-          <p className="py-8 text-center text-xs text-muted-foreground">Sin productos.</p>
+          <p className="py-8 text-center text-xs text-muted-foreground">{t("none")}</p>
         )}
       </CardContent>
     </Card>

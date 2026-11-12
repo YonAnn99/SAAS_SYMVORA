@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Copy, Download, Loader2, QrCode, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export function QrMostrador({
   onCodigoCambiado: () => Promise<void> | void;
 }) {
   const locale = useLocale();
+  const t = useTranslations("customers.loyalty.counterQr");
   const { tenantId, tenantName, tenantLogo } = useCurrentTenant();
   const [svg, setSvg] = useState<string | null>(null);
   const [descargando, setDescargando] = useState(false);
@@ -58,9 +59,9 @@ export function QrMostrador({
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      toast.success("Enlace copiado");
+      toast.success(t("copied"));
     } catch {
-      toast.error("No se pudo copiar el enlace");
+      toast.error(t("copyError"));
     }
   };
 
@@ -79,7 +80,7 @@ export function QrMostrador({
       });
       descargarPdf(pdf, `Cartel-lealtad-${tenantName.replace(/[^\p{L}\p{N}]+/gu, "-")}.pdf`);
     } catch {
-      toast.error("No se pudo generar el cartel");
+      toast.error(t("posterError"));
     } finally {
       setDescargando(false);
     }
@@ -91,10 +92,10 @@ export function QrMostrador({
     try {
       await regenerarCodigoAlta(tenantId);
       await onCodigoCambiado();
-      toast.success("Código cambiado. Imprime el cartel nuevo");
+      toast.success(t("codeChanged"));
       setConfirmando(false);
     } catch (error) {
-      toast.error(mensajeDeError(error, "No se pudo cambiar el código"));
+      toast.error(mensajeDeError(error, t("codeChangeError")));
     } finally {
       setCambiando(false);
     }
@@ -105,7 +106,7 @@ export function QrMostrador({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
           <QrCode className="h-4 w-4 text-muted-foreground" />
-          QR para tu mostrador
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -116,8 +117,7 @@ export function QrMostrador({
         />
         <div className="min-w-0 flex-1 space-y-3">
           <p className="text-sm text-muted-foreground">
-            Imprime el cartel y pégalo junto a la caja. Tu cliente lo escanea con la cámara, escribe su nombre y
-            celular, y su tarjeta queda lista. Si un celular ya está registrado, se le pide su tarjeta en caja.
+            {t("desc")}
           </p>
           <p className="truncate font-mono text-xs text-muted-foreground" title={url}>
             {url}
@@ -125,16 +125,16 @@ export function QrMostrador({
           <div className="flex flex-wrap gap-2">
             <Button size="sm" className="h-8 gap-1.5" onClick={descargar} disabled={descargando}>
               {descargando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              Descargar cartel (PDF)
+              {t("download")}
             </Button>
             <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={copiar}>
               <Copy className="h-3.5 w-3.5" />
-              Copiar enlace
+              {t("copy")}
             </Button>
             {puedeConfigurar && (
               <Button size="sm" variant="ghost" className="h-8 gap-1.5" onClick={() => setConfirmando(true)}>
                 <RefreshCw className="h-3.5 w-3.5" />
-                Cambiar código
+                {t("changeCode")}
               </Button>
             )}
           </div>
@@ -144,19 +144,18 @@ export function QrMostrador({
       <Dialog open={confirmando} onOpenChange={(a) => !cambiando && setConfirmando(a)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base">¿Cambiar el código del QR?</DialogTitle>
+            <DialogTitle className="text-base">{t("confirmTitle")}</DialogTitle>
             <DialogDescription className="text-sm">
-              Los carteles que ya imprimiste dejarán de funcionar y tendrás que imprimir uno nuevo. Úsalo si alguien
-              está abusando del registro. Las tarjetas de tus clientes no cambian.
+              {t("confirmDesc")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmando(false)} disabled={cambiando}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button onClick={cambiarCodigo} disabled={cambiando} className="gap-1.5">
               {cambiando && <Loader2 className="h-4 w-4 animate-spin" />}
-              Cambiar código
+              {t("changeCode")}
             </Button>
           </DialogFooter>
         </DialogContent>

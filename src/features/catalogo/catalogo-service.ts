@@ -168,11 +168,29 @@ export async function obtenerVistaPreviaProductos(
 }
 
 /** Mensaje para el usuario según el error de la base. */
-export function mensajeErrorCatalogo(error: unknown): string {
+export type CodigoErrorCatalogo = "slugTaken" | "readOnly" | "noPermission" | "invalid" | "generic";
+
+const MENSAJE_ERROR_CATALOGO: Record<CodigoErrorCatalogo, string> = {
+  slugTaken: "Ese enlace ya lo usa otro negocio. Prueba con otro.",
+  readOnly: "Tu cuenta está en solo lectura.",
+  noPermission: "No tienes permiso para cambiar el catálogo.",
+  invalid: "Hay un dato que no es válido. Revisa el enlace, el WhatsApp, el color o el precio.",
+  generic: "No se pudo guardar. Intenta de nuevo.",
+};
+
+/**
+ * El aviso de un error al guardar el catálogo. `traducir` (opcional) da el texto
+ * en el idioma de la interfaz a partir del código (`onlineCatalog.errors.<codigo>`).
+ */
+export function mensajeErrorCatalogo(
+  error: unknown,
+  traducir?: (codigo: CodigoErrorCatalogo) => string
+): string {
   const e = error as { code?: string; message?: string; hint?: string } | null;
-  if (e?.code === "23505") return "Ese enlace ya lo usa otro negocio. Prueba con otro.";
-  if (e?.hint === "CUENTA_SOLO_LECTURA") return e.message ?? "Tu cuenta está en solo lectura.";
-  if (e?.code === "42501") return "No tienes permiso para cambiar el catálogo.";
-  if (e?.code === "23514") return "Hay un dato que no es válido. Revisa el enlace, el WhatsApp, el color o el precio.";
-  return "No se pudo guardar. Intenta de nuevo.";
+  const texto = (codigo: CodigoErrorCatalogo) => (traducir ? traducir(codigo) : MENSAJE_ERROR_CATALOGO[codigo]);
+  if (e?.code === "23505") return texto("slugTaken");
+  if (e?.hint === "CUENTA_SOLO_LECTURA") return e.message ?? texto("readOnly");
+  if (e?.code === "42501") return texto("noPermission");
+  if (e?.code === "23514") return texto("invalid");
+  return texto("generic");
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,6 +43,7 @@ export function InsumosServicioEditor({
   tenantId: string;
   servicioId: string;
 }) {
+  const t = useTranslations("products.serviceSupplies");
   const [insumos, setInsumos] = useState<InsumoLinea[]>([]);
   const [opciones, setOpciones] = useState<OpcionCompra[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -58,14 +60,14 @@ export function InsumosServicioEditor({
           setOpciones(ops);
           setCambios(false);
         })
-        .catch(() => vigente && toast.error("No se pudieron cargar los insumos"))
+        .catch(() => vigente && toast.error(t("loadError")))
         .finally(() => vigente && setCargando(false));
     }, 0);
     return () => {
       vigente = false;
       window.clearTimeout(t0);
     };
-  }, [servicioId, tenantId]);
+  }, [servicioId, tenantId, t]);
 
   const yaElegidos = useMemo(
     () => new Set(insumos.map((i) => `${i.productId}::${i.varianteId ?? ""}`)),
@@ -96,7 +98,7 @@ export function InsumosServicioEditor({
 
   const guardar = async () => {
     if (insumos.some((i) => !(Number(i.cantidad) > 0))) {
-      toast.error("Cada insumo necesita una cantidad mayor que cero");
+      toast.error(t("qtyAboveZero"));
       return;
     }
     setGuardando(true);
@@ -105,10 +107,10 @@ export function InsumosServicioEditor({
       await guardarRecetaServicio(servicioId, limpios);
       setInsumos(limpios);
       setCambios(false);
-      toast.success(limpios.length > 0 ? "Insumos guardados" : "El servicio ya no usa insumos");
+      toast.success(limpios.length > 0 ? t("saved") : t("noneNow"));
     } catch (error) {
       const msg = (error as { message?: string } | null)?.message;
-      toast.error(msg || "No se pudieron guardar los insumos");
+      toast.error(msg || t("saveError"));
     } finally {
       setGuardando(false);
     }
@@ -117,15 +119,14 @@ export function InsumosServicioEditor({
   return (
     <div className="space-y-2 rounded-lg border border-border p-3">
       <div>
-        <Label className="text-xs">Insumos que usa</Label>
+        <Label className="text-xs">{t("title")}</Label>
         <p className="text-[11px] text-muted-foreground">
-          Por cada servicio vendido. Al cobrarlo se descuentan del inventario de la sucursal (primero el
-          lote que caduca antes); en el punto de venta se pueden ajustar para cada venta.
+          {t("hint")}
         </p>
       </div>
 
       {cargando ? (
-        <p className="text-xs text-muted-foreground">Cargando…</p>
+        <p className="text-xs text-muted-foreground">{t("loading")}</p>
       ) : (
         <>
           {insumos.length > 0 && (
@@ -138,7 +139,7 @@ export function InsumosServicioEditor({
                     inputMode="decimal"
                     min="0"
                     step="any"
-                    aria-label={`Cantidad de ${ins.nombre}`}
+                    aria-label={t("quantityOf", { nombre: ins.nombre })}
                     value={Number.isFinite(ins.cantidad) ? String(ins.cantidad) : ""}
                     onChange={(e) => cambiarCantidad(i, e.target.value)}
                     className="h-8 w-20 text-right font-mono text-sm"
@@ -148,7 +149,7 @@ export function InsumosServicioEditor({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    aria-label={`Quitar ${ins.nombre}`}
+                    aria-label={t("removeItem", { nombre: ins.nombre })}
                     onClick={() => quitar(i)}
                   >
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -168,13 +169,13 @@ export function InsumosServicioEditor({
             }
           >
             <ComboboxInputGroup className="h-8 w-full">
-              <ComboboxInput placeholder="Agregar insumo…" />
+              <ComboboxInput placeholder={t("add")} />
               <ComboboxTrigger />
             </ComboboxInputGroup>
             <ComboboxPortal>
               <ComboboxPositioner>
                 <ComboboxPopup className="min-w-64">
-                  <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+                  <ComboboxEmpty>{t("noResults")}</ComboboxEmpty>
                   <ComboboxList>
                     {(o: OpcionCompra) => (
                       <ComboboxItem key={o.value} value={o.value}>
@@ -196,7 +197,7 @@ export function InsumosServicioEditor({
               disabled={!cambios || guardando}
               onClick={() => void guardar()}
             >
-              {guardando ? "Guardando…" : "Guardar insumos"}
+              {guardando ? t("saving") : t("save")}
             </Button>
           </div>
         </>

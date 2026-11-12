@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useMemo, type MouseEvent } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -155,6 +157,7 @@ export function ProductGrid({
   variantesFavoritas,
   enCarrito,
 }: ProductGridProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
 
   const gridItems = useMemo<PosGridItem[]>(() => {
@@ -244,10 +247,10 @@ export function ProductGrid({
               <Heart className="h-10 w-10 text-rose-500/50 fill-rose-500/20" />
               <div className="text-center space-y-1">
                 <p className="text-sm font-medium text-foreground">
-                  No tienes productos marcados como favoritos
+                  {t("pos.grid.noFavorites")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Márcalos con el corazón en el módulo de Productos para verlos aquí.
+                  {t("pos.grid.noFavoritesHint")}
                 </p>
               </div>
             </>
@@ -256,8 +259,8 @@ export function ProductGrid({
               <ShoppingCart className="h-10 w-10 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">
                 {hasSearch
-                  ? "No se encontraron productos"
-                  : "No hay productos disponibles"}
+                  ? t("pos.grid.noResults")
+                  : t("pos.grid.noProducts")}
               </p>
             </>
           )}
@@ -293,7 +296,7 @@ export function ProductGrid({
                       item.familyColor.badgeBorder
                     )}
                   >
-                    {item.count === 1 ? "1 variante" : `${item.count} variantes`}
+                    {t("pos.grid.variants", { count: item.count })}
                   </span>
                   <span className="h-px flex-1 bg-border" aria-hidden="true" />
                 </div>
@@ -315,7 +318,7 @@ export function ProductGrid({
                   onClick={(e) => {
                     if (agotado) {
                       toast.error(
-                        `La variante "${variantLabel(item.variant)}" está agotada`
+                        t("pos.grid.variantSoldOut", { variante: variantLabel(item.variant) })
                       );
                       return;
                     }
@@ -354,7 +357,7 @@ export function ProductGrid({
                         "border",
                         item.familyColor.badgeBorder
                       )}
-                      title={`Variante de: ${item.product.nombre}`}
+                      title={t("pos.grid.variantOf", { nombre: item.product.nombre })}
                     >
                       <Palette className="h-3 w-3" aria-hidden="true" />
                       {variantLabel(item.variant)}
@@ -380,32 +383,32 @@ export function ProductGrid({
                     </span>
                     <div className="flex items-center justify-between w-full mt-1">
                       <span className="text-[13px] text-muted-foreground font-mono">
-                        ${precioEfectivo.toFixed(2)}
+                        {formatear(precioEfectivo)}
                       </span>
                       {servicio ? (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          Servicio
+                          {t("pos.grid.service")}
                         </Badge>
                       ) : agotado ? (
                         <Badge
                           variant="destructive"
                           className="text-[10px] px-1.5 py-0"
                         >
-                          Agotado
+                          {t("pos.grid.soldOut")}
                         </Badge>
                       ) : stock <= item.product.stock_minimo ? (
                         <Badge
                           variant="destructive"
                           className="text-[10px] px-1.5 py-0"
                         >
-                          {stock} disp.
+                          {t("pos.grid.available", { stock })}
                         </Badge>
                       ) : (
                         <Badge
                           variant="secondary"
                           className="text-[10px] px-1.5 py-0 bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]"
                         >
-                          {stock} disp.
+                          {t("pos.grid.available", { stock })}
                         </Badge>
                       )}
                     </div>
@@ -452,7 +455,7 @@ export function ProductGrid({
                     )}
                     <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-muted/90 text-muted-foreground border border-border shadow-sm backdrop-blur-sm">
                       <Package className="h-3 w-3" aria-hidden="true" />
-                      General
+                      {t("pos.grid.general")}
                     </span>
                   </div>
                   <div className="flex flex-col items-start w-full p-2">
@@ -465,17 +468,17 @@ export function ProductGrid({
                       {item.product.nombre}
                     </span>
                     <span className="text-xs text-muted-foreground truncate w-full mt-0.5">
-                      Stock general sin clasificar
+                      {t("pos.grid.generalStock")}
                     </span>
                     <div className="flex items-center justify-between w-full mt-1">
                       <span className="text-[13px] text-muted-foreground font-mono">
-                        ${precioEfectivo.toFixed(2)}
+                        {formatear(precioEfectivo)}
                       </span>
                       <Badge
                         variant="secondary"
                         className="text-[10px] px-1.5 py-0 bg-[#EDF3EC] text-[#346538] dark:bg-[#346538]/20 dark:text-[#7BC67E]"
                       >
-                        {stock} disp.
+                        {t("pos.grid.available", { stock })}
                       </Badge>
                     </div>
                   </div>
@@ -559,8 +562,8 @@ export function ProductGrid({
                   <div className="flex items-center justify-between w-full mt-1 @max-md:flex-col @max-md:items-start @max-md:gap-1">
                     <span className="text-[13px] text-muted-foreground font-mono @max-md:text-[15px] @max-md:font-bold @max-md:text-foreground">
                       {precioDesde !== null
-                        ? `Desde $${precioDesde.toFixed(2)}`
-                        : `$${precioEfectivo.toFixed(2)}`}
+                        ? t("pos.grid.from", { precio: formatear(precioDesde) })
+                        : `${formatear(precioEfectivo)}`}
                     </span>
                     {/* `stockStatus()` en vez de la regla a mano que habia
                         aqui (`stock_actual <= stock_minimo`): es la misma
@@ -572,7 +575,7 @@ export function ProductGrid({
                         variant="outline"
                         className="text-[10px] px-1.5 py-0"
                       >
-                        Servicio
+                        {t("pos.grid.service")}
                       </Badge>
                     ) : estadoTarjeta === "bajo" || estadoTarjeta === "agotado" ? (
                       <Badge

@@ -39,5 +39,5 @@ export const nombreVisible = (nombre: string | null | undefined, email: string |
 export const nombreDeClave = (clave: Pick<InviteKey, "nombre" | "apellido">) =>
   [clave.nombre, clave.apellido].map((x) => x?.trim()).filter(Boolean).join(" ") || null;
 
-export const fechaCorta = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+export const fechaCorta = (iso: string, locale = "es-MX") =>
+  new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });

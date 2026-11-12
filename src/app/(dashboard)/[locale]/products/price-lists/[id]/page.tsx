@@ -1,6 +1,7 @@
 "use client";
 
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
+import { useTranslations } from "next-intl";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { ArrowLeft, Info, Pencil, Plus, Search } from "lucide-react";
@@ -30,6 +31,7 @@ import { BulkPriceDialog } from "@/features/inventory/components/price-lists/bul
 import { EditableTextCell } from "@/features/inventory/components/products/editable-cell";
 import {
   aplicarPorcentaje,
+  CLAVE_ERROR_PRECIO,
   claveFila,
   construirFilas,
   parsearPrecio,
@@ -38,7 +40,7 @@ import {
 } from "@/features/inventory/price-list";
 import { fetchProducts } from "@/features/inventory/services/product-service";
 import { fetchVariantsForPricing } from "@/features/inventory/services/price-list-service";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { toast } from "sonner";
 
 export default function PriceListDetailPage({
@@ -46,7 +48,12 @@ export default function PriceListDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { formatear } = useMoneda();
   const { id } = use(params);
+  const t = useTranslations("products.priceLists");
+  const te = useTranslations("products.priceLists.errors");
+  const errorPrecio = (error: string) =>
+    error in CLAVE_ERROR_PRECIO ? te(CLAVE_ERROR_PRECIO[error]) : error;
   const router = useRouter();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
   const { lista, items, loading, saving, refetch, agregar, quitar, guardarPrecios, activar } =
@@ -63,12 +70,12 @@ export default function PriceListDetailPage({
   // El catálogo completo con variantes: la lista puede incluir tallas sueltas.
   useEffect(() => {
     if (tenantLoading || !tenantId) return;
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       void Promise.all([fetchProducts(tenantId), fetchVariantsForPricing(tenantId)]).then(
         ([productos, variantes]) => setCatalogo(construirFilas(productos, variantes))
       );
     }, 0);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
   }, [tenantId, tenantLoading]);
 
   const porClave = useMemo(
@@ -125,7 +132,7 @@ export default function PriceListDetailPage({
     for (const f of objetivo) {
       const r = aplicarPorcentaje(f.precio_base, porcentaje, direccion, redondear);
       if (!r.ok) {
-        toast.error(r.error);
+        toast.error(errorPrecio(r.error));
         return;
       }
       cambios.push({
@@ -136,9 +143,7 @@ export default function PriceListDetailPage({
     }
     void guardarPrecios(cambios);
     setPorcentajeAbierto(false);
-    toast.success(
-      `Precio actualizado en ${cambios.length} ${cambios.length === 1 ? "producto" : "productos"}`
-    );
+    toast.success(t("pricesUpdated", { count: cambios.length }));
   }
 
   return (
@@ -152,14 +157,15 @@ export default function PriceListDetailPage({
             onClick={() => router.push("/products/price-lists")}
           >
             <ArrowLeft className="mr-1 h-3.5 w-3.5" />
-            Listas de precios
+            {t("title")}
           </Button>
           <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-            {lista?.nombre ?? "Lista de precios"}
+            {lista?.nombre ?? t("detail.fallbackName")}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {filas.length} {filas.length === 1 ? "producto" : "productos"}
-            {lista?.activa ? " · Activa" : " · Borrador"}
+            {t("products", { count: filas.length })}
+            {" · "}
+            {lista?.activa ? t("active") : t("draft")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -171,7 +177,7 @@ export default function PriceListDetailPage({
             onClick={() => void activar(!lista?.activa)}
             disabled={loading}
           >
-            {lista?.activa ? "Desactivar lista" : "Guardar y activar"}
+            {lista?.activa ? t("detail.deactivateList") : t("detail.saveAndActivate")}
           </Button>
         </div>
       </div>
@@ -180,8 +186,7 @@ export default function PriceListDetailPage({
           producto y da por hecho que su liquidación se movió sola. */}
       <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground animate-fade-in-up stagger-2">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Cambiar el precio base de un producto no cambia su precio en esta lista.
-        Si lo mueves, vuelve aquí y actualízalo.
+        {t("detail.notice")}
       </p>
 
       <div className="flex flex-wrap items-center gap-2 animate-fade-in-up stagger-2">
@@ -190,15 +195,15 @@ export default function PriceListDetailPage({
           <Input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar en la lista..."
+            placeholder={t("detail.search")}
             className="h-8 pl-8 text-sm"
           />
         </div>
         <Chip activo={!soloSinPrecio} onClick={() => setSoloSinPrecio(false)}>
-          Todos {filas.length}
+          {t("detail.all")} {filas.length}
         </Chip>
         <Chip activo={soloSinPrecio} onClick={() => setSoloSinPrecio(true)}>
-          Precio no definido {sinPrecio}
+          {t("detail.noPrice")} {sinPrecio}
         </Chip>
         <Button
           variant="outline"
@@ -207,11 +212,11 @@ export default function PriceListDetailPage({
           onClick={() => setPorcentajeAbierto(true)}
           disabled={marcadas === 0}
           title={
-            marcadas === 0 ? "Selecciona productos para actualizar" : undefined
+            marcadas === 0 ? t("detail.selectToUpdate") : undefined
           }
         >
           <Pencil className="mr-1 h-3.5 w-3.5" />
-          Actualizar todos los precios
+          {t("detail.updateAll")}
         </Button>
         <Button
           variant="outline"
@@ -223,7 +228,7 @@ export default function PriceListDetailPage({
           }}
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
-          Agregar productos
+          {t("detail.addProducts")}
         </Button>
       </div>
 
@@ -244,16 +249,16 @@ export default function PriceListDetailPage({
                 />
               </TableHead>
               <TableHead className="text-xs uppercase tracking-wider">
-                Nombre del producto
+                {t("detail.colName")}
               </TableHead>
               <TableHead className="text-xs uppercase tracking-wider">
-                Categoría
+                {t("detail.colCategory")}
               </TableHead>
               <TableHead className="text-right text-xs uppercase tracking-wider">
-                Precio base
+                {t("detail.colBase")}
               </TableHead>
               <TableHead className="text-right text-xs uppercase tracking-wider">
-                Precio en la lista
+                {t("detail.colListPrice")}
               </TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -262,15 +267,15 @@ export default function PriceListDetailPage({
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
-                  Cargando...
+                  {t("loading")}
                 </TableCell>
               </TableRow>
             ) : visibles.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                   {filas.length === 0
-                    ? "Esta lista todavía no tiene productos"
-                    : "Sin resultados"}
+                    ? t("detail.emptyList")
+                    : t("picker.noResults")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -294,19 +299,19 @@ export default function PriceListDetailPage({
                     {f.categoria ?? "—"}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm tabular-nums">
-                    {formatMXN(f.precio_base)}
+                    {formatear(f.precio_base)}
                   </TableCell>
                   <TableCell className="text-right">
                     <EditableTextCell
                       canEdit
-                      hint="Clic para editar. Enter guarda, Esc cancela"
+                      hint={t("detail.editHint")}
                       value={f.precio === null ? "" : String(f.precio)}
                       numerico
                       className="text-right font-mono tabular-nums"
                       onCommit={(texto) => {
                         const r = parsearPrecio(texto);
                         if (!r.ok) {
-                          toast.error(r.error);
+                          toast.error(errorPrecio(r.error));
                           return;
                         }
                         if (r.precio === f.precio) return;
@@ -322,10 +327,10 @@ export default function PriceListDetailPage({
                       {f.precio === null ? (
                         <span className="flex items-center justify-end gap-1.5 text-muted-foreground">
                           <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
-                          No definido
+                          {t("detail.notDefined")}
                         </span>
                       ) : (
-                        formatMXN(f.precio)
+                        formatear(f.precio)
                       )}
                     </EditableTextCell>
                   </TableCell>
@@ -333,7 +338,7 @@ export default function PriceListDetailPage({
                     {/* Quita el precio especial de la lista (el producto sigue
                         existiendo): mantener presionado confirma. */}
                     <BotonEliminar
-                      nombre={`${f.nombre} de la lista`}
+                      nombre={t("detail.removeName", { nombre: f.nombre })}
                       onEliminar={() => quitar(f.producto_id, f.variante_id)}
                     />
                   </TableCell>
@@ -355,7 +360,7 @@ export default function PriceListDetailPage({
       <Dialog open={agregando} onOpenChange={setAgregando}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base">Agregar productos</DialogTitle>
+            <DialogTitle className="text-base">{t("detail.addProducts")}</DialogTitle>
           </DialogHeader>
           <ProductPicker
             filas={catalogo}
@@ -382,7 +387,7 @@ export default function PriceListDetailPage({
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAgregando(false)} disabled={saving}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button
               disabled={aAgregar.size === 0 || saving}
@@ -397,7 +402,7 @@ export default function PriceListDetailPage({
                 void agregar(renglones).then(() => setAgregando(false));
               }}
             >
-              {saving ? "Agregando..." : `Continuar (${aAgregar.size})`}
+              {saving ? t("detail.adding") : t("detail.continueN", { n: aAgregar.size })}
             </Button>
           </DialogFooter>
         </DialogContent>

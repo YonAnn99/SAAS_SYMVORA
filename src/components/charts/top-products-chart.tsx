@@ -1,7 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { BarrasHorizontales } from "./barras-horizontales";
 import { montoCompleto, montoEje } from "./formato-grafica";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 import { ALTO_GRAFICA_CHICA } from "./tarjeta-grafica";
 
 interface TopProductsChartProps {
@@ -12,13 +14,14 @@ interface TopProductsChartProps {
 const formatoCantidad = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 });
 
 export function TopProductsChart({ data, title }: TopProductsChartProps) {
+  const t = useTranslations("charts");
   return (
     <BarrasHorizontales
       title={title}
       etiquetas={data.map((d) => d.nombre)}
       valores={data.map((d) => d.cantidad)}
-      nombreSerie="Unidades vendidas"
-      formatoTooltip={(v) => `${formatoCantidad.format(v)} vendidas`}
+      nombreSerie={t("unitsSold")}
+      formatoTooltip={(v) => t("soldCount", { cantidad: formatoCantidad.format(v) })}
       enteros
     />
   );
@@ -32,17 +35,19 @@ export function ProveedoresChart({
   data: { nombre: string; total: number; compras: number }[];
   title: string;
 }) {
+  const moneda = useMonedaDelNegocio();
+  const t = useTranslations("reports.charts");
   return (
     <BarrasHorizontales
       title={title}
       etiquetas={data.map((d) => d.nombre)}
       valores={data.map((d) => d.total)}
-      nombreSerie="Comprado"
-      formatoTooltip={montoCompleto}
-      formatoEje={montoEje}
+      nombreSerie={t("purchased")}
+      formatoTooltip={(v) => montoCompleto(v, moneda)}
+      formatoEje={(v) => montoEje(v, moneda)}
       detalleTooltip={(i) => {
         const n = data[i]?.compras ?? 0;
-        return `${n} ${n === 1 ? "compra" : "compras"}`;
+        return t("purchaseCount", { count: n });
       }}
       simple
       alto={ALTO_GRAFICA_CHICA}

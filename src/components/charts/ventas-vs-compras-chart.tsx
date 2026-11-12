@@ -1,9 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import "./registro";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { useTemaGrafica } from "./use-tema-grafica";
+import { useMonedaDelNegocio } from "@/contexts/tenant-context";
 import { ejeCategorias, ejeMontos, opcionesBase, tooltipBase } from "./opciones";
 import { montoCompleto } from "./formato-grafica";
 import { ALTO_GRAFICA_CHICA, TarjetaGrafica } from "./tarjeta-grafica";
@@ -22,13 +24,15 @@ export function VentasVsComprasChart({
   title: string;
 }) {
   const tema = useTemaGrafica();
+  const moneda = useMonedaDelNegocio();
+  const t = useTranslations("reports.charts");
   const diferencia = ventas - compras;
 
   const datos: ChartData<"bar"> = {
-    labels: ["Ventas", "Compras"],
+    labels: [t("sales"), t("purchases")],
     datasets: [
       {
-        label: "Monto",
+        label: t("amount"),
         data: [ventas, compras],
         backgroundColor: [tema.principal, tema.serie[2]],
         borderRadius: 6,
@@ -39,12 +43,12 @@ export function VentasVsComprasChart({
 
   const opciones: ChartOptions<"bar"> = {
     ...opcionesBase<"bar">(tema),
-    scales: { x: ejeCategorias(tema), y: ejeMontos(tema) },
+    scales: { x: ejeCategorias(tema), y: ejeMontos(tema, moneda) },
     plugins: {
       legend: { display: false },
       tooltip: {
         ...tooltipBase(tema),
-        callbacks: { label: (ctx) => ` ${montoCompleto(Number(ctx.parsed.y))}` },
+        callbacks: { label: (ctx) => ` ${montoCompleto(Number(ctx.parsed.y), moneda)}` },
       },
     },
   };
@@ -63,7 +67,7 @@ export function VentasVsComprasChart({
               diferencia < 0 ? "text-[#9F2F2D] dark:text-[#F2A5A4]" : "text-foreground"
             }`}
           >
-            {montoCompleto(diferencia)}
+            {montoCompleto(diferencia, moneda)}
           </span>
         </p>
       }

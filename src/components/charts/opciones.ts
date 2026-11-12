@@ -6,6 +6,7 @@
 import type { ChartOptions, ChartType, TooltipOptions } from "chart.js";
 import type { TemaGrafica } from "./use-tema-grafica";
 import { montoEje } from "./formato-grafica";
+import type { Moneda } from "@/lib/money";
 
 const FUENTE = { size: 11 };
 
@@ -26,7 +27,7 @@ export function tooltipBase(tema: TemaGrafica): Partial<TooltipOptions<ChartType
 }
 
 /** Escala de montos (eje Y de ventas, ingresos...). */
-export function ejeMontos(tema: TemaGrafica) {
+export function ejeMontos(tema: TemaGrafica, moneda: Moneda = "MXN") {
   return {
     beginAtZero: true,
     border: { display: false },
@@ -35,7 +36,7 @@ export function ejeMontos(tema: TemaGrafica) {
       color: tema.textoSuave,
       font: FUENTE,
       maxTicksLimit: tema.compacto ? 4 : 6,
-      callback: (valor: string | number) => montoEje(Number(valor)),
+      callback: (valor: string | number) => montoEje(Number(valor), moneda),
     },
   };
 }

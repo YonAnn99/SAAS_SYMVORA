@@ -80,12 +80,12 @@ export function isDateAfterOrEqual(a: Date, b: Date): boolean {
   return startOfDay(a).getTime() >= startOfDay(b).getTime();
 }
 
-export function formatMonthYear(date: Date): string {
-  return date.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+export function formatMonthYear(date: Date, locale = "es-MX"): string {
+  return date.toLocaleDateString(locale, { month: "long", year: "numeric" });
 }
 
-export function formatShortDate(date: Date): string {
-  return date.toLocaleDateString("es-MX", {
+export function formatShortDate(date: Date, locale = "es-MX"): string {
+  return date.toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

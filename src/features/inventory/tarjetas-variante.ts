@@ -4,6 +4,7 @@
  * precio, costo, stock y minimo). Aqui vive la logica pura (resumen, armado del
  * insert y deteccion de repetidas), separada del componente para probarla.
  */
+import { formatMXN } from "@/lib/money";
 import { contenidoCapturado, esFraccionable, type UnidadMedida } from "@/lib/unidades";
 import type { VarianteInput } from "./services/variant-service";
 import {
@@ -101,34 +102,62 @@ export function resumenAtributos(t: TarjetaVariante): string {
     .join(" · ");
 }
 
+/** Textos de los resumenes; la interfaz pasa los del idioma activo. */
+export interface TextosResumen {
+  /** Monto en la moneda del negocio (`useMoneda().formatear`). */
+  precio: (n: number) => string;
+  sinPrecio: string;
+  servicio: string;
+  enStock: (cantidad: number) => string;
+  automatico: string;
+  sinDatos: string;
+}
+
+export const TEXTOS_RESUMEN_ES: TextosResumen = {
+  precio: formatMXN,
+  sinPrecio: "Sin precio",
+  servicio: "Servicio",
+  enStock: (cantidad) => `${cantidad} en stock`,
+  automatico: "Automático",
+  sinDatos: "Sin datos",
+};
+
 /** Resumen de la seccion Precio y costo. */
-export function resumenPrecio(t: TarjetaVariante): string {
-  return parseFloat(t.precio) > 0 ? `$${parseFloat(t.precio).toFixed(2)}` : "Sin precio";
+export function resumenPrecio(t: TarjetaVariante, txt: TextosResumen = TEXTOS_RESUMEN_ES): string {
+  return parseFloat(t.precio) > 0 ? txt.precio(parseFloat(t.precio)) : txt.sinPrecio;
 }
 
 /** Resumen de la seccion Inventario. */
-export function resumenInventario(t: TarjetaVariante, esServicio = false): string {
-  return esServicio ? "Servicio" : `${parseFloat(t.stock) || 0} en stock`;
+export function resumenInventario(
+  t: TarjetaVariante,
+  esServicio = false,
+  txt: TextosResumen = TEXTOS_RESUMEN_ES
+): string {
+  return esServicio ? txt.servicio : txt.enStock(parseFloat(t.stock) || 0);
 }
 
 /** Resumen de la seccion Codigos. */
-export function resumenCodigos(t: TarjetaVariante): string {
+export function resumenCodigos(t: TarjetaVariante, txt: TextosResumen = TEXTOS_RESUMEN_ES): string {
   const partes = [t.codigo.trim(), t.sku.trim()].filter(Boolean);
-  return partes.length ? partes.join(" · ") : "Automático";
+  return partes.length ? partes.join(" · ") : txt.automatico;
 }
 
 /**
  * "Capacidad 600 ml · $18.00 · 20 en stock", para la tarjeta compacta.
  * Un servicio dice "Servicio" en vez del stock.
  */
-export function resumenTarjeta(t: TarjetaVariante, esServicio = false): string {
+export function resumenTarjeta(
+  t: TarjetaVariante,
+  esServicio = false,
+  txt: TextosResumen = TEXTOS_RESUMEN_ES
+): string {
   const atributos = resumenAtributos(t);
   const partes = [
     atributos,
-    parseFloat(t.precio) > 0 ? `$${parseFloat(t.precio).toFixed(2)}` : "",
-    resumenInventario(t, esServicio),
+    parseFloat(t.precio) > 0 ? txt.precio(parseFloat(t.precio)) : "",
+    resumenInventario(t, esServicio, txt),
   ].filter(Boolean);
-  return atributos ? partes.join(" · ") : "Sin datos";
+  return atributos ? partes.join(" · ") : txt.sinDatos;
 }
 
 const claveDe = (t: TarjetaVariante) =>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
@@ -64,7 +67,9 @@ export function CantidadDialog({
   onConfirm: (cantidad: number) => void;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { formatear, entero, simbolo } = useMoneda();
   const [valor, setValor] = useState("");
+  const t = useTranslations("pos.quantity");
   const [modo, setModo] = useState<Modo>("cantidad");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -104,14 +109,14 @@ export function CantidadDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-base">¿Cuánto?</DialogTitle>
+          <DialogTitle className="text-base">{t("title")}</DialogTitle>
           <DialogDescription className="text-xs">
-            {nombre} · ${precioUnitario.toFixed(2)} por {abreviatura(unidad, 1)}
+            {t("pricePer", { nombre, precio: formatear(precioUnitario), unidad: abreviatura(unidad, 1) })}
           </DialogDescription>
         </DialogHeader>
 
         {/* Cantidad (lo que marca la bascula) o importe ("$50 de jamon"). */}
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Vender por">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label={t("sellBy")}>
           {(["cantidad", "importe"] as const).map((m) => (
             <button
               key={m}
@@ -123,7 +128,7 @@ export function CantidadDialog({
                 modo === m ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {m === "cantidad" ? `Cantidad (${abreviatura(unidad, 1)})` : "Importe ($)"}
+              {m === "cantidad" ? t("byQuantity", { unidad: abreviatura(unidad, 1) }) : t("byAmount", { simbolo })}
             </button>
           ))}
         </div>
@@ -136,14 +141,14 @@ export function CantidadDialog({
           className="space-y-3"
         >
           <div className="flex items-center gap-2">
-            {porImporte && <span className="w-4 text-lg font-medium text-muted-foreground">$</span>}
+            {porImporte && <span className="w-4 text-lg font-medium text-muted-foreground">{simbolo}</span>}
             <Input
               ref={inputRef}
               inputMode="decimal"
               placeholder={porImporte ? "0.00" : "0.000"}
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              aria-label={porImporte ? "Importe en pesos" : `Cantidad en ${abreviatura(unidad)}`}
+              aria-label={porImporte ? t("amountInPesos") : t("quantityIn", { unidad: abreviatura(unidad) })}
               className="h-11 text-lg font-mono"
             />
             {!porImporte && (
@@ -164,7 +169,7 @@ export function CantidadDialog({
                       disabled={n === null || (disponible !== null && n > disponible)}
                       onClick={() => confirmar(n)}
                     >
-                      ${monto}
+                      {entero(monto)}
                     </Button>
                   );
                 })
@@ -185,7 +190,7 @@ export function CantidadDialog({
           {/* En importe se muestra la cantidad que entra y lo que de verdad se
               cobra (la cantidad va con 3 decimales: puede variar centavos). */}
           <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">{porImporte ? "Se agrega" : "Importe"}</span>
+            <span className="text-muted-foreground">{porImporte ? t("willAdd") : t("amount")}</span>
             <span className="font-mono font-semibold">
               {porImporte && cantidad !== null && `${formatearCantidad(cantidad, unidad)} · `}$
               {((cantidad ?? 0) * precioUnitario).toFixed(2)}
@@ -194,16 +199,16 @@ export function CantidadDialog({
 
           {excede && (
             <p className="text-xs text-destructive">
-              Solo hay {formatearCantidad(disponible ?? 0, unidad)} en esta sucursal.
+              {t("onlyAvailable", { cantidad: formatearCantidad(disponible ?? 0, unidad) })}
             </p>
           )}
 
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button type="submit" size="sm" disabled={!valida}>
-              Agregar
+              {t("add")}
             </Button>
           </DialogFooter>
         </form>

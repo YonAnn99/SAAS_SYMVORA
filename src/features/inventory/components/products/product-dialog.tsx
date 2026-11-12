@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { usePermissions } from "@/hooks/use-permissions";
 import { InsumosServicioEditor } from "./insumos-servicio-editor";
 import { useTranslations } from "next-intl";
@@ -10,8 +12,8 @@ import {
   enUnidad,
   esFraccionable,
   formatearContenido,
+  abreviatura,
   pareceEmpaquetado,
-  porUnidad,
 } from "@/lib/unidades";
 import { AvisoEmpaquetado, CampoContenido, OpcionesUnidad } from "../unidad-y-contenido";
 import { unidadesOfrecidas } from "@/lib/modulos";
@@ -97,7 +99,11 @@ export function ProductDialog({
   tenantId,
   categorias = [],
 }: ProductDialogProps) {
+  const { formatear } = useMoneda();
   const t = useTranslations();
+  // " por kg" en las de medida: el precio se captura por unidad (`porUnidad`, traducido).
+  const porU = (u: string) =>
+    esFraccionable(u) ? t("products.form.perUnit", { unidad: abreviatura(u, 1) }) : "";
   // Modulos del negocio (Configuracion -> Modulos): deciden que unidades y que
   // opciones se ofrecen. Lo que el producto YA usa se muestra siempre.
   const { modulos } = useModulos();
@@ -310,7 +316,7 @@ export function ProductDialog({
 
       if (!res.ok) {
         const cuerpo = await res.json().catch(() => null);
-        toast.error(cuerpo?.error ?? "No se pudo mejorar la imagen.");
+        toast.error(cuerpo?.error ?? t("products.form.imageImproveError"));
         return;
       }
 
@@ -323,9 +329,9 @@ export function ProductDialog({
       setImagenOriginal(imagenFile);
       setImagenFile(recortada);
       setImagenPreview(URL.createObjectURL(recortada));
-      toast.success("Fondo eliminado");
+      toast.success(t("products.form.bgRemoved"));
     } catch {
-      toast.error("No se pudo mejorar la imagen. Revisa tu conexión.");
+      toast.error(t("products.form.imageImproveNetwork"));
     } finally {
       setQuitandoFondo(false);
     }
@@ -345,7 +351,7 @@ export function ProductDialog({
     // precio dentro de una seccion cerrada es facil pasarlo por alto. Un 0
     // escrito a proposito (regalo, promocion) sigue valiendo.
     if (formData.nombre.trim() && formData.precio_venta.trim() === "") {
-      toast.error("Captura el precio de venta");
+      toast.error(t("products.form.enterPrice"));
       setSeccion(SECCION_DE_CAMPO.precio_venta);
       return false;
     }
@@ -385,8 +391,9 @@ export function ProductDialog({
         imagen_url = await subirImagenProducto(imagenFile, tenantId);
       } catch (error) {
         toast.error(
-          "Error al subir la imagen: " +
-            (error instanceof Error ? error.message : "inténtalo de nuevo")
+          t("products.form.uploadError", {
+            detalle: error instanceof Error ? error.message : t("products.form.tryAgain"),
+          })
         );
         return false;
       } finally {
@@ -424,7 +431,7 @@ export function ProductDialog({
   // Crear: se desliza. Si algo no pasa (validacion, imagen, base) se rechaza
   // para que la pastilla muestre el error y regrese; el aviso ya salio.
   const crearDeslizando = async () => {
-    if (!(await handleSave())) throw new Error("No se guardó");
+    if (!(await handleSave())) throw new Error(t("products.form.notSaved"));
   };
 
   // Tras la pastilla azul: sonido y destello desde el control, y se cierra
@@ -456,10 +463,10 @@ export function ProductDialog({
   const notaStock = !hayVarias
     ? null
     : nombreSucursal
-      ? `Existencias en ${nombreSucursal}.`
+      ? t("products.form.stockAt", { sucursal: nombreSucursal })
       : editingProduct
-        ? "Total del negocio. Elige una sucursal en el selector para editarlas."
-        : "Elige una sucursal en el selector para cargar existencias iniciales, o déjalas en 0.";
+        ? t("products.form.stockTotalNote")
+        : t("products.form.stockPickBranch");
 
   // Lo que se ve de cada seccion cerrada.
   const resumenDatos = [
@@ -472,17 +479,17 @@ export function ProductDialog({
     .filter(Boolean)
     .join(" · ");
   const resumenPrecio = formData.precio_venta
-    ? `$${parseFloat(formData.precio_venta || "0").toFixed(2)}${
+    ? `${formatear(parseFloat(formData.precio_venta || "0"))}${
         margenEnVivo && !margenEnVivo.esPerdida
-          ? ` · margen ${margenEnVivo.margenPct.toFixed(1)}%`
+          ? ` · ${t("products.form.marginSummary", { pct: margenEnVivo.margenPct.toFixed(1) })}`
           : margenEnVivo?.esPerdida
-            ? " · con pérdida"
+            ? ` · ${t("products.form.withLoss")}`
             : ""
       }`
-    : "Sin precio";
+    : t("products.form.noPrice");
   const resumenInventario = formData.es_servicio
-    ? "Servicio"
-    : `${formData.stock_actual || 0} en stock`;
+    ? t("products.badges.service")
+    : t("products.table.inStock", { stock: formData.stock_actual || 0 });
   const resumenCodigos = [formData.codigo_barras, formData.sku].filter(Boolean).join(" · ");
 
   return (
@@ -490,33 +497,33 @@ export function ProductDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {editingProduct ? "Editar producto" : "Crear producto"}
+            {editingProduct ? t("products.form.editTitle") : t("products.form.createTitle")}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {editingProduct
-              ? "Actualiza los datos del producto"
-              : "Agrega un nuevo producto a tu catálogo"}
+              ? t("products.form.editDesc")
+              : t("products.form.createDesc")}
           </DialogDescription>
         </DialogHeader>
         {/* En secciones desplegables (una abierta a la vez), como la creacion
             de cuenta: la ventana con todos los campos seguidos era muy larga.
             Cerrada, cada seccion resume lo capturado. */}
         <Accordion variante="panel" activeIndex={seccion} onActiveIndexChange={setSeccion}>
-          <AccordionItem title="Datos del producto" index={0} resumen={resumenDatos}>
+          <AccordionItem title={t("products.form.secData")} index={0} resumen={resumenDatos}>
             <div className="space-y-4 pt-1">
           <div className="space-y-1.5">
-            <Label className="text-xs">Nombre *</Label>
+            <Label className="text-xs">{t("products.form.name")} *</Label>
             <Input
-              placeholder="Nombre del producto"
+              placeholder={t("products.form.namePlaceholder")}
               value={formData.nombre}
               onChange={(e) => updateField("nombre", e.target.value)}
               className="h-8 text-sm"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Descripción</Label>
+            <Label className="text-xs">{t("products.form.description")}</Label>
             <Textarea
-              placeholder="Descripción del producto"
+              placeholder={t("products.form.descriptionPlaceholder")}
               value={formData.descripcion}
               onChange={(e) => updateField("descripcion", e.target.value)}
               className="text-sm min-h-[60px]"
@@ -524,7 +531,7 @@ export function ProductDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">¿Cómo se vende? *</Label>
+              <Label className="text-xs">{t("products.form.howSold")} *</Label>
               <Select
                 items={Object.fromEntries(UNIDADES.map((u) => [u, t(`products.units.${u}`)]))}
                 value={formData.unidad_medida}
@@ -543,7 +550,7 @@ export function ProductDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Categoría</Label>
+              <Label className="text-xs">{t("products.form.category")}</Label>
               <SelectorCategoria
                 value={formData.categoria}
                 onChange={(c) => updateField("categoria", c)}
@@ -572,11 +579,11 @@ export function ProductDialog({
           )}
             </div>
           </AccordionItem>
-          <AccordionItem title="Precio y costo" index={1} resumen={resumenPrecio}>
+          <AccordionItem title={t("products.form.secPrice")} index={1} resumen={resumenPrecio}>
             <div className="space-y-4 pt-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Precio de venta{porUnidad(formData.unidad_medida)} *</Label>
+              <Label className="text-xs">{t("products.form.salePrice")}{porU(formData.unidad_medida)} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -588,7 +595,7 @@ export function ProductDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Costo de compra{porUnidad(formData.unidad_medida)} *</Label>
+              <Label className="text-xs">{t("products.form.cost")}{porU(formData.unidad_medida)} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -615,21 +622,22 @@ export function ProductDialog({
             >
               {margenEnVivo.esPerdida ? (
                 <span className="font-medium">
-                  El costo es mayor o igual al precio: venderías con pérdida de $
-                  {Math.abs(margenEnVivo.gananciaUnitaria).toFixed(2)} por unidad.
+                  {t("products.form.lossWarning", { monto: formatear(Math.abs(margenEnVivo.gananciaUnitaria)) })}
                 </span>
               ) : (
                 <span>
-                  <strong>Ganas ${margenEnVivo.gananciaUnitaria.toFixed(2)}</strong>{" "}
-                  por unidad · Margen {margenEnVivo.margenPct.toFixed(1)}% · Markup{" "}
-                  {margenEnVivo.markupPct.toFixed(1)}%
+                  <strong>{t("products.form.earn", { monto: formatear(margenEnVivo.gananciaUnitaria) })}</strong>{" "}
+                  {t("products.form.marginLine", {
+                    margen: margenEnVivo.margenPct.toFixed(1),
+                    markup: margenEnVivo.markupPct.toFixed(1),
+                  })}
                 </span>
               )}
             </div>
           )}
             </div>
           </AccordionItem>
-          <AccordionItem title="Inventario" index={2} resumen={resumenInventario}>
+          <AccordionItem title={t("products.form.secInventory")} index={2} resumen={resumenInventario}>
             <div className="space-y-4 pt-1">
           {/* En un servicio los campos de stock DESAPARECEN, no se deshabilitan:
               dejarlos en gris seguiría sugiriendo que importan, y no importan —
@@ -637,7 +645,7 @@ export function ProductDialog({
           {!formData.es_servicio && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Stock actual{enUnidad(formData.unidad_medida)}</Label>
+                <Label className="text-xs">{t("products.form.stock")}{enUnidad(formData.unidad_medida)}</Label>
                 <Input
                   type="number"
                   step={esFraccionable(formData.unidad_medida) ? "any" : undefined}
@@ -653,7 +661,7 @@ export function ProductDialog({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Stock mínimo{enUnidad(formData.unidad_medida)}</Label>
+                <Label className="text-xs">{t("products.form.minStock")}{enUnidad(formData.unidad_medida)}</Label>
                 <Input
                   type="number"
                   step={esFraccionable(formData.unidad_medida) ? "any" : undefined}
@@ -676,11 +684,10 @@ export function ProductDialog({
                 checked={formData.es_servicio}
                 onCheckedChange={(v) => alternarServicio(v)}
               />
-              <Label className="text-xs">Es servicio (no maneja stock)</Label>
+              <Label className="text-xs">{t("products.form.isService")}</Label>
             </div>
             <p className="ml-11 text-[11px] text-muted-foreground">
-              Se vende sin descontar existencias: asesorías, instalación, envío
-              a domicilio.
+              {t("products.form.isServiceHint")}
             </p>
           </div>
           )}
@@ -691,8 +698,7 @@ export function ProductDialog({
               <InsumosServicioEditor tenantId={tenantId} servicioId={editingProduct.id} />
             ) : !editingProduct ? (
               <p className="ml-11 text-[11px] text-muted-foreground">
-                ¿Usa medicamentos o materiales? Guarda el servicio y vuelve a abrirlo para indicar
-                sus insumos: se descontarán solos al cobrarlo.
+                {t("products.form.suppliesHint")}
               </p>
             ) : null)}
           {(modulos.permite_lotes_caducidad || formData.permite_lotes) && (
@@ -702,11 +708,10 @@ export function ProductDialog({
                 checked={formData.permite_lotes}
                 onCheckedChange={(v) => updateField("permite_lotes", v)}
               />
-              <Label className="text-xs">Maneja lotes y fecha de caducidad</Label>
+              <Label className="text-xs">{t("products.form.hasLots")}</Label>
             </div>
             <p className="ml-11 text-[11px] text-muted-foreground">
-              Al guardar, el producto aparece en la pestaña Lotes para
-              registrar sus caducidades.
+              {t("products.form.hasLotsHint")}
             </p>
           </div>
           )}
@@ -717,23 +722,22 @@ export function ProductDialog({
                 checked={formData.permite_variantes}
                 onCheckedChange={(v) => updateField("permite_variantes", v)}
               />
-              <Label className="text-xs">Maneja variantes (talla/color)</Label>
+              <Label className="text-xs">{t("products.form.hasVariants")}</Label>
             </div>
             <p className="ml-11 text-[11px] text-muted-foreground">
-              Al guardar, el producto aparece en la pestaña Variantes para dar
-              de alta tallas y colores con su propio stock.
+              {t("products.form.hasVariantsHint")}
             </p>
           </div>
           )}
             </div>
           </AccordionItem>
-          <AccordionItem title="Códigos" index={3} resumen={resumenCodigos}>
+          <AccordionItem title={t("products.form.secCodes")} index={3} resumen={resumenCodigos}>
             <div className="space-y-4 pt-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs">
-                  Código de barras
+                  {t("products.form.barcode")}
                   {!editingProduct && autoBarcode && formData.codigo_barras && (
                     <span className="text-emerald-500 ml-1 text-[10px] font-normal">(auto)</span>
                   )}
@@ -749,7 +753,7 @@ export function ProductDialog({
                       htmlFor="auto-barcode"
                       className="text-[11px] text-muted-foreground cursor-pointer select-none"
                     >
-                      Automático
+                      {t("products.form.auto")}
                     </label>
                   </div>
                 )}
@@ -759,7 +763,7 @@ export function ProductDialog({
               <div className="relative">
                 <Input
                   ref={barcodeInputRef}
-                  placeholder={!editingProduct && !autoBarcode ? "Escribe o escanea..." : editingProduct ? "Escanea o genera" : "EAN-13"}
+                  placeholder={!editingProduct && !autoBarcode ? t("products.form.typeOrScan") : editingProduct ? t("products.form.scanOrGenerate") : "EAN-13"}
                   value={formData.codigo_barras}
                   onChange={(e) => updateField("codigo_barras", e.target.value)}
                   className="h-8 pr-9 text-sm font-mono"
@@ -767,7 +771,7 @@ export function ProductDialog({
                 />
                 <BotonEscanear
                   modo="uno"
-                  titulo="Escanear código del producto"
+                  titulo={t("products.form.scanCode")}
                   onCodigo={(codigo) => {
                     // Se leyo el codigo real del empaque: manda sobre el automatico.
                     if (autoBarcode) setAutoBarcode(false);
@@ -795,7 +799,7 @@ export function ProductDialog({
           </div>
             </div>
           </AccordionItem>
-          <AccordionItem title="Imagen" index={4} resumen={imagenPreview ? "Con foto" : "Sin foto"}>
+          <AccordionItem title={t("products.form.secImage")} index={4} resumen={imagenPreview ? t("products.form.withPhoto") : t("products.form.noPhoto")}>
             <div className="space-y-4 pt-1">
           {/* `allowCamera` dibuja "Tomar foto" solo en móvil. El texto de ayuda
               ya no habla de 2MB ni de formatos: entra cualquier foto de celular
@@ -804,8 +808,8 @@ export function ProductDialog({
             preview={imagenPreview}
             onFileSelect={handleImagenSelect}
             onFileRemove={handleImagenRemove}
-            dragDropText="Arrastra una foto del producto o haz clic para seleccionar"
-            maxSizeText="Se recorta a cuadrado y se optimiza automáticamente"
+            dragDropText={t("products.form.dragPhoto")}
+            maxSizeText={t("products.form.photoHint")}
             opciones={IMAGEN_PRODUCTO}
             accept="image/*"
             allowCamera
@@ -827,7 +831,7 @@ export function ProductDialog({
                   onClick={handleRestaurarOriginal}
                 >
                   <Undo2 className="mr-1.5 h-3.5 w-3.5" />
-                  Restaurar original
+                  {t("products.form.restoreOriginal")}
                 </Button>
               ) : (
                 <Button
@@ -839,12 +843,12 @@ export function ProductDialog({
                   onClick={() => void handleQuitarFondo()}
                 >
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  {quitandoFondo ? "Quitando fondo..." : "Quitar fondo"}
+                  {quitandoFondo ? t("products.form.removingBg") : t("products.form.removeBg")}
                 </Button>
               )}
               {imagenOriginal && !conMarcaDeAgua && (
                 <span className="text-xs text-muted-foreground">
-                  Fondo eliminado
+                  {t("products.form.bgRemoved")}
                 </span>
               )}
             </div>
@@ -856,8 +860,7 @@ export function ProductDialog({
               solo el día que se use la llave live. */}
           {conMarcaDeAgua && (
             <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-              Imagen de prueba: lleva marca de agua. No la guardes en tu
-              catálogo — usa &quot;Restaurar original&quot;.
+              {t("products.form.watermark")}
             </p>
           )}
             </div>
@@ -880,19 +883,19 @@ export function ProductDialog({
               disabled={saving || uploadingImage}
             >
               {uploadingImage
-                ? "Subiendo imagen..."
+                ? t("products.form.uploadingImage")
                 : saving
                   ? t("common.loading")
-                  : "Guardar cambios"}
+                  : t("products.form.saveChanges")}
             </SpecularActionButton>
           </DialogFooter>
         ) : (
           // Mismo "desliza para confirmar" que cobrar en el POS, en azul.
           <div className="flex flex-col items-stretch gap-2">
             <DeslizarParaConfirmar
-              label="Desliza para crear producto"
-              doneLabel="Producto creado"
-              errorLabel="No se guardó"
+              label={t("products.form.slideCreate")}
+              doneLabel={t("products.form.created")}
+              errorLabel={t("products.form.notSaved")}
               successColor={COLOR_ALTA}
               onConfirm={crearDeslizando}
               onDone={trasCrear}

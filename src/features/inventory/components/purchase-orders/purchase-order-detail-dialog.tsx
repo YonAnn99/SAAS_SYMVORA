@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 /**
  * El desglose de una orden de compra: lo pedido, lo que ya llego, las compras
  * que genero cada recepcion y el PDF que se le mando al proveedor. Mismo
@@ -19,11 +22,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import {
   fetchOrderFullDetail,
   orderEstadoColors,
-  orderEstadoLabels,
   type OrdenDetalle,
 } from "../../services/purchase-order-service";
 import { correoDeMiembro } from "../../services/purchase-service";
@@ -55,6 +57,10 @@ export function PurchaseOrderDetailDialog({
   nombreNegocio,
   onOpenChange,
 }: PurchaseOrderDetailDialogProps) {
+  const { formatear, moneda } = useMoneda();
+  const t = useTranslations();
+  const locale = useLocale();
+  const li = localeIntl(locale);
   const [orden, setOrden] = useState<OrdenDetalle | null>(null);
   const [creador, setCreador] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -88,6 +94,7 @@ export function PurchaseOrderDetailDialog({
     const pdf = await generarPdfOrdenCompra(
       datosPdfDeOrden({
         negocio: nombreNegocio,
+        moneda,
         proveedor: orden.proveedor?.nombre ?? "",
         orden,
         renglones: orden.detalle.map((d) => ({
@@ -106,17 +113,17 @@ export function PurchaseOrderDetailDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            Orden {orden?.numero_orden ?? ""}
+            {t("purchaseOrders.list.orderLabel", { numero: orden?.numero_orden ?? "" })}
             {orden && (
               <Badge
                 className={`${orderEstadoColors[orden.estado]} px-1.5 py-0 text-[10px]`}
               >
-                {orderEstadoLabels[orden.estado]}
+                {t(`purchaseOrders.statuses.${orden.estado}`)}
               </Badge>
             )}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {orden ? `Creada el ${fechaLarga(orden.creado_en)}` : "Cargando..."}
+            {orden ? t("purchaseOrders.detail.createdOn", { fecha: fechaLarga(orden.creado_en, li) }) : t("common.loading")}
           </DialogDescription>
         </DialogHeader>
 
@@ -128,14 +135,14 @@ export function PurchaseOrderDetailDialog({
 
         {!cargando && !orden && ordenId && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No se encontró la orden.
+            {t("purchaseOrders.detail.notFound")}
           </p>
         )}
 
         {!cargando && orden && (
           <div className="space-y-4 text-sm">
             <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-              <DatoDetalle etiqueta="Proveedor">
+              <DatoDetalle etiqueta={t("purchases.supplier")}>
                 {orden.proveedor?.nombre ?? "—"}
                 {orden.proveedor?.telefono && (
                   <span className="block font-normal text-muted-foreground">
@@ -143,17 +150,17 @@ export function PurchaseOrderDetailDialog({
                   </span>
                 )}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Sucursal destino">
+              <DatoDetalle etiqueta={t("purchaseOrders.detail.branch")}>
                 {orden.sucursal?.nombre ?? "—"}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Creada por">{creador ?? "—"}</DatoDetalle>
-              <DatoDetalle etiqueta="Entrega estimada">
+              <DatoDetalle etiqueta={t("purchaseOrders.detail.createdBy")}>{creador ?? "—"}</DatoDetalle>
+              <DatoDetalle etiqueta={t("purchaseOrders.detail.estimated")}>
                 {orden.fecha_estimada_recepcion
-                  ? fechaSinHora(orden.fecha_estimada_recepcion)
+                  ? fechaSinHora(orden.fecha_estimada_recepcion, li)
                   : "—"}
               </DatoDetalle>
-              <DatoDetalle etiqueta="Recepción">
-                {orden.fecha_recepcion ? fechaLarga(orden.fecha_recepcion) : "—"}
+              <DatoDetalle etiqueta={t("purchases.detail.reception")}>
+                {orden.fecha_recepcion ? fechaLarga(orden.fecha_recepcion, li) : "—"}
               </DatoDetalle>
             </div>
 
@@ -170,18 +177,18 @@ export function PurchaseOrderDetailDialog({
 
             <div className="flex flex-col items-end gap-0.5 font-mono text-xs">
               <span className="text-muted-foreground">
-                Subtotal: {formatMXN(Number(orden.subtotal))}
+                {t("purchases.detail.subtotal", { monto: formatear(Number(orden.subtotal)) })}
               </span>
               <span className="text-muted-foreground">
-                {impuesto > 0 ? `IVA: ${formatMXN(impuesto)}` : "Sin IVA"}
+                {impuesto > 0 ? t("purchases.detail.tax", { monto: formatear(impuesto) }) : t("purchases.detail.noTax")}
               </span>
               <span className="text-sm font-semibold">
-                Total: {formatMXN(Number(orden.total))}
+                {t("purchases.detail.total", { monto: formatear(Number(orden.total)) })}
               </span>
             </div>
 
             {orden.notas?.trim() && (
-              <DatoDetalle etiqueta="Notas">
+              <DatoDetalle etiqueta={t("purchases.detail.notes")}>
                 <span className="whitespace-pre-line font-normal">
                   {orden.notas}
                 </span>
@@ -192,7 +199,7 @@ export function PurchaseOrderDetailDialog({
                 varias. Es la liga entre la orden y lo que entro al stock. */}
             {orden.recepciones.length > 0 && (
               <div className="space-y-1.5 text-xs">
-                <span className="text-muted-foreground">Recepciones</span>
+                <span className="text-muted-foreground">{t("purchaseOrders.detail.receipts")}</span>
                 <ul className="divide-y divide-border rounded-lg border border-border">
                   {orden.recepciones.map((c) => (
                     <li
@@ -200,19 +207,19 @@ export function PurchaseOrderDetailDialog({
                       className="flex items-center justify-between gap-3 px-3 py-2"
                     >
                       <span>
-                        {fechaLarga(c.fecha_compra)}
+                        {fechaLarga(c.fecha_compra, li)}
                         {c.numero_factura && (
                           <span className="text-muted-foreground">
                             {" "}
-                            · Factura {c.numero_factura}
+                            · {t("purchases.detail.invoice", { numero: c.numero_factura })}
                           </span>
                         )}
                         {c.estado === "CANCELADA" && (
-                          <span className="text-destructive"> · Cancelada</span>
+                          <span className="text-destructive"> · {t("purchaseOrders.statuses.CANCELADA")}</span>
                         )}
                       </span>
                       <span className="font-mono tabular-nums">
-                        {formatMXN(Number(c.total))}
+                        {formatear(Number(c.total))}
                       </span>
                     </li>
                   ))}
@@ -224,11 +231,11 @@ export function PurchaseOrderDetailDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cerrar
+            {t("common.close")}
           </Button>
           <Button variant="outline" disabled={!orden} onClick={() => void descargar()}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
-            Descargar PDF
+            {t("purchaseOrders.detail.downloadPdf")}
           </Button>
         </DialogFooter>
       </DialogContent>

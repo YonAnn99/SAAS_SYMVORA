@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SALES_PHONE_DISPLAY, SALES_PHONE_E164 } from "@/lib/contact";
 import Image from "next/image";
+import { BotonConfigurarCookies } from "@/components/compliance/boton-configurar-cookies";
 
 /**
  * `locale`: prefijo de las paginas legales (`/es/aviso-privacidad`). Sin el,
@@ -61,6 +62,8 @@ export default function Footer({ locale = "es" }: { locale?: string }) {
             <Link href={`/${locale}/aviso-privacidad`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Aviso de Privacidad</Link>
             <Link href={`/${locale}/terminos`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos y Condiciones</Link>
             <Link href={`/${locale}/politica-cookies`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">Política de Cookies</Link>
+            {/* Reabre el aviso de cookies para cambiar la eleccion. */}
+            <BotonConfigurarCookies className="text-left hover:text-zinc-900 dark:hover:text-white transition-colors" />
             {/* En el host de la app: ahi se instala la PWA (ver `features/instalar-app`). */}
             <a href="https://app.symvora.com.mx/es/instalar" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Instalar en tu computadora</a>
           </div>

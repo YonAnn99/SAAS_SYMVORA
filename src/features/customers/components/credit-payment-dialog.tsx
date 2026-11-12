@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { clavePagoI18n } from "@/features/pos/ticket-format";
+import { useMoneda } from "@/hooks/use-moneda";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +44,7 @@ export function CreditPaymentDialog({
   saving,
 }: CreditPaymentDialogProps) {
   const t = useTranslations();
+  const { formatear } = useMoneda();
   const [metodoPago, setMetodoPago] = useState<CreditMetodoPago>("EFECTIVO");
   const [monto, setMonto] = useState("");
   const [notas, setNotas] = useState("");
@@ -67,7 +70,7 @@ export function CreditPaymentDialog({
             {t("finances.addPayment")}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {cliente?.nombre} — {t("finances.balance")}: ${saldo.toFixed(2)}
+            {cliente?.nombre} — {t("finances.balance")}: {formatear(saldo)}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -78,14 +81,14 @@ export function CreditPaymentDialog({
               onValueChange={(v) => setMetodoPago(v as CreditMetodoPago)}
             >
               <SelectTrigger className="h-8 w-full text-sm">
-                <SelectValue />
+                <SelectValue>{(v: string) => (v ? t(clavePagoI18n(v)) : "")}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="EFECTIVO">Efectivo</SelectItem>
-                <SelectItem value="TRANSFERENCIA">Transferencia</SelectItem>
-                <SelectItem value="TARJETA">Tarjeta</SelectItem>
+                <SelectItem value="EFECTIVO">{t(clavePagoI18n("EFECTIVO"))}</SelectItem>
+                <SelectItem value="TRANSFERENCIA">{t(clavePagoI18n("TRANSFERENCIA"))}</SelectItem>
+                <SelectItem value="TARJETA">{t(clavePagoI18n("TARJETA"))}</SelectItem>
                 <SelectItem value="TARJETA_TERMINAL">
-                  Tarjeta (terminal)
+                  {t(clavePagoI18n("TARJETA_TERMINAL"))}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -109,7 +112,7 @@ export function CreditPaymentDialog({
           <div className="space-y-1.5">
             <Label className="text-xs">{t("common.description")}</Label>
             <Input
-              placeholder="Opcional"
+              placeholder={t("customers.form.optional")}
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               className="h-8 text-sm"
@@ -132,7 +135,7 @@ export function CreditPaymentDialog({
             disabled={!isValid || saving}
             onClick={() => onConfirm(montoNumber, metodoPago, notas)}
           >
-            {saving ? "Guardando..." : t("common.confirm")}
+            {saving ? t("customers.form.saving") : t("common.confirm")}
           </SpecularActionButton>
         </DialogFooter>
       </DialogContent>

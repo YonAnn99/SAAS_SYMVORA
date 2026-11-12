@@ -1,5 +1,9 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
+import { useTranslations } from "next-intl";
+
 import { Gift, Stamp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { progreso } from "../lealtad";
@@ -34,6 +38,8 @@ export function TiraLealtadPos({
   /** Total de esta venta (con IVA y descuentos), para decir si alcanza la compra minima. */
   totalVenta: number;
 }) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("customers.loyalty.pos");
   const p = progreso(tarjeta.sellos, programa.sellos_meta);
   const tienePremio = p.premiosDisponibles > 0;
   // Misma regla que el servidor: el TOTAL de la venta contra la compra minima.
@@ -46,7 +52,7 @@ export function TiraLealtadPos({
         <Stamp className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="truncate font-medium">Lealtad · {tarjeta.cliente?.nombre ?? "Cliente"}</span>
+            <span className="truncate font-medium">{t("stripTitle", { nombre: tarjeta.cliente?.nombre ?? t("customerFallback") })}</span>
             <span className="shrink-0 font-mono">
               {tarjeta.sellos}/{programa.sellos_meta}
             </span>
@@ -59,8 +65,8 @@ export function TiraLealtadPos({
           type="button"
           onClick={onQuitar}
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
-          aria-label="Quitar tarjeta de lealtad"
-          title="Quitar tarjeta"
+          aria-label={t("removeCardAria")}
+          title={t("removeCard")}
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -68,37 +74,37 @@ export function TiraLealtadPos({
 
       {conTerminal ? (
         <p className="mt-1.5 text-[11px] text-muted-foreground">
-          La lealtad no aplica al cobrar con terminal: usa otro método para sumar el sello.
+          {t("noTerminal")}
         </p>
       ) : tienePremio ? (
         <div className="mt-2 flex items-center gap-2">
           <Gift className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           <p className="min-w-0 flex-1 truncate text-xs">
-            {canjear ? "Premio aplicado: " : "Tiene premio: "}
+            {canjear ? t("rewardApplied") : t("hasReward")}{" "}
             <span className="font-medium">{programa.premio_descripcion}</span>
           </p>
           {canjear ? (
             <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => onCanjear(false)}>
-              Quitar
+              {t("remove")}
             </Button>
           ) : faltaProducto && onAgregarProductoPremio ? (
             <Button type="button" size="sm" className="h-6 px-2 text-xs" onClick={onAgregarProductoPremio}>
-              Agregar y aplicar
+              {t("addAndApply")}
             </Button>
           ) : (
             <Button type="button" size="sm" className="h-6 px-2 text-xs" onClick={() => onCanjear(true)}>
-              Aplicar
+              {t("apply")}
             </Button>
           )}
         </div>
       ) : (
         minima > 0 && faltaParaSello > 0 ? (
           <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">
-            Faltan ${faltaParaSello.toFixed(2)} para sumar sello (compra mínima ${minima.toFixed(2)}).
+            {t("missingForStamp", { falta: formatear(faltaParaSello), minima: formatear(minima) })}
           </p>
         ) : (
           <p className="mt-1.5 text-[11px] text-emerald-700 dark:text-emerald-400">
-            ✓ Esta compra suma 1 sello.
+            {t("addsStamp")}
           </p>
         )
       )}

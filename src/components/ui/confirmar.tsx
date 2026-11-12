@@ -11,6 +11,7 @@
  * dashboard), asi cada boton no carga su propio dialogo.
  */
 
+import { useTranslations } from "next-intl";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ type Confirmar = (opciones: OpcionesConfirmar) => Promise<boolean>;
 const ConfirmarContext = createContext<Confirmar | null>(null);
 
 export function ConfirmarProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations("common.confirmDialog");
   const [opciones, setOpciones] = useState<OpcionesConfirmar | null>(null);
   const resolver = useRef<((si: boolean) => void) | null>(null);
 
@@ -73,12 +75,12 @@ export function ConfirmarProvider({ children }: { children: ReactNode }) {
             </div>
             <DialogTitle className="text-base">{opciones?.titulo}</DialogTitle>
             <DialogDescription className="text-sm">
-              {opciones?.descripcion ?? "Esta acción no se puede deshacer."}
+              {opciones?.descripcion ?? t("cannotUndo")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="outline" size="sm" className="h-9" onClick={() => cerrar(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button
               size="sm"
@@ -88,7 +90,7 @@ export function ConfirmarProvider({ children }: { children: ReactNode }) {
               onClick={() => cerrar(true)}
               autoFocus
             >
-              {opciones?.accion ?? "Eliminar"}
+              {opciones?.accion ?? t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

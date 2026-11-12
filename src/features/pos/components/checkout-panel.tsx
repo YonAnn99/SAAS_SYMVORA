@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useEffect, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -16,15 +18,15 @@ import { montosRapidos } from "../montos-rapidos";
 import type { MotivoBloqueo } from "../venta-bloqueada";
 import { precargarSonidoVenta } from "../celebracion-venta";
 
-/** Lo que dice el deslizador mientras no se puede cobrar. */
-const ETIQUETA_BLOQUEO: Record<MotivoBloqueo, string> = {
-  "sin-productos": "Agrega productos",
-  "sin-metodo": "Elige un método de pago",
-  "monto-insuficiente": "Captura el monto recibido",
-  "sin-terminal": "Tarjeta sin terminal",
+/** Lo que dice el deslizador mientras no se puede cobrar (clave en `pos.checkout.blocked`). */
+const CLAVE_BLOQUEO: Record<MotivoBloqueo, string> = {
+  "sin-productos": "noProducts",
+  "sin-metodo": "noMethod",
+  "monto-insuficiente": "amountMissing",
+  "sin-terminal": "noTerminal",
   // Solo cuando NO es el propio cobro: mientras se registra la venta el
   // deslizador muestra su giro, y bloquearlo a mitad cortaria la animacion.
-  procesando: "Actualizando precios…",
+  procesando: "processing",
 };
 
 interface CheckoutPanelProps {
@@ -110,6 +112,7 @@ export function CheckoutPanel({
   onEditarInsumos,
   className,
 }: CheckoutPanelProps) {
+  const { formatear, entero, moneda } = useMoneda();
   const t = useTranslations();
   const hayArticulos = items.length > 0;
   // El sonido de venta se precarga en cuanto hay algo que cobrar: antes lo
@@ -117,7 +120,7 @@ export function CheckoutPanel({
   useEffect(() => {
     if (hayArticulos) precargarSonidoVenta();
   }, [hayArticulos]);
-  const total = `$${totals.total.toFixed(2)}`;
+  const total = `${formatear(totals.total)}`;
   const bloqueoDeslizador =
     motivoBloqueo === "procesando" && processingSale ? null : motivoBloqueo;
 
@@ -161,8 +164,8 @@ export function CheckoutPanel({
           {totals.total > 0 && (
             <div className="flex gap-1.5">
               {[
-                { etiqueta: "Exacto", monto: totals.total },
-                ...montosRapidos(totals.total).map((m) => ({ etiqueta: `$${m}`, monto: m })),
+                { etiqueta: t("pos.checkout.exact"), monto: totals.total },
+                ...montosRapidos(totals.total, 3, moneda).map((m) => ({ etiqueta: entero(m), monto: m })),
               ].map(({ etiqueta, monto }) => {
                 const elegido = Number(montoRecibido) === Number(monto.toFixed(2));
                 return (
@@ -189,7 +192,7 @@ export function CheckoutPanel({
             inputMode="decimal"
             min={0}
             step="0.01"
-            placeholder="$0.00"
+            placeholder={formatear(0)}
             value={montoRecibido}
             onChange={(e) => onMontoRecibidoChange(e.target.value)}
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm max-lg:h-11 max-lg:rounded-xl max-lg:text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -198,7 +201,7 @@ export function CheckoutPanel({
             <div className="flex justify-between text-xs font-medium">
               <span className="text-muted-foreground">{t("pos.change")}</span>
               <span className="font-mono">
-                ${Math.max(0, cambio).toFixed(2)}
+                {formatear(Math.max(0, cambio))}
               </span>
             </div>
           )}
@@ -221,15 +224,16 @@ export function CheckoutPanel({
               disabled={motivoBloqueo !== null}
               onClick={() => void onCobrar().catch(() => {})}
             >
-              {processingSale ? t("common.loading") : `Cobrar en terminal ${total}`}
+              {processingSale ? t("common.loading") : t("pos.checkout.chargeTerminal", { total })}
             </SpecularActionButton>
           ) : (
             <DeslizarParaConfirmar
               key={ventasCobradas}
               label={
-                bloqueoDeslizador ? ETIQUETA_BLOQUEO[bloqueoDeslizador] : `Desliza para cobrar ${total}`
+                bloqueoDeslizador ? t(`pos.checkout.blocked.${CLAVE_BLOQUEO[bloqueoDeslizador]}`) : t("pos.checkout.slideToCharge", { total })
               }
-              doneLabel="Venta completada"
+              doneLabel={t("pos.checkout.saleDone")}
+              errorLabel={t("pos.checkout.notCompleted")}
               successColor="#22c55e"
               disabled={bloqueoDeslizador !== null}
               onConfirm={onCobrar}

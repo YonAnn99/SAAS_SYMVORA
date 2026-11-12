@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 // Con idioma (`/es/...`): `next/link` con "/products" pasaba dos veces por el
 // middleware (verificacion completa + redireccion de next-intl).
 import { Link } from "@/i18n/navigation";
@@ -26,6 +26,15 @@ import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { ContadorAnimado } from "@/components/ui/contador-animado";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
+import { localeIntl } from "@/lib/idioma";
+
+/** Metodo de pago de la venta → clave de `pos.paymentMethods`. */
+const METODO_A_CLAVE: Record<string, string> = {
+  EFECTIVO: "CASH",
+  TARJETA: "CARD",
+  TRANSFERENCIA: "TRANSFER",
+  CREDITO: "CREDIT",
+};
 
 interface DashboardStats {
   ventasHoy: number;
@@ -38,7 +47,8 @@ interface DashboardStats {
   productosVendidos: number;
   ventasAnteriores: number;
   crecimientoVentas: number;
-  ventasDiarias: { date: string; ventas: number }[];
+  /** `fecha` = AAAA-MM-DD; la etiqueta del eje se arma al pintar, con el idioma. */
+  ventasDiarias: { fecha: string; ventas: number }[];
   topProductos: { nombre: string; cantidad: number }[];
   metodosPago: { name: string; value: number }[];
   ventasPorCategoria: { name: string; value: number }[];
@@ -46,6 +56,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const { tenantId, userName, loading: tenantLoading } = useCurrentTenant();
   // Saludo con el nombre capturado al crear la cuenta.
   const nombre = primerNombre(userName);
@@ -143,9 +154,9 @@ export default function DashboardPage() {
         };
 
     if (queryError) {
-      setError("Error al cargar datos del dashboard");
+      setError(t("dashboard.loadError"));
       setLoading(false);
-      toast.error("Error al cargar datos del dashboard");
+      toast.error(t("dashboard.loadError"));
       return;
     }
 
@@ -181,7 +192,7 @@ export default function DashboardPage() {
       });
 
       const ventasDiarias = last7Days.map((date) => ({
-        date: new Date(date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric" }),
+        fecha: date,
         ventas: ventas
           .filter((v) => new Date(v.fecha_venta).toISOString().split("T")[0] === date)
           .reduce((sum, v) => sum + v.total, 0),
@@ -193,10 +204,8 @@ export default function DashboardPage() {
         return acc;
       }, {} as Record<string, number>);
 
-      const metodosPago = Object.entries(metodosPagoMap).map(([name, value]) => ({
-        name: name.charAt(0) + name.slice(1).toLowerCase(),
-        value,
-      }));
+      // `name` = el metodo tal cual (EFECTIVO, TARJETA…); se traduce al pintar.
+      const metodosPago = Object.entries(metodosPagoMap).map(([name, value]) => ({ name, value }));
 
       const nuevas: DashboardStats = {
         ventasHoy,
@@ -219,7 +228,7 @@ export default function DashboardPage() {
     }
 
     setLoading(false);
-  }, [tenantId, sucursalId]);
+  }, [tenantId, sucursalId, t]);
 
   useEffect(() => {
     if (!tenantLoading && tenantId) {
@@ -228,8 +237,20 @@ export default function DashboardPage() {
     }
   }, [tenantLoading, tenantId, fetchDashboardData]);
 
+  // Etiquetas que dependen del idioma: se arman al pintar (la cache guarda datos).
+  const formatoDia = new Intl.DateTimeFormat(localeIntl(locale), { weekday: "short", day: "numeric" });
+  const ventasDiarias = stats.ventasDiarias.map((d) => ({
+    // Mediodia local: `new Date("AAAA-MM-DD")` es medianoche UTC y en Mexico caia en el dia anterior.
+    date: formatoDia.format(new Date(`${d.fecha}T12:00:00`)),
+    ventas: d.ventas,
+  }));
+  const metodosPago = stats.metodosPago.map((m) => ({
+    name: METODO_A_CLAVE[m.name] ? t(`pos.paymentMethods.${METODO_A_CLAVE[m.name]}`) : m.name,
+    value: m.value,
+  }));
+
   // Los numeros cuentan desde 0 hasta su valor (`ContadorAnimado`).
-  const pesos = (n: number) => <ContadorAnimado valor={n} prefijo="$" decimales={2} />;
+  const pesos = (n: number) => <ContadorAnimado valor={n} dinero />;
   const kpis = [
     { title: t("dashboard.salesToday"), value: pesos(stats.ventasHoy), icon: DollarSign, idx: 1, trend: null, color: "from-blue-500" },
     { title: t("dashboard.salesMonth"), value: pesos(stats.ventasMes), icon: TrendingUp, idx: 2, trend: stats.crecimientoVentas, color: "from-emerald-500" },
@@ -238,7 +259,7 @@ export default function DashboardPage() {
     // a error. Si hay productos sin costo capturado se avisa en el subtítulo,
     // porque si no el número parecería completo cuando es parcial.
     {
-      title: "Ganancia del mes",
+      title: t("dashboard.monthProfit"),
       value: pesos(stats.gananciaMes),
       icon: TrendingUp,
       idx: 3,
@@ -248,18 +269,18 @@ export default function DashboardPage() {
         <>
           <ContadorAnimado valor={stats.margenMesPct} sufijo="%" decimales={1} />
           {stats.productosSinCosto > 0
-            ? ` · ${stats.productosSinCosto} sin costo`
-            : " de margen"}
+            ? ` · ${t("dashboard.withoutCost", { count: stats.productosSinCosto })}`
+            : ` ${t("dashboard.marginSuffix")}`}
         </>
       ),
     },
     { title: t("dashboard.averageTicket"), value: pesos(stats.ticketPromedio), icon: ShoppingCart, idx: 4, trend: null, color: "from-amber-500" },
-    { title: "Clientes Atendidos", value: <ContadorAnimado valor={stats.clientesAtendidos} />, icon: Users, idx: 4, trend: null, color: "from-violet-500" },
-    { title: "Productos Vendidos", value: (
+    { title: t("dashboard.customersServed"), value: <ContadorAnimado valor={stats.clientesAtendidos} />, icon: Users, idx: 4, trend: null, color: "from-violet-500" },
+    { title: t("dashboard.productsSold"), value: (
         // Con granel la cantidad trae fraccion (kg, l): entonces con 2 decimales.
         <ContadorAnimado valor={stats.productosVendidos} decimales={Number.isInteger(stats.productosVendidos) ? 0 : 2} />
       ), icon: Package, idx: 5, trend: null, color: "from-pink-500" },
-    { title: "Ventas Mes Anterior", value: pesos(stats.ventasAnteriores), icon: CreditCard, idx: 6, trend: null, color: "from-cyan-500" },
+    { title: t("dashboard.lastMonthSales"), value: pesos(stats.ventasAnteriores), icon: CreditCard, idx: 6, trend: null, color: "from-cyan-500" },
   ];
 
   return (
@@ -288,10 +309,10 @@ export default function DashboardPage() {
             <AlertCircle className="h-5 w-5 text-destructive" />
             <div className="flex-1">
               <p className="text-sm font-medium text-destructive">{error}</p>
-              <p className="text-xs text-muted-foreground">Verifica tu conexión e intenta de nuevo</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.checkConnection")}</p>
             </div>
             <Button variant="outline" size="sm" onClick={fetchDashboardData}>
-              Reintentar
+              {t("dashboard.retry")}
             </Button>
           </CardContent>
         </Card>
@@ -331,14 +352,13 @@ export default function DashboardPage() {
             <div className="mb-4 p-3 rounded-full bg-primary/10 animate-scale-in">
               <ShoppingCart className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-2">¡Bienvenido a SYMVORA!</h3>
+            <h3 className="text-xl font-bold mb-2">{t("dashboard.welcomeTitle")}</h3>
             <p className="text-muted-foreground max-w-md mb-6">
-              Realiza tu primera venta desde el POS para ver tus estadísticas aquí.
-              El dashboard mostrará ventas diarias, mensuales y métodos de pago.
+              {t("dashboard.welcomeDesc")}
             </p>
             <SpecularActionButton tone="money" className="h-9 gap-2">
 
-              <Link href="/pos">Ir al POS</Link>
+              <Link href="/pos">{t("dashboard.goToPos")}</Link>
             </SpecularActionButton>
           </CardContent>
         </Card>
@@ -354,7 +374,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <SalesChart
-                  data={stats.ventasDiarias}
+                  data={ventasDiarias}
                   title=""
                 />
               </CardContent>
@@ -378,11 +398,11 @@ export default function DashboardPage() {
         <div className="animate-fade-in-up stagger-7">
           <Card>
             <CardHeader>
-              <CardTitle>Métodos de pago</CardTitle>
+              <CardTitle>{t("dashboard.paymentMethods")}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <PaymentMethodsChart
-                data={stats.metodosPago}
+                data={metodosPago}
                 title=""
               />
             </CardContent>

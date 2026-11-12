@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import Image from "next/image";
 
 /**
@@ -16,8 +18,7 @@ import { Archive } from "lucide-react";
 import {
   COLOR_ARCHIVAR,
   FilaDeslizable,
-  TEXTO_PISTA_DESLIZAR,
-  TEXTO_PISTA_DESLIZAR_ARCHIVAR,
+  useTextoPistaDeslizar,
   noArrastrar,
   usePistaDeslizar,
 } from "@/components/ui/fila-deslizable";
@@ -57,13 +58,15 @@ export function VariantSwipeList({
   favoritas,
   onToggleFavorita,
 }: VariantSwipeListProps) {
+  const { formatear } = useMoneda();
   const { verPista, alAbrir } = usePistaDeslizar();
+  const pista = useTextoPistaDeslizar(Boolean(onArchive));
 
   return (
     <div className="space-y-2">
       {verPista && (
         <p className="px-1 pb-1 text-[11px] text-muted-foreground">
-          {onArchive ? TEXTO_PISTA_DESLIZAR_ARCHIVAR : TEXTO_PISTA_DESLIZAR}
+          {pista}
         </p>
       )}
 
@@ -130,7 +133,7 @@ export function VariantSwipeList({
 
             <div className="flex shrink-0 flex-col items-end gap-0.5">
               <span className="font-mono text-sm tabular-nums">
-                ${variant.precio_venta.toFixed(2)}
+                {formatear(variant.precio_venta)}
               </span>
               <span className="text-xs opacity-60">{variant.stock_actual} en stock</span>
             </div>

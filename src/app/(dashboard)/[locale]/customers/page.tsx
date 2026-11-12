@@ -1,5 +1,7 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -48,6 +50,7 @@ import {
 const PESTANAS = ["clientes", "lealtad"];
 
 export default function CustomersPage() {
+  const { formatear } = useMoneda();
   const t = useTranslations();
   const { tenantId } = useCurrentTenant();
   const { can } = usePermissions();
@@ -89,13 +92,13 @@ export default function CustomersPage() {
         entityId: cliente.id,
         entityName: cliente.nombre,
       });
-      toast.success(`Cliente ${cliente.nombre} eliminado`);
+      toast.success(t("customers.msg.deleted", { nombre: cliente.nombre }));
       void refresh();
       // Su tarjeta de lealtad se borro en cascada.
       if (teniaTarjeta) void lealtad.refrescar();
       return true;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo eliminar el cliente");
+      toast.error(error instanceof Error ? error.message : t("customers.msg.deleteError"));
       return false;
     }
   };
@@ -133,7 +136,7 @@ export default function CustomersPage() {
     setEmitiendo(null);
     if (!estado) return;
     const cliente = customers.find((c) => c.id === clienteId);
-    toast.success("Tarjeta creada");
+    toast.success(t("customers.msg.cardCreated"));
     setVentana({
       id: estado.tarjeta_id,
       codigo: estado.codigo,
@@ -170,7 +173,7 @@ export default function CustomersPage() {
             </TabsTrigger>
             <TabsTrigger value="lealtad" className="gap-1.5 text-xs">
               <Stamp className="h-3.5 w-3.5" />
-              Tarjetas de lealtad
+              {t("customers.loyaltyTab")}
             </TabsTrigger>
           </TabsList>
         )}
@@ -195,9 +198,9 @@ export default function CustomersPage() {
             >
               <PauseCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="flex-1">
-                El programa de lealtad está pausado: no se crean tarjetas ni se suman sellos.
+                {t("customers.programPaused")}
               </span>
-              <span className="shrink-0 font-medium underline underline-offset-2">Ver tarjetas de lealtad</span>
+              <span className="shrink-0 font-medium underline underline-offset-2">{t("customers.seeLoyalty")}</span>
             </button>
           )}
 
@@ -278,7 +281,7 @@ export default function CustomersPage() {
                                   variant="destructive"
                                   className="text-[10px] px-1.5 py-0 font-mono"
                                 >
-                                  ${c.saldo_pendiente.toFixed(2)}
+                                  {formatear(c.saldo_pendiente)}
                                 </Badge>
                               ) : (
                                 <span className="text-sm font-mono text-muted-foreground">
@@ -287,7 +290,7 @@ export default function CustomersPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-right text-sm font-mono">
-                              ${c.limite_credito.toFixed(2)}
+                              {formatear(c.limite_credito)}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
@@ -297,8 +300,8 @@ export default function CustomersPage() {
                                     size="icon"
                                     className="h-7 w-7"
                                     onClick={() => setEditando(c)}
-                                    aria-label={`Editar ${c.nombre}`}
-                                    title="Editar cliente"
+                                    aria-label={t("customers.editNamed", { nombre: c.nombre })}
+                                    title={t("customers.edit")}
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
@@ -309,10 +312,10 @@ export default function CustomersPage() {
                                     disabled={c.saldo_pendiente > 0}
                                     detalle={
                                       c.saldo_pendiente > 0
-                                        ? "Tiene saldo pendiente: registra su abono antes de eliminarlo"
+                                        ? t("customers.deleteHasBalance")
                                         : tarjetaDe(c.id)
-                                          ? "También se borra su tarjeta de lealtad. No se puede deshacer"
-                                          : "No se puede deshacer"
+                                          ? t("customers.deleteWithCard")
+                                          : t("customers.deleteNoUndo")
                                     }
                                     onEliminar={async () => void (await eliminarCliente(c))}
                                   />
@@ -324,10 +327,10 @@ export default function CustomersPage() {
                                     className="h-7 gap-1 text-xs"
                                     disabled={emitiendo === c.id}
                                     onClick={() => void abrirTarjeta(c.id)}
-                                    title={tarjeta ? "Ver tarjeta de lealtad" : "Crear tarjeta de lealtad"}
+                                    title={tarjeta ? t("customers.viewCard") : t("customers.createCardTitle")}
                                   >
                                     <CreditCard className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">{tarjeta ? "Tarjeta" : "Crear tarjeta"}</span>
+                                    <span className="hidden sm:inline">{tarjeta ? t("customers.card") : t("customers.createCard")}</span>
                                   </Button>
                                 )}
                                 <Button
@@ -335,10 +338,10 @@ export default function CustomersPage() {
                                   size="sm"
                                   className="h-7 gap-1 text-xs"
                                   onClick={() => setCuentaDe(c)}
-                                  title="Ventas a crédito y abonos"
+                                  title={t("customers.statementTitle")}
                                 >
                                   <Receipt className="h-3.5 w-3.5" />
-                                  <span className="hidden sm:inline">Estado de cuenta</span>
+                                  <span className="hidden sm:inline">{t("customers.statement")}</span>
                                 </Button>
                                 <Button
                                   variant="ghost"

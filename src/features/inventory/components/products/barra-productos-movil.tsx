@@ -11,6 +11,7 @@
  * chips y del dialogo (ver `filtros-etiquetas.ts`), asi que todo cuadra.
  */
 
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,6 @@ import {
 } from "@/components/motion/multi-select";
 import {
   SIN_CATEGORIA,
-  STOCK_STATUS_LABEL,
   type ProductFilters,
   type StockStatus,
 } from "@/features/inventory/stock-status";
@@ -103,6 +103,7 @@ export function BarraProductosMovil({
   actualizar,
   imprimirEtiquetas,
 }: BarraProductosMovilProps) {
+  const t = useTranslations();
   const etiquetas = filtrosAEtiquetas(filters);
 
   return (
@@ -116,7 +117,7 @@ export function BarraProductosMovil({
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-9 pl-8 pr-9 text-sm"
           />
-          <BotonEscanear modo="uno" titulo="Buscar por código" onCodigo={onSearchChange} />
+          <BotonEscanear modo="uno" titulo={t("products.page.searchByCode")} onCodigo={onSearchChange} />
         </div>
         {/* El contador va FUERA del boton: el llenado (`.btn-llenado`) recorta lo
             que sobresale y el circulo quedaba cortado. */}
@@ -126,7 +127,7 @@ export function BarraProductosMovil({
             size="sm"
             className="h-9 w-9 p-0"
             onClick={onAbrirFiltros}
-            aria-label="Filtros y orden"
+            aria-label={t("products.filters.filtersAndSort")}
           >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
@@ -152,48 +153,48 @@ export function BarraProductosMovil({
               etiquetas (abierto o cerrado). Con los dos se encimaban. */}
           <MultiSelectValue placeholder="" />
           <MultiSelectInput
-            aria-label="Buscar filtro"
-            placeholder="Filtrar: stock, favoritos, categoría…"
+            aria-label={t("products.filters.searchFilter")}
+            placeholder={t("products.filters.filterPlaceholder")}
             // El anillo de foco global (`:focus-visible` en globals.css) le
             // dibujaba un marco propio DENTRO del recuadro, que ya marca el foco.
             className="focus-visible:shadow-none!"
           />
         </MultiSelectTrigger>
         <MultiSelectContent>
-          <MultiSelectList ariaLabel="Filtros">
+          <MultiSelectList ariaLabel={t("products.filters.title")}>
             <MultiSelectGroup>
-              <MultiSelectLabel>Rápidos</MultiSelectLabel>
-              <Opcion value={etiquetaStock("bajo")} label="Stock bajo" conteo={stockCounts.bajo} />
-              <Opcion value={ETIQUETA_SIN_MINIMO} label="Stock indefinido" conteo={sinMinimoCount} />
-              <Opcion value={ETIQUETA_FAVORITOS} label="Favoritos" conteo={favoritosCount} />
+              <MultiSelectLabel>{t("products.filters.quick")}</MultiSelectLabel>
+              <Opcion value={etiquetaStock("bajo")} label={t("products.filters.lowStock")} conteo={stockCounts.bajo} />
+              <Opcion value={ETIQUETA_SIN_MINIMO} label={t("products.filters.noMin")} conteo={sinMinimoCount} />
+              <Opcion value={ETIQUETA_FAVORITOS} label={t("products.filters.favorites")} conteo={favoritosCount} />
             </MultiSelectGroup>
             <MultiSelectGroup>
-              <MultiSelectLabel>Estado</MultiSelectLabel>
+              <MultiSelectLabel>{t("products.filters.status")}</MultiSelectLabel>
               {(["ok", "agotado", "servicio"] as const).map((estado) => (
                 <Opcion
                   key={estado}
                   value={etiquetaStock(estado)}
-                  label={STOCK_STATUS_LABEL[estado]}
+                  label={t(`products.stockStatus.${estado}`)}
                   conteo={stockCounts[estado]}
                 />
               ))}
             </MultiSelectGroup>
             {(categories.length > 0 || sinCategoriaCount > 0) && (
               <MultiSelectGroup>
-                <MultiSelectLabel>Categoría (una)</MultiSelectLabel>
+                <MultiSelectLabel>{t("products.filters.categoryOne")}</MultiSelectLabel>
                 {categories.map((c) => (
                   <Opcion key={c} value={etiquetaCategoria(c)} label={c} />
                 ))}
                 {sinCategoriaCount > 0 && (
                   <Opcion
                     value={etiquetaCategoria(SIN_CATEGORIA)}
-                    label="Sin categoría"
+                    label={t("products.filters.noCategory")}
                     conteo={sinCategoriaCount}
                   />
                 )}
               </MultiSelectGroup>
             )}
-            <MultiSelectEmpty>Sin filtros con ese nombre.</MultiSelectEmpty>
+            <MultiSelectEmpty>{t("products.filters.noMatch")}</MultiSelectEmpty>
           </MultiSelectList>
         </MultiSelectContent>
       </MultiSelect>

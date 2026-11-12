@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Select,
   SelectContent,
@@ -26,20 +27,21 @@ export function FiltroCategoriaCompra({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const t = useTranslations("purchases.categoryFilter");
   if (categorias.length === 0) return null;
 
   return (
     <Select value={value} onValueChange={(v) => onChange((v as string | null) ?? TODAS_CATEGORIAS)}>
-      <SelectTrigger aria-label="Filtrar productos por categoría" className="h-7 w-40 text-xs">
-        <SelectValue placeholder="Categoría">
+      <SelectTrigger aria-label={t("filterAria")} className="h-7 w-40 text-xs">
+        <SelectValue placeholder={t("category")}>
           {/* Con render function: evita que Base UI muestre 'all' crudo. */}
           {(v: unknown) =>
-            v === TODAS_CATEGORIAS ? "Todas las categorías" : (v as string) || "Categoría"
+            v === TODAS_CATEGORIAS ? t("all") : (v as string) || t("category")
           }
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={TODAS_CATEGORIAS}>Todas las categorías</SelectItem>
+        <SelectItem value={TODAS_CATEGORIAS}>{t("all")}</SelectItem>
         {categorias.map((c) => (
           <SelectItem key={c} value={c}>
             {c}

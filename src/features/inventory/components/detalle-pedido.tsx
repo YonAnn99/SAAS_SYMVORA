@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { formatearCantidad } from "@/lib/unidades";
-import { formatMXN } from "@/lib/money";
+import { useMoneda } from "@/hooks/use-moneda";
 import { cn } from "@/lib/utils";
 
 /**
@@ -8,8 +9,8 @@ import { cn } from "@/lib/utils";
  * Mismo aspecto que el detalle de una venta en Reportes.
  */
 
-export function fechaLarga(iso: string): string {
-  return new Date(iso).toLocaleString("es-MX", {
+export function fechaLarga(iso: string, locale = "es-MX"): string {
+  return new Date(iso).toLocaleString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -20,9 +21,9 @@ export function fechaLarga(iso: string): string {
 }
 
 /** Una fecha sin hora (`fecha_estimada_recepcion` es DATE). */
-export function fechaSinHora(fecha: string): string {
+export function fechaSinHora(fecha: string, locale = "es-MX"): string {
   // Mediodia: con medianoche UTC, en Mexico la fecha retrocederia un dia.
-  return new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX", {
+  return new Date(`${fecha}T12:00:00`).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -55,6 +56,8 @@ export interface RenglonTabla {
 }
 
 export function TablaRenglones({ renglones }: { renglones: RenglonTabla[] }) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("purchases.detail");
   const conRecibido = renglones.some((r) => r.recibido !== undefined);
 
   return (
@@ -62,15 +65,15 @@ export function TablaRenglones({ renglones }: { renglones: RenglonTabla[] }) {
       <table className="w-full text-xs">
         <thead className="border-b border-border text-muted-foreground">
           <tr>
-            <th className="px-3 py-2 text-left font-medium">Producto</th>
+            <th className="px-3 py-2 text-left font-medium">{t("product")}</th>
             <th className="px-3 py-2 text-right font-medium">
-              {conRecibido ? "Pedido" : "Cant."}
+              {conRecibido ? t("ordered") : t("qty")}
             </th>
             {conRecibido && (
-              <th className="px-3 py-2 text-right font-medium">Recibido</th>
+              <th className="px-3 py-2 text-right font-medium">{t("received")}</th>
             )}
-            <th className="px-3 py-2 text-right font-medium">Costo</th>
-            <th className="px-3 py-2 text-right font-medium">Importe</th>
+            <th className="px-3 py-2 text-right font-medium">{t("cost")}</th>
+            <th className="px-3 py-2 text-right font-medium">{t("amount")}</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +85,7 @@ export function TablaRenglones({ renglones }: { renglones: RenglonTabla[] }) {
             return (
               <tr key={i} className="border-b border-border last:border-b-0">
                 <td className="px-3 py-2">
-                  {r.producto?.nombre ?? "Producto eliminado"}
+                  {r.producto?.nombre ?? t("deletedProduct")}
                   {(r.variante?.talla || r.variante?.color) && (
                     <span className="block text-muted-foreground">
                       {[r.variante.talla, r.variante.color]
@@ -109,10 +112,10 @@ export function TablaRenglones({ renglones }: { renglones: RenglonTabla[] }) {
                   </td>
                 )}
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
-                  {formatMXN(r.costo)}
+                  {formatear(r.costo)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums">
-                  {formatMXN(r.importe)}
+                  {formatear(r.importe)}
                 </td>
               </tr>
             );

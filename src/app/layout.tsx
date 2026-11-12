@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { AnaliticaVercel } from "@/components/analitica-vercel";
+import { AnaliticaVercel, RendimientoVercel } from "@/components/analitica-vercel";
 import { Providers } from "./providers";
 import { MarcaAppAndroid } from "@/features/app-android/marca-app-android";
 import { CapturaInstalacion } from "@/features/instalar-app/captura-instalacion";
@@ -163,8 +162,9 @@ export default function RootLayout({
         </Providers>
         {/* Core Web Vitals reales por ruta (INP, LCP, TTFB) en Vercel →
             Speed Insights. Mide el plan de rendimiento; script del propio
-            dominio (/_vercel), la CSP no cambia. */}
-        <SpeedInsights />
+            dominio (/_vercel), la CSP no cambia. Los dos se apagan si la persona
+            rechaza la "medicion anonima" en el aviso de cookies. */}
+        <RendimientoVercel />
         {/* Visitas y paginas vistas en Vercel → Analytics, sin cookies. Limpia
             de la URL los codigos de tarjeta y los query strings. */}
         <AnaliticaVercel />

@@ -1,3 +1,4 @@
+import { formatMXN } from "@/lib/money";
 import { stockStatus, type StockStatus } from "./stock-status";
 
 /**
@@ -81,8 +82,11 @@ export function resumenConVariantes(
   };
 }
 
-/** "$18.00" o "$18.00 – $32.00". */
-export function rangoDePrecio(r: Pick<ResumenVariantes, "precioMin" | "precioMax">): string {
-  const min = `$${r.precioMin.toFixed(2)}`;
-  return r.precioMin === r.precioMax ? min : `${min} – $${r.precioMax.toFixed(2)}`;
+/** "$18.00" o "$18.00 – $32.00". `formatear`: la moneda del negocio (`useMoneda`). */
+export function rangoDePrecio(
+  r: Pick<ResumenVariantes, "precioMin" | "precioMax">,
+  formatear: (n: number) => string = formatMXN
+): string {
+  const min = formatear(r.precioMin);
+  return r.precioMin === r.precioMax ? min : `${min} – ${formatear(r.precioMax)}`;
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp, Wrench } from "lucide-react";
+import { localeIntl } from "@/lib/idioma";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
   Card,
@@ -42,30 +44,32 @@ export function AdjustmentsTable({
   getProductName,
   onAdd,
 }: AdjustmentsTableProps) {
+  const t = useTranslations("products.adjustments");
+  const locale = useLocale();
   return (
     <Card className="animate-fade-in-up stagger-3">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <CardTitle className="text-sm font-medium">
-            Historial de Ajustes
+            {t("historyTitle")}
           </CardTitle>
           <span className="text-xs text-muted-foreground font-mono">
-            {adjustments.length} ajustes
+            {t("count", { count: adjustments.length })}
           </span>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-            Cargando...
+            {t("loading")}
           </div>
         ) : filteredAdjustments.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <Wrench className="h-8 w-8 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
               {adjustments.length === 0
-                ? "No hay ajustes registrados"
-                : "No se encontraron ajustes"}
+                ? t("none")
+                : t("noneFound")}
             </p>
             <SpecularActionButton
               tone="add"
@@ -73,7 +77,7 @@ export function AdjustmentsTable({
               onClick={onAdd}
             >
 
-              Nuevo ajuste
+              {t("new")}
             </SpecularActionButton>
           </div>
         ) : (
@@ -82,25 +86,25 @@ export function AdjustmentsTable({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Fecha
+                    {t("colDate")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Producto
+                    {t("colProduct")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Motivo
+                    {t("colReason")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
-                    Anterior
+                    {t("colBefore")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
-                    Ajuste
+                    {t("colAdjustment")}
                   </TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider">
-                    Nuevo
+                    {t("colAfter")}
                   </TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">
-                    Notas
+                    {t("colNotes")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -108,7 +112,7 @@ export function AdjustmentsTable({
                 {filteredAdjustments.map((adj) => (
                   <TableRow key={adj.id}>
                     <TableCell className="text-sm">
-                      {new Date(adj.creado_en).toLocaleDateString("es-MX")}
+                      {new Date(adj.creado_en).toLocaleDateString(localeIntl(locale))}
                     </TableCell>
                     <TableCell className="font-medium text-sm">
                       {getProductName(adj.producto_id)}
@@ -118,7 +122,7 @@ export function AdjustmentsTable({
                         variant="secondary"
                         className="text-[10px] px-1.5 py-0"
                       >
-                        {motivoLabels[adj.motivo]}
+                        {adj.motivo in motivoLabels ? t(`reasons.${adj.motivo}`) : adj.motivo}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">

@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
+
 import { useState } from "react";
 import { CalendarX2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,10 +26,12 @@ export function BajaPendiente() {
   const { tenantName, tenantId } = useCurrentTenant();
   const { salir } = useCerrarSesion();
   const [cancelando, setCancelando] = useState(false);
+  const t = useTranslations("account.pending");
+  const li = localeIntl(useLocale());
 
   if (!baja) return null;
   const { solicitud, propia } = baja;
-  const fecha = fechaLegible(solicitud.ejecutar_en);
+  const fecha = fechaLegible(solicitud.ejecutar_en, li);
   const dias = diasRestantes(solicitud.ejecutar_en);
 
   async function cancelar() {
@@ -36,12 +41,12 @@ export function BajaPendiente() {
       if (!res.ok) throw new Error();
       toast.success(
         solicitud.es_dueno
-          ? "Cancelaste la eliminación. Reactiva tu plan en Suscripción para seguir vendiendo."
-          : "Cancelaste la eliminación de tu cuenta."
+          ? t("canceledOwner")
+          : t("canceled")
       );
       avisarCambioDeBaja();
     } catch {
-      toast.error("No se pudo cancelar. Escríbenos a hola@symvora.com.mx");
+      toast.error(t("cancelError"));
     } finally {
       setCancelando(false);
     }
@@ -61,24 +66,26 @@ export function BajaPendiente() {
         </span>
         <h2 id="baja-titulo" className="text-lg font-semibold">
           {propia
-            ? "Tu cuenta se eliminará"
-            : `${tenantName || "Este negocio"} se va a cerrar`}
+            ? t("titleOwn")
+            : t("titleBusiness", { negocio: tenantName || t("thisBusiness") })}
         </h2>
         <p className="text-sm text-muted-foreground">
           {propia
-            ? `Pediste eliminar tu cuenta${solicitud.es_dueno ? " y tu negocio" : ""}. Se borrará el ${fecha}`
-            : `El dueño pidió cerrar el negocio. Se borrará el ${fecha}`}
-          {dias > 0 ? ` (faltan ${dias} ${dias === 1 ? "día" : "días"}).` : "."}
-          {propia ? " Si cambias de opinión, cancela la solicitud." : ""}
+            ? solicitud.es_dueno
+              ? t("ownDescBusiness", { fecha })
+              : t("ownDesc", { fecha })
+            : t("businessDesc", { fecha })}
+          {dias > 0 ? ` ${t("daysLeft", { count: dias })}` : "."}
+          {propia ? ` ${t("changeMind")}` : ""}
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
           {propia && (
             <Button onClick={() => void cancelar()} disabled={cancelando}>
-              {cancelando ? "Cancelando…" : "Cancelar la eliminación"}
+              {cancelando ? t("canceling") : t("cancelDeletion")}
             </Button>
           )}
           <Button variant="outline" onClick={() => void salir()}>
-            Cerrar sesión
+            {t("signOut")}
           </Button>
         </div>
       </div>

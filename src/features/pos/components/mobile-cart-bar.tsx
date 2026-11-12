@@ -1,6 +1,9 @@
 "use client";
 
+import { useMoneda } from "@/hooks/use-moneda";
+
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronUp, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVuelosAlCarrito } from "../vuelo-al-carrito";
@@ -22,6 +25,8 @@ interface MobileCartBarProps {
  * número espera.
  */
 export function MobileCartBar({ itemCount, total, onOpen }: MobileCartBarProps) {
+  const { formatear } = useMoneda();
+  const t = useTranslations("pos.cartBar");
   const { activos, aterrizajes } = useVuelosAlCarrito();
   const [mostrado, setMostrado] = useState({ itemCount, total, aterrizajes });
   const desactualizado =
@@ -43,8 +48,8 @@ export function MobileCartBar({ itemCount, total, onOpen }: MobileCartBarProps) 
       onClick={onOpen}
       aria-label={
         itemCount > 0
-          ? `Ver carrito: ${itemCount} artículo${itemCount === 1 ? "" : "s"}, total $${total.toFixed(2)}`
-          : "Ver carrito vacío"
+          ? t("ariaWithItems", { count: itemCount, total: formatear(total) })
+          : t("ariaEmpty")
       }
       className={cn(
         "lg:hidden flex h-14 shrink-0 items-center gap-3 rounded-2xl text-left transition-transform active:scale-[0.99]",
@@ -61,8 +66,8 @@ export function MobileCartBar({ itemCount, total, onOpen }: MobileCartBarProps) 
           >
             {mostrado.itemCount}
           </span>
-          <span className="flex-1 text-base font-semibold">Ver carrito</span>
-          <span className="font-mono text-[17px] font-bold">${mostrado.total.toFixed(2)}</span>
+          <span className="flex-1 text-base font-semibold">{t("viewCart")}</span>
+          <span className="font-mono text-[17px] font-bold">{formatear(mostrado.total)}</span>
           <ChevronUp className="h-5 w-5" aria-hidden="true" />
         </>
       ) : (
@@ -70,8 +75,8 @@ export function MobileCartBar({ itemCount, total, onOpen }: MobileCartBarProps) 
           <span data-destino-carrito className="flex shrink-0">
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
           </span>
-          <span className="flex-1 text-[15px]">El carrito está vacío</span>
-          <span className="hidden text-xs min-[380px]:inline">Toca un producto para agregarlo</span>
+          <span className="flex-1 text-[15px]">{t("empty")}</span>
+          <span className="hidden text-xs min-[380px]:inline">{t("tapToAdd")}</span>
         </>
       )}
     </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Check, Sparkles } from "lucide-react";
 import { useRouter, usePathname } from "@/i18n/navigation";
@@ -39,6 +40,10 @@ export function VentanaNovedad() {
   const router = useRouter();
   // Se fija al abrir: aunque cambie la ruta o el estado, la ventana no salta.
   const [abierta, setAbierta] = useState<Novedad | null>(null);
+  const tn = useTranslations("news");
+  // Texto de la novedad en el idioma de la interfaz; si no hay clave, el de `NOVEDADES`.
+  const texto = (n: Novedad, campo: string, respaldo: string) =>
+    tn.has(`${n.id}.${campo}`) ? tn(`${n.id}.${campo}`) : respaldo;
 
   const puede = Boolean(porMostrar) && !isActive && !minimized && ruta !== "/pos" && ruta !== porMostrar?.href;
 
@@ -68,24 +73,24 @@ export function VentanaNovedad() {
         <div className="space-y-3 p-5">
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
             <Sparkles className="h-3 w-3" aria-hidden />
-            Novedad en SYMVORA
+            {tn("badge")}
           </span>
-          <DialogTitle className="text-lg font-semibold leading-tight">{abierta.titulo}</DialogTitle>
-          <DialogDescription>{abierta.texto}</DialogDescription>
+          <DialogTitle className="text-lg font-semibold leading-tight">{texto(abierta, "title", abierta.titulo)}</DialogTitle>
+          <DialogDescription>{texto(abierta, "text", abierta.texto)}</DialogDescription>
           <ul className="space-y-2 pt-1">
-            {abierta.puntos.map((p) => (
+            {abierta.puntos.map((p, i) => (
               <li key={p} className="flex gap-2 text-sm">
                 <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
-                <span>{p}</span>
+                <span>{texto(abierta, `points.${i}`, p)}</span>
               </li>
             ))}
           </ul>
         </div>
         <DialogFooter className="mx-0 mb-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button variant="ghost" onClick={cerrar}>
-            Después
+            {tn("later")}
           </Button>
-          <Button onClick={conocer}>{abierta.boton}</Button>
+          <Button onClick={conocer}>{texto(abierta, "button", abierta.boton)}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -97,6 +102,7 @@ export function VentanaNovedad() {
  * CSS: sin imágenes que descargar. Decorativo.
  */
 function IlustracionCatalogo() {
+  const tn = useTranslations("news");
   return (
     <div
       aria-hidden
@@ -115,7 +121,7 @@ function IlustracionCatalogo() {
         </div>
       </div>
       <div className="absolute right-[calc(50%-6.5rem)] top-6 rounded-2xl rounded-bl-sm bg-[#25D366] px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg motion-safe:animate-in motion-safe:zoom-in-75 motion-safe:fade-in motion-safe:delay-300 motion-safe:duration-300 motion-safe:fill-mode-backwards">
-        ¡Nuevo pedido!
+        {tn("newOrder")}
       </div>
     </div>
   );

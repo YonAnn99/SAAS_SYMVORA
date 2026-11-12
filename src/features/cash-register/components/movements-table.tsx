@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { localeIntl } from "@/lib/idioma";
 
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -32,6 +33,7 @@ export function MovementsTable({
   onAdd,
 }: MovementsTableProps) {
   const t = useTranslations();
+  const locale = useLocale();
 
   return (
     <Card className="animate-fade-in-up stagger-6">
@@ -49,7 +51,7 @@ export function MovementsTable({
       <CardContent>
         {movements.length === 0 ? (
           <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-            No hay movimientos registrados
+            {t("finances.noMovements")}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -79,7 +81,7 @@ export function MovementsTable({
                   return (
                     <TableRow key={movement.id}>
                       <TableCell className="text-sm">
-                        {new Date(movement.fecha).toLocaleString()}
+                        {new Date(movement.fecha).toLocaleString(localeIntl(locale))}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {movement.descripcion}

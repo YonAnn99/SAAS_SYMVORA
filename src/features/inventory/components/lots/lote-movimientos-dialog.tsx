@@ -1,6 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { localeIntl } from "@/lib/idioma";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +31,8 @@ export function LoteMovimientosDialog({
   nombreProducto: string;
   nombreSucursal: (id: string) => string;
 }) {
+  const t = useTranslations("products.lots");
+  const locale = useLocale();
   const [movimientos, setMovimientos] = useState<MovimientoLote[] | null>(null);
   const [error, setError] = useState(false);
   const loteId = lote?.id ?? null;
@@ -55,26 +59,26 @@ export function LoteMovimientosDialog({
     <Dialog open={Boolean(lote)} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Lote {lote?.numero_lote}</DialogTitle>
+          <DialogTitle className="text-base">{t("lotTitle", { numero: lote?.numero_lote ?? "" })}</DialogTitle>
           <DialogDescription className="text-xs">{nombreProducto}</DialogDescription>
         </DialogHeader>
 
         {lote && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Caducidad:</span>
+              <span className="text-muted-foreground">{t("expiryLabel")}</span>
               <span>
                 {lote.fecha_caducidad
-                  ? new Date(`${lote.fecha_caducidad}T12:00:00`).toLocaleDateString("es-MX")
-                  : "Sin fecha"}
+                  ? new Date(`${lote.fecha_caducidad}T12:00:00`).toLocaleDateString(localeIntl(locale))
+                  : t("noDate")}
               </span>
               <BadgeCaducidad fecha={lote.fecha_caducidad} />
             </div>
 
             <div>
-              <p className="mb-1.5 text-xs font-medium">Dónde está</p>
+              <p className="mb-1.5 text-xs font-medium">{t("whereIs")}</p>
               {existencias.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Agotado en todas las sucursales.</p>
+                <p className="text-xs text-muted-foreground">{t("soldOutEverywhere")}</p>
               ) : (
                 <ul className="divide-y divide-border rounded-lg border border-border text-sm">
                   {existencias.map((e) => (
@@ -88,26 +92,26 @@ export function LoteMovimientosDialog({
             </div>
 
             <div>
-              <p className="mb-1.5 text-xs font-medium">Movimientos</p>
+              <p className="mb-1.5 text-xs font-medium">{t("movements")}</p>
               {error ? (
-                <p className="text-xs text-destructive">No se pudieron cargar los movimientos.</p>
+                <p className="text-xs text-destructive">{t("movementsError")}</p>
               ) : movimientos === null ? (
-                <p className="text-xs text-muted-foreground">Cargando…</p>
+                <p className="text-xs text-muted-foreground">{t("loadingShort")}</p>
               ) : movimientos.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Sin movimientos todavía.</p>
+                <p className="text-xs text-muted-foreground">{t("noMovements")}</p>
               ) : (
                 <ul className="divide-y divide-border rounded-lg border border-border">
                   {movimientos.map((m) => (
                     <li key={m.id} className="flex items-center gap-3 px-3 py-1.5 text-xs">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium">{ETIQUETA_MOVIMIENTO_LOTE[m.tipo] ?? m.tipo}</p>
+                        <p className="font-medium">{m.tipo in ETIQUETA_MOVIMIENTO_LOTE ? t(`movementTypes.${m.tipo}`) : m.tipo}</p>
                         <p className="text-[11px] text-muted-foreground">
                           {nombreSucursal(m.sucursal_id)} ·{" "}
-                          {new Date(m.creado_en).toLocaleString("es-MX", {
+                          {new Date(m.creado_en).toLocaleString(localeIntl(locale), {
                             dateStyle: "short",
                             timeStyle: "short",
                           })}
-                          {m.venta_id && ` · Venta #${m.venta_id.slice(0, 8)}`}
+                          {m.venta_id && ` · ${t("saleNumber", { id: m.venta_id.slice(0, 8) })}`}
                         </p>
                       </div>
                       <span
