@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -159,13 +160,44 @@ export function EditableSelectCell({
   hint,
   className,
 }: EditableSelectCellProps) {
+  // El menú se monta hasta que se usa. Un `Select` por fila (con sus
+  // proveedores y su posicionamiento) era de lo más caro de la tabla: con
+  // cientos de productos se notaba en cada repintado. En reposo es un botón
+  // con la misma pinta; al tocarlo se monta el menú ya abierto.
+  const [activo, setActivo] = useState(false);
+
   if (!canEdit) {
     return <>{children}</>;
+  }
+
+  if (!activo) {
+    return (
+      <button
+        type="button"
+        title={hint}
+        disabled={saving}
+        aria-haspopup="listbox"
+        onClick={() => setActivo(true)}
+        className={cn(
+          "-mx-1.5 inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm whitespace-nowrap transition-colors hover:bg-muted/60",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          saving && "pointer-events-none opacity-50",
+          className
+        )}
+      >
+        <span>{children}</span>
+        <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+      </button>
+    );
   }
 
   return (
     <Select
       value={value}
+      defaultOpen
+      onOpenChange={(abierto) => {
+        if (!abierto) setActivo(false);
+      }}
       onValueChange={(v) => {
         if (typeof v === "string" && v !== value) onCommit(v);
       }}

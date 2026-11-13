@@ -17,6 +17,7 @@ import type { PosViewMode } from "./pos-search-bar";
 import { variantesVisiblesEnFavoritos } from "../favoritos-pos";
 import { seVendeComoGeneral } from "@/features/sucursales/stock";
 import { textoContenido } from "@/lib/unidades";
+import { useListaPorPartes } from "@/hooks/use-lista-por-partes";
 
 /**
  * Las columnas se calculan sobre el ancho REAL del contenedor (`@container`),
@@ -230,6 +231,21 @@ export function ProductGrid({
     return items;
   }, [products, variantsByProduct, variantCountByProduct, viewMode, isFavoritesFilter, favoritos, variantesFavoritas]);
 
+  // Catálogos grandes: se pintan las primeras tarjetas y las siguientes al
+  // bajar. Con cientos de tarjetas, cada producto agregado o cada letra del
+  // buscador las repintaba TODAS (el «×N» del carrito les llega a todas) y el
+  // cobro se trababa. Buscar y escanear siguen sobre el catálogo completo: eso
+  // lo resuelve la página, no esta cuadrícula.
+  // La clave cambia con la búsqueda, la categoría o la vista (otra lista), no
+  // al cobrar ni al refrescar existencias (mismos productos): ahí se conserva
+  // el lugar.
+  const claveLista = `${viewMode}|${products.length}|${products[0]?.id ?? ""}|${products[products.length - 1]?.id ?? ""}`;
+  const { visibles, hayMas, restantes, mostrarMas, centinela } = useListaPorPartes(
+    gridItems.length,
+    claveLista
+  );
+  const itemsPintados = hayMas ? gridItems.slice(0, visibles) : gridItems;
+
   return (
     // En celular sin marco: las tarjetas van directo sobre el fondo y ganan el
     // ancho que se comian el borde y el relleno. `overscroll-y-contain`: al
@@ -267,7 +283,7 @@ export function ProductGrid({
         </div>
       ) : (
         <div className={GRID_CLASSES}>
-          {gridItems.map((item, index) => {
+          {itemsPintados.map((item, index) => {
             if (item.kind === "family-header") {
               return (
                 <div
@@ -598,6 +614,17 @@ export function ProductGrid({
               </button>
             );
           })}
+          {hayMas && (
+            <div ref={centinela} className="col-span-full flex justify-center py-3">
+              <button
+                type="button"
+                onClick={mostrarMas}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                {t("products.table.showMore", { count: restantes })}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMoneda } from "@/hooks/use-moneda";
 
 /**
@@ -55,6 +56,8 @@ interface ProductSwipeListProps {
   onVerVariantes?: (product: Producto) => void;
   /** Para resumir precio, stock y estado de un producto con variantes. */
   variantesPorProducto?: Record<string, VarianteResumible[]>;
+  /** Al final de la lista: el «Mostrar más» cuando se pinta por tramos. */
+  pie?: ReactNode;
 }
 
 export function ProductSwipeList({
@@ -72,6 +75,7 @@ export function ProductSwipeList({
   conteoVariantes = {},
   onVerVariantes,
   variantesPorProducto,
+  pie,
 }: ProductSwipeListProps) {
   const { formatear } = useMoneda();
   const t = useTranslations();
@@ -212,6 +216,7 @@ export function ProductSwipeList({
           </FilaDeslizable>
         );
       })}
+      {pie}
     </div>
   );
 }

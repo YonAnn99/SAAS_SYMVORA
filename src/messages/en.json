@@ -551,7 +551,8 @@
       "noCost": "No cost entered",
       "earnPerUnit": "You earn {monto} per unit",
       "selectAll": "Select all",
-      "inStock": "{stock} in stock"
+      "inStock": "{stock} in stock",
+      "showMore": "Show more ({count} left)"
     },
     "categorySelector": {
       "none": "No category",

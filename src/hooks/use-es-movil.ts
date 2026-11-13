@@ -39,3 +39,23 @@ export function useEsEscritorio(): boolean {
     () => false
   );
 }
+
+/** Desde `md` (768 px): donde las listas del panel pasan de pastillas a tabla. */
+const CONSULTA_TABLA = "(min-width: 768px)";
+
+/**
+ * `true` desde `md`. Sirve para montar SOLO la tabla o SOLO la lista de celular
+ * (con `md:hidden` las dos se montaban y el trabajo era doble). En el servidor
+ * (y en el primer pintado) da `false`.
+ */
+export function useEsTabla(): boolean {
+  return useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(CONSULTA_TABLA);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(CONSULTA_TABLA).matches,
+    () => false
+  );
+}

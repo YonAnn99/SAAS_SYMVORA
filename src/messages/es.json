@@ -551,7 +551,8 @@
       "noCost": "Sin costo capturado",
       "earnPerUnit": "Ganas {monto} por unidad",
       "selectAll": "Seleccionar todos",
-      "inStock": "{stock} en stock"
+      "inStock": "{stock} en stock",
+      "showMore": "Mostrar más ({count, plural, one {falta #} other {faltan #}})"
     },
     "categorySelector": {
       "none": "Sin categoría",

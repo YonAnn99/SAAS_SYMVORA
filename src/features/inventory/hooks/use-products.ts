@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import type { Producto } from "../types/inventory.types";
@@ -440,16 +440,21 @@ export function useProducts(
 
   // Búsqueda y filtros se aplican EN CADENA, no se sustituyen: buscar "coca"
   // con el filtro "stock bajo" debe dar las cocas que están por acabarse.
-  const searchedProducts = useMemo(
-    () =>
-      products.filter(
-        (product) =>
-          product.nombre.toLowerCase().includes(search.toLowerCase()) ||
-          product.codigo_barras?.toLowerCase().includes(search.toLowerCase()) ||
-          product.sku?.toLowerCase().includes(search.toLowerCase())
-      ),
-    [products, search]
-  );
+  //
+  // La lista se filtra con el texto DIFERIDO: el campo muestra cada letra al
+  // momento y la tabla se repinta cuando React tiene un respiro (y se
+  // interrumpe si llega otra letra). Con mil productos, filtrar y repintar en
+  // cada tecla trababa el buscador segundos enteros.
+  const busquedaAplicada = useDeferredValue(search);
+  const searchedProducts = useMemo(() => {
+    const texto = busquedaAplicada.toLowerCase();
+    return products.filter(
+      (product) =>
+        product.nombre.toLowerCase().includes(texto) ||
+        product.codigo_barras?.toLowerCase().includes(texto) ||
+        product.sku?.toLowerCase().includes(texto)
+    );
+  }, [products, busquedaAplicada]);
 
   const filteredProducts = useMemo(
     () => applyProductFilters(searchedProducts, filters, favoritos, estadoDe),
@@ -494,6 +499,8 @@ export function useProducts(
     products,
     filteredProducts,
     search,
+    /** El texto con el que YA se filtró `filteredProducts` (va un paso atrás de `search`). */
+    busquedaAplicada,
     setSearch,
     filters,
     setFilters,

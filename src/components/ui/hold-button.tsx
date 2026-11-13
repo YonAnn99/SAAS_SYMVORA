@@ -264,7 +264,11 @@ const HoldButton: React.FC<HoldButtonProps> = ({
       button.style.setProperty('--hb-w', `${button.offsetWidth}px`);
       button.style.setProperty('--hb-h', `${button.offsetHeight}px`);
     };
-    measure();
+    // Sin medir aquí mismo: leer `offsetWidth` y escribir el estilo, botón por
+    // botón, obliga al navegador a recalcular la página en cada uno. Con un
+    // «Eliminar» por fila, una tabla de cientos de productos se congelaba. El
+    // ResizeObserver avisa una primera vez al observar, ya con todo medido de
+    // una sola pasada y antes de pintar.
     const ro = new ResizeObserver(measure);
     ro.observe(button);
     return () => ro.disconnect();
@@ -350,7 +354,11 @@ const HoldButton: React.FC<HoldButtonProps> = ({
       onKeyUp={handleKeyUp}
       onContextMenu={e => e.preventDefault()}
     >
-      <style>{STYLE}</style>
+      {/* `href` + `precedence`: React deja UNA sola hoja en el <head> aunque haya
+          cientos de botones. Antes cada botón insertaba la suya y, con un
+          «Eliminar» por fila, cada inserción recalculaba los estilos de toda
+          la página (Productos con 1,000 filas se congelaba). */}
+      <style href="symvora-hold-button" precedence="default">{STYLE}</style>
       <span
         className="hb-pulse pointer-events-none absolute inset-0 z-0 opacity-0 [border-radius:var(--hb-radius)] group-data-[glow=true]:group-data-[phase=done]:[animation:hb-pulse_600ms_var(--hb-ease-out)_forwards]"
         aria-hidden="true"

@@ -127,6 +127,7 @@ export default function ProductsPage() {
     products,
     filteredProducts,
     search,
+    busquedaAplicada,
     setSearch,
     filters,
     setFilters,
@@ -209,23 +210,74 @@ export default function ProductsPage() {
     usarFuncion("etiquetas");
     setEtiquetasAbiertas(true);
   };
-  const productosSeleccionados = products.filter((p) => seleccionados.has(p.id));
-  const toggleSeleccion = (id: string) =>
-    setSeleccionados((prev) => {
-      const siguiente = new Set(prev);
-      if (siguiente.has(id)) siguiente.delete(id);
-      else siguiente.add(id);
-      return siguiente;
-    });
-  const seleccionarVisibles = (marcar: boolean) =>
-    setSeleccionados((prev) => {
-      const siguiente = new Set(prev);
-      for (const p of filteredProducts) {
-        if (marcar) siguiente.add(p.id);
-        else siguiente.delete(p.id);
-      }
-      return siguiente;
-    });
+  const productosSeleccionados = useMemo(
+    () => products.filter((p) => seleccionados.has(p.id)),
+    [products, seleccionados]
+  );
+  // Lo que recibe `ProductsTable` (con `memo`) debe ser ESTABLE entre pintados:
+  // si no, la tabla entera se repinta en cada tecla del buscador.
+  // Solo cuentan los que siguen existiendo (uno borrado deja de contar).
+  const idsSeleccionados = useMemo(
+    () => new Set(productosSeleccionados.map((p) => p.id)),
+    [productosSeleccionados]
+  );
+  const toggleSeleccion = useCallback(
+    (id: string) =>
+      setSeleccionados((prev) => {
+        const siguiente = new Set(prev);
+        if (siguiente.has(id)) siguiente.delete(id);
+        else siguiente.add(id);
+        return siguiente;
+      }),
+    []
+  );
+  const seleccionarVisibles = useCallback(
+    (marcar: boolean) =>
+      setSeleccionados((prev) => {
+        const siguiente = new Set(prev);
+        for (const p of filteredProducts) {
+          if (marcar) siguiente.add(p.id);
+          else siguiente.delete(p.id);
+        }
+        return siguiente;
+      }),
+    [filteredProducts]
+  );
+  const limpiarSeleccion = useCallback(() => setSeleccionados(new Set()), []);
+  const borrarProducto = useCallback(
+    (p: Producto) => handleDelete(p, variantesPorProducto[p.id]?.length ?? 0),
+    [handleDelete, variantesPorProducto]
+  );
+  const archivarProductoFila = useCallback(
+    (p: Producto) => handleArchive(p, variantesPorProducto[p.id]?.length ?? 0),
+    [handleArchive, variantesPorProducto]
+  );
+  const { handleDelete: borrarVar, handleArchive: archivarVar, openCreateForProduct } = variantes;
+  const borrarVariante = useCallback(
+    (v: VarianteProducto) => borrarVar(v, productoDeLaVariante(v)),
+    [borrarVar, productoDeLaVariante]
+  );
+  const archivarVariante = useCallback(
+    (v: VarianteProducto) => archivarVar(v, productoDeLaVariante(v)),
+    [archivarVar, productoDeLaVariante]
+  );
+  const agregarVariante = useCallback(
+    (p: Producto) =>
+      openCreateForProduct({
+        id: p.id,
+        nombre: p.nombre,
+        permite_variantes: p.permite_variantes,
+        permite_lotes: p.permite_lotes,
+        stock_minimo: p.stock_minimo,
+        unidad_medida: p.unidad_medida,
+        es_servicio: p.es_servicio,
+      }),
+    [openCreateForProduct]
+  );
+  const claveFiltro = useMemo(
+    () => `${busquedaAplicada}|${JSON.stringify(filters)}`,
+    [busquedaAplicada, filters]
+  );
 
   // No se pinta la barra hasta resolver el rol. Es la misma lección del fix
   // del sidebar (2026-09-04): calcular con `role` aún en null mostraba unos
@@ -561,40 +613,30 @@ export default function ProductsPage() {
       <ProductsTable
         products={products}
         filteredProducts={filteredProducts}
+        claveFiltro={claveFiltro}
         loading={loading}
         onEdit={openEditDialog}
-        onDelete={(p) => handleDelete(p, variantesPorProducto[p.id]?.length ?? 0)}
-        onArchive={(p) => handleArchive(p, variantesPorProducto[p.id]?.length ?? 0)}
+        onDelete={borrarProducto}
+        onArchive={archivarProductoFila}
         onAdd={openCreateDialog}
         onInlineSave={handleInlineSave}
         canEdit={canManageInventory}
         guardando={guardandoInline}
         favoritos={favoritos}
         onToggleFavorito={handleToggleFavorito}
-        // Solo cuentan los que siguen existiendo (uno borrado deja de contar).
-        seleccionados={new Set(productosSeleccionados.map((p) => p.id))}
+        seleccionados={idsSeleccionados}
         onToggleSeleccion={toggleSeleccion}
         onSeleccionarVisibles={seleccionarVisibles}
-        onLimpiarSeleccion={() => setSeleccionados(new Set())}
+        onLimpiarSeleccion={limpiarSeleccion}
         variantesPorProducto={variantesPorProducto}
         onEditVariante={variantes.openEditDialog}
-        onDeleteVariante={(v) => variantes.handleDelete(v, productoDeLaVariante(v))}
-        onArchiveVariante={(v) => variantes.handleArchive(v, productoDeLaVariante(v))}
+        onDeleteVariante={borrarVariante}
+        onArchiveVariante={archivarVariante}
         variantesFavoritas={variantes.favoritas}
         onToggleFavoritaVariante={variantes.toggleFavorita}
         onInlineSaveVariante={variantes.handleInlineSaveVariante}
         guardandoVariantes={variantes.guardandoVariantes}
-        onAgregarVariante={(p) =>
-          variantes.openCreateForProduct({
-            id: p.id,
-            nombre: p.nombre,
-            permite_variantes: p.permite_variantes,
-            permite_lotes: p.permite_lotes,
-            stock_minimo: p.stock_minimo,
-            unidad_medida: p.unidad_medida,
-            es_servicio: p.es_servicio,
-          })
-        }
+        onAgregarVariante={agregarVariante}
       />
 
         </TabsContent>

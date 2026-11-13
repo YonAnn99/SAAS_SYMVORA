@@ -127,6 +127,14 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     carrito ORDENADOS POR ID antes del bucle y mueve el stock en ese mismo orden (sin deadlocks entre cajas).
     `completeSale` reintenta hasta 2 veces ante 40P01/40001 (`esChoqueDeConcurrencia`): la transacción se revierte
     entera, así que es seguro. Una función nueva que bloquee varios productos debe seguir el mismo orden.
+  - **Catálogos grandes en Productos** (2026-11-12, medido con 1,000 productos: 152 mil elementos y la pestaña
+    congelada): la tabla y la lista de celular pintan por tramos de 60 (`hooks/use-lista-por-partes.ts`, «Mostrar más»
+    o al acercarse al final); buscar, filtrar, marcar todos, etiquetas y exportar usan la lista COMPLETA. Solo se monta
+    la vista visible (`useEsTabla`). `ProductsTable` lleva `memo`: la página le pasa funciones y conjuntos ESTABLES
+    (`useCallback`/`useMemo`); una función en línea nueva anula el `memo`. La búsqueda filtra con `useDeferredValue`
+    (`busquedaAplicada`). El `Select` de unidad por fila se monta al tocarlo. `HoldButton` usa UNA hoja de estilos
+    (`<style href precedence>`), no una por botón. **REGLA:** una lista que puede pasar de cientos de filas se pinta
+    por tramos. El POS hace lo mismo en `product-grid.tsx` (tarjetas por tramos; la clave cambia con la búsqueda, la categoría o la vista, no al cobrar).
   - Migración 105 (fase 3.1, aplicada el 2026-10-04): índices para las 19 llaves foráneas sin índice. Los
     nuevos salen como "unused" en el linter hasta que haya tráfico; no borrarlos por eso.
 - **Otras reglas:**

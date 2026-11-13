@@ -2,7 +2,7 @@
 
 import { useMoneda } from "@/hooks/use-moneda";
 
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, memo, useState, type ReactNode } from "react";
 import { textoContenido } from "@/lib/unidades";
 import { useTranslations } from "next-intl";
 import { useModulos } from "@/hooks/use-modulos";
@@ -41,6 +41,8 @@ import { EditableSelectCell, EditableTextCell } from "./editable-cell";
 import { FavoriteButton, StockBadge } from "./product-badges";
 import { rangoDePrecio, resumenConVariantes } from "@/features/inventory/resumen-variantes";
 import { ProductSwipeList } from "./product-swipe-list";
+import { useEsTabla } from "@/hooks/use-es-movil";
+import { useListaPorPartes } from "@/hooks/use-lista-por-partes";
 
 interface ProductsTableProps {
   products: Producto[];
@@ -94,9 +96,20 @@ interface ProductsTableProps {
   guardandoVariantes?: ReadonlySet<string>;
   /** Abre la ventana para crear variantes de este producto. */
   onAgregarVariante?: (product: Producto) => void;
+  /**
+   * Búsqueda + filtros vigentes. Al cambiar, la lista vuelve a su primer tramo
+   * (`useListaPorPartes`): solo se pintan las filas cercanas a lo que se ve.
+   */
+  claveFiltro?: string;
 }
 
-export function ProductsTable({
+/**
+ * Con `memo`: la página se repinta en cada tecla del buscador, pero la tabla
+ * (lo caro) solo cuando cambian sus datos. Por eso la página le pasa funciones
+ * y conjuntos ESTABLES (`useCallback`/`useMemo`): una función nueva en cada
+ * pintado anula el `memo` sin avisar.
+ */
+export const ProductsTable = memo(function ProductsTable({
   products,
   filteredProducts,
   loading,
@@ -122,9 +135,24 @@ export function ProductsTable({
   onInlineSaveVariante,
   guardandoVariantes = new Set<string>(),
   onAgregarVariante,
+  claveFiltro = "",
 }: ProductsTableProps) {
   const { formatear } = useMoneda();
   const t = useTranslations();
+  // Con catálogos grandes, pintar todas las filas congelaba la pestaña: se
+  // pintan por tramos. Marcar todos y exportar siguen usando `filteredProducts`.
+  const { visibles, hayMas, restantes, mostrarMas, centinela } = useListaPorPartes(
+    filteredProducts.length,
+    claveFiltro
+  );
+  // Solo se monta la vista que se ve: con `md:hidden` se montaban las dos.
+  const esTabla = useEsTabla();
+  const productosPintados = hayMas ? filteredProducts.slice(0, visibles) : filteredProducts;
+  const botonMas = (
+    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={mostrarMas}>
+      {t("products.table.showMore", { count: restantes })}
+    </Button>
+  );
   const { modulos } = useModulos();
   // Escritorio: productos con sus variantes desplegadas (varios a la vez).
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
@@ -220,9 +248,17 @@ export function ProductsTable({
           <>
           {/* Celular: una pastilla deslizable por producto (editar/eliminar al
               deslizar). La tabla de 9 columnas obligaba a desplazarse de lado. */}
+          {!esTabla && (
           <div className="md:hidden">
             <ProductSwipeList
-              productos={filteredProducts}
+              productos={productosPintados}
+              pie={
+                hayMas ? (
+                  <div ref={centinela} className="flex justify-center py-3">
+                    {botonMas}
+                  </div>
+                ) : null
+              }
               seleccionados={seleccionados}
               onToggleSeleccion={onToggleSeleccion}
               onSeleccionarVisibles={onSeleccionarVisibles}
@@ -256,6 +292,8 @@ export function ProductsTable({
               onToggleFavorita={onToggleFavoritaVariante}
             />
           </div>
+          )}
+          {esTabla && (
           <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
@@ -298,7 +336,7 @@ export function ProductsTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => {
+                {productosPintados.map((product) => {
                   const savingRow = guardando.has(product.id);
                   const celda = (campo: CampoInline) => ({
                     canEdit,
@@ -667,15 +705,23 @@ export function ProductsTable({
                   </Fragment>
                   );
                 })}
+                {hayMas && (
+                  <TableRow ref={centinela} className="hover:bg-transparent">
+                    <TableCell colSpan={10} className="py-4 text-center">
+                      {botonMas}
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
+          )}
           </>
         )}
       </CardContent>
     </Card>
   );
-}
+});
 
 /**
  * Margen de un producto en la tabla.
