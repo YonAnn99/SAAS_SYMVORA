@@ -12,6 +12,10 @@
  * Solo la ve quien tiene el `permiso` del módulo: al cajero no se le anuncia
  * lo que no puede abrir.
  *
+ * Una novedad con `funcion` es un botón DENTRO de un módulo (p. ej. «Etiquetas»
+ * en Productos): la etiqueta «Nuevo» va en ese botón y no en el menú, entrar al
+ * módulo no la marca vista (se marca al usarla) y no abre la ventana.
+ *
  * Lo visto se recuerda en `localStorage` por usuario. Es una cortesía: verla
  * otra vez en otro aparato no hace daño, así que no lleva tabla.
  */
@@ -20,7 +24,13 @@ export interface Novedad {
   id: string;
   /** Ruta del panel sin idioma: la etiqueta se pega a esta opción del menú. */
   href: string;
-  permiso: string;
+  /** Permiso del módulo; `null` = todo el equipo (como el catálogo de Productos). */
+  permiso: string | null;
+  /**
+   * Función dentro del módulo (el botón que lleva la etiqueta). Sin ella, la
+   * novedad es el módulo entero.
+   */
+  funcion?: string;
   /** Día (CDMX) desde el que se anuncia y día hasta el que dura la etiqueta. */
   desde: string;
   hasta: string;
@@ -45,6 +55,23 @@ export const NOVEDADES: readonly Novedad[] = [
       "Ya viene incluido en tu plan, sin costo extra.",
     ],
     boton: "Conocerlo",
+  },
+  {
+    // Aviso en la campana: migración 134 (negocios actuales y los que se registren
+    // hasta `hasta`).
+    id: "etiquetas-codigos",
+    href: "/products",
+    funcion: "etiquetas",
+    permiso: null,
+    desde: "2026-11-12",
+    hasta: "2026-12-03",
+    titulo: "Nuevo: etiquetas con código de barras",
+    texto: "Imprime etiquetas con código de barras y precio para tus productos.",
+    puntos: [
+      "En hoja carta o en rollo para impresora de etiquetas.",
+      "Genera códigos a los productos que no tienen.",
+    ],
+    boton: "Probarlo",
   },
 ];
 
@@ -75,12 +102,21 @@ export const ESTADO_VACIO: EstadoNovedades = { vistas: [], descartadas: [] };
 
 /** Las novedades vigentes que esta persona puede abrir. */
 export function novedadesPara(ahora: Date, can: (permiso: string) => boolean): Novedad[] {
-  return NOVEDADES.filter((n) => novedadVigente(n, ahora) && can(n.permiso));
+  return NOVEDADES.filter((n) => novedadVigente(n, ahora) && (n.permiso === null || can(n.permiso)));
 }
 
 /** La novedad que lleva la etiqueta «Nuevo» en esta opción del menú, si hay. */
 export function esNuevo(href: string, activas: readonly Novedad[], estado: EstadoNovedades): boolean {
-  return activas.some((n) => n.href === href && !estado.vistas.includes(n.id));
+  return activas.some((n) => !n.funcion && n.href === href && !estado.vistas.includes(n.id));
+}
+
+/** Si el botón `funcion` (dentro de su módulo) lleva la etiqueta «Nuevo». */
+export function esFuncionNueva(
+  funcion: string,
+  activas: readonly Novedad[],
+  estado: EstadoNovedades
+): boolean {
+  return activas.some((n) => n.funcion === funcion && !estado.vistas.includes(n.id));
 }
 
 /** La que toca enseñar en la ventana: la primera que no vio ni descartó. */
@@ -89,7 +125,9 @@ export function novedadPorMostrar(
   estado: EstadoNovedades
 ): Novedad | null {
   return (
-    activas.find((n) => !estado.vistas.includes(n.id) && !estado.descartadas.includes(n.id)) ?? null
+    activas.find(
+      (n) => !n.funcion && !estado.vistas.includes(n.id) && !estado.descartadas.includes(n.id)
+    ) ?? null
   );
 }
 

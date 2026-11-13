@@ -3328,6 +3328,7 @@
     "dismissError": "No se pudo quitar la notificación. Intenta de nuevo."
   },
   "news": {
+    "new": "Nuevo",
     "badge": "Novedad en SYMVORA",
     "later": "Después",
     "newOrder": "¡Nuevo pedido!",

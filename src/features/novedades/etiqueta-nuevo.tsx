@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,6 +7,7 @@ import { cn } from "@/lib/utils";
  * pastilla clara de la opción activa.
  */
 export function EtiquetaNuevo({ className }: { className?: string }) {
+  const t = useTranslations("news");
   return (
     <span
       className={cn(
@@ -13,7 +15,7 @@ export function EtiquetaNuevo({ className }: { className?: string }) {
         className
       )}
     >
-      Nuevo
+      {t("new")}
     </span>
   );
 }

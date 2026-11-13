@@ -3328,6 +3328,7 @@
     "dismissError": "Couldn't remove the notification. Try again."
   },
   "news": {
+    "new": "New",
     "badge": "New in SYMVORA",
     "later": "Later",
     "newOrder": "New order!",

@@ -88,6 +88,8 @@ import { SucursalSelector } from "@/features/sucursales/components/sucursal-sele
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { descargarPlantillaProductos } from "@/features/inventory/plantilla-productos";
 import { toast } from "sonner";
+import { useNovedades } from "@/features/novedades/use-novedades";
+import { EtiquetaNuevo } from "@/features/novedades/etiqueta-nuevo";
 
 export default function ProductsPage() {
   const { formatear } = useMoneda();
@@ -199,6 +201,14 @@ export default function ProductsPage() {
   // cruza con `products`, asi un producto borrado se ignora solo.
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
   const [etiquetasAbiertas, setEtiquetasAbiertas] = useState(false);
+  // Novedad «etiquetas-codigos» (`lib/novedades.ts`): pastilla «Nuevo» en el
+  // botón hasta que la persona lo usa.
+  const { funcionNueva, usarFuncion } = useNovedades();
+  const etiquetasNuevas = funcionNueva("etiquetas");
+  const abrirEtiquetas = () => {
+    usarFuncion("etiquetas");
+    setEtiquetasAbiertas(true);
+  };
   const productosSeleccionados = products.filter((p) => seleccionados.has(p.id));
   const toggleSeleccion = (id: string) =>
     setSeleccionados((prev) => {
@@ -462,10 +472,11 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               className="gap-1.5 px-2.5 text-xs"
-              onClick={() => setEtiquetasAbiertas(true)}
+              onClick={abrirEtiquetas}
             >
               <Barcode className="h-4 w-4" />
               {t("products.page.labels")}
+              {etiquetasNuevas && <EtiquetaNuevo className="ml-0.5" />}
             </Button>
           }
           exportar={
@@ -513,7 +524,7 @@ export default function ProductsPage() {
           variant="outline"
           size="sm"
           className="h-8 shrink-0 gap-1.5 text-xs"
-          onClick={() => setEtiquetasAbiertas(true)}
+          onClick={abrirEtiquetas}
           title={
             productosSeleccionados.length > 0
               ? t("products.page.labelsSelected", { count: productosSeleccionados.length })
@@ -522,6 +533,7 @@ export default function ProductsPage() {
         >
           <Barcode className="h-3.5 w-3.5" />
           {t("products.page.labels")}
+          {etiquetasNuevas && <EtiquetaNuevo className="ml-0.5" />}
           {productosSeleccionados.length > 0 && (
             <span className="ml-0.5 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
               {productosSeleccionados.length}

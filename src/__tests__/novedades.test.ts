@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ESTADO_VACIO,
   NOVEDADES,
+  esFuncionNueva,
   esNuevo,
   hoyMx,
   leerEstado,
@@ -58,5 +59,34 @@ describe("novedades", () => {
     expect(leerEstado(null)).toEqual(ESTADO_VACIO);
     expect(leerEstado("no es json")).toEqual(ESTADO_VACIO);
     expect(leerEstado('{"vistas":["a",3],"descartadas":"b"}')).toEqual({ vistas: ["a"], descartadas: [] });
+  });
+});
+
+describe("novedad de una función dentro de un módulo (etiquetas, migración 134)", () => {
+  const etiquetas = NOVEDADES.find((n) => n.id === "etiquetas-codigos")!;
+  // 2026-11-20 a mediodía en CDMX: vigentes las dos.
+  const ambas = new Date("2026-11-20T18:00:00Z");
+
+  it("la ve todo el equipo (el catálogo de Productos no pide permiso)", () => {
+    expect(etiquetas.permiso).toBeNull();
+    expect(novedadesPara(ambas, () => false)).toContain(etiquetas);
+  });
+
+  it("la etiqueta va en el botón, no en el menú de Productos", () => {
+    const activas = novedadesPara(ambas, todo);
+    expect(esNuevo("/products", activas, ESTADO_VACIO)).toBe(false);
+    expect(esFuncionNueva("etiquetas", activas, ESTADO_VACIO)).toBe(true);
+    expect(esFuncionNueva("etiquetas", activas, { vistas: [etiquetas.id], descartadas: [] })).toBe(false);
+  });
+
+  it("no abre la ventana de novedad", () => {
+    const activas = novedadesPara(ambas, (p) => p !== "catalog.manage");
+    expect(activas).toContain(etiquetas);
+    expect(novedadPorMostrar(activas, ESTADO_VACIO)).toBeNull();
+  });
+
+  it("deja de anunciarse después del 3 de diciembre", () => {
+    expect(novedadVigente(etiquetas, new Date("2026-12-04T07:00:00Z"))).toBe(false);
+    expect(novedadVigente(etiquetas, new Date("2026-11-12T18:00:00Z"))).toBe(true);
   });
 });

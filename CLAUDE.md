@@ -485,7 +485,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 
 ## Novedades del producto (2026-10-30)
 - **Fuente única** `lib/novedades.ts` (`NOVEDADES`: id, ruta, permiso, `desde`/`hasta` en días CDMX). Hoy: el Catálogo en
-  línea. Solo la ve quien tiene el permiso del módulo; nunca en demo.
+  línea y las Etiquetas con código de barras. Solo la ve quien tiene el permiso del módulo (`null` = todo el equipo);
+  nunca en demo.
+- **Novedad de una función dentro de un módulo** (campo `funcion`, p. ej. `"etiquetas"` en Productos): la pastilla
+  «Nuevo»/«New» va en ESE botón (`funcionNueva`/`usarFuncion` de `useNovedades`), no en el menú; entrar al módulo no la
+  marca vista (se marca al usarla) y no abre la ventana. `EtiquetaNuevo` se traduce (`news.new`).
 - **Cuatro vías:**
   - **Etiqueta «Nuevo»** en el menú lateral, en el panel «Más» y un punto en el botón (+) del dock
     (`features/novedades/`: `use-novedades.ts`, `etiqueta-nuevo.tsx`). Se quita al abrir el módulo.
@@ -496,8 +500,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - **Correo** a los dueños: `/api/cron/anuncio-novedad`. Fuera de `vercel.json`, se corre a mano. Sin parámetros es
     simulacro; `?enviar=1` manda, una vez por persona (`consumirRateLimit`). Destinatarios en
     `lib/anuncio-novedad.ts`: sin demos, sin solo lectura y sin quien ya tiene catálogo.
-- Para una novedad futura: agrégala a `NOVEDADES`; para la campana y el correo, haz una migración y una plantilla
-  nuevas.
+- **Migración 134 (Etiquetas):** aviso en la campana a todo negocio real (`permiso` NULL) y trigger
+  `trg_tenants_novedades` → `_novedades_negocio_nuevo()`: los negocios que se registren hasta el 2026-12-03 también lo
+  reciben (demos no; atrapa sus errores).
+- Para una novedad futura: agrégala a `NOVEDADES`; para la campana, una migración que siembre los avisos y haga
+  `CREATE OR REPLACE` de `_novedades_negocio_nuevo()` con el texto y la fecha nuevos; para el correo, una plantilla.
 
 ## App de Android en Google Play (TWA) y eliminar cuenta (migración 128, 2026-10-31)
 - **La app es una TWA** (Trusted Web Activity, con Bubblewrap): abre `app.symvora.com.mx` en Chrome a pantalla completa.
@@ -649,7 +656,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 133; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 134; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**

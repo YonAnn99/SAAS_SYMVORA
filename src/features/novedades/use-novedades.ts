@@ -9,6 +9,7 @@ import { stripLocale } from "@/lib/navigation";
 import {
   ESTADO_VACIO,
   claveNovedades,
+  esFuncionNueva,
   esNuevo,
   leerEstado,
   novedadPorMostrar,
@@ -77,21 +78,35 @@ export function useNovedades() {
   const listo = !tenantLoading && !permisosLoading && Boolean(clave) && !isDemo;
   const activas = useMemo(() => (listo ? novedadesPara(new Date(), can) : []), [listo, can]);
 
-  // Entrar al módulo cuenta como visto, llegue por donde llegue.
+  // Entrar al módulo cuenta como visto, llegue por donde llegue. Una función
+  // dentro del módulo no: esa se marca al usarla (`usarFuncion`).
   useEffect(() => {
     if (!clave) return;
-    const enModulo = activas.find((n) => n.href === ruta);
+    const enModulo = activas.find((n) => !n.funcion && n.href === ruta);
     if (enModulo) marcar(clave, "vistas", enModulo.id);
   }, [clave, activas, ruta]);
 
   const nuevo = useCallback((href: string) => esNuevo(href, activas, estado), [activas, estado]);
   const vista = useCallback((id: string) => clave && marcar(clave, "vistas", id), [clave]);
   const descartar = useCallback((id: string) => clave && marcar(clave, "descartadas", id), [clave]);
+  const funcionNueva = useCallback(
+    (funcion: string) => esFuncionNueva(funcion, activas, estado),
+    [activas, estado]
+  );
+  const usarFuncion = useCallback(
+    (funcion: string) => {
+      if (!clave) return;
+      activas.filter((n) => n.funcion === funcion).forEach((n) => marcar(clave, "vistas", n.id));
+    },
+    [clave, activas]
+  );
 
   return {
     esNuevo: nuevo,
     porMostrar: novedadPorMostrar(activas, estado),
     marcarVista: vista,
     descartar,
+    funcionNueva,
+    usarFuncion,
   };
 }
