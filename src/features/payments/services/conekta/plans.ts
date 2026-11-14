@@ -9,6 +9,7 @@ import type { ClavePlan } from "../../promocion";
 const DEFINICION: Record<ClavePlan, { nombre: string; intervalo: "month" | "year" }> = {
   monthly: { nombre: "SYMVORA Basico Mensual", intervalo: "month" },
   yearly: { nombre: "SYMVORA Basico Anual", intervalo: "year" },
+  yearlyTablet: { nombre: "SYMVORA ANUAL TABLET", intervalo: "year" },
   monthlyPromo: { nombre: "SYMVORA Basico Mensual - Promo -50%", intervalo: "month" },
 };
 

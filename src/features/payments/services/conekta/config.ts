@@ -1,6 +1,10 @@
 import { CustomersApi, Configuration, PlansApi, SubscriptionsApi } from "conekta";
 import https from "https";
-import { SUBSCRIPTION_PRICE_CENTS, PROMO_LANZAMIENTO } from "@/lib/pricing";
+import {
+  SUBSCRIPTION_PRICE_CENTS,
+  PROMO_LANZAMIENTO,
+  PROMO_ANUAL_TABLET,
+} from "@/lib/pricing";
 import { TIMEOUTS } from "@/lib/http/timeout";
 
 const apiKey = process.env.CONEKTA_PRIVATE_KEY;
@@ -53,9 +57,11 @@ export const conektaSubscriptionsApi = new SubscriptionsApi(config);
 // de la promocion, este id tambien tiene que versionarse (-v2): igual que los
 // demas, su monto es inmutable una vez creado en Conekta.
 //   promo50-v1 -> $199, tres cobros, luego symvora-basic-monthly-v3
+//   symvora-anual-tablet -> $4,788, anual con tablet incluida (promo nov 2026)
 export const CONEKTA_PLAN_IDS = {
   monthly: "symvora-basic-monthly-v3",
   yearly: "symvora-basic-yearly-v3",
+  yearlyTablet: "symvora-anual-tablet",
   monthlyPromo: "symvora-basic-monthly-promo50-v1",
 } as const;
 
@@ -64,5 +70,6 @@ export const CONEKTA_PLAN_IDS = {
 // `lib/pricing.ts` para que no puedan separarse.
 export const CONEKTA_PLAN_AMOUNTS = {
   ...SUBSCRIPTION_PRICE_CENTS,
+  yearlyTablet: PROMO_ANUAL_TABLET.precioCents,
   monthlyPromo: PROMO_LANZAMIENTO.precioCents,
 } as const;

@@ -21,12 +21,14 @@
 
 import {
   PROMO_LANZAMIENTO,
+  PROMO_ANUAL_TABLET,
   SUBSCRIPTION_PRICE_CENTS,
+  esPromoAnualTabletVigente,
   type BillingPeriod,
 } from "@/lib/pricing";
 
 /** Clave de plan, no id de Conekta. La traduce `conekta/config.ts`. */
-export type ClavePlan = "monthly" | "yearly" | "monthlyPromo";
+export type ClavePlan = "monthly" | "yearly" | "monthlyPromo" | "yearlyTablet";
 
 /** ?Se le ofrece la promocion a quien contrata en este momento? */
 export function promoAplica(period: BillingPeriod): boolean {
@@ -49,16 +51,28 @@ export function cobrosPromoIniciales(period: BillingPeriod): number {
  */
 export function precioCobroCents(
   period: BillingPeriod,
-  cobrosRestantes: number
+  cobrosRestantes: number,
+  esNuevoCliente: boolean = true,
+  ahora: Date = new Date()
 ): number {
   if (period === PROMO_LANZAMIENTO.periodo && cobrosRestantes > 0) {
     return PROMO_LANZAMIENTO.precioCents;
+  }
+  if (period === "yearly" && esPromoAnualTabletVigente(ahora) && esNuevoCliente) {
+    return PROMO_ANUAL_TABLET.precioCents;
   }
   return SUBSCRIPTION_PRICE_CENTS[period];
 }
 
 /** Plan con el que arrancar un checkout nuevo. */
-export function claveDePlanNuevo(period: BillingPeriod): ClavePlan {
+export function claveDePlanNuevo(
+  period: BillingPeriod,
+  esNuevoCliente: boolean = true,
+  ahora: Date = new Date()
+): ClavePlan {
+  if (period === "yearly" && esPromoAnualTabletVigente(ahora) && esNuevoCliente) {
+    return "yearlyTablet";
+  }
   return promoAplica(period) ? "monthlyPromo" : period;
 }
 

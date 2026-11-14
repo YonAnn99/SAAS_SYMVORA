@@ -88,9 +88,12 @@ export async function POST(request: Request) {
       period
     );
 
-    const clavePlan = conOfertaRegreso ? "monthlyPromo" : claveDePlanNuevo(period);
-    const esPromo = clavePlan === "monthlyPromo";
     const yaPaga = Boolean(subscription.last_payment_at);
+    const esNuevoCliente = !yaPaga;
+    const clavePlan = conOfertaRegreso
+      ? "monthlyPromo"
+      : claveDePlanNuevo(period, esNuevoCliente);
+    const esPromo = clavePlan === "monthlyPromo";
 
     const cambios: Record<string, unknown> = { billing_period: period };
     if (conOfertaRegreso) {
@@ -236,13 +239,15 @@ export async function POST(request: Request) {
       : esPromo && !yaPaga
         ? cobrosPromoIniciales(period)
         : 0;
-    const amount = precioCobroCents(period, cobrosPromo);
+    const amount = precioCobroCents(period, cobrosPromo, esNuevoCliente);
     const description =
-      period === "yearly"
-        ? "SYMVORA Basico - Anual"
-        : cobrosPromo > 0
-          ? "SYMVORA Basico - Mensual (promo -50%)"
-          : "SYMVORA Basico - Mensual";
+      clavePlan === "yearlyTablet"
+        ? "SYMVORA ANUAL TABLET"
+        : period === "yearly"
+          ? "SYMVORA Basico - Anual"
+          : cobrosPromo > 0
+            ? "SYMVORA Basico - Mensual (promo -50%)"
+            : "SYMVORA Basico - Mensual";
 
     // Tarjeta = cobro recurrente real (Conekta solo soporta suscripciones con
     // tarjeta): en vez de una orden de una sola exhibición, se crea el checkout

@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import * as m from "motion/react-m";
 import { ArrowRight, Rocket } from "lucide-react";
 import { PRECIO_PROMO_MXN, precioListaMXN, promoAplica } from "@/features/payments/promocion";
-import { PROMO_LANZAMIENTO } from "@/lib/pricing";
+import { PROMO_LANZAMIENTO, esPromoAnualTabletVigente } from "@/lib/pricing";
 import { WhatsAppLogo } from "./whatsapp-logo";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, WHATSAPP_CONTORNO } from "./boton-capsula";
 import {
@@ -58,7 +58,12 @@ export function CTA() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
   const isYearly = billing === "yearly";
-  const period = isYearly ? t("landing.cta.periodYearly") : t("landing.cta.periodMonthly");
+  const hayPromoTablet = esPromoAnualTabletVigente();
+  const period = isYearly
+    ? hayPromoTablet
+      ? t("landing.cta.periodYearlyTablet")
+      : t("landing.cta.periodYearly")
+    : t("landing.cta.periodMonthly");
 
   // La promocion solo toca el mensual. El precio sale de la constante y no de
   // una cadena de i18n para que no pueda desincronizarse de lo que cobra
@@ -75,7 +80,9 @@ export function CTA() {
   const price = hayPromo
     ? `$${PRECIO_PROMO_MXN}`
     : isYearly
-      ? t("landing.cta.priceYearly")
+      ? hayPromoTablet
+        ? t("landing.cta.priceYearlyTablet")
+        : t("landing.cta.priceYearly")
       : t("landing.cta.priceMonthly");
 
   return (
@@ -196,13 +203,25 @@ export function CTA() {
               }`}
             />
             <span className="relative">{t("landing.cta.yearly")}</span>
-            <span
-              className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                isYearly ? "bg-emerald-400 text-black" : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-              }`}
-            >
-              {t("landing.cta.saveBadge")}
-            </span>
+            {hayPromoTablet ? (
+              <span
+                className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  isYearly
+                    ? "bg-blue-500 text-white"
+                    : "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300"
+                }`}
+              >
+                {t("landing.cta.tabletPromoBadge")}
+              </span>
+            ) : (
+              <span
+                className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  isYearly ? "bg-emerald-400 text-black" : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                }`}
+              >
+                {t("landing.cta.saveBadge")}
+              </span>
+            )}
           </button>
         </m.div>
 
@@ -237,6 +256,29 @@ export function CTA() {
               normal: `$${precioListaMXN("monthly")}`,
             })}
           </m.p>
+        )}
+
+        {isYearly && hayPromoTablet && (
+          <div className="-mt-3 flex flex-col items-center gap-1 text-center">
+            <m.p
+              key="promo-tablet"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={easeOutShort}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400"
+            >
+              {t("landing.cta.tabletPromoNota")}
+            </m.p>
+            <m.p
+              key="promo-tablet-vigencia"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={easeOutShort}
+              className="text-xs font-medium text-neutral-500 dark:text-neutral-400"
+            >
+              {t("landing.cta.tabletPromoVigencia")}
+            </m.p>
+          </div>
         )}
 
         <m.div

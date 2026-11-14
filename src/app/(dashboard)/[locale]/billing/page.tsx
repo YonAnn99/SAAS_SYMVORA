@@ -44,7 +44,7 @@ import {
   precioListaMXN,
   promoAplica,
 } from "@/features/payments/promocion";
-import { PROMO_LANZAMIENTO } from "@/lib/pricing";
+import { PROMO_LANZAMIENTO, esPromoAnualTabletVigente } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
 import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
@@ -187,6 +187,8 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
     ofertaRegreso ||
     (promoAplica(selectedPeriod) && !subscription?.last_payment_at);
   const cobrosPromoRestantes = subscription?.promo_cobros_restantes ?? 0;
+  const promoTabletVigente =
+    esPromoAnualTabletVigente() && !subscription?.last_payment_at;
 
   const getDaysLeft = () => {
     if (!subscription?.trial_end) return 0;
@@ -630,7 +632,11 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                       </span>
                     </>
                   ) : selectedPeriod === "yearly" ? (
-                    t("landing.cta.priceYearly")
+                    promoTabletVigente ? (
+                      t("landing.cta.priceYearlyTablet")
+                    ) : (
+                      t("landing.cta.priceYearly")
+                    )
                   ) : (
                     t("landing.cta.priceMonthly")
                   )}
@@ -653,6 +659,17 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                         normal: `$${precioListaMXN("monthly")}`,
                       })}
                 </p>
+              )}
+
+              {selectedPeriod === "yearly" && promoTabletVigente && (
+                <div className="-mt-2 space-y-0.5">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                    {t("landing.cta.tabletPromoNota")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("landing.cta.tabletPromoVigencia")}
+                  </p>
+                </div>
               )}
 
               <div
@@ -687,9 +704,15 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   }`}
                 >
                   {t("landing.cta.yearly")}
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                    {t("landing.cta.saveBadge")}
-                  </span>
+                  {promoTabletVigente ? (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                      {t("landing.cta.tabletPromoBadge")}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                      {t("landing.cta.saveBadge")}
+                    </span>
+                  )}
                 </button>
               </div>
 

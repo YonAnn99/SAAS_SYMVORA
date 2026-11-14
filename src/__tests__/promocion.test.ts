@@ -6,7 +6,12 @@ import {
   promoAplica,
   trasCobrar,
 } from "@/features/payments/promocion";
-import { PROMO_LANZAMIENTO, SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
+import {
+  PROMO_LANZAMIENTO,
+  PROMO_ANUAL_TABLET,
+  SUBSCRIPTION_PRICE_CENTS,
+  esPromoAnualTabletVigente,
+} from "@/lib/pricing";
 
 /**
  * La promocion de lanzamiento cobra $199 tres veces y despues $399. Todo lo que
@@ -14,33 +19,42 @@ import { PROMO_LANZAMIENTO, SUBSCRIPTION_PRICE_CENTS } from "@/lib/pricing";
  * cobrar de mas antes de tiempo, o regalar meses que nadie autorizo.
  */
 
-describe("a quien le toca la promoción", () => {
+describe("a quien le toca la promoción mensual", () => {
   it("nunca se le aplica al plan anual", () => {
     // $199 es media mensualidad; aplicarselo a un cobro anual de $3,588 seria
-    // regalar el 94% del año. El anual se queda con su "Ahorra 25%".
+    // regalar el 94% del año.
     expect(promoAplica("yearly")).toBe(false);
     expect(cobrosPromoIniciales("yearly")).toBe(0);
-    expect(precioCobroCents("yearly", 3)).toBe(SUBSCRIPTION_PRICE_CENTS.yearly);
   });
 
-  it("una suscripción anual no puede nacer con cobros promocionales", () => {
-    expect(claveDePlanNuevo("yearly")).toBe("yearly");
+  it("una suscripción anual fuera de la promo de tablet nace en el plan anual normal", () => {
+    const fechaFuera = new Date("2026-11-20T00:00:00Z");
+    expect(claveDePlanNuevo("yearly", true, fechaFuera)).toBe("yearly");
+    expect(precioCobroCents("yearly", 3, true, fechaFuera)).toBe(SUBSCRIPTION_PRICE_CENTS.yearly);
   });
 });
 
 describe("cuánto se cobra en cada ciclo", () => {
-  it("los tres primeros cobros son de $199 y el cuarto de $399", () => {
+  it("los seis primeros cobros son de $199 y el séptimo de $399", () => {
     // El fallo que evita: quedarse cobrando $199 para siempre porque el
     // contador nunca se consulta al calcular el monto.
     const montos: number[] = [];
     let restantes = cobrosPromoIniciales("monthly");
 
-    for (let ciclo = 0; ciclo < 4; ciclo++) {
+    for (let ciclo = 0; ciclo < 7; ciclo++) {
       montos.push(precioCobroCents("monthly", restantes));
       restantes = trasCobrar(restantes, true).restantes;
     }
 
-    expect(montos).toEqual([19900, 19900, 19900, SUBSCRIPTION_PRICE_CENTS.monthly]);
+    expect(montos).toEqual([
+      19900,
+      19900,
+      19900,
+      19900,
+      19900,
+      19900,
+      SUBSCRIPTION_PRICE_CENTS.monthly,
+    ]);
   });
 
   it("el precio de un cobro no depende de que la promoción siga encendida", () => {
@@ -104,3 +118,31 @@ describe("coherencia de la constante", () => {
     expect(descuentoReal).toBeGreaterThanOrEqual(PROMO_LANZAMIENTO.descuentoPct / 100);
   });
 });
+
+describe("promoción temporal SYMVORA ANUAL TABLET ($4,788 MXN)", () => {
+  it("está activa para nuevos clientes antes del 17 de noviembre a las 23:59:59 CST", () => {
+    const fechaDentro = new Date("2026-11-15T12:00:00-06:00");
+    expect(esPromoAnualTabletVigente(fechaDentro)).toBe(true);
+    // Nuevo cliente (esNuevoCliente = true)
+    expect(claveDePlanNuevo("yearly", true, fechaDentro)).toBe("yearlyTablet");
+    expect(precioCobroCents("yearly", 0, true, fechaDentro)).toBe(PROMO_ANUAL_TABLET.precioCents);
+    expect(precioCobroCents("yearly", 0, true, fechaDentro)).toBe(478800);
+  });
+
+  it("clientes existentes que ya pagaron conservan el plan anual normal de $3,588 MXN", () => {
+    const fechaDentro = new Date("2026-11-15T12:00:00-06:00");
+    // Cliente existente (esNuevoCliente = false)
+    expect(claveDePlanNuevo("yearly", false, fechaDentro)).toBe("yearly");
+    expect(precioCobroCents("yearly", 0, false, fechaDentro)).toBe(SUBSCRIPTION_PRICE_CENTS.yearly);
+    expect(precioCobroCents("yearly", 0, false, fechaDentro)).toBe(358800);
+  });
+
+  it("expira después del 17 de noviembre a las 23:59:59 CST y vuelve al plan anual regular", () => {
+    const fechaDespues = new Date("2026-11-18T00:00:00-06:00");
+    expect(esPromoAnualTabletVigente(fechaDespues)).toBe(false);
+    expect(claveDePlanNuevo("yearly", true, fechaDespues)).toBe("yearly");
+    expect(precioCobroCents("yearly", 0, true, fechaDespues)).toBe(SUBSCRIPTION_PRICE_CENTS.yearly);
+    expect(precioCobroCents("yearly", 0, true, fechaDespues)).toBe(358800);
+  });
+});
+
