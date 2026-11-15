@@ -54,6 +54,53 @@ export async function POST(request: Request) {
     const demo = await assertNotDemo();
     if (!demo.ok) return demo.response;
 
+    const codigoClean = codigo.trim().toUpperCase();
+    if (codigoClean === "SYMVORA99") {
+      const { esPromoMeta99Vigente } = await import("@/lib/pricing");
+      if (!esPromoMeta99Vigente()) {
+        return NextResponse.json(
+          { error: "expirado", ok: false },
+          { status: 400 }
+        );
+      }
+      const supabase = createSupabaseServiceRoleClient();
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("id, status, last_payment_at")
+        .eq("tenant_id", tenant_id)
+        .maybeSingle();
+
+      if (sub && sub.status !== "trial" && sub.status !== "expired" && sub.last_payment_at) {
+        return NextResponse.json(
+          { error: "suscripcion_activa", ok: false },
+          { status: 400 }
+        );
+      }
+
+      await supabase
+        .from("subscriptions")
+        .update({
+          promo_codigo_campana: "SYMVORA99",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tenant_id", tenant_id);
+
+      const { data: updatedSub } = await supabase
+        .from("subscriptions")
+        .select("status, trial_start, trial_end, promo_codigo_campana")
+        .eq("tenant_id", tenant_id)
+        .single();
+
+      return NextResponse.json({
+        ok: true,
+        tipo: "pago_unico_campana",
+        codigo: "SYMVORA99",
+        precio_mxn: 99,
+        valido_hasta_ano: "2026-12-31T23:59:59-06:00",
+        subscription: updatedSub,
+      });
+    }
+
     // El RPC es SECURITY DEFINER y valida auth.uid() + membresía internamente,
     // por lo que debe ejecutarse con el cliente autenticado del usuario.
     const userClient = await createSupabaseServerClient();

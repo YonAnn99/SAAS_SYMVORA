@@ -7,9 +7,9 @@ import { rutaDeRegresoSegura } from "@/lib/ruta-de-regreso";
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; ref?: string; giro?: string; next?: string }>;
+  searchParams: Promise<{ mode?: string; ref?: string; giro?: string; next?: string; promo?: string }>;
 }) {
-  const { mode, ref, giro, next } = await searchParams;
+  const { mode, ref, giro, next, promo } = await searchParams;
   // A donde volver al entrar (lo pone el middleware). Lo que no sea una ruta
   // interna segura se ignora y se entra al dashboard como siempre.
   const destino = rutaDeRegresoSegura(next);
@@ -22,6 +22,7 @@ export default async function AuthPage({
   const referrerBusinessName = referralCode
     ? await getReferrerBusinessName(referralCode)
     : null;
+  const initialPromoCode = promo?.trim() ? promo.trim().toUpperCase() : null;
 
   return (
     <Suspense>
@@ -31,10 +32,11 @@ export default async function AuthPage({
         referrerBusinessName={referrerBusinessName}
         initialGiro={initialGiro}
         destino={destino}
+        initialPromoCode={initialPromoCode}
         // En celular, la pantalla de bienvenida solo cuando se llega sin un
         // destino concreto: quien pidio entrar, registrarse, viene de un
         // referido o de una sesion vencida va directo a su formulario.
-        bienvenida={!mode && !destino && !referralCode && !initialGiro}
+        bienvenida={!mode && !destino && !referralCode && !initialGiro && !initialPromoCode}
       />
     </Suspense>
   );

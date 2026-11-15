@@ -5,11 +5,12 @@ export default async function SignupPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; promo?: string }>;
 }) {
   const { locale } = await params;
-  const { ref } = await searchParams;
+  const { ref, promo } = await searchParams;
 
   const refQuery = ref ? `&ref=${encodeURIComponent(ref)}` : "";
-  redirect(`/${locale}/auth?mode=signup${refQuery}`);
+  const promoQuery = promo ? `&promo=${encodeURIComponent(promo)}` : "";
+  redirect(`/${locale}/auth?mode=signup${refQuery}${promoQuery}`);
 }

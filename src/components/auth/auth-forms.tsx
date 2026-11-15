@@ -153,6 +153,7 @@ export function AuthForms({
   referrerBusinessName = null,
   initialGiro,
   destino = null,
+  initialPromoCode = null,
   bienvenida: bienvenidaInicial = false,
 }: {
   /**
@@ -170,6 +171,8 @@ export function AuthForms({
    * `rutaDeRegresoSegura`). Sin ella, al dashboard.
    */
   destino?: string | null;
+  /** Codigo promocional opcional desde URL (?promo=) */
+  initialPromoCode?: string | null;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -252,8 +255,8 @@ export function AuthForms({
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupLoading, setSignupLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [showPromoInput, setShowPromoInput] = useState(false);
+  const [promoCode, setPromoCode] = useState(initialPromoCode ?? "");
+  const [showPromoInput, setShowPromoInput] = useState(Boolean(initialPromoCode));
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;

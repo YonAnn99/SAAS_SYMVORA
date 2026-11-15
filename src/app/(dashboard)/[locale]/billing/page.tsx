@@ -44,7 +44,7 @@ import {
   precioListaMXN,
   promoAplica,
 } from "@/features/payments/promocion";
-import { PROMO_LANZAMIENTO, esPromoAnualTabletVigente } from "@/lib/pricing";
+import { PROMO_LANZAMIENTO, PROMO_META_99, esPromoAnualTabletVigente, esPromoMeta99Vigente } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
 import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
@@ -66,6 +66,7 @@ interface Subscription {
   billing_period: "monthly" | "yearly";
   promo_cobros_restantes: number | null;
   promo_plan: string | null;
+  promo_codigo_campana?: string | null;
   /** Migracion 096; ausente si aun no se aplica. */
   oferta_regreso_hasta?: string | null;
 }
@@ -291,7 +292,11 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       const data = await response.json();
 
       if (response.ok && data.ok) {
-        toast.success(t("billing.promoApplied", { days: data.trial_days }));
+        if (data.tipo === "pago_unico_campana") {
+          toast.success(t("billing.promoMetaApplied", { precio: data.precio_mxn }));
+        } else {
+          toast.success(t("billing.promoApplied", { days: data.trial_days }));
+        }
         setPromoCode("");
         fetchSubscription();
       } else {
@@ -310,6 +315,34 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       toast.error(t("common.error"));
     } finally {
       setPromoApplying(false);
+    }
+  };
+
+  const handlePagoPromo99 = async () => {
+    if (!tenantId) return;
+    setProcessing(true);
+    try {
+      const response = await fetch("/api/conekta/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          type: "unico",
+          codigo_promo: PROMO_META_99.codigo,
+          locale,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        toast.error(data.error || t("common.error"));
+        setProcessing(false);
+      }
+    } catch {
+      toast.error(t("common.error"));
+      setProcessing(false);
     }
   };
 
@@ -719,6 +752,30 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               <Separator />
 
               <div className="space-y-3">
+                {subscription?.promo_codigo_campana === PROMO_META_99.codigo &&
+                  esPromoMeta99Vigente() &&
+                  !subscription?.last_payment_at && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                          {t("billing.promoMetaBadge")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {t("billing.promoMetaDesc")}
+                      </p>
+                      <SpecularActionButton
+                        tone="money"
+                        onClick={handlePagoPromo99}
+                        disabled={processing || !tenantId}
+                        className="w-full h-9 font-semibold"
+                      >
+                        {t("billing.payPromoMeta")}
+                      </SpecularActionButton>
+                    </div>
+                  )}
+
                 <div className="flex flex-col gap-4">
                   <div className="space-y-1.5">
                     <SpecularActionButton

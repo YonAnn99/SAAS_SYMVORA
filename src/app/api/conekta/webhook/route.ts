@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { precioCobroCents, trasCobrar } from "@/features/payments/promocion";
 import { metodoDePagoConekta } from "@/features/payments/metodo-pago-conekta";
+import { PROMO_META_99 } from "@/lib/pricing";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -727,7 +728,7 @@ export async function POST(request: Request) {
         const { data: subData } = await supabase
           .from("subscriptions")
           .select(
-            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_subscription_id"
+            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_subscription_id, promo_codigo_campana"
           )
           .eq("conekta_customer_id", customerId)
           .single();
@@ -765,25 +766,37 @@ export async function POST(request: Request) {
             });
           }
 
+          const metadata = (data.metadata || {}) as Record<string, unknown>;
+          const isPromoMeta99 =
+            metadata.promo_campana === PROMO_META_99.codigo ||
+            subData.promo_codigo_campana === PROMO_META_99.codigo;
+
           const now = new Date();
-          const periodEnd = new Date(now);
-          if (subData.billing_period === "yearly") {
+          let periodEnd = new Date(now);
+          if (isPromoMeta99) {
+            periodEnd = new Date(PROMO_META_99.finPeriodoAcceso);
+          } else if (subData.billing_period === "yearly") {
             periodEnd.setFullYear(periodEnd.getFullYear() + 1);
           } else {
             periodEnd.setMonth(periodEnd.getMonth() + 1);
+          }
+
+          const subscriptionUpdates: Record<string, unknown> = {
+            status: "active",
+            last_payment_at: now.toISOString(),
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            updated_at: now.toISOString(),
+          };
+          if (isPromoMeta99) {
+            subscriptionUpdates.promo_codigo_campana = PROMO_META_99.codigo;
           }
 
           // Dos tablas distintas, sin dependencia entre ellas: en paralelo.
           await Promise.all([
             supabase
               .from("subscriptions")
-              .update({
-                status: "active",
-                last_payment_at: now.toISOString(),
-                current_period_start: now.toISOString(),
-                current_period_end: periodEnd.toISOString(),
-                updated_at: now.toISOString(),
-              })
+              .update(subscriptionUpdates)
               .eq("id", subData.id),
             supabase
               .from("tenants")

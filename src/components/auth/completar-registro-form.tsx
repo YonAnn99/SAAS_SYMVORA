@@ -26,10 +26,12 @@ export function CompletarRegistroForm({
   userId,
   email,
   nombreInicial,
+  initialPromoCode,
 }: {
   userId: string;
   email: string;
   nombreInicial: string;
+  initialPromoCode?: string | null;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -43,8 +45,8 @@ export function CompletarRegistroForm({
   const [giro, setGiro] = useState<string>(GIRO_POR_DEFECTO);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [promoCode, setPromoCode] = useState("");
-  const [showPromoInput, setShowPromoInput] = useState(false);
+  const [promoCode, setPromoCode] = useState(initialPromoCode ?? "");
+  const [showPromoInput, setShowPromoInput] = useState(Boolean(initialPromoCode));
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);

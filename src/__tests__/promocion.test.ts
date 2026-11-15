@@ -9,8 +9,11 @@ import {
 import {
   PROMO_LANZAMIENTO,
   PROMO_ANUAL_TABLET,
+  PROMO_META_99,
   SUBSCRIPTION_PRICE_CENTS,
   esPromoAnualTabletVigente,
+  esPromoMeta99Vigente,
+  esCodigoPromoMeta99,
 } from "@/lib/pricing";
 
 /**
@@ -143,6 +146,37 @@ describe("promoción temporal SYMVORA ANUAL TABLET ($4,788 MXN)", () => {
     expect(claveDePlanNuevo("yearly", true, fechaDespues)).toBe("yearly");
     expect(precioCobroCents("yearly", 0, true, fechaDespues)).toBe(SUBSCRIPTION_PRICE_CENTS.yearly);
     expect(precioCobroCents("yearly", 0, true, fechaDespues)).toBe(358800);
+  });
+});
+
+describe("campaña Meta Ads SYMVORA99 ($99 MXN pago único)", () => {
+  it("reconoce el código promocional sin importar mayúsculas o espacios", () => {
+    expect(esCodigoPromoMeta99("SYMVORA99")).toBe(true);
+    expect(esCodigoPromoMeta99("symvora99")).toBe(true);
+    expect(esCodigoPromoMeta99("  SyMvOrA99  ")).toBe(true);
+    expect(esCodigoPromoMeta99("OTRO")).toBe(false);
+    expect(esCodigoPromoMeta99("")).toBe(false);
+    expect(esCodigoPromoMeta99(null as unknown as string)).toBe(false);
+  });
+
+  it("está vigente hasta el 20 de noviembre de 2026 a las 23:59:59 CST", () => {
+    const fechaDentro = new Date("2026-11-15T12:00:00-06:00");
+    const fechaLimite = new Date("2026-11-20T23:59:59-06:00");
+    const fechaVencida = new Date("2026-11-21T00:00:00-06:00");
+
+    expect(esPromoMeta99Vigente(fechaDentro)).toBe(true);
+    expect(esPromoMeta99Vigente(fechaLimite)).toBe(true);
+    expect(esPromoMeta99Vigente(fechaVencida)).toBe(false);
+  });
+
+  it("mantiene el precio de 9900 centavos ($99 MXN) y periodo de acceso por un año hasta 2027-11-20", () => {
+    expect(PROMO_META_99.precioCents).toBe(9900);
+    expect(PROMO_META_99.codigo).toBe("SYMVORA99");
+    expect(PROMO_META_99.finPeriodoAcceso).toBe("2027-11-20T23:59:59-06:00");
+    const fechaFin = new Date(PROMO_META_99.finPeriodoAcceso);
+    expect(fechaFin.getFullYear()).toBe(2027);
+    expect(fechaFin.getMonth()).toBe(10); // November (0-indexed)
+    expect(fechaFin.getDate()).toBe(20);
   });
 });
 

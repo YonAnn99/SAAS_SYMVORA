@@ -73,3 +73,28 @@ export function precioAnualVigenteMXN(ahora: Date = new Date()): number {
   return precioAnualVigenteCents(ahora) / 100;
 }
 
+// ---------------------------------------------------------------------------
+// Campaña Meta Ads: Código SYMVORA99 por $99 MXN.
+// Válida para canje hasta el 20 de noviembre de 2026 a las 23:59:59 (hora de México CST / UTC-6).
+// Otorga acceso activo por un año completo (hasta el 20 de noviembre de 2027 a las 23:59:59 CST).
+// A partir del 21 de noviembre de 2027 se requiere la mensualidad regular ($399 MXN).
+export const PROMO_META_99 = {
+  codigo: "SYMVORA99",
+  activa: true,
+  precioCents: 9900, // $99.00 MXN
+  precioMXN: 99,
+  validoParaCanjeHasta: "2026-11-20T23:59:59-06:00",
+  finPeriodoAcceso: "2027-11-20T23:59:59-06:00",
+} as const;
+
+export function esPromoMeta99Vigente(ahora: Date = new Date()): boolean {
+  if (!PROMO_META_99.activa) return false;
+  const limite = new Date(PROMO_META_99.validoParaCanjeHasta);
+  return !Number.isNaN(limite.getTime()) && ahora <= limite;
+}
+
+export function esCodigoPromoMeta99(codigo: string | null | undefined): boolean {
+  return typeof codigo === "string" && codigo.trim().toUpperCase() === PROMO_META_99.codigo;
+}
+
+

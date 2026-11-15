@@ -11,6 +11,11 @@ import {
   precioCobroCents,
 } from "@/features/payments/promocion";
 import { METODOS_POR_TIPO, metodoPendiente } from "@/features/payments/metodo-pago-conekta";
+import {
+  PROMO_META_99,
+  esPromoMeta99Vigente,
+  esCodigoPromoMeta99,
+} from "@/lib/pricing";
 
 // Presupuesto de ejecucion explicito. Sin el, una llamada lenta a un tercero
 // deja la funcion ocupada hasta el tope por defecto de la plataforma.
@@ -22,6 +27,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { tenant_id, type } = body;
+    const codigoPromoParam =
+      typeof body.codigo_promo === "string" ? body.codigo_promo.trim().toUpperCase() : null;
     const locale = typeof body.locale === "string" && /^(es|en)$/.test(body.locale)
       ? body.locale
       : "es";
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
     // Get subscription
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("id, conekta_customer_id, status, last_payment_at")
+      .select("id, conekta_customer_id, status, last_payment_at, promo_codigo_campana")
       .eq("tenant_id", tenant_id)
       .single();
 
@@ -90,12 +97,21 @@ export async function POST(request: Request) {
 
     const yaPaga = Boolean(subscription.last_payment_at);
     const esNuevoCliente = !yaPaga;
+    const esCampanaMeta99 =
+      !yaPaga &&
+      esPromoMeta99Vigente() &&
+      (esCodigoPromoMeta99(codigoPromoParam ?? "") ||
+        subscription.promo_codigo_campana === PROMO_META_99.codigo);
+
     const clavePlan = conOfertaRegreso
       ? "monthlyPromo"
       : claveDePlanNuevo(period, esNuevoCliente);
     const esPromo = clavePlan === "monthlyPromo";
 
     const cambios: Record<string, unknown> = { billing_period: period };
+    if (esCampanaMeta99) {
+      cambios.promo_codigo_campana = PROMO_META_99.codigo;
+    }
     if (conOfertaRegreso) {
       // A diferencia de la promocion de lanzamiento, esta SI se siembra en
       // quien ya pago: es justo a quien va dirigida. Un solo cobro.
@@ -239,9 +255,12 @@ export async function POST(request: Request) {
       : esPromo && !yaPaga
         ? cobrosPromoIniciales(period)
         : 0;
-    const amount = precioCobroCents(period, cobrosPromo, esNuevoCliente);
-    const description =
-      clavePlan === "yearlyTablet"
+    const amount = esCampanaMeta99
+      ? PROMO_META_99.precioCents
+      : precioCobroCents(period, cobrosPromo, esNuevoCliente);
+    const description = esCampanaMeta99
+      ? "SYMVORA - Promoción Fin de Año ($99 MXN)"
+      : clavePlan === "yearlyTablet"
         ? "SYMVORA ANUAL TABLET"
         : period === "yearly"
           ? "SYMVORA Basico - Anual"
@@ -252,9 +271,9 @@ export async function POST(request: Request) {
     // Tarjeta = cobro recurrente real (Conekta solo soporta suscripciones con
     // tarjeta): en vez de una orden de una sola exhibición, se crea el checkout
     // con un plan — Conekta guarda la tarjeta y cobra sola cada periodo.
-    // Los demas metodos (efectivo, SPEI, BBVA, Aplazo) no pueden ser recurrentes:
-    // son una orden de una sola exhibicion ("Otros metodos de pago").
-    const isCardSubscription = type === "card";
+    // Para la campaña SYMVORA99 ($99 hasta fin de año), es una orden de pago único
+    // (no recurrente inmediata), disponible con tarjeta, transferencia o efectivo.
+    const isCardSubscription = type === "card" && !esCampanaMeta99;
 
     let order;
     try {
@@ -279,6 +298,9 @@ export async function POST(request: Request) {
           cancelUrl: `${APP_URL}/${locale}/billing`,
           failureUrl: `${APP_URL}/${locale}/billing`,
           allowedPaymentMethods: allowedMethods,
+          metadata: esCampanaMeta99
+            ? { promo_campana: PROMO_META_99.codigo, tenant_id }
+            : undefined,
         });
       }
     } catch (orderError: unknown) {

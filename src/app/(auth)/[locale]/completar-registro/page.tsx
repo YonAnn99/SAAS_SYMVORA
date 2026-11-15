@@ -12,10 +12,13 @@ import { CompletarRegistroForm } from "@/components/auth/completar-registro-form
  */
 export default async function CompletarRegistroPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ promo?: string }>;
 }) {
   const { locale } = await params;
+  const { promo } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -50,6 +53,7 @@ export default async function CompletarRegistroPage({
       userId={user.id}
       email={user.email ?? ""}
       nombreInicial={nombreInicial}
+      initialPromoCode={promo?.trim() ? promo.trim().toUpperCase() : null}
     />
   );
 }

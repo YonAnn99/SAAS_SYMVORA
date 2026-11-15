@@ -23,12 +23,14 @@ export async function createHostedCheckoutOrder(params: {
   cancelUrl: string;
   failureUrl?: string;
   allowedPaymentMethods?: string[];
+  metadata?: Record<string, unknown>;
 }) {
   const orderRequest = {
     currency: "MXN",
     customer_info: {
       customer_id: params.customerId,
     },
+    ...(params.metadata ? { metadata: params.metadata } : {}),
     line_items: [
       {
         name: params.description,

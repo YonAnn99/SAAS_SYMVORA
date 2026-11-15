@@ -43,20 +43,27 @@ export async function crearNegocio(datos: DatosNegocio): Promise<ResultadoCrearN
   // el usuario puede corregirlo y reintentar sin dejar registros huérfanos.
   const promoTrimmed = datos.promoCode.trim();
   if (promoTrimmed) {
-    const { data: promoCheck } = await supabase.rpc("validar_codigo_promo", {
-      p_codigo: promoTrimmed,
-    });
-    const check = promoCheck as { valido: boolean; razon?: string } | null;
-    if (!check?.valido) {
-      return {
-        ok: false,
-        error:
-          check?.razon === "usado"
-            ? datos.mensajesPromo.usado
-            : check?.razon === "expirado"
-              ? datos.mensajesPromo.expirado
-              : datos.mensajesPromo.invalido,
-      };
+    if (promoTrimmed.toUpperCase() === "SYMVORA99") {
+      const { esPromoMeta99Vigente } = await import("@/lib/pricing");
+      if (!esPromoMeta99Vigente()) {
+        return { ok: false, error: datos.mensajesPromo.expirado };
+      }
+    } else {
+      const { data: promoCheck } = await supabase.rpc("validar_codigo_promo", {
+        p_codigo: promoTrimmed,
+      });
+      const check = promoCheck as { valido: boolean; razon?: string } | null;
+      if (!check?.valido) {
+        return {
+          ok: false,
+          error:
+            check?.razon === "usado"
+              ? datos.mensajesPromo.usado
+              : check?.razon === "expirado"
+                ? datos.mensajesPromo.expirado
+                : datos.mensajesPromo.invalido,
+        };
+      }
     }
   }
 
