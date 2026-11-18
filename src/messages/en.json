@@ -3396,7 +3396,8 @@
     "dismissAria": "Dismiss notification",
     "dismiss": "Dismiss",
     "delete": "Delete",
-    "dismissError": "Couldn't remove the notification. Try again."
+    "dismissError": "Couldn't remove the notification. Try again.",
+    "open": "Open"
   },
   "news": {
     "new": "New",

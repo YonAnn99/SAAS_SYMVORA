@@ -621,6 +621,10 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Tipos de lotes y caducidades (118): ver «Lotes por sucursal». Un tipo nuevo va en el CHECK, en
     `TIPOS_NOTIFICACION` (`lib/notificaciones.ts`) y en `ESTILO` de la campana; `notificaciones-tipos.test.ts` compara
     la lista con el CHECK.
+- **Expandir** (2026-11-17): si el título o el mensaje no caben (`estaRecortado`: `scrollHeight`/`scrollWidth` contra
+  lo visible), el clic o toque EXPANDE el aviso y muestra «Abrir» (`notifications.open`) para ir al módulo; otro toque
+  lo recoge. Si el texto cabe, va directo al módulo como antes. Escritorio: `AvisoEscritorio`. Celular: `AvisoMovil`
+  mide el texto y le pasa el alto a `FilaDeslizable` (alto fijo por diseño), que anima el cambio.
 - **Descartar** (migración 109): es POR USUARIO, nunca borra la fila compartida. `ocultar_notificacion(id)` guarda
   en `notificaciones_ocultas` y la RLS de `notificaciones` esconde las que tengan `oculta_en >= creado_en`. Así una
   agrupada que se actualiza después reaparece con el conteo nuevo. En escritorio (`useEsEscritorio`) es la X al

@@ -3396,7 +3396,8 @@
     "dismissAria": "Descartar notificación",
     "dismiss": "Descartar",
     "delete": "Eliminar",
-    "dismissError": "No se pudo quitar la notificación. Intenta de nuevo."
+    "dismissError": "No se pudo quitar la notificación. Intenta de nuevo.",
+    "open": "Abrir"
   },
   "news": {
     "new": "Nuevo",

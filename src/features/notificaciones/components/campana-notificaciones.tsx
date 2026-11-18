@@ -2,9 +2,10 @@
 
 import { useTranslations } from "next-intl";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   ArrowLeftRight,
+  ArrowRight,
   Bell,
   Boxes,
   CalendarClock,
@@ -78,6 +79,195 @@ function IconoNotificacion({ n, nueva }: { n: Notificacion; nueva: boolean }) {
   );
 }
 
+/** El texto ya no cabe en lo que se ve (`truncate` o `line-clamp`). */
+function estaRecortado(el: HTMLElement | null): boolean {
+  if (!el) return false;
+  return el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
+}
+
+/** «Abrir» dentro de un aviso expandido: lleva a su módulo. */
+function BotonAbrir({ enlace, onIr }: { enlace: string; onIr: () => void }) {
+  const t = useTranslations("notifications");
+  return (
+    <Link
+      href={enlace}
+      onClick={(e) => {
+        e.stopPropagation();
+        onIr();
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="mt-2 inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+    >
+      {t("open")}
+      <ArrowRight className="h-3.5 w-3.5" />
+    </Link>
+  );
+}
+
+/**
+ * Un aviso en escritorio. Si su texto no cabe, el clic lo EXPANDE (con «Abrir»
+ * para ir al módulo) y otro clic lo recoge; si cabe, el clic va directo al
+ * módulo, como siempre.
+ */
+function AvisoEscritorio({
+  n,
+  nueva,
+  hace,
+  onIr,
+  onOcultar,
+}: {
+  n: Notificacion;
+  nueva: boolean;
+  hace: string;
+  onIr: (n: Notificacion) => void;
+  onOcultar: () => void;
+}) {
+  const t = useTranslations("notifications");
+  const [expandida, setExpandida] = useState(false);
+  const tituloRef = useRef<HTMLParagraphElement>(null);
+  const mensajeRef = useRef<HTMLParagraphElement>(null);
+
+  const alTocar = () => {
+    if (expandida) setExpandida(false);
+    else if (estaRecortado(tituloRef.current) || estaRecortado(mensajeRef.current)) setExpandida(true);
+    else if (n.enlace) onIr(n);
+  };
+  const alTeclear = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      alTocar();
+    }
+  };
+
+  return (
+    <li className="group relative">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expandida}
+        onClick={alTocar}
+        onKeyDown={alTeclear}
+        className={cn(
+          "flex cursor-pointer gap-3 py-3 pl-4 pr-10 outline-none transition-colors hover:bg-muted/60 focus-visible:bg-muted/60",
+          expandida && "bg-muted/40"
+        )}
+      >
+        <span className="mt-0.5">
+          <IconoNotificacion n={n} nueva={nueva} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p ref={tituloRef} className="text-sm font-medium leading-snug text-foreground">
+            {n.titulo}
+          </p>
+          {n.mensaje && (
+            <p
+              ref={mensajeRef}
+              className={cn(
+                "mt-0.5 text-xs text-muted-foreground",
+                expandida ? "whitespace-pre-line" : "line-clamp-2"
+              )}
+            >
+              {n.mensaje}
+            </p>
+          )}
+          <p className="mt-1 text-[11px] text-muted-foreground/80">{hace}</p>
+          {expandida && n.enlace && <BotonAbrir enlace={n.enlace} onIr={() => onIr({ ...n, enlace: null })} />}
+        </div>
+      </div>
+      {/* Fuera del área que expande: cerrar no navega. Visible al pasar el
+          mouse, con el teclado, o siempre en pantallas sin hover. */}
+      <button
+        type="button"
+        onClick={onOcultar}
+        aria-label={t("dismissAria")}
+        title={t("dismiss")}
+        className="absolute right-2 top-2.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </li>
+  );
+}
+
+const ALTO_AVISO_MOVIL = 72;
+
+/**
+ * Un aviso en celular y tablet: misma regla que en escritorio. La pastilla
+ * deslizable tiene alto fijo, así que al expandir se mide el texto y se le da
+ * el alto que necesita (la pastilla anima el cambio).
+ */
+function AvisoMovil({
+  n,
+  hace,
+  onIr,
+  onOcultar,
+  onOpenChange,
+  icono,
+}: {
+  n: Notificacion;
+  hace: string;
+  onIr: (n: Notificacion) => void;
+  onOcultar: () => Promise<unknown> | unknown;
+  onOpenChange: (abierta: boolean) => void;
+  icono: ReactNode;
+}) {
+  const t = useTranslations("notifications");
+  const [expandida, setExpandida] = useState(false);
+  const [alto, setAlto] = useState(ALTO_AVISO_MOVIL);
+  const textoRef = useRef<HTMLDivElement>(null);
+  const tituloRef = useRef<HTMLParagraphElement>(null);
+  const mensajeRef = useRef<HTMLParagraphElement>(null);
+
+  // Tras expandir (o recoger), el alto que pide el texto. Expandido, el bloque
+  // ya lleva su aire arriba y abajo (`py-3`): su alto basta.
+  useLayoutEffect(() => {
+    const el = textoRef.current;
+    const siguiente = expandida && el ? Math.max(ALTO_AVISO_MOVIL, Math.ceil(el.offsetHeight)) : ALTO_AVISO_MOVIL;
+    setAlto(siguiente);
+  }, [expandida, n.titulo, n.mensaje]);
+
+  const alTocar = () => {
+    if (expandida) setExpandida(false);
+    else if (estaRecortado(tituloRef.current) || estaRecortado(mensajeRef.current)) setExpandida(true);
+    else if (n.enlace) onIr(n);
+  };
+
+  return (
+    <FilaDeslizable
+      label={n.titulo}
+      alto={alto}
+      onOpenChange={onOpenChange}
+      onTap={alTocar}
+      acciones={[
+        {
+          id: "eliminar",
+          etiqueta: t("delete"),
+          color: COLOR_ELIMINAR,
+          icono: <Trash2 size={18} strokeWidth={2} />,
+          alElegir: () => void onOcultar(),
+        },
+      ]}
+    >
+      <span className={cn(expandida && "self-start pt-3")}>{icono}</span>
+      <div ref={textoRef} className={cn("min-w-0 flex-1", expandida && "self-start py-3")} aria-expanded={expandida}>
+        <p ref={tituloRef} className={cn("text-sm font-medium", expandida ? "leading-snug" : "truncate")}>
+          {n.titulo}
+        </p>
+        {n.mensaje && (
+          <p
+            ref={mensajeRef}
+            className={cn("text-xs text-muted-foreground", expandida ? "mt-0.5 whitespace-pre-line" : "truncate")}
+          >
+            {n.mensaje}
+          </p>
+        )}
+        <p className="text-[11px] opacity-60">{hace}</p>
+        {expandida && n.enlace && <BotonAbrir enlace={n.enlace} onIr={() => onIr({ ...n, enlace: null })} />}
+      </div>
+    </FilaDeslizable>
+  );
+}
+
 /**
  * Campana del header. Al abrirla se marcan todas como leídas, pero las que
  * eran nuevas conservan su punto mientras el panel siga abierto (se compara
@@ -114,10 +304,10 @@ export function CampanaNotificaciones() {
   const esNueva = (n: Notificacion) =>
     !corteAlAbrir || new Date(n.creado_en).getTime() > new Date(corteAlAbrir).getTime();
 
+  // Con `enlace` null solo cierra el panel: ya navega el `Link` de «Abrir».
   const abrirEnlace = (n: Notificacion) => {
-    if (!n.enlace) return;
     setAbierta(false);
-    router.push(n.enlace);
+    if (n.enlace) router.push(n.enlace);
   };
 
   return (
@@ -167,75 +357,29 @@ export function CampanaNotificaciones() {
             </div>
           ) : esEscritorio ? (
             <ul className="divide-y divide-border/50">
-              {lista.map((n) => {
-                const contenido = (
-                  <div className="flex gap-3 py-3 pl-4 pr-10">
-                    <span className="mt-0.5">
-                      <IconoNotificacion n={n} nueva={esNueva(n)} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium leading-snug text-foreground">{n.titulo}</p>
-                      {n.mensaje && (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.mensaje}</p>
-                      )}
-                      <p className="mt-1 text-[11px] text-muted-foreground/80">{hace(n.creado_en)}</p>
-                    </div>
-                  </div>
-                );
-                return (
-                  <li key={n.id} className="group relative">
-                    {n.enlace ? (
-                      <Link
-                        href={n.enlace}
-                        onClick={() => setAbierta(false)}
-                        className="block transition-colors hover:bg-muted/60"
-                      >
-                        {contenido}
-                      </Link>
-                    ) : (
-                      contenido
-                    )}
-                    {/* Fuera del enlace: cerrar no navega. Visible al pasar el
-                        mouse, con el teclado, o siempre en pantallas sin hover. */}
-                    <button
-                      type="button"
-                      onClick={() => void ocultar(n.id)}
-                      aria-label={t("dismissAria")}
-                      title={t("dismiss")}
-                      className="absolute right-2 top-2.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </li>
-                );
-              })}
+              {lista.map((n) => (
+                <AvisoEscritorio
+                  key={n.id}
+                  n={n}
+                  nueva={esNueva(n)}
+                  hace={hace(n.creado_en)}
+                  onIr={abrirEnlace}
+                  onOcultar={() => void ocultar(n.id)}
+                />
+              ))}
             </ul>
           ) : (
             <div className="space-y-2 p-2">
               {lista.map((n) => (
-                <FilaDeslizable
+                <AvisoMovil
                   key={n.id}
-                  label={n.titulo}
-                  alto={72}
+                  n={n}
+                  hace={hace(n.creado_en)}
+                  onIr={abrirEnlace}
+                  onOcultar={() => ocultar(n.id)}
                   onOpenChange={alAbrir}
-                  onTap={n.enlace ? () => abrirEnlace(n) : undefined}
-                  acciones={[
-                    {
-                      id: "eliminar",
-                      etiqueta: t("delete"),
-                      color: COLOR_ELIMINAR,
-                      icono: <Trash2 size={18} strokeWidth={2} />,
-                      alElegir: () => ocultar(n.id),
-                    },
-                  ]}
-                >
-                  <IconoNotificacion n={n} nueva={esNueva(n)} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{n.titulo}</p>
-                    {n.mensaje && <p className="truncate text-xs text-muted-foreground">{n.mensaje}</p>}
-                    <p className="text-[11px] opacity-60">{hace(n.creado_en)}</p>
-                  </div>
-                </FilaDeslizable>
+                  icono={<IconoNotificacion n={n} nueva={esNueva(n)} />}
+                />
               ))}
             </div>
           )}
