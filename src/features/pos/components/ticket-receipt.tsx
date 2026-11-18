@@ -166,6 +166,9 @@ export function TicketReceipt({
       {receipt.esReimpresion && (
         <p className="ticket-reimpresion">*** REIMPRESIÓN ***</p>
       )}
+      {receipt.cancelada && (
+        <p className="ticket-reimpresion">*** VENTA CANCELADA ***</p>
+      )}
 
       <table className="ticket-tabla">
         <thead>

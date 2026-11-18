@@ -68,3 +68,20 @@ describe("correo de la novedad", () => {
     expect(html).toContain("Hola, Ana");
   });
 });
+
+describe("correo de cancelar y corregir ventas (137)", () => {
+  it("saluda por nombre, nombra el negocio y lleva a Reportes", async () => {
+    const { construirCorreoNovedadVentas } = await import("@/lib/email");
+    const { subject, html } = construirCorreoNovedadVentas({ nombre: "Ana", negocio: "Tienda <Ana>" });
+    expect(subject).toBe("Nuevo en SYMVORA: cancela y corrige tus ventas");
+    expect(html).toContain("Hola, Ana");
+    // El nombre del negocio va escapado.
+    expect(html).toContain("Tienda &lt;Ana&gt;");
+    expect(html).toContain("/es/reports");
+  });
+
+  it("sin nombre, saludo genérico", async () => {
+    const { construirCorreoNovedadVentas } = await import("@/lib/email");
+    expect(construirCorreoNovedadVentas({ nombre: "", negocio: "X" }).html).toContain("Hola: ya puedes cancelar");
+  });
+});

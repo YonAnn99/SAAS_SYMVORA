@@ -123,6 +123,17 @@ export const MODULES: ModuleDefinition[] = [
     grantable: true,
   },
   {
+    // Cancelar o corregir una venta ya cobrada (migracion 137). No es una
+    // pantalla: son los botones del detalle de venta. `sales.void` ya existia
+    // (SUPER_ADMIN y ORG_ADMIN) y gobierna tambien la RLS de `ventas`.
+    key: "salesVoid",
+    label: "Cancelar y corregir ventas",
+    description: "Cancelar un ticket cobrado o corregirlo y volver a cobrar",
+    paths: [],
+    permission: "sales.void",
+    grantable: true,
+  },
+  {
     // Quien hizo que y cuando. Hasta la migracion 088 no pedia permiso y la
     // veia cualquiera; ahora lo tienen de fabrica los administradores, y la
     // politica de `activity_logs` exige el mismo permiso.

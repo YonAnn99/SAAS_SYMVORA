@@ -159,6 +159,54 @@ export async function completeSale(params: CompleteSaleParams) {
 }
 
 /**
+ * Corrige una venta ya cobrada (migración 137): cancela la original y cobra la
+ * correcta en UNA transacción (`corregir_venta`). Si el cobro nuevo falla, la
+ * original sigue intacta. Sin lealtad: la venta corregida no suma sello (y el
+ * sello de la original se revierte al cancelarla).
+ */
+export async function corregirVenta(
+  params: Omit<CompleteSaleParams, "tarjetaLealtadId" | "canjearPremio" | "fechaVenta"> & {
+    ventaOriginalId: string;
+    motivo: string;
+  }
+) {
+  const supabase = createSupabaseBrowserClient();
+  const llamar = () =>
+    supabase.rpc("corregir_venta", {
+      p_venta_id: params.ventaOriginalId,
+      p_motivo: params.motivo,
+      p_tenant_id: params.tenantId,
+      p_usuario_id: params.userId,
+      p_cliente_id: params.clienteId,
+      p_metodo_pago: params.metodoPago,
+      p_items: params.items.map((item) => ({
+        productId: item.productId,
+        varianteId: item.varianteId ?? null,
+        cantidad: item.cantidad,
+        descuento: item.descuento,
+        ...(item.insumos ? { insumos: insumosParaRpc(item.insumos) } : {}),
+      })),
+      p_include_iva: params.includeIva,
+      p_notas: params.notas || null,
+      p_monto_recibido: params.montoRecibido ?? null,
+      p_idempotency_key: params.idempotencyKey ?? null,
+      p_caja_id: params.cajaId ?? null,
+      p_total_cobrado: params.totalCobrado ?? null,
+      p_lista_precio_id: params.listaPrecioId ?? null,
+    });
+
+  // Mismo reintento que `completeSale`: un choque de concurrencia revierte todo.
+  let { data: venta, error } = await llamar();
+  for (let intento = 1; error && esChoqueDeConcurrencia(error) && intento <= 2; intento++) {
+    await new Promise((r) => setTimeout(r, 100 * intento + Math.random() * 150));
+    ({ data: venta, error } = await llamar());
+  }
+  if (error) throw error;
+  if (!venta) throw new Error("Error al procesar la venta");
+  return venta;
+}
+
+/**
  * Tras una venta con tarjeta de lealtad, actualiza su pase de Google Wallet
  * (sellos y aviso al telefono). Sin `await` y sin errores hacia arriba: la venta
  * y el ticket nunca esperan a Google. `keepalive` deja terminar la peticion

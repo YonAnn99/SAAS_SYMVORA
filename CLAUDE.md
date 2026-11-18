@@ -233,6 +233,34 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Reportes:** historial de ventas con reimpresión (la regla de visibilidad vive en los RPC
   `listar_ventas`/`detalle_venta`), ganancia bruta. Filtro por cliente (`p_cliente_id`, migración 129: la firma se
   cambió con DROP + CREATE porque un parámetro nuevo crea un overload que PostgREST no sabe elegir).
+- **Cancelar y corregir ventas** (migración 137, 2026-11-17, pedido de una clienta): botones «Cancelar venta» y
+  «Corregir» en el detalle de venta (`sale-detail-dialog.tsx`), con permiso `sales.void` (ya existía: SUPER_ADMIN y
+  ORG_ADMIN; ahora es el módulo concedible `salesVoid` de `lib/modules.ts`, sin ruta).
+  - **Nunca se borra una venta:** `cancelar_venta(p_venta_id, p_motivo)` la deja `CANCELADA` con `cancelada_en`,
+    `cancelada_por` y `motivo_cancelacion`. `_cancelar_venta` (interna) regresa:
+    - el stock directo y los insumos a la sucursal de la venta, con candados por id (107);
+    - los lotes a los MISMOS lotes (`DEVOLUCION_VENTA`, después del stock);
+    - el crédito, sin dejar el saldo negativo (`credito_excedente` avisa lo ya abonado);
+    - el sello o canje de lealtad, con un `ajuste`.
+  - **Caja:** si la caja de la venta (la del cajero en esa sucursal, abierta antes de la venta) sigue abierta, nada:
+    `fetchVentasTotal` ya filtra `COMPLETADA`. Si cerró y fue EFECTIVO, `SALIDA` con concepto `CANCELACION_VENTA`
+    (`movimientos_caja.venta_id`) en la caja abierta de quien cancela; sin caja, aviso `sin_caja_para_devolucion`.
+    Tarjeta y transferencia se devuelven por su medio (`devolucion_fuera_de_caja`). Terminal: `reembolso_en_terminal`
+    (se devuelve en Mercado Pago). Facturada: se rechaza.
+  - **Corregir** = `corregir_venta(...)`: cancela la original y cobra la nueva con `_crear_venta_desde_items` en UNA
+    transacción, y las liga (`corrige_venta_id` / `corregida_por_venta_id`). Sin lealtad. Con terminal no se corrige.
+    El detalle guarda la corrección pendiente en `sessionStorage` (`features/sales/correccion.ts`) y lleva al POS;
+    `useCorreccionVenta` carga el carrito (precios de hoy, cliente, forma de pago, lista, IVA) y muestra la franja.
+  - Avisos con códigos en `features/sales/cancelar-venta.ts` (`bloqueoCancelar`, `bloqueoCorregir`, `avisosPrevios`,
+    `avisosCancelacion`). El motivo se guarda en español. El ticket reimpreso dice «VENTA CANCELADA».
+  - Campana: tipo `venta_cancelada` cuando cancela un colaborador (no el dueño), permiso `sales.void`.
+  - **Migración 138:** `ventas` y `detalle_ventas` ya no tienen políticas de INSERT/UPDATE/DELETE: `authenticated` solo
+    lee. Antes un cajero podía crear ventas o cambiar renglones directo, y `sales.void` editar o borrar ventas sin
+    revertir nada. Toda escritura va por funciones `SECURITY DEFINER`. **REGLA:** no reabrir esas políticas; si una
+    pantalla necesita escribir ahí, una función nueva.
+  - **Anuncio:** campana con la migración **139** (`permiso = 'sales.void'`, negocios nuevos hasta el 2026-12-17 vía
+    `_novedades_negocio_nuevo`) y correo con `/api/cron/anuncio-novedad?novedad=cancelar-ventas` (sin `enviar=1` es
+    simulacro). Los dos van DESPUÉS del deploy.
 - **Estado de cuenta del cliente** (migración 129, sugerencia de un cliente real): botón en Clientes (en celular,
   acción «Cuenta» del cajón; tocar la pastilla si no puede editar) → `estado-cuenta-dialog.tsx` con
   `estado_cuenta_cliente`: saldo, ventas a crédito (abren `SaleDetailDialog`) y abonos de `pagos_credito`. Misma
@@ -511,6 +539,9 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Migración 134 (Etiquetas):** aviso en la campana a todo negocio real (`permiso` NULL) y trigger
   `trg_tenants_novedades` → `_novedades_negocio_nuevo()`: los negocios que se registren hasta el 2026-12-03 también lo
   reciben (demos no; atrapa sus errores).
+- **Correo de una novedad:** `/api/cron/anuncio-novedad?novedad=<id>` elige el anuncio (`ANUNCIOS` en la ruta:
+  `catalogo-en-linea`, que excluye a quien ya tiene catálogo, y `cancelar-ventas`). Plantillas en `lib/email.ts`
+  (`construirCorreoNovedad*`), envío común `sendCorreoNovedad`.
 - Para una novedad futura: agrégala a `NOVEDADES`; para la campana, una migración que siembre los avisos y haga
   `CREATE OR REPLACE` de `_novedades_negocio_nuevo()` con el texto y la fecha nuevos; para el correo, una plantilla.
 
@@ -664,7 +695,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 134; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 139; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**

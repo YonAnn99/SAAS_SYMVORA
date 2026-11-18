@@ -94,6 +94,8 @@ export interface SaleReceipt {
    * falsa: es practica estandar en punto de venta diferenciarlo del original.
    */
   esReimpresion?: boolean;
+  /** La venta se canceló (migración 137): el papel lo dice en grande. */
+  cancelada?: boolean;
   /**
    * Como se nombra el descuento del ticket ("Descuento (10 %)"). Solo lo trae
    * el cobro; la reimpresion no guarda el porcentaje y dice "Descuento".

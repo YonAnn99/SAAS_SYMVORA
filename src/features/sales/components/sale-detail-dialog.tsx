@@ -12,7 +12,7 @@ import { formatearCantidad } from "@/lib/unidades";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { localeIntl } from "@/lib/idioma";
-import { Printer, Loader2 } from "lucide-react";
+import { Printer, Loader2, Ban, PencilLine } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,9 @@ import { clavePagoI18n, numeroOperacion } from "@/features/pos/ticket-format";
 import { useMoneda } from "@/hooks/use-moneda";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { useSaleDetail } from "../hooks/use-sales-history";
+import { usePermissions } from "@/hooks/use-permissions";
+import { bloqueoCancelar, bloqueoCorregir } from "../cancelar-venta";
+import { CancelarVentaDialog } from "./cancelar-venta-dialog";
 import { fetchLotesDeVenta, textoLotes, type LoteDeVenta } from "../services/lotes-de-venta";
 import {
   fetchInsumosDeVenta,
@@ -39,6 +42,10 @@ interface SaleDetailDialogProps {
   /** Id de la venta a mostrar, o `null` para cerrar. */
   ventaId: string | null;
   onOpenChange: (open: boolean) => void;
+  /** Tras cancelar una venta: para refrescar el listado que la muestra. */
+  onCambio?: () => void;
+  /** Abrir otra venta (la corregida o la que corrige). Sin ella no hay enlace. */
+  onVerVenta?: (ventaId: string) => void;
 }
 
 function fechaLarga(iso: string, locale: string): string {
@@ -55,12 +62,28 @@ function fechaLarga(iso: string, locale: string): string {
 export function SaleDetailDialog({
   ventaId,
   onOpenChange,
+  onCambio,
+  onVerVenta,
 }: SaleDetailDialogProps) {
   const { formatear } = useMoneda();
   const t = useTranslations();
   const locale = useLocale();
   const { venta, receipt, cargando, abrir, cerrar } = useSaleDetail();
   const [ticketAbierto, setTicketAbierto] = useState(false);
+  // Cancelar / corregir (migración 137): con `sales.void`.
+  const { can } = usePermissions();
+  const puedeAnular = can("sales.void");
+  const [modoAnular, setModoAnular] = useState<"cancelar" | "corregir" | null>(null);
+  const datosAnular = venta
+    ? {
+        estado: venta.estado,
+        metodo_pago: venta.metodo_pago,
+        facturada: venta.facturada,
+        pagada_con_terminal: venta.pagada_con_terminal,
+      }
+    : null;
+  const ofrecerCancelar = datosAnular !== null && bloqueoCancelar(datosAnular, puedeAnular) === null;
+  const ofrecerCorregir = datosAnular !== null && bloqueoCorregir(datosAnular, puedeAnular) === null;
   // Lotes que salieron con esta venta (116). Solo informativo: si falla, no
   // estorba al detalle ni a la reimpresion.
   const [lotes, setLotes] = useState<LoteDeVenta[]>([]);
@@ -150,6 +173,52 @@ export function SaleDetailDialog({
                   </p>
                 </div>
               </div>
+
+              {/* Venta cancelada (137): quién, cuándo, por qué y, si se corrigió, cuál la reemplaza. */}
+              {venta.estado === "CANCELADA" && (
+                <div className="space-y-1 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+                  <p className="font-semibold">{t("reports.sale.cancel.cancelled")}</p>
+                  {venta.cancelada_en && (
+                    <p>
+                      {t("reports.sale.cancel.cancelledBy", {
+                        fecha: fechaLarga(venta.cancelada_en, localeIntl(locale)),
+                        nombre: venta.cancelada_por_nombre?.trim() || "—",
+                      })}
+                    </p>
+                  )}
+                  {venta.motivo_cancelacion && (
+                    <p>{t("reports.sale.cancel.reasonShown", { motivo: venta.motivo_cancelacion })}</p>
+                  )}
+                  {venta.corregida_por_venta_id && (
+                    <p>
+                      {t("reports.sale.cancel.correctedBy", { numero: numeroOperacion(venta.corregida_por_venta_id) ?? "" })}
+                      {onVerVenta && (
+                        <button
+                          type="button"
+                          className="ml-1 font-medium underline underline-offset-2"
+                          onClick={() => onVerVenta(venta.corregida_por_venta_id as string)}
+                        >
+                          {t("reports.sale.cancel.view")}
+                        </button>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
+              {venta.corrige_venta_id && (
+                <p className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-700 dark:text-sky-300">
+                  {t("reports.sale.cancel.corrects", { numero: numeroOperacion(venta.corrige_venta_id) ?? "" })}
+                  {onVerVenta && (
+                    <button
+                      type="button"
+                      className="ml-1 font-medium underline underline-offset-2"
+                      onClick={() => onVerVenta(venta.corrige_venta_id as string)}
+                    >
+                      {t("reports.sale.cancel.view")}
+                    </button>
+                  )}
+                </p>
+              )}
 
               {/* Una venta marcada para revisión se cobró con un total que no
                   coincide con lo que recalculó el servidor. Quedan las que se
@@ -259,10 +328,22 @@ export function SaleDetailDialog({
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-wrap gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               {t("common.close")}
             </Button>
+            {ofrecerCancelar && (
+              <Button variant="destructive" className="h-8" onClick={() => setModoAnular("cancelar")}>
+                <Ban className="mr-1.5 h-3.5 w-3.5" />
+                {t("reports.sale.cancel.cancelButton")}
+              </Button>
+            )}
+            {ofrecerCorregir && (
+              <Button variant="outline" className="h-8" onClick={() => setModoAnular("corregir")}>
+                <PencilLine className="mr-1.5 h-3.5 w-3.5" />
+                {t("reports.sale.cancel.correctButton")}
+              </Button>
+            )}
             <SpecularActionButton
               tone="money"
               className="h-8"
@@ -303,6 +384,16 @@ export function SaleDetailDialog({
         onOpenChange={setTicketAbierto}
         receipt={receipt}
       />
+
+      <CancelarVentaDialog
+        venta={venta}
+        modo={modoAnular}
+        onOpenChange={(abierta) => !abierta && setModoAnular(null)}
+        onCancelada={() => {
+          if (venta) void abrir(venta.id);
+          onCambio?.();
+        }}
+      />
     </>
   );
 }
@@ -312,7 +403,7 @@ export function EstadoVentaBadge({ estado }: { estado: string }) {
   const t = useTranslations("reports.saleStatus");
   if (estado === "COMPLETADA") return null;
   return (
-    <Badge variant="secondary" className="text-[10px]">
+    <Badge variant={estado === "CANCELADA" ? "destructive" : "secondary"} className="ml-1.5 text-[10px]">
       {t.has(estado) ? t(estado) : estado}
     </Badge>
   );

@@ -55,6 +55,19 @@ export interface VentaGuardada {
   origen: string | null;
   requiere_revision: boolean | null;
   renglones: RenglonVenta[];
+  // Migración 137. Opcionales: una respuesta anterior no los trae.
+  cliente_id?: string | null;
+  lista_precio_id?: string | null;
+  sucursal_id?: string | null;
+  facturada?: boolean;
+  pagada_con_terminal?: boolean;
+  cancelada_en?: string | null;
+  cancelada_por_nombre?: string | null;
+  motivo_cancelacion?: string | null;
+  /** En la venta corregida: a cuál reemplaza. */
+  corrige_venta_id?: string | null;
+  /** En la cancelada por corrección: la venta que la reemplazó. */
+  corregida_por_venta_id?: string | null;
 }
 
 /**
@@ -125,5 +138,6 @@ export function construirReceiptDesdeVenta(venta: VentaGuardada): SaleReceipt {
     // "Atendió:" con el nombre; sin nombre, el correo como antes.
     cajero: venta.cajero_nombre?.trim() || venta.cajero_email || null,
     esReimpresion: true,
+    cancelada: venta.estado === "CANCELADA",
   };
 }

@@ -72,6 +72,9 @@ export function ticketVentaEscPos({
   if (receipt.esReimpresion) {
     t.alinear("centro").negritas(true).linea("*** REIMPRESIÓN ***").negritas(false).alinear("izquierda");
   }
+  if (receipt.cancelada) {
+    t.alinear("centro").negritas(true).linea("*** VENTA CANCELADA ***").negritas(false).alinear("izquierda");
+  }
 
   t.separador();
   t.negritas(true)

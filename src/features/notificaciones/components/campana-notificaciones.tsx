@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Package,
   PackageX,
+  ReceiptText,
   ShoppingCart,
   SlidersHorizontal,
   Sparkles,
@@ -51,6 +52,7 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
   insumo_faltante: { icono: FlaskConical, clase: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
   lealtad_alta: { icono: Stamp, clase: "bg-pink-500/15 text-pink-600 dark:text-pink-400" },
   novedad: { icono: Sparkles, clase: "bg-primary/15 text-primary" },
+  venta_cancelada: { icono: ReceiptText, clase: "bg-red-500/15 text-red-600 dark:text-red-400" },
 };
 
 /** Icono del tipo, con el punto de "nueva" en su esquina. */

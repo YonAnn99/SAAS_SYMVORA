@@ -816,16 +816,46 @@ export function construirCorreoNovedadCatalogo(params: {
   return { subject: "Nuevo en SYMVORA: tu catálogo en línea", html };
 }
 
-export async function sendNovedadCatalogoEmail(params: {
-  to: string;
+/**
+ * Anuncio de «cancelar y corregir ventas» (migración 137) a los dueños. Mismo
+ * envío y mismas reglas que el del catálogo (`/api/cron/anuncio-novedad`, con
+ * `?novedad=cancelar-ventas`).
+ */
+export function construirCorreoNovedadVentas(params: {
   nombre: string;
   negocio: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): { subject: string; html: string } {
+  const saludo = params.nombre ? `Hola, ${esc(params.nombre)}` : "Hola";
+  const punto = (texto: string) =>
+    `<tr><td style="padding:5px 0;font-size:14px;color:${BRAND.ink};line-height:1.6;">&#10003;&nbsp; ${texto}</td></tr>`;
+  const html = buildNoticeHtml({
+    preheader: "¿Un cobro de más o una devolución? Ahora lo arreglas desde el historial de ventas.",
+    heading: `${saludo}: ya puedes cancelar y corregir ventas`,
+    intro: `¿Se cobró algo de más, una venta quedó registrada dos veces o un cliente devolvió un producto? Ahora lo arreglas en <strong>${esc(params.negocio)}</strong> desde el historial de ventas, en <strong>Reportes</strong>: abre la venta y elige <strong>Cancelar venta</strong> o <strong>Corregir</strong>.`,
+    highlight: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${punto("<strong>Cancelar:</strong> los productos regresan al inventario y la venta deja de contar en tu corte y en tus reportes.")}
+      ${punto("<strong>Corregir:</strong> la venta se carga en el punto de venta, la ajustas y la cobras de nuevo.")}
+      ${punto("Queda registro de quién lo hizo, cuándo y por qué. Ninguna venta se borra.")}
+      ${punto("Tú decides quién de tu equipo puede hacerlo, desde <strong>Usuarios</strong>.")}
+    </table>`,
+    ctaLabel: "Ver mis ventas",
+    ctaHref: `${BRAND.appUrl}/es/reports`,
+    mostrarBeneficios: false,
+    pie: "Recibes este correo porque tienes una cuenta en SYMVORA. Si no quieres avisos de novedades, respóndenos y te sacamos de la lista.",
+  });
+  return { subject: "Nuevo en SYMVORA: cancela y corrige tus ventas", html };
+}
+
+/** Envía un anuncio ya armado (catálogo, ventas…). */
+export async function sendCorreoNovedad(
+  params: { to: string; nombre: string; negocio: string },
+  construir: (p: { nombre: string; negocio: string }) => { subject: string; html: string }
+): Promise<{ ok: boolean; error?: string }> {
   if (!resendApiKey) {
     console.warn("[email] RESEND_API_KEY no configurada; se omite el anuncio de novedad");
     return { ok: false, error: "RESEND_API_KEY not configured" };
   }
-  const { subject, html } = construirCorreoNovedadCatalogo(params);
+  const { subject, html } = construir(params);
   try {
     await deliver(new Resend(resendApiKey), {
       from: getFromAddress(),
@@ -839,6 +869,14 @@ export async function sendNovedadCatalogoEmail(params: {
     console.error("[email] Falló el anuncio de novedad:", err);
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+export async function sendNovedadCatalogoEmail(params: {
+  to: string;
+  nombre: string;
+  negocio: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  return sendCorreoNovedad(params, construirCorreoNovedadCatalogo);
 }
 
 /**

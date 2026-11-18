@@ -9,6 +9,7 @@ import {
   ArrowRightLeft,
   Banknote,
   CreditCard,
+  PencilLine,
   Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +43,11 @@ import { motivoBloqueoCobro } from "@/features/pos/venta-bloqueada";
 import { tarjetaManualDisponible } from "@/features/pos/tarjeta-disponible";
 import { useIsDemo } from "@/hooks/use-is-demo";
 
-import { calculateSaleTotals, completeSale } from "@/features/pos/services/pos-service";
+import { calculateSaleTotals, completeSale, corregirVenta } from "@/features/pos/services/pos-service";
+import { useCorreccionVenta } from "@/features/pos/hooks/use-correccion-venta";
+import type { VentaGuardada } from "@/features/sales/sale-receipt-builder";
+import { avisosCancelacion, type RespuestaCancelacion } from "@/features/sales/cancelar-venta";
+import { Button } from "@/components/ui/button";
 import { usePosLealtad } from "@/features/lealtad/use-pos-lealtad";
 import { TiraLealtadPos } from "@/features/lealtad/components/tira-lealtad-pos";
 import { aplicarPremio, codigoDesdeEscaneo } from "@/features/lealtad/lealtad";
@@ -258,6 +263,71 @@ export default function POSPage() {
   // Tarjeta de lealtad de la venta (migracion 115). Sin programa activo todo
   // es null y el cobro sigue el camino de siempre.
   const lealtad = usePosLealtad(tenantId);
+
+  // Corregir una venta ya cobrada (migracion 137): el detalle de la venta deja
+  // la correccion pendiente y aqui se carga en el carrito, con su cliente, su
+  // forma de pago, su lista y su IVA. Precios del catalogo de HOY (el servidor
+  // los recalcula igual); lo que ya no esta en el catalogo se avisa.
+  const tc = useTranslations("pos.correct");
+  const cargarCorreccion = useCallback(
+    (venta: VentaGuardada) => {
+      clearCart();
+      lealtad.soltar();
+      const lista = venta.lista_precio_id
+        ? priceLists.find((l) => l.id === venta.lista_precio_id) ?? null
+        : null;
+      const mapa = lista ? construirMapaLista(lista.renglones) : null;
+      const omitidos: string[] = [];
+      for (const r of venta.renglones) {
+        const product = products.find((p) => p.id === r.producto_id);
+        const variant = r.variante_id
+          ? (variantsByProduct[r.producto_id] ?? []).find((v) => v.id === r.variante_id) ?? null
+          : null;
+        if (!product || (r.variante_id && !variant)) {
+          omitidos.push(r.nombre);
+          continue;
+        }
+        const precioBase = variant ? variantPrice(variant, product) : product.precio_venta;
+        addItem({
+          productId: product.id,
+          varianteId: variant?.id ?? null,
+          varianteLabel: variant ? variantLabel(variant) : null,
+          nombre: product.nombre,
+          cantidad: Number(r.cantidad),
+          precioUnitario: precioConLista(precioBase, mapa, product.id, variant?.id ?? null),
+          descuento: Number(r.descuento) || 0,
+          unidad_medida: unidadDeVenta(product, variant),
+        });
+      }
+      setSelectedPriceList(lista ? lista.id : SIN_LISTA);
+      setSelectedCustomer(
+        venta.cliente_id && customers.some((c) => c.id === venta.cliente_id) ? venta.cliente_id : "none"
+      );
+      setSelectedPayment(venta.metodo_pago === "TARJETA_TERMINAL" ? "" : venta.metodo_pago);
+      setMontoRecibido("");
+      setIncludeIva(Number(venta.impuesto ?? 0) > 0);
+      if (omitidos.length > 0) {
+        toast.warning(tc("missing", { productos: omitidos.join(", ") }), { duration: 10000 });
+      } else {
+        toast.info(tc("loaded", { numero: numeroOperacion(venta.id) ?? "" }));
+      }
+    },
+    [clearCart, lealtad, priceLists, products, variantsByProduct, addItem, customers, setIncludeIva, tc]
+  );
+  const { correccion, terminar: terminarCorreccion } = useCorreccionVenta(
+    usuarioContexto || null,
+    !loadingProducts && carritoRestaurado,
+    cargarCorreccion
+  );
+  const salirDeCorreccion = useCallback(() => {
+    terminarCorreccion();
+    clearCart();
+    setSelectedCustomer("none");
+    setSelectedPayment("");
+    setSelectedPriceList(SIN_LISTA);
+    setMontoRecibido("");
+  }, [terminarCorreccion, clearCart]);
+
   const conTerminal = selectedPayment === "TARJETA_TERMINAL";
   // El premio en los renglones, SOLO para mostrar el total que cobrara el
   // servidor (mismo algoritmo que `complete_sale_lealtad`). Al servidor se le
@@ -271,8 +341,13 @@ export default function POSPage() {
           valor: lealtad.programa.premio_valor,
         })
       : null;
+  // Corrigiendo una venta (137) no hay lealtad: la venta corregida no sella.
   const canjearPremio =
-    lealtad.canjear && !conTerminal && premioCalculado !== null && !premioCalculado.faltaProducto;
+    lealtad.canjear &&
+    !conTerminal &&
+    !correccion &&
+    premioCalculado !== null &&
+    !premioCalculado.faltaProducto;
   const itemsCobro = canjearPremio && premioCalculado ? premioCalculado.items : items;
   const totalsCobro = canjearPremio ? calculateSaleTotals(itemsCobro, includeIva) : totals;
   const premioLealtad =
@@ -703,6 +778,10 @@ export default function POSPage() {
       fallar(t("pos.msg.amountTooLow"));
     }
 
+    if (correccion && selectedPayment === "TARJETA_TERMINAL") {
+      fallar(tc("noTerminal"));
+    }
+
     if (selectedPayment === "TARJETA_TERMINAL") {
       // El ticket es lo que se manda a cobrar; se abre cuando Mercado Pago
       // confirma el pago (`onSaleCompleted`). Con terminal no hay lealtad.
@@ -737,7 +816,7 @@ export default function POSPage() {
     try {
       // El retorno del RPC trae la fila completa de `ventas`; su `id` es el
       // numero de operacion que imprime el ticket.
-      const venta = (await completeSale({
+      const cobro = {
         tenantId,
         userId,
         clienteId,
@@ -751,11 +830,35 @@ export default function POSPage() {
         // y otra en Norte, una venta de Principal se descontaba (y validaba el
         // stock) en Norte, y fallaba con "Stock insuficiente".
         cajaId: cajaId ?? null,
-        // Con tarjeta: misma venta + sello o canje (`complete_sale_lealtad`).
-        // Con terminal no llega aqui (`startTerminalSale`), sin sello.
-        tarjetaLealtadId: lealtad.tarjeta?.id ?? null,
-        canjearPremio,
-      })) as { id?: string; lealtad?: EstadoTarjeta } | null;
+      };
+      // Corrigiendo (137): cancela la original y cobra esta en una transaccion.
+      // La clave evita que un reintento tras un corte de red cobre dos veces.
+      const venta = (correccion
+        ? await corregirVenta({
+            ...cobro,
+            ventaOriginalId: correccion.ventaId,
+            motivo: correccion.motivo,
+            idempotencyKey: crypto.randomUUID(),
+          })
+        : await completeSale({
+            ...cobro,
+            // Con tarjeta: misma venta + sello o canje (`complete_sale_lealtad`).
+            // Con terminal no llega aqui (`startTerminalSale`), sin sello.
+            tarjetaLealtadId: lealtad.tarjeta?.id ?? null,
+            canjearPremio,
+          })) as { id?: string; lealtad?: EstadoTarjeta; cancelacion?: RespuestaCancelacion } | null;
+
+      if (correccion) {
+        const numeroOriginal = correccion.numero;
+        terminarCorreccion();
+        toast.success(tc("done", { numero: numeroOriginal }));
+        for (const aviso of avisosCancelacion(venta?.cancelacion ?? {})) {
+          if (aviso.codigo === "caja-abierta") continue;
+          const mensaje = t(`reports.sale.cancel.after.${aviso.codigo}`, { monto: formatear(aviso.monto ?? 0) });
+          if (aviso.tono === "aviso") toast.warning(mensaje, { duration: 12000 });
+          else toast.info(mensaje, { duration: 8000 });
+        }
+      }
 
       const estadoLealtad = venta?.lealtad ?? null;
       // Con tarjeta, sin canje y sin sello: la venta no llego a la compra
@@ -979,6 +1082,19 @@ export default function POSPage() {
           de herramientas y empujaba el carrito fuera de la pantalla en anchos
           de ~1280 px (laptops con la escala de Windows al 125 %). */}
       <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-h-0 min-w-0">
+        {/* Corrigiendo una venta (137): a la vista mientras dure. */}
+        {correccion && (
+          <div
+            role="status"
+            className="flex shrink-0 items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-800 dark:text-sky-200"
+          >
+            <PencilLine className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="min-w-0 flex-1">{tc("banner", { numero: correccion.numero })}</span>
+            <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs" onClick={salirDeCorreccion}>
+              {tc("exit")}
+            </Button>
+          </div>
+        )}
         {/* La columna es flex-col y la cuadricula ocupa lo que sobra: esta
             linea solo le quita alto a la cuadricula, no al panel completo. */}
         {saludo && (

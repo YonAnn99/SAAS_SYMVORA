@@ -129,11 +129,14 @@ describe("permissionForPath", () => {
     expect(compras[0].paths).toEqual(["/purchases", "/purchase-orders"]);
   });
 
-  it("CFDI y Cancelar ventas ya no figuran como módulos", () => {
-    // CFDI está descartado por ahora; sales.void no lo usa ninguna pantalla
-    // (el permiso sigue en role_permissions gobernando la RLS de ventas).
+  it("CFDI no figura como módulo; Cancelar ventas sí, sin ruta (137)", () => {
+    // CFDI está descartado por ahora. sales.void volvió con la migración 137:
+    // son los botones Cancelar/Corregir del detalle de venta, sin pantalla.
     expect(MODULES.find((m) => m.key === "facturas")).toBeUndefined();
-    expect(MODULES.find((m) => m.key === "salesVoid")).toBeUndefined();
+    const cancelar = MODULES.find((m) => m.key === "salesVoid");
+    expect(cancelar?.permission).toBe("sales.void");
+    expect(cancelar?.paths).toEqual([]);
+    expect(cancelar?.grantable).toBe(true);
     // /facturas cae al chequeo por rol del middleware, como antes.
     expect(permissionForPath("/facturas")).toBeNull();
   });

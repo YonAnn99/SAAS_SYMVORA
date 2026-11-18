@@ -14,6 +14,7 @@
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { VentaGuardada } from "../sale-receipt-builder";
+import type { RespuestaCancelacion } from "../cancelar-venta";
 
 /** Una fila del listado. */
 export interface VentaEnHistorial {
@@ -100,4 +101,22 @@ export async function fetchDetalleVenta(
   if (!data) throw new Error("No se encontró la venta");
 
   return data as VentaGuardada;
+}
+
+/**
+ * Cancela una venta cobrada (migración 137). El servidor revierte stock, lotes,
+ * crédito, sello de lealtad y, si la caja ya cerró y fue en efectivo, registra
+ * la devolución en la caja abierta de quien cancela.
+ */
+export async function cancelarVenta(
+  ventaId: string,
+  motivo: string
+): Promise<RespuestaCancelacion> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("cancelar_venta", {
+    p_venta_id: ventaId,
+    p_motivo: motivo,
+  });
+  if (error) throw error;
+  return (data ?? {}) as RespuestaCancelacion;
 }

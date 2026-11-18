@@ -1279,6 +1279,16 @@
       "selectBranch": "Select a branch…",
       "branchHint": "All sales from this shift will count toward this branch.",
       "usePrevious": "Use previous closing balance:"
+    },
+    "correct": {
+      "banner": "Correcting sale #{numero}. Adjust the cart and charge: the original sale is cancelled when you charge.",
+      "exit": "Exit",
+      "loaded": "Sale #{numero} loaded for correction",
+      "missing": "Not loaded because they're no longer in the catalog: {productos}",
+      "notAvailable": "That sale can no longer be corrected (did someone cancel it?).",
+      "loadError": "The sale to correct couldn't be loaded",
+      "noTerminal": "A correction can't be charged with the terminal. Choose another payment method.",
+      "done": "Sale #{numero} corrected"
     }
   },
   "purchases": {
@@ -1475,7 +1485,8 @@
       "RETIRO_EFECTIVO": "Cash withdrawal",
       "OTRO_GASTO": "Other expense",
       "COMPRA": "Purchase payment",
-      "DEVOLUCION_COMPRA": "Purchase refund"
+      "DEVOLUCION_COMPRA": "Purchase refund",
+      "CANCELACION_VENTA": "Cancelled sale refund"
     },
     "credit": "Credit",
     "customers": "Customers",
@@ -2109,6 +2120,10 @@
           "label": "Billing and subscription",
           "description": "Plan, payments and subscription cancellation",
           "reason": "Allows changing the plan and canceling the business subscription."
+        },
+        "salesVoid": {
+          "label": "Cancel and correct sales",
+          "description": "Cancel a charged ticket or correct it and charge again"
         }
       },
       "allBranchesSaved": "{nombre} can work at every branch",
@@ -3060,10 +3075,56 @@
       "total": "Total: {monto}",
       "received": "Received: {monto}",
       "change": "Change: {monto}",
-      "reprint": "Reprint receipt"
+      "reprint": "Reprint receipt",
+      "cancel": {
+        "title": "Cancel sale #{numero}",
+        "titleCorrect": "Correct sale #{numero}",
+        "desc": "The sale stays in the history marked as cancelled, with who, when and why. It is not deleted.",
+        "descCorrect": "It is loaded into the point of sale so you can adjust it. When you charge it, this sale is cancelled and linked to the new one.",
+        "reason": "Reason",
+        "reasons": {
+          "captura": "Entry error",
+          "devolucion": "Customer return",
+          "duplicado": "Duplicate charge",
+          "otro": "Other"
+        },
+        "detailRequired": "Write the reason",
+        "detailOptional": "Details (optional)",
+        "before": {
+          "stock": "The products go back to inventory (and to their lots).",
+          "credito": "{monto} is taken off the customer's outstanding balance.",
+          "efectivo": "If its cash register is already closed, the {monto} comes out of your open register as a refund.",
+          "otro-medio": "If its cash register is already closed, return the {monto} through the same payment method: it doesn't come out of the drawer.",
+          "terminal": "A terminal payment is refunded from Mercado Pago: SYMVORA doesn't refund it.",
+          "lealtad-y-caja": "It stops counting in reports and the cash closing, and the loyalty card stamp is removed if it gave one.",
+          "correct": "The corrected sale is charged with your register and today's date."
+        },
+        "back": "Back",
+        "confirm": "Cancel sale",
+        "confirmCorrect": "Go to correct",
+        "done": "Sale #{numero} cancelled",
+        "after": {
+          "caja-abierta": "Its cash register is still open: it no longer counts in the closing.",
+          "devuelto-caja": "A {monto} cash-out was recorded in your register as a refund.",
+          "sin-caja": "You have no open register: hand over the {monto} and record it as a cash-out when you open one.",
+          "fuera-de-caja": "Return {monto} to the customer through the same payment method.",
+          "terminal": "Refund {monto} from Mercado Pago: terminal payments aren't refunded automatically.",
+          "credito": "{monto} was taken off the customer's balance.",
+          "credito-excedente": "The customer had already paid part: return {monto} to them.",
+          "lealtad": "The stamp was removed (or the reward returned) on their loyalty card."
+        },
+        "cancelled": "Sale cancelled",
+        "cancelledBy": "On {fecha} by {nombre}",
+        "reasonShown": "Reason: {motivo}",
+        "correctedBy": "Corrected with sale #{numero}.",
+        "corrects": "This sale corrects #{numero}.",
+        "view": "View",
+        "cancelButton": "Cancel sale",
+        "correctButton": "Correct"
+      }
     },
     "saleStatus": {
-      "CANCELADA": "CANCELED",
+      "CANCELADA": "Cancelled",
       "PENDIENTE": "PENDING"
     },
     "purchases": {

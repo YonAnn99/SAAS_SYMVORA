@@ -13,6 +13,7 @@
  * el selector de cajero, que sin `sales.view_all` no tendría nada que filtrar.
  */
 
+import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { localeIntl } from "@/lib/idioma";
@@ -202,7 +203,12 @@ export function SalesHistoryCard({
                   <span className="whitespace-nowrap text-muted-foreground">{horaCorta(v.fecha_venta, li)}</span>
                   <span className="font-mono">#{numeroOperacion(v.id)}</span>
                   <EstadoVentaBadge estado={v.estado} />
-                  <span className="ml-auto shrink-0 font-mono text-sm font-medium tabular-nums">
+                  <span
+                    className={cn(
+                      "ml-auto shrink-0 font-mono text-sm font-medium tabular-nums",
+                      v.estado === "CANCELADA" && "text-muted-foreground line-through"
+                    )}
+                  >
                     {formatear(v.total)}
                   </span>
                 </span>
@@ -263,7 +269,13 @@ export function SalesHistoryCard({
               <TableCell className="text-xs">
                 {t(clavePagoI18n(v.metodo_pago))}
               </TableCell>
-              <TableCell className="text-right font-mono text-xs tabular-nums">
+              <TableCell
+                className={cn(
+                  "text-right font-mono text-xs tabular-nums",
+                  // Cancelada (137): sigue en el historial, pero no cuenta.
+                  v.estado === "CANCELADA" && "text-muted-foreground line-through"
+                )}
+              >
                 {formatear(v.total)}
               </TableCell>
             </TableRow>
@@ -382,6 +394,8 @@ export function SalesHistoryCard({
       <SaleDetailDialog
         ventaId={ventaAbierta}
         onOpenChange={(open) => !open && setVentaAbierta(null)}
+        onCambio={() => void refetch()}
+        onVerVenta={setVentaAbierta}
       />
     </>
   );

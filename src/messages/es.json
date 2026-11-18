@@ -1279,6 +1279,16 @@
       "selectBranch": "Selecciona una sucursal…",
       "branchHint": "Todas las ventas de este turno se contarán en esta sucursal.",
       "usePrevious": "Usar saldo de cierre anterior:"
+    },
+    "correct": {
+      "banner": "Corrigiendo la venta #{numero}. Ajusta el carrito y cobra: la venta original se cancela al cobrar.",
+      "exit": "Salir",
+      "loaded": "Venta #{numero} cargada para corregir",
+      "missing": "No se cargaron porque ya no están en el catálogo: {productos}",
+      "notAvailable": "Esa venta ya no se puede corregir (¿alguien la canceló?).",
+      "loadError": "No se pudo cargar la venta a corregir",
+      "noTerminal": "Una corrección no se cobra con la terminal. Elige otro método de pago.",
+      "done": "Venta #{numero} corregida"
     }
   },
   "purchases": {
@@ -1475,7 +1485,8 @@
       "RETIRO_EFECTIVO": "Retiro de efectivo",
       "OTRO_GASTO": "Otro gasto",
       "COMPRA": "Pago de compra",
-      "DEVOLUCION_COMPRA": "Devolución de compra"
+      "DEVOLUCION_COMPRA": "Devolución de compra",
+      "CANCELACION_VENTA": "Devolución de venta cancelada"
     },
     "credit": "Crédito / Fiado",
     "customers": "Clientes",
@@ -2109,6 +2120,10 @@
           "label": "Facturación y suscripción",
           "description": "Plan, pagos y cancelación de la suscripción",
           "reason": "Permite cambiar el plan y cancelar la suscripción del negocio."
+        },
+        "salesVoid": {
+          "label": "Cancelar y corregir ventas",
+          "description": "Cancelar un ticket cobrado o corregirlo y volver a cobrar"
         }
       },
       "allBranchesSaved": "{nombre} puede trabajar en todas las sucursales",
@@ -3060,10 +3075,56 @@
       "total": "Total: {monto}",
       "received": "Recibido: {monto}",
       "change": "Cambio: {monto}",
-      "reprint": "Reimprimir ticket"
+      "reprint": "Reimprimir ticket",
+      "cancel": {
+        "title": "Cancelar la venta #{numero}",
+        "titleCorrect": "Corregir la venta #{numero}",
+        "desc": "La venta queda en el historial marcada como cancelada, con quién, cuándo y por qué. No se borra.",
+        "descCorrect": "Se carga en el punto de venta para que la ajustes. Al cobrarla, esta venta se cancela y queda ligada a la nueva.",
+        "reason": "Motivo",
+        "reasons": {
+          "captura": "Error de captura",
+          "devolucion": "Devolución del cliente",
+          "duplicado": "Cobro duplicado",
+          "otro": "Otro"
+        },
+        "detailRequired": "Escribe el motivo",
+        "detailOptional": "Detalle (opcional)",
+        "before": {
+          "stock": "Los productos regresan al inventario (y a sus lotes).",
+          "credito": "Se rebaja {monto} del saldo pendiente del cliente.",
+          "efectivo": "Si su caja ya cerró, los {monto} salen de tu caja abierta como devolución.",
+          "otro-medio": "Si su caja ya cerró, devuelve los {monto} por el mismo medio de pago: no salen del cajón.",
+          "terminal": "El cobro con terminal se devuelve desde Mercado Pago: SYMVORA no lo reembolsa.",
+          "lealtad-y-caja": "Deja de contar en reportes y en el corte, y se quita el sello de la tarjeta de lealtad si lo dio.",
+          "correct": "La venta corregida se cobra con tu caja y con la fecha de hoy."
+        },
+        "back": "Volver",
+        "confirm": "Cancelar venta",
+        "confirmCorrect": "Ir a corregir",
+        "done": "Venta #{numero} cancelada",
+        "after": {
+          "caja-abierta": "Su caja sigue abierta: ya no cuenta en el corte.",
+          "devuelto-caja": "Se registró una salida de {monto} en tu caja como devolución.",
+          "sin-caja": "No tienes caja abierta: entrega los {monto} y regístralo como salida cuando abras caja.",
+          "fuera-de-caja": "Devuelve {monto} al cliente por el mismo medio con que pagó.",
+          "terminal": "Devuelve {monto} desde Mercado Pago: el cobro con terminal no se reembolsa solo.",
+          "credito": "Se rebajaron {monto} del saldo del cliente.",
+          "credito-excedente": "El cliente ya había abonado: devuélvele {monto}.",
+          "lealtad": "Se quitó el sello (o se devolvió el premio) de su tarjeta de lealtad."
+        },
+        "cancelled": "Venta cancelada",
+        "cancelledBy": "El {fecha} por {nombre}",
+        "reasonShown": "Motivo: {motivo}",
+        "correctedBy": "Corregida con la venta #{numero}.",
+        "corrects": "Esta venta corrige la #{numero}.",
+        "view": "Ver",
+        "cancelButton": "Cancelar venta",
+        "correctButton": "Corregir"
+      }
     },
     "saleStatus": {
-      "CANCELADA": "CANCELADA",
+      "CANCELADA": "Cancelada",
       "PENDIENTE": "PENDIENTE"
     },
     "purchases": {

@@ -773,7 +773,7 @@ export type Database = {
           descripcion: string;
           fecha: string;
           /** Motivo del movimiento (migracion 093). NULL en ventas, entradas manuales y lo anterior. */
-          concepto: "DEPOSITO_BANCO" | "RETIRO_EFECTIVO" | "OTRO_GASTO" | "COMPRA" | "DEVOLUCION_COMPRA" | null;
+          concepto: "DEPOSITO_BANCO" | "RETIRO_EFECTIVO" | "OTRO_GASTO" | "COMPRA" | "DEVOLUCION_COMPRA" | "CANCELACION_VENTA" | null;
           /** La compra que pago (o devolvio) este movimiento (migracion 093). */
           compra_id: string | null;
         };
@@ -784,7 +784,7 @@ export type Database = {
           monto: number;
           descripcion: string;
           fecha?: string;
-          concepto?: "DEPOSITO_BANCO" | "RETIRO_EFECTIVO" | "OTRO_GASTO" | "COMPRA" | "DEVOLUCION_COMPRA" | null;
+          concepto?: "DEPOSITO_BANCO" | "RETIRO_EFECTIVO" | "OTRO_GASTO" | "COMPRA" | "DEVOLUCION_COMPRA" | "CANCELACION_VENTA" | null;
           compra_id?: string | null;
         };
         Update: {
@@ -794,7 +794,7 @@ export type Database = {
           monto?: number;
           descripcion?: string;
           fecha?: string;
-          concepto?: "DEPOSITO_BANCO" | "RETIRO_EFECTIVO" | "OTRO_GASTO" | "COMPRA" | "DEVOLUCION_COMPRA" | null;
+          concepto?: "DEPOSITO_BANCO" | "RETIRO_EFECTIVO" | "OTRO_GASTO" | "COMPRA" | "DEVOLUCION_COMPRA" | "CANCELACION_VENTA" | null;
           compra_id?: string | null;
         };
       };

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { consumirRateLimit } from "@/lib/rate-limit";
-import { construirCorreoNovedadCatalogo, sendNovedadCatalogoEmail } from "@/lib/email";
+import {
+  construirCorreoNovedadCatalogo,
+  construirCorreoNovedadVentas,
+  sendCorreoNovedad,
+} from "@/lib/email";
 import type { Acceso } from "@/lib/acceso-suscripcion";
 import {
   claveCorreoNovedad,
@@ -10,7 +14,11 @@ import {
 } from "@/lib/anuncio-novedad";
 
 /**
- * Correo a los dueños anunciando el Catálogo en línea (`lib/novedades.ts`).
+ * Correo a los dueños anunciando una novedad (`lib/novedades.ts`).
+ *
+ * `?novedad=` elige cuál (por defecto el Catálogo en línea, como siempre):
+ * - `catalogo-en-linea`: excluye a quien ya creó su catálogo.
+ * - `cancelar-ventas` (migración 137): todos los dueños activos.
  *
  * NO está en `vercel.json`: se corre a mano, una vez, después del deploy.
  * - Sin parámetros es un SIMULACRO: devuelve a quién le llegaría, a quién no y
@@ -25,7 +33,12 @@ import {
 
 export const maxDuration = 60;
 
-const NOVEDAD = "catalogo-en-linea";
+/** Las novedades que se pueden anunciar por correo. */
+const ANUNCIOS = {
+  "catalogo-en-linea": { construir: construirCorreoNovedadCatalogo, excluirConCatalogo: true },
+  "cancelar-ventas": { construir: construirCorreoNovedadVentas, excluirConCatalogo: false },
+} as const;
+type NovedadAnunciable = keyof typeof ANUNCIOS;
 const VENTANA_SEGUNDOS = 60 * 24 * 60 * 60;
 /** Resend permite pocas peticiones por segundo: se manda de una en una. */
 const PAUSA_MS = 600;
@@ -40,6 +53,14 @@ export async function GET(request: Request) {
   if (!cronAutorizado(request)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
+
+  const parametros = new URL(request.url).searchParams;
+  const pedida = parametros.get("novedad") ?? "catalogo-en-linea";
+  if (!(pedida in ANUNCIOS)) {
+    return NextResponse.json({ error: `Novedad desconocida: ${pedida}` }, { status: 400 });
+  }
+  const NOVEDAD = pedida as NovedadAnunciable;
+  const anuncio = ANUNCIOS[NOVEDAD];
 
   const supabase = createSupabaseServiceRoleClient();
   const [{ data: duenos, error }, { data: catalogos, error: errorCatalogos }] = await Promise.all([
@@ -74,7 +95,7 @@ export async function GET(request: Request) {
       negocio: tenant?.nombre_comercial || "tu negocio",
       esDemo,
       acceso: (acceso as Acceso | null) ?? null,
-      tieneCatalogo: conCatalogo.has(d.tenant_id),
+      tieneCatalogo: anuncio.excluirConCatalogo && conCatalogo.has(d.tenant_id),
       userId: d.user_id,
       email: usuario?.user?.email ?? null,
       meta: (usuario?.user?.user_metadata as Record<string, unknown> | undefined) ?? null,
@@ -83,15 +104,16 @@ export async function GET(request: Request) {
   }
 
   const { destinatarios, excluidos } = elegirDestinatarios(candidatos);
-  const enviar = new URL(request.url).searchParams.get("enviar") === "1";
+  const enviar = parametros.get("enviar") === "1";
 
   if (!enviar) {
-    const muestra = construirCorreoNovedadCatalogo({
+    const muestra = anuncio.construir({
       nombre: destinatarios[0]?.nombre ?? "",
       negocio: destinatarios[0]?.negocio ?? "tu negocio",
     });
     return NextResponse.json({
       dry: true,
+      novedad: NOVEDAD,
       total: destinatarios.length,
       destinatarios: destinatarios.map(({ to, nombre, negocio }) => ({ to, nombre, negocio })),
       // Las demos no se listan una por una: solo cuántas.
@@ -111,7 +133,7 @@ export async function GET(request: Request) {
       yaEnviados.push(d.to);
       continue;
     }
-    const r = await sendNovedadCatalogoEmail({ to: d.to, nombre: d.nombre, negocio: d.negocio });
+    const r = await sendCorreoNovedad({ to: d.to, nombre: d.nombre, negocio: d.negocio }, anuncio.construir);
     if (r.ok) enviados.push(d.to);
     else fallidos.push({ to: d.to, error: r.error });
     await new Promise((listo) => setTimeout(listo, PAUSA_MS));

@@ -19,7 +19,9 @@ export type ConceptoSalida = (typeof CONCEPTOS_SALIDA)[number];
 export type ConceptoMovimiento =
   | ConceptoSalida
   | "COMPRA"
-  | "DEVOLUCION_COMPRA";
+  | "DEVOLUCION_COMPRA"
+  // 137: devolución en efectivo de una venta cancelada cuya caja ya cerró.
+  | "CANCELACION_VENTA";
 
 /** El motivo que se propone al elegir "Salida". */
 export const CONCEPTO_SALIDA_POR_DEFECTO: ConceptoSalida = "OTRO_GASTO";
