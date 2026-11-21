@@ -1,19 +1,28 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import * as m from "motion/react-m";
 import { ArrowRight, Play } from "lucide-react";
 import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./animations";
 import { HeroMockups } from "./hero-mockups";
-import { GiroGiratorio } from "./giro-giratorio";
+import { PalabraGiratoria } from "./palabra-giratoria";
 import { SinLimites } from "./sin-limites";
 import { PromoBadgeEnLinea } from "./promo-badge";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, SECUNDARIA } from "./boton-capsula";
 
+/** Orden en que rota la palabra del titulo (las claves viven en `landing.hero.dispositivos`). */
+const DISPOSITIVOS = ["celular", "tablet", "computadora", "dispositivo"] as const;
+
 export function Hero() {
   const t = useTranslations();
   const locale = useLocale();
+  // Estable entre pintados: el giratorio no reinicia su ciclo por un arreglo nuevo.
+  const palabras = useMemo(
+    () => DISPOSITIVOS.map((d) => t(`landing.hero.dispositivos.${d}`)),
+    [t]
+  );
 
   return (
     <section
@@ -32,18 +41,15 @@ export function Hero() {
 
         {/* Headline */}
         <h1
-          className="entrada-suave text-4xl sm:text-6xl lg:text-7xl font-bold text-black dark:text-white max-w-3xl leading-[1.05] tracking-tighter"
+          className="entrada-suave text-3xl sm:text-5xl xl:text-6xl font-bold text-black dark:text-white max-w-3xl leading-[1.08] tracking-tighter"
         >
-          {/* Renglones fijos: "Tu sistema todo en uno," / "hecho para tu" / giro. El
-              giro va SIEMPRE en su propio renglon: frases como "tienda de
-              cosmeticos" no caben junto a "para tu", y si unas veces cupiera y
-              otras no, el titulo cambiaria de alto y todo lo de abajo brincaria
-              cada 2 segundos. */}
+          {/* El eslogan fijo ("...desde cualquier") y, SIEMPRE en su propio
+              renglon, la palabra que rota. Si unas veces cupiera junto al texto
+              y otras no, el titulo cambiaria de alto y todo lo de abajo
+              brincaria cada 2 segundos. */}
           {t("landing.hero.title")}
-          <br />
-          {t("landing.hero.highlight")}
-          {/* El giro rota en bucle: farmacia, papeleria, ferreteria... */}
-          <GiroGiratorio />
+          {/* Rota en bucle: celular, tablet, computadora, dispositivo. */}
+          <PalabraGiratoria palabras={palabras} />
         </h1>
 
         {/* Subtitle */}

@@ -343,6 +343,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     pegando las capturas oscuras DENTRO de esos mismos marcos (rectángulos de pantalla medidos en el script) y tapa el
     correo de la cuenta de pruebas. **Si cambia el tamaño de un WebP, cambiar `MOCKUPS_HERO`** (lo vigila
     `hero-mockups.test.tsx`). Nunca capturas con correos, celulares o nombres del equipo.
+  - **H1 del hero** (2026-11-20): eslogan fijo «Controla tu inventario, evita fugas en caja y vende más rápido desde
+    cualquier» + la pastilla giratoria (`palabra-giratoria.tsx`, recibe `palabras`) con celular, tablet, computadora y
+    dispositivo (`landing.hero.dispositivos`, en ese orden). La pastilla va SIEMPRE en su propio renglón para que el alto
+    del título no cambie al rotar. Los 20 giros ya no están en el H1: viven en la franja de giros y en
+    `/punto-de-venta/[giro]`.
   - Footer: `components/ui/footer.tsx`, con enlaces legales con locale.
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**

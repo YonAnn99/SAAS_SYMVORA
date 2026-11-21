@@ -2483,8 +2483,13 @@
       }
     },
     "hero": {
-      "title": "Tu sistema todo en uno,",
-      "highlight": "hecho para tu",
+      "title": "Controla tu inventario, evita fugas en caja y vende más rápido desde cualquier",
+      "dispositivos": {
+        "celular": "celular",
+        "tablet": "tablet",
+        "computadora": "computadora",
+        "dispositivo": "dispositivo"
+      },
       "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
       "ctaPrimary": "Prueba {dias} días gratis",
       "ctaSecondary": "Ver demo",

@@ -10,7 +10,7 @@
  *     motor completo en el JS inicial.
  *   - Sin `layout`: `domAnimation` no incluye animaciones de layout. Quien lo
  *     use y quiera animar el ancho del contenedor lo hace aparte (ver
- *     `giro-giratorio.tsx`).
+ *     `palabra-giratoria.tsx`).
  *
  * Tiene que renderizarse dentro de `LazyMotion` (la landing ya lo esta).
  */

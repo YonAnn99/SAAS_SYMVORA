@@ -1,21 +1,20 @@
 "use client";
 
 /**
- * La palabra que rota en el hero: "hecho para tu [farmacia]", pasando en bucle
- * por los 20 giros dentro de una pastilla azul SYMVORA (Rotating Text de React
- * Bits, `components/ui/rotating-text.tsx`).
+ * La palabra que rota en el hero: "...desde cualquier [celular]", pasando en
+ * bucle por las palabras que reciba (celular, tablet, computadora, dispositivo)
+ * dentro de una pastilla azul SYMVORA (Rotating Text de React Bits,
+ * `components/ui/rotating-text.tsx`).
  *
  * La pastilla cambia de ancho con una transicion CSS: un medidor oculto con la
  * palabra actual da el ancho. El original lo hacia con `layout` de motion, que
  * la landing no carga (usa `domAnimation`, mucho mas ligero).
  *
- * Con "reducir movimiento" se queda fija en el primer giro.
+ * Con "reducir movimiento" se queda fija en la primera palabra.
  */
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useLocale } from "next-intl";
 import RotatingText from "@/components/ui/rotating-text";
-import { palabrasDelHero } from "./giro-giratorio-palabras";
 
 const CONSULTA_REDUCIR = "(prefers-reduced-motion: reduce)";
 
@@ -34,9 +33,7 @@ function useReducirMovimiento(): boolean {
 /** Relleno horizontal de la pastilla (px-3 = 12px por lado). */
 const RELLENO_X = 24;
 
-export function GiroGiratorio() {
-  const locale = useLocale();
-  const palabras = palabrasDelHero(locale === "en" ? "en" : "es");
+export function PalabraGiratoria({ palabras }: { palabras: string[] }) {
   const reducir = useReducirMovimiento();
   const [indice, setIndice] = useState(0);
   const [ancho, setAncho] = useState<number | null>(null);
@@ -59,7 +56,7 @@ export function GiroGiratorio() {
 
   return (
     // `flex` (bloque): siempre en su propio renglon, ver `hero.tsx`. En
-    // celular un poco mas chica: "tienda de cosmeticos" no cabria en 320 px, y
+    // celular un poco mas chica: una palabra larga no cabria en 320 px, y
     // partirla en dos renglones cambiaria el alto (el salto que se veia).
     <span className="relative mt-2 flex w-fit max-w-full max-sm:text-[0.82em]">
       {/* Medidor: invisible y fuera del flujo. */}
