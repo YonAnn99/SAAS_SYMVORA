@@ -10,6 +10,7 @@ import Image from "next/image";
 import { HeroMockups, MOCKUPS_HERO, rutaMockup } from "./hero-mockups";
 import { PalabraGiratoria } from "./palabra-giratoria";
 import { SinLimites } from "./sin-limites";
+import { GirosStrip } from "./giros-strip";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, SECUNDARIA } from "./boton-capsula";
 
 /** Orden en que rota la palabra del titulo (las claves viven en `landing.hero.dispositivos`). */
@@ -111,7 +112,14 @@ export function Hero() {
         </p>
 
         {/* Lo que no tiene tope: usuarios, productos y comisiones. */}
-        <SinLimites visibleDesdeInicio compactoMovil />
+        {/* Celular: la franja de giros va aqui (a sangre, como en su seccion);
+            escritorio: usuarios, productos y comisiones sin tope. */}
+        <div className="lg:hidden -mx-4 sm:-mx-6">
+          <GirosStrip clase="max-lg:border-b-0" />
+        </div>
+        <div className="hidden lg:block">
+          <SinLimites visibleDesdeInicio />
+        </div>
 
         {/* Celular: el producto a la vista sin desplazar. Solo se asoma la
             parte de arriba (recorte con degradado) para invitar a seguir. */}

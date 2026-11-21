@@ -14,13 +14,15 @@ const logos = [
   { src: "/enterprises/logo.webp", alt: "Gecotay Mobiliario e Insumos" },
   { src: "/enterprises/armada-nutrition.webp", alt: "Armada Nutrition" },
   { src: "/enterprises/clarabella.webp", alt: "Clarabella Store" },
+  { src: "/enterprises/cereza-del-pastel.webp", alt: "La cereza del pastel by Sherry" },
+  { src: "/enterprises/sherry.webp", alt: "Graduaciones Sherry" },
 ];
 
 export default function LogoCarousel() {
   // 6 copias: cada mitad (3 copias, más de 1,600 px) supera el ancho maximo del
   // contenedor (max-w-7xl), asi el loop translateX(-50%) nunca deja espacio
   // vacio y el reinicio es invisible. Con mas logos cada copia es mas ancha:
-  // seis siguen sobrando.
+  // seis siguen sobrando (con 7 logos cada tanda mide ~1,600 px).
   const extendedLogos = Array.from({ length: 6 }, () => logos).flat();
 
   return (
@@ -54,7 +56,7 @@ export default function LogoCarousel() {
           <div className="flex animate-infinite-scroll items-center gap-8 sm:gap-10">
             {extendedLogos.map((logo, index) => (
               // Solo la primera tanda se anuncia: las copias son decoracion del
-              // loop y un lector de pantalla leeria 30 logos en vez de 5.
+              // loop y un lector de pantalla leeria 42 logos en vez de 7.
               <div
                 key={index}
                 className="flex items-center justify-center shrink-0"

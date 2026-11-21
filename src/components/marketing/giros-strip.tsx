@@ -34,7 +34,7 @@ const ETIQUETA_CORTA: Record<string, { es: string; en: string }> = {
   "tiendas-de-ropa": { es: "Ropa", en: "Clothing" },
 };
 
-export function GirosStrip() {
+export function GirosStrip({ clase = "" }: { clase?: string }) {
   const locale = useLocale();
   const reducirMovimiento = useReducedMotion();
   const giros: Giro[] = GIROS;
@@ -125,7 +125,7 @@ export function GirosStrip() {
   return (
     <section
       aria-label={locale === "en" ? "Business types" : "Giros comerciales"}
-      className="w-full pt-2 border-b border-[#EAEAEA] dark:border-white/[0.08] lg:border-b-0"
+      className={`w-full pt-2 border-b border-[#EAEAEA] dark:border-white/[0.08] lg:border-b-0 ${clase}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Celular: la etiqueta y "Ver los 20" van arriba de la franja. */}

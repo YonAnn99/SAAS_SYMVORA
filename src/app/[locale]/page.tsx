@@ -13,6 +13,7 @@ import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import LogoCarousel from "@/components/ui/logo-carousel";
 import { Features } from "@/components/marketing/features";
 import { GirosStrip } from "@/components/marketing/giros-strip";
+import { SinLimites } from "@/components/marketing/sin-limites";
 import { WhyChooseUs } from "@/components/marketing/why-choose-us";
 import { SecuritySection } from "@/components/marketing/security-section";
 import { Benefits } from "@/components/marketing/benefits";
@@ -118,15 +119,18 @@ export default async function LocalePage({
       <AppFrame>
       {/* Lo primero que se ve: el visitante se reconoce por su giro antes de
           leer el hero. Muestra los 20 giros, deslizable; cada uno lleva a su pagina. */}
-      {/* En celular el hero va PRIMERO (el boton de registro a la vista) y la
-          franja de giros debajo; desde lg, como siempre: franja y luego hero. */}
-      <div className="flex flex-col">
-        <div className="order-2 lg:order-1">
-          <GirosStrip />
-        </div>
-        <div id="hero-landing" className="order-1 lg:order-2">
-          <Hero />
-        </div>
+      {/* Escritorio: la franja de giros arriba del hero. En celular el hero va
+          PRIMERO (el boton de registro a la vista) y la franja de giros va DENTRO
+          del hero (`hero.tsx`), donde estaban «Usuarios / Productos ilimitados»;
+          esos tres puntos pasan a la banda de abajo, junto a los logos. */}
+      <div className="hidden lg:block">
+        <GirosStrip />
+      </div>
+      <div id="hero-landing">
+        <Hero />
+      </div>
+      <div className="lg:hidden px-4 sm:px-6 pb-2">
+        <SinLimites alineacion="centro" compactoMovil visibleDesdeInicio />
       </div>
       <LogoCarousel />
       <Features />
