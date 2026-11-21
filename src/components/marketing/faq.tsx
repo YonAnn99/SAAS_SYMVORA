@@ -163,17 +163,18 @@ export function FAQ() {
             <MessageCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
             {t("landing.faq.cta.noAnswer")}
           </span>
-          <m.a
+          {/* Sin `whileHover`/`whileTap` de motion: este enlace ya lleva `.btn-llenado`
+              (CAPSULA), cuya transicion de `transform` (0.6 s) pelea con el `transform` en linea de
+              motion, y al hacer scroll con el cursor encima el boton rebotaba. Hover y apretado, por CSS. */}
+          <a
             href={buildWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${CAPSULA} ${CAPSULA_CHICA} ${WHATSAPP} shadow-sm hover:shadow-md`}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.97 }}
+            className={`${CAPSULA} ${CAPSULA_CHICA} ${WHATSAPP} shadow-sm hover:shadow-md active:scale-[0.97]`}
           >
             <WhatsAppLogo size={18} className="text-white" aria-hidden="true" />
             {t("landing.faq.cta.contactUs")}
-          </m.a>
+          </a>
         </m.div>
       </div>
     </m.section>

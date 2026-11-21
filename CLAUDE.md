@@ -141,6 +141,13 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Sin Server Actions: las mutaciones van por el cliente de Supabase o por rutas API.
   - Rate limit durable en Postgres (`consumirRateLimit`); nunca un `Map` en memoria.
   - Los correos en webhooks van con `after()`.
+  - **Turnstile del login/registro/olvidé contraseña/clave de colaborador** (2026-11-21, `components/auth/turnstile-resiliente.tsx`;
+    una clienta con Safari no podía entrar: «No se pudo completar la verificación de seguridad»): invisible primero
+    (`interaction-only`); si falla, 2 reintentos silenciosos (1.5 s y 3 s); si sigue, widget VISIBLE (`always`) + aviso con el
+    CÓDIGO del error + «Reintentar verificación». Cada fallo se reporta a Sentry (`Turnstile fallo`, tags `turnstile_codigo`
+    y `turnstile_widget`, una vez por carga). Al recuperarse se quita solo el aviso del captcha. **Un widget nuevo usa
+    `TurnstileResiliente`, nunca `<Turnstile>` suelto.** El captcha NO se puentea. Códigos útiles: `200100` reloj del
+    equipo mal o página en caché, `110620` sin interacción a tiempo, `300xxx`/`600xxx` fallo genérico del reto.
   - **El modo sin conexión está RETIRADO.** No reintroducirlo; se hará con una app nativa. La PWA sigue
     siendo instalable: no borres `sw.ts`.
   - CSS global: `html, body { overflow-x: clip }`. **No volver a `hidden`**: crea un segundo scroll.
@@ -352,6 +359,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     header de escritorio y en el menú del celular (`etiqueta-promo.tsx`; `BubbleMenu` acepta `etiqueta` por ítem) y en el
     selector Mensual/Anual de precios. Las dos salen con `promoAplica("monthly")` (`PROMO_LANZAMIENTO.activa`): al apagarla
     se van juntas. El sello giratorio «−50% OFF» (`promo-badge.tsx`) se retiró.
+  - **Botones con llenado** (`CAPSULA` / `.btn-llenado`): NO llevan `whileHover`/`whileTap` de motion en el MISMO elemento
+    (2026-11-21). El llenado pone `transition: transform 0.6s` y motion escribe el `transform` en línea: pelean y el botón
+    rebota al hacer scroll con el cursor encima (le pasó al WhatsApp de preguntas frecuentes). Si hace falta animarlo, un
+    `<m.div>` envoltorio; hover y apretado por CSS (`hover:shadow-md active:scale-[0.97]`). Lo vigila
+    `boton-llenado-sin-motion.test.ts`.
   - **Logos de clientes** («Equipos que construyen el futuro», `components/ui/logo-carousel.tsx`, archivos en
     `public/enterprises/`): el carrusel los vuelve silueta con CSS (`brightness-0`, blanca en oscuro), así que cada logo va
     como **WebP de una sola tinta con fondo transparente y recortado**. Un JPG/PNG con fondo sólido saldría como cuadro

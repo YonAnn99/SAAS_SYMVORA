@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, type ReactNode } from "react";
-import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { TurnstileResiliente, type ControlTurnstile } from "./turnstile-resiliente";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -70,13 +70,6 @@ function MicrosoftIcon() {
 }
 
 type AuthMode = "login" | "signup" | "forgot" | "key";
-
-/**
- * Turnstile solo se muestra si Cloudflare necesita que la persona interactúe;
- * la verificación corre igual. El recuadro fijo de ~70 px ("Success!") no
- * dejaba que el login cupiera en la pantalla del celular.
- */
-const OPCIONES_TURNSTILE = { appearance: "interaction-only" } as const;
 
 /**
  * Campo con su etiqueta sobre el borde (diseño de celular). En escritorio la
@@ -192,7 +185,7 @@ export function AuthForms({
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
-  const turnstileForgotRef = useRef<TurnstileInstance>(null);
+  const turnstileForgotRef = useRef<ControlTurnstile>(null);
   const [forgotCaptchaToken, setForgotCaptchaToken] = useState<string | null>(null);
 
   // Login state
@@ -261,9 +254,9 @@ export function AuthForms({
 
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
-  const turnstileLoginRef = useRef<TurnstileInstance>(null);
-  const turnstileSignupRef = useRef<TurnstileInstance>(null);
-  const turnstileKeyRef = useRef<TurnstileInstance>(null);
+  const turnstileLoginRef = useRef<ControlTurnstile>(null);
+  const turnstileSignupRef = useRef<ControlTurnstile>(null);
+  const turnstileKeyRef = useRef<ControlTurnstile>(null);
   const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
   const [signupCaptchaToken, setSignupCaptchaToken] = useState<string | null>(null);
   const [keyCaptchaToken, setKeyCaptchaToken] = useState<string | null>(null);
@@ -974,16 +967,11 @@ export function AuthForms({
 
             {turnstileSiteKey && (
               <div style={{ width: "100%", display: "flex", justifyContent: "center", marginTop: "16px" }}>
-                <Turnstile
+                <TurnstileResiliente
                   id="cf-turnstile-signup"
                   siteKey={turnstileSiteKey}
-                  options={OPCIONES_TURNSTILE}
-                  onSuccess={setSignupCaptchaToken}
-                  onError={() => {
-                    setSignupCaptchaToken(null);
-                    setSignupError(t("auth.captchaError"));
-                  }}
-                  onExpire={() => setSignupCaptchaToken(null)}
+                  onToken={setSignupCaptchaToken}
+                  setError={setSignupError}
                   ref={turnstileSignupRef}
                 />
               </div>
@@ -1082,16 +1070,11 @@ export function AuthForms({
 
                 {turnstileSiteKey && (
                   <div style={{ width: "100%", marginBottom: "12px" }}>
-                    <Turnstile
+                    <TurnstileResiliente
                       id="cf-turnstile-forgot"
                       siteKey={turnstileSiteKey}
-                      options={OPCIONES_TURNSTILE}
-                      onSuccess={setForgotCaptchaToken}
-                      onError={() => {
-                        setForgotCaptchaToken(null);
-                        setForgotError(t("auth.captchaError"));
-                      }}
-                      onExpire={() => setForgotCaptchaToken(null)}
+                      onToken={setForgotCaptchaToken}
+                      setError={setForgotError}
                       ref={turnstileForgotRef}
                     />
                   </div>
@@ -1176,16 +1159,11 @@ export function AuthForms({
 
             {turnstileSiteKey && (
               <div style={{ width: "100%", marginBottom: "12px" }}>
-                <Turnstile
+                <TurnstileResiliente
                   id="cf-turnstile-key"
                   siteKey={turnstileSiteKey}
-                  options={OPCIONES_TURNSTILE}
-                  onSuccess={setKeyCaptchaToken}
-                  onError={() => {
-                    setKeyCaptchaToken(null);
-                    setKeyError(t("auth.captchaError"));
-                  }}
-                  onExpire={() => setKeyCaptchaToken(null)}
+                  onToken={setKeyCaptchaToken}
+                  setError={setKeyError}
                   ref={turnstileKeyRef}
                 />
               </div>
@@ -1293,16 +1271,11 @@ export function AuthForms({
 
           {turnstileSiteKey && (
             <div style={{ width: "100%", marginBottom: "12px" }}>
-              <Turnstile
+              <TurnstileResiliente
                 id="cf-turnstile-login"
                 siteKey={turnstileSiteKey}
-                options={OPCIONES_TURNSTILE}
-                onSuccess={setLoginCaptchaToken}
-                onError={() => {
-                  setLoginCaptchaToken(null);
-                  setLoginError(t("auth.captchaError"));
-                }}
-                onExpire={() => setLoginCaptchaToken(null)}
+                onToken={setLoginCaptchaToken}
+                setError={setLoginError}
                 ref={turnstileLoginRef}
               />
             </div>

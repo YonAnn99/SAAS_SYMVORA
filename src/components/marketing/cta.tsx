@@ -350,17 +350,17 @@ export function CTA() {
             </Link>
           </m.div>
 
-          <m.a
+          {/* Sin `whileHover`/`whileTap` de motion en este mismo elemento: ver el WhatsApp de faq.tsx
+              (`.btn-llenado` y motion peleaban por el `transform` y el boton rebotaba al hacer scroll). */}
+          <a
             href={buildWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${CAPSULA} ${CAPSULA_GRANDE} ${WHATSAPP_CONTORNO} w-full sm:w-auto`}
-            whileHover={{ y: -2, boxShadow: "0 4px 12px -2px rgba(0, 0, 0, 0.1)" }}
-            whileTap={{ scale: 0.98 }}
+            className={`${CAPSULA} ${CAPSULA_GRANDE} ${WHATSAPP_CONTORNO} w-full sm:w-auto hover:shadow-md active:scale-[0.98]`}
           >
             <WhatsAppLogo size={20} className="shrink-0" aria-hidden="true" />
             {t("landing.cta.secondary")}
-          </m.a>
+          </a>
         </m.div>
 
 
