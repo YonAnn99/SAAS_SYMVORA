@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
-import { PromoBadge } from "@/components/marketing/promo-badge";
+import { EtiquetaPromo, useTextoPromo } from "@/components/marketing/etiqueta-promo";
+import { useTranslations } from "next-intl";
 import { CAPSULA, CAPSULA_CHICA, CLARA, FLECHA_CAPSULA } from "@/components/marketing/boton-capsula";
 import { ArrowRight } from "lucide-react";
 
@@ -36,6 +37,9 @@ export function AppFrame({
   inicio?: string;
 }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // «−50%» junto a «Precios» mientras la promocion de lanzamiento este activa.
+  const textoPromo = useTextoPromo();
+  const tPromo = useTranslations("landing.promo");
 
   // En la landing (`inicio` vacio) el logo sube al principio de la pagina. En
   // las demas que usan este marco (Aprende, paginas de giro) lleva a la
@@ -67,7 +71,13 @@ export function AppFrame({
               textColor: "var(--bubble-cta-text)",
               hoverStyles: { bgColor: "var(--bubble-cta-bg)", textColor: "var(--bubble-cta-text)" },
             },
-            { label: "Precios", href: `${inicio}#pricing`, rotation: -8 },
+            {
+              label: "Precios",
+              href: `${inicio}#pricing`,
+              rotation: -8,
+              etiqueta: textoPromo,
+              ariaLabel: textoPromo ? tPromo("aria") : undefined,
+            },
             { label: "Aprende", href: "/es/aprende", rotation: 8 },
             { label: "Nosotros", href: "/es/nosotros", rotation: -8 },
             { label: "Contáctanos", href: `${inicio}#footer-contacto`, rotation: 8 },
@@ -117,7 +127,14 @@ export function AppFrame({
           </a>
 
           <nav className="flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href={`${inicio}#pricing`} className="hover:text-white transition-colors">Precios</Link>
+            <Link
+              href={`${inicio}#pricing`}
+              aria-label={textoPromo ? tPromo("aria") : undefined}
+              className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+            >
+              Precios
+              <EtiquetaPromo />
+            </Link>
             <Link href="/es/aprende" className="hover:text-white transition-colors">Aprende</Link>
             <Link href="/es/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
             <Link href={`${inicio}#footer-contacto`} className="hover:text-white transition-colors">Contáctanos</Link>
@@ -138,9 +155,8 @@ export function AppFrame({
           {children}
         </main>
 
-        {/* Hermano del contenedor de scroll, no hijo: asi se queda quieto
-            mientras la landing se desplaza. Ver la nota del componente. */}
-        <PromoBadge />
+        {/* Hermanos del contenedor de scroll, no hijos: se quedan quietos
+            mientras la landing se desplaza. */}
         <ThemeToggleFab />
         <VoiceNarrator />
       </div>

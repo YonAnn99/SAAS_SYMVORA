@@ -348,6 +348,14 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     dispositivo (`landing.hero.dispositivos`, en ese orden). La pastilla va SIEMPRE en su propio renglón para que el alto
     del título no cambie al rotar. Los 20 giros ya no están en el H1: viven en la franja de giros y en
     `/punto-de-venta/[giro]`.
+  - **Promoción de lanzamiento en la landing** (2026-11-20): se ve como la pastilla roja «−50%» junto a «Precios» en el
+    header de escritorio y en el menú del celular (`etiqueta-promo.tsx`; `BubbleMenu` acepta `etiqueta` por ítem) y en el
+    selector Mensual/Anual de precios. Las dos salen con `promoAplica("monthly")` (`PROMO_LANZAMIENTO.activa`): al apagarla
+    se van juntas. El sello giratorio «−50% OFF» (`promo-badge.tsx`) se retiró.
+  - **Logos de clientes** («Equipos que construyen el futuro», `components/ui/logo-carousel.tsx`, archivos en
+    `public/enterprises/`): el carrusel los vuelve silueta con CSS (`brightness-0`, blanca en oscuro), así que cada logo va
+    como **WebP de una sola tinta con fondo transparente y recortado**. Un JPG/PNG con fondo sólido saldría como cuadro
+    negro: quitarle el fondo antes (Armada Nutrition y Clarabella se hicieron así, 2026-11-20).
   - Footer: `components/ui/footer.tsx`, con enlaces legales con locale.
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**

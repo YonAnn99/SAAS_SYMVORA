@@ -116,8 +116,8 @@ export function SucursalProvider({ children }: { children: React.ReactNode }) {
     }
   }, [tenantId]);
 
-  // Diferido con setTimeout, convención del repo (misma que `use-cash-register`
-  // y `promo-badge`): llamar a setState de forma síncrona dentro del efecto
+  // Diferido con setTimeout, convención del repo (misma que `use-cash-register`):
+  // llamar a setState de forma síncrona dentro del efecto
   // encadena renders y lo marca `react-hooks/set-state-in-effect`.
   useEffect(() => {
     if (tenantLoading) return;

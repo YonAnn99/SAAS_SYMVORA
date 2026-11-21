@@ -9,7 +9,6 @@ import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./ani
 import { HeroMockups } from "./hero-mockups";
 import { PalabraGiratoria } from "./palabra-giratoria";
 import { SinLimites } from "./sin-limites";
-import { PromoBadgeEnLinea } from "./promo-badge";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, SECUNDARIA } from "./boton-capsula";
 
 /** Orden en que rota la palabra del titulo (las claves viven en `landing.hero.dispositivos`). */
@@ -35,10 +34,6 @@ export function Hero() {
           ahora es CSS (`.entrada-suave`, solo desplazamiento): el texto se ve
           desde el primer pintado. */}
       <div className="w-full lg:w-3/5 flex flex-col gap-8 lg:gap-10 z-10">
-        {/* El sello de la promocion en movil. En escritorio no se dibuja: alli
-            vive flotando en el marco (ver `promo-badge.tsx`). */}
-        <PromoBadgeEnLinea />
-
         {/* Headline */}
         <h1
           className="entrada-suave text-3xl sm:text-5xl xl:text-6xl font-bold text-black dark:text-white max-w-3xl leading-[1.08] tracking-tighter"

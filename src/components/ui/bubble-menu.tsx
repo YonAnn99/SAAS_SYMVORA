@@ -42,6 +42,9 @@ export default function BubbleMenu({
     bgColor?: string;
     textColor?: string;
     hoverStyles?: { bgColor?: string; textColor?: string };
+    /** Texto de una pastilla roja junto a la palabra (p. ej. «−50%» en «Precios»). */
+    etiqueta?: string;
+    ariaLabel?: string;
   }>;
   animationEase?: string;
   animationDuration?: number;
@@ -158,7 +161,7 @@ export default function BubbleMenu({
       {showOverlay && (
         <div ref={overlayRef} className={`bubble-menu-items ${useFixedPosition ? 'fixed' : 'absolute'} inset-0 flex items-center justify-center pointer-events-none z-[1000]`} aria-hidden={!isMenuOpen}>
           <ul className="pill-list list-none m-0 px-6 w-full max-w-[1600px] mx-auto flex flex-wrap gap-x-0 gap-y-1 pointer-events-auto" role="menu" aria-label="Menu links">
-            {menuItems.map((item: { label: string; href: string; rotation?: number; ariaLabel?: string; bgColor?: string; textColor?: string; hoverStyles?: { bgColor?: string; textColor?: string } }, idx: number) => (
+            {menuItems.map((item: { label: string; href: string; rotation?: number; ariaLabel?: string; etiqueta?: string; bgColor?: string; textColor?: string; hoverStyles?: { bgColor?: string; textColor?: string } }, idx: number) => (
               <li key={idx} role="none" className="pill-col flex justify-center items-stretch box-border">
                 <a
                   role="menuitem"
@@ -183,6 +186,11 @@ export default function BubbleMenu({
                 >
                   <span className="pill-label inline-block" ref={el => { if (el) labelRefs.current[idx] = el; }}>
                     {item.label}
+                    {item.etiqueta && (
+                      <span className="ml-3 inline-block -translate-y-[0.12em] rounded-full bg-red-500 px-[0.55em] py-[0.3em] align-middle text-[0.45em] font-bold leading-none text-white">
+                        {item.etiqueta}
+                      </span>
+                    )}
                   </span>
                 </a>
               </li>

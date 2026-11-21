@@ -4,16 +4,23 @@
 import React from "react";
 import Image from "next/image";
 
+// Cada logo es UNA tinta con fondo TRANSPARENTE (WebP): el CSS de abajo lo vuelve
+// silueta (`brightness-0`, blanca en oscuro con `dark:invert`). Un logo con fondo
+// sólido (JPG o PNG opaco) saldría como un cuadro negro: quitarle el fondo y
+// recortarlo antes de agregarlo aquí.
 const logos = [
   { src: "/enterprises/ghost-logo.webp", alt: "Ghost" },
   { src: "/enterprises/logo_acrylitec.webp", alt: "Acrylitec Acrílicos" },
   { src: "/enterprises/logo.webp", alt: "Gecotay Mobiliario e Insumos" },
+  { src: "/enterprises/armada-nutrition.webp", alt: "Armada Nutrition" },
+  { src: "/enterprises/clarabella.webp", alt: "Clarabella Store" },
 ];
 
 export default function LogoCarousel() {
-  // 6 copias: cada mitad (3 copias, ~1,600 px) supera el ancho maximo del
+  // 6 copias: cada mitad (3 copias, más de 1,600 px) supera el ancho maximo del
   // contenedor (max-w-7xl), asi el loop translateX(-50%) nunca deja espacio
-  // vacio y el reinicio es invisible. Antes eran 8 (24 imagenes para 3 logos).
+  // vacio y el reinicio es invisible. Con mas logos cada copia es mas ancha:
+  // seis siguen sobrando.
   const extendedLogos = Array.from({ length: 6 }, () => logos).flat();
 
   return (
@@ -47,7 +54,7 @@ export default function LogoCarousel() {
           <div className="flex animate-infinite-scroll items-center gap-8 sm:gap-10">
             {extendedLogos.map((logo, index) => (
               // Solo la primera tanda se anuncia: las copias son decoracion del
-              // loop y un lector de pantalla leeria 18 logos en vez de 3.
+              // loop y un lector de pantalla leeria 30 logos en vez de 5.
               <div
                 key={index}
                 className="flex items-center justify-center shrink-0"
