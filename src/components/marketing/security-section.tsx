@@ -24,6 +24,7 @@ export function SecuritySection() {
 
   return (
     <m.section
+      id="security"
       className="w-full py-12 sm:py-24 bg-[#1A1A1A] dark:bg-[#141414] text-white"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}

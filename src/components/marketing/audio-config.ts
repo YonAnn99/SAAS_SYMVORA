@@ -1,27 +1,38 @@
 export interface AudioSection {
   id: string;
-  label: string;
+  labelKey: string;
   src: string;
 }
 
+/**
+ * Narración de la landing, en el mismo orden en que aparecen las secciones.
+ * Las rutas usan slugs ASCII porque los nombres originales traían espacios,
+ * acentos y un salto de línea que no son seguros para archivos públicos.
+ */
 export const NARRATION_SECTIONS: AudioSection[] = [
   {
-    id: "benefits",
-    label: "Diseñado para quien tiene prisa",
-    src: "/audio/landing/disenado-para-quien-tiene-prisa.mp3",
+    id: "features",
+    labelKey: "landing.features.title",
+    src: "/audio/landing/todo-lo-que-tu-negocio-necesita.mp3",
   },
   {
     id: "why-choose-us",
-    label: "Por qué elegirnos",
-    src: "/audio/landing/por-que-elegirnos.mp3",
+    labelKey: "landing.whyChooseUs.title",
+    src: "/audio/landing/por-que-elegir-symvora.mp3",
   },
   {
-    id: "features",
-    label: "Todo lo que tu negocio necesita",
-    src: "/audio/landing/todo-lo-que-tu-negocio-necesita.mp3",
+    id: "security",
+    labelKey: "landing.security.title",
+    src: "/audio/landing/tus-datos-estan-protegidos.mp3",
+  },
+  {
+    id: "benefits",
+    labelKey: "landing.benefits.title",
+    src: "/audio/landing/disenado-para-quien-tiene-prisa.mp3",
+  },
+  {
+    id: "setup",
+    labelKey: "landing.setup.title",
+    src: "/audio/landing/en-4-pasos-estas-vendiendo.mp3",
   },
 ];
-
-export const SECTION_ID_SET = new Set(
-  NARRATION_SECTIONS.map((s) => s.id)
-);

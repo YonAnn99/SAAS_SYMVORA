@@ -152,7 +152,11 @@ export function AppFrame({
           </div>
         </header>
 
-        <main ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden pt-20 md:pt-28 pb-0 scrollbar-hide relative scroll-smooth">
+        <main
+          ref={scrollContainerRef}
+          data-audio-scroll-root=""
+          className="flex-1 overflow-y-auto overflow-x-hidden pt-20 md:pt-28 pb-0 scrollbar-hide relative scroll-smooth"
+        >
           {children}
         </main>
 

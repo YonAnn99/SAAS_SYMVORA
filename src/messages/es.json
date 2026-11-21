@@ -2457,6 +2457,10 @@
     }
   },
   "landing": {
+    "audio": {
+      "play": "Narrar esta sección",
+      "pause": "Pausar narración"
+    },
     "nav": {
       "features": "Funciones",
       "solutionsLabel": "Soluciones",
