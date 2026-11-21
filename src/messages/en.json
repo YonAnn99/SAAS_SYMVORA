@@ -2488,21 +2488,11 @@
       "subtitle": "Point of sale, inventory and finance — all in one, no per-sale commissions, with Spanish support.",
       "ctaPrimary": "{dias}-day free trial",
       "ctaSecondary": "See demo",
-      "growthLabel": "Monthly sales",
-      "mockup": {
-        "searchPlaceholder": "Search product or scan barcode…",
-        "products": "Products",
-        "cart": "Cart",
-        "subtotal": "Subtotal",
-        "total": "Total",
-        "charge": "Charge",
-        "items": {
-          "milk": "Whole milk 1L",
-          "apple": "Apples by kilo",
-          "tortillas": "Corn tortillas 1kg",
-          "rice": "Rice 1kg"
-        },
-        "added": "Item added"
+      "mockups": {
+        "grupo": "SYMVORA on a computer, tablet and phone",
+        "laptop": "SYMVORA dashboard on a laptop",
+        "tablet": "SYMVORA dashboard on a tablet",
+        "movil": "SYMVORA dashboard on a phone"
       }
     },
     "sinLimites": {

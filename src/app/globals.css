@@ -1017,6 +1017,37 @@
   }
 }
 
+/* Mockups del hero (`hero-mockups.tsx`): laptop, tablet y celular, uno a la vez, en un ciclo de 12 s
+   (~4 s cada uno, con fundido cruzado). Cada uno lleva su posicion en `--i` (0, 1, 2). El delay de
+   `--i = 0` es NEGATIVO: la animacion arranca ya en su parte visible y el primero se ve desde el primer
+   pintado, sin esperar a que el fundido lo haga aparecer. Los demas esperan su turno con `opacity: 0`. */
+.hero-mockup {
+  opacity: 0;
+  animation: hero-mockup 12s linear infinite backwards;
+  animation-delay: calc(var(--i) * 4s - 0.72s);
+}
+@keyframes hero-mockup {
+  0% {
+    opacity: 0;
+  }
+  6%,
+  30% {
+    opacity: 1;
+  }
+  36%,
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-mockup {
+    animation: none;
+  }
+  .hero-mockup:first-child {
+    opacity: 1;
+  }
+}
+
 /* Cambio de tema "Circle blur" (beUI, beui.dev/components/motion/theme-toggle),
    con la View Transition API: el tema nuevo se revela en un circulo que nace
    del boton pulsado (`--tema-origen`, lo pone `useCambioTema`) y se enfoca al

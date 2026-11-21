@@ -335,6 +335,14 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
       corrido.
     - La salida es un FLIP: `splash-control.tsx` mide los `data-splash-*` de `app-frame.tsx` (logo y marca en
       escritorio, logo de la píldora en celular). **Si cambia el header, revisar el vuelo.**
+  - **Mockups del hero** (2026-11-20, `components/marketing/hero-mockups.tsx`): laptop, tablet y celular en bucle (12 s, CSS
+    puro en `.hero-mockup`, sin JS; con reduced-motion solo el primero). El modo va por CSS (`dark:hidden` /
+    `hidden dark:block`), nunca leyendo el tema en JS. Solo desde `lg`, como antes. Los WebP viven en
+    `public/landing/hero/{claro,oscuro}-{laptop,tablet,movil}.webp` y salen de `node scripts/mockups-hero.mjs`
+    (origen `~/Imágenes/mockup_landing_page`, fuera del repo): el claro son los PNG con marco; el OSCURO se compone
+    pegando las capturas oscuras DENTRO de esos mismos marcos (rectángulos de pantalla medidos en el script) y tapa el
+    correo de la cuenta de pruebas. **Si cambia el tamaño de un WebP, cambiar `MOCKUPS_HERO`** (lo vigila
+    `hero-mockups.test.tsx`). Nunca capturas con correos, celulares o nombres del equipo.
   - Footer: `components/ui/footer.tsx`, con enlaces legales con locale.
   - Las páginas legales usan `LegalShell` con `AppFrame`.
 - **Legal (LFPDPPP):**
@@ -794,6 +802,38 @@ Código listo y apagado (`src/lib/whatsapp-api.ts`, plantillas en `src/lib/whats
       Play → Firma de apps). Prueba cerrada enviada a revisión con el Grupo `symvora_test_01`.
 - [ ] Ficha: política de privacidad, URL de eliminación `https://www.symvora.com.mx/es/eliminar-cuenta`,
       «Seguridad de los datos», cuenta de prueba (negocio de pruebas) en «Acceso a la app».
+
+## Armada Pass dentro de Symvora (ARMADA NUTRICIÓN, exclusivo) — EN ESPERA
+Tienda de suplementos para gimnasio. Tiene su propio sistema de lealtad («Armada Pass», `~/Documentos/ARMADA NUTRICION`,
+otro proyecto con otra base: solo se LEE como referencia, nunca se editan ni se usan sus llaves o su Supabase aquí) y
+se pasa al POS de Symvora. Hay que agregar a las tarjetas de lealtad de Symvora lo que les falta, **solo para ese negocio**.
+
+- [ ] **Estado:** esperando a que el negocio se registre en Symvora. No crear el negocio a mano ni empezar antes.
+- **Decisiones tomadas (2026-11-20):**
+  - Exclusivo para UN negocio: interruptor «solo este negocio»; los demás no ven nada distinto. Sin interruptor por
+    `if (tenant === X)` en el código: va por configuración del negocio (columna aditiva, a decidir al empezar).
+  - Se pasan al POS de Symvora (dejan KYTE): NO se construye el validador de caja `/caja` de Armada.
+  - Arrancan desde cero: sin migrar clientes ni saldos. Los pases de Armada Pass dejan de servir (avisarles con cartel/QR nuevo).
+  - Ya pagaron un anticipo. El mantenimiento mensual se cobra FUERA de Conekta (sin plan especial: los planes son
+    inmutables y no hay precio por negocio).
+- **Alcance:** niveles por gasto histórico (Principiante 5 % / Atleta 10 % / Culturista 15 %, editables); cashback en
+  puntos (tasa por peso, canje parcial, bienvenida); cumpleaños (una vez al año, hora de México); promo relámpago con
+  fechas; tarjeta compartida (el amigo recibe el descuento de nivel y el titular un bono; no cuenta para su gasto, sellos
+  ni cashback); reactivación de inactivos con cupón de un solo uso; regla VIP por cliente; interruptor de cada dinámica
+  (global y por cliente). **Fuera:** Google Wallet, dinámicas nuevas (se cotizan aparte) y migración de clientes.
+- **Referencia técnica:** en el proyecto fuente, `supabase/migrations/20261111000001_lealtad.sql` y
+  `20261116000001_cambios_sistema.sql`, `src/features/lealtad/motor.ts` (`calcularCompra`, espejo de la RPC
+  `registrar_compra`) y `src/features/admin/components/dinamicas.tsx`. **Prioridad del beneficio:** VIP > cupón > nivel >
+  promociones vigentes. En Symvora se integra en `complete_sale_lealtad` / `_crear_venta_desde_items` y en
+  `features/lealtad/lealtad.ts` (`aplicarPremio` es el MISMO algoritmo que el servidor: si cambia uno, cambia el otro).
+- **Reglas al ejecutar:**
+  - Toca el cobro de negocios reales: plan aprobado antes de desplegar; migraciones aditivas, probadas con transacción
+    revertida y también como `authenticated`.
+  - Lo que mueve saldos se escribe solo por RPC `SECURITY DEFINER` (como las tarjetas de lealtad actuales).
+  - Probar en «Pruebas SYMVORA», nunca en el negocio real; ninguna base ni llave de Armada dentro de Symvora.
+  - Cada cambio futuro al cobro o a la lealtad debe probarse también con sus reglas encendidas.
+- **Comercial (resumen):** cotización «Completo» ≈ $59,000 MXN (sin migración de clientes) menos el anticipo, pago 50/50;
+  $399 del plan + $700–$900 mensuales de mantenimiento aparte; 3–4 semanas desde el anticipo.
 
 ## Seguridad
 - [x] `log_activity` ya no confía en el cliente (migración 106, 2026-10-04): con sesión exige

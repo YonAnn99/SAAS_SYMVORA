@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import * as m from "motion/react-m";
 import { ArrowRight, Play } from "lucide-react";
 import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./animations";
-import { PosMockup } from "./pos-mockup";
+import { HeroMockups } from "./hero-mockups";
 import { GiroGiratorio } from "./giro-giratorio";
 import { SinLimites } from "./sin-limites";
 import { PromoBadgeEnLinea } from "./promo-badge";
@@ -101,7 +101,7 @@ export function Hero() {
         <SinLimites visibleDesdeInicio />
       </div>
 
-      {/* Right Column - POS Mockup (40%) */}
+      {/* Right Column - Mockups de dispositivos (40%) */}
       {/* En escritorio, arriba y a la altura del titulo ("Tu sistema todo en
           uno"), no centrada contra toda la columna izquierda. `lg:pt-3` baja el
           borde del mockup a la linea de las mayusculas del H1. */}
@@ -130,34 +130,17 @@ export function Hero() {
           aria-hidden="true"
         />
 
-        {/* POS Mockup - Sticky Stack Target */}
+        {/* Mockups del panel en laptop, tablet y celular, uno a la vez (claro u oscuro
+            segun el modo). Ver `hero-mockups.tsx`. */}
         <m.div
-          className="relative w-full max-w-[560px] aspect-[4/3] z-10"
+          className="relative w-full max-w-[560px] z-10"
           initial={{ rotateY: 15, rotateX: -5, scale: 0.95 }}
           animate={{ rotateY: 0, rotateX: 0, scale: 1 }}
           whileHover={{ rotateY: 0, rotateX: 0, scale: 1.01 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           style={{ transformOrigin: "center center" }}
         >
-          <PosMockup />
-          
-          {/* Floating stat badge */}
-          <m.div
-            className="absolute left-2 right-auto sm:-left-6 bottom-4 sm:bottom-10 bg-white dark:bg-neutral-900 p-3 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-800 flex items-center gap-3 max-w-[calc(100%-1rem)]"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1.9, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-              <span className="text-emerald-500 text-lg" aria-hidden="true">📈</span>
-            </div>
-            <div className="flex flex-col pr-4">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 uppercase font-medium">
-                {t("landing.hero.growthLabel")}
-              </span>
-              <span className="text-lg font-bold text-black dark:text-neutral-50">+24.5%</span>
-            </div>
-          </m.div>
+          <HeroMockups />
         </m.div>
       </m.div>
 

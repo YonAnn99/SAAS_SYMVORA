@@ -2488,21 +2488,11 @@
       "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
       "ctaPrimary": "Prueba {dias} días gratis",
       "ctaSecondary": "Ver demo",
-      "growthLabel": "Ventas del mes",
-      "mockup": {
-        "searchPlaceholder": "Buscar producto o escanear código…",
-        "products": "Productos",
-        "cart": "Carrito",
-        "subtotal": "Subtotal",
-        "total": "Total",
-        "charge": "Cobrar",
-        "items": {
-          "milk": "Leche Lala 1L",
-          "apple": "Manzana por kilo",
-          "tortillas": "Tortillas de maíz 1kg",
-          "rice": "Arroz 1kg"
-        },
-        "added": "Producto agregado"
+      "mockups": {
+        "grupo": "SYMVORA en computadora, tablet y celular",
+        "laptop": "Panel de SYMVORA en una computadora portátil",
+        "tablet": "Panel de SYMVORA en una tablet",
+        "movil": "Panel de SYMVORA en un celular"
       }
     },
     "sinLimites": {
