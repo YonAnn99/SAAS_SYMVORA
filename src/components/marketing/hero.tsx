@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import * as m from "motion/react-m";
 import { ArrowRight, Play } from "lucide-react";
 import { cubicBezierPremium, springTransition, scrollRevealStagger } from "./animations";
-import { HeroMockups } from "./hero-mockups";
+import Image from "next/image";
+import { HeroMockups, MOCKUPS_HERO, rutaMockup } from "./hero-mockups";
 import { PalabraGiratoria } from "./palabra-giratoria";
 import { SinLimites } from "./sin-limites";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, SECUNDARIA } from "./boton-capsula";
@@ -25,7 +26,7 @@ export function Hero() {
 
   return (
     <section
-      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 lg:pt-12 pb-24 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-12 lg:gap-16"
+      className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 lg:pt-12 pb-10 sm:pb-24 lg:pb-32 overflow-hidden flex flex-col lg:flex-row items-center gap-6 lg:gap-16"
     >
       {/* Columna izquierda. NADA de lo que se ve sin desplazar parte de
           `opacity: 0`: antes el H1 (el elemento del LCP) llegaba en el HTML con
@@ -33,25 +34,31 @@ export function Hero() {
           animar (varios segundos en un Android de gama media). La entrada
           ahora es CSS (`.entrada-suave`, solo desplazamiento): el texto se ve
           desde el primer pintado. */}
-      <div className="w-full lg:w-3/5 flex flex-col gap-8 lg:gap-10 z-10">
+      <div className="w-full lg:w-3/5 flex flex-col gap-5 sm:gap-8 lg:gap-10 z-10">
         {/* Headline */}
         <h1
-          className="entrada-suave text-3xl sm:text-5xl xl:text-6xl font-bold text-black dark:text-white max-w-3xl leading-[1.08] tracking-tighter"
+          className="entrada-suave text-[1.95rem] sm:text-5xl xl:text-6xl font-bold text-black dark:text-white max-w-3xl leading-[1.08] tracking-tighter"
         >
           {/* El eslogan fijo ("...desde cualquier") y, SIEMPRE en su propio
               renglon, la palabra que rota. Si unas veces cupiera junto al texto
               y otras no, el titulo cambiaria de alto y todo lo de abajo
               brincaria cada 2 segundos. */}
-          {t("landing.hero.title")}
-          {/* Rota en bucle: celular, tablet, computadora, dispositivo. */}
-          <PalabraGiratoria palabras={palabras} />
+          {/* Celular: titular corto de beneficio (el largo ocupaba 5 renglones
+              y empujaba el boton fuera de la primera pantalla). */}
+          <span className="sm:hidden">{t("landing.hero.titleMovil")}</span>
+          <span className="hidden sm:inline">
+            {t("landing.hero.title")}
+            {/* Rota en bucle: celular, tablet, computadora, dispositivo. */}
+            <PalabraGiratoria palabras={palabras} />
+          </span>
         </h1>
 
         {/* Subtitle */}
         <p
-          className="entrada-suave [animation-delay:80ms] text-lg sm:text-xl text-neutral-600 dark:text-white max-w-xl leading-relaxed"
+          className="entrada-suave [animation-delay:80ms] text-base sm:text-xl text-neutral-600 dark:text-white max-w-xl leading-relaxed"
         >
-          {t("landing.hero.subtitle")}
+          <span className="sm:hidden">{t("landing.hero.subtitleMovil")}</span>
+          <span className="hidden sm:inline">{t("landing.hero.subtitle")}</span>
         </p>
 
         {/* CTAs */}
@@ -65,7 +72,7 @@ export function Hero() {
           >
             <Link
               href="/signup"
-              className={`${CAPSULA} ${CAPSULA_GRANDE} ${PRINCIPAL}`}
+              className={`${CAPSULA} ${CAPSULA_GRANDE} ${PRINCIPAL} w-full sm:w-auto`}
             >
               {t("landing.hero.ctaPrimary")}
               <ArrowRight className={`w-5 h-5 ${FLECHA_CAPSULA}`} aria-hidden="true" />
@@ -79,7 +86,7 @@ export function Hero() {
             className="relative rounded-full"
           >
             <span
-              className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-25"
+              className="hidden sm:block absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-25"
               aria-hidden="true"
             />
             <Link
@@ -88,7 +95,7 @@ export function Hero() {
                   ? `https://demo.symvora.com.mx/${locale}/demo`
                   : `/${locale}/demo`
               }
-              className={`${CAPSULA} ${CAPSULA_GRANDE} ${SECUNDARIA}`}
+              className={`${CAPSULA} h-11 px-6 text-sm sm:h-14 sm:px-8 sm:text-base w-full sm:w-auto ${SECUNDARIA}`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 01-1.497.89l-3.197-2.132A1 1 0 004 10.073V13.93a1 1 0 001.497.89l3.197 2.132A1 1 0 0011 14.12V18a1 1 0 001 1h2a1 1 0 001-1v-4.263a1 1 0 011.497-.89l3.197-2.132A1 1 0 0020 10.073V6.927a1 1 0 00-1.497-.89l-3.197 2.132A1 1 0 0012 6.927z" />
@@ -98,8 +105,34 @@ export function Hero() {
           </m.div>
         </div>
 
+        {/* Quita la ultima duda de quien llega por un anuncio: no hay riesgo. */}
+        <p className="entrada-suave [animation-delay:200ms] -mt-2 sm:hidden text-center text-xs text-neutral-500 dark:text-neutral-400">
+          {t("landing.hero.sinTarjeta")}
+        </p>
+
         {/* Lo que no tiene tope: usuarios, productos y comisiones. */}
-        <SinLimites visibleDesdeInicio />
+        <SinLimites visibleDesdeInicio compactoMovil />
+
+        {/* Celular: el producto a la vista sin desplazar. Solo se asoma la
+            parte de arriba (recorte con degradado) para invitar a seguir. */}
+        <div
+          className="lg:hidden relative mx-auto -mb-2 h-[230px] w-[210px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_55%,transparent)]"
+          aria-hidden="true"
+        >
+          {(["claro", "oscuro"] as const).map((modo) => (
+            <Image
+              key={modo}
+              src={rutaMockup(modo, "movil")}
+              alt=""
+              width={MOCKUPS_HERO[2].ancho}
+              height={MOCKUPS_HERO[2].alto}
+              loading="eager"
+              unoptimized
+              draggable={false}
+              className={`w-full h-auto select-none ${modo === "claro" ? "dark:hidden" : "hidden dark:block"}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Right Column - Mockups de dispositivos (40%) */}

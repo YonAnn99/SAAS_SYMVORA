@@ -5,26 +5,26 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import * as m from "motion/react-m";
 import { useReducedMotion } from "motion/react";
-import { ArrowRight, ChevronRight } from "lucide-react";
-import { GIROS, GIROS_FRANJA, giroPorSlug, rutaGiro, type Giro } from "@/features/marketing/giros";
-import { CAPSULA, CAPSULA_CHICA, FLECHA_CAPSULA, SECUNDARIA_AZUL } from "./boton-capsula";
+import { ChevronRight } from "lucide-react";
+import { GIROS, rutaGiro, type Giro } from "@/features/marketing/giros";
 import { ENLACE_GIRO, ETIQUETA_GIRO, RECUADRO_GIRO, TRAZO_GIRO } from "./giro-estilos";
 
 /**
  * Franja de giros, lo primero de la landing (encima del hero): el visitante se
  * reconoce ("esto es para mi papeleria") antes de leer una sola funcion.
  *
- * Cada icono lleva a la pagina de su giro; "Ver los 20" baja al catalogo
- * completo (`#giros`, en `GirosCatalog`). Estilo minimalista (skill
+ * Muestra los 20 giros en una fila que se desliza; cada icono lleva a la pagina
+ * de su giro (antes habia una seccion aparte con la cuadricula de los 20: se
+ * quito). Estilo minimalista (skill
  * `minimalist-ui`): monocromo calido, iconos de linea 1.8 y sin color de marca. Las paginas por giro existen solo en español
  * (el mercado es Mexico), asi que el enlace va a /es aunque se vea en ingles.
  *
- * EN CELULAR SE VEN 5 DE 11, y el ultimo visible queda completo: parecia que
+ * EN CELULAR SE VEN 5 DE 20, y el ultimo visible queda completo: parecia que
  * la lista terminaba ahi. Por eso, SOLO cuando la lista desborda:
  *   - se "asoma" una vez al aparecer (se desliza un poco y regresa),
  *   - un degradado en el borde marca que hay mas contenido,
  *   - una flecha con vaiven invita a deslizar (y desliza al tocarla).
- * En escritorio caben todos y nada de esto se dibuja.
+ * En escritorio tambien desborda (20 giros): mismo comportamiento.
  */
 
 const CLAVE_ASOMO = "symvora_giros_asomo";
@@ -37,9 +37,7 @@ const ETIQUETA_CORTA: Record<string, { es: string; en: string }> = {
 export function GirosStrip() {
   const locale = useLocale();
   const reducirMovimiento = useReducedMotion();
-  const giros = GIROS_FRANJA.map((slug) => giroPorSlug(slug)).filter(
-    (g): g is Giro => Boolean(g)
-  );
+  const giros: Giro[] = GIROS;
 
   const listaRef = useRef<HTMLUListElement>(null);
   const interactuo = useRef(false);
@@ -124,8 +122,6 @@ export function GirosStrip() {
     el.scrollBy({ left: Math.round(el.clientWidth * 0.8), behavior: "smooth" });
   };
 
-  const verTodos = locale === "en" ? `See all ${GIROS.length}` : `Ver los ${GIROS.length}`;
-
   return (
     <section
       aria-label={locale === "en" ? "Business types" : "Giros comerciales"}
@@ -137,12 +133,9 @@ export function GirosStrip() {
           <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#787774] dark:text-[#9A9791]">
             {locale === "en" ? "For your business" : "Para tu giro"}
           </span>
-          <a
-            href="#giros"
-            className="text-[13px] font-semibold text-[#111111] dark:text-[#F5F4F0] hover:text-[#333333] dark:hover:text-white"
-          >
-            {verTodos} →
-          </a>
+          <span className="text-[13px] font-semibold text-[#111111] dark:text-[#F5F4F0]">
+            {locale === "en" ? `${GIROS.length} types · swipe →` : `${GIROS.length} giros · desliza →`}
+          </span>
         </div>
 
         <div className="flex items-center gap-7 pb-4 lg:pb-[22px] lg:border-b border-[#EAEAEA] dark:border-white/[0.08]">
@@ -167,11 +160,11 @@ export function GirosStrip() {
               onTouchStart={alInteractuar}
               onWheel={alInteractuar}
               // Celular: desplazamiento horizontal de borde a borde. Escritorio:
-              // UNA fila repartida entre la etiqueta y "Ver los 20".
+              // una fila que tambien se desliza (son 20 giros).
               // `pt-1.5` (compensado con `-mt-1.5`): `overflow-x-auto` obliga a
               // recortar tambien en vertical, y sin ese margen el icono se
               // cortaba por arriba al subir con el hover.
-              className="-mt-1.5 pt-1.5 px-4 sm:px-6 lg:px-0 flex gap-1 lg:gap-1.5 overflow-x-auto scrollbar-hide lg:justify-between snap-x"
+              className="-mt-1.5 pt-1.5 px-4 sm:px-6 lg:px-0 flex gap-1 lg:gap-1.5 overflow-x-auto scrollbar-hide snap-x"
             >
               {giros.map((giro) => {
                 const Icono = giro.icono;
@@ -232,15 +225,6 @@ export function GirosStrip() {
               </m.button>
             )}
           </div>
-
-          {/* Escritorio: el catalogo completo, en lugar del antiguo circulo "+ Otros". */}
-          <a
-            href="#giros"
-            className={`max-lg:hidden shrink-0 ${CAPSULA} ${CAPSULA_CHICA} ${SECUNDARIA_AZUL}`}
-          >
-            {verTodos}
-            <ArrowRight className={`w-4 h-4 ${FLECHA_CAPSULA}`} aria-hidden="true" />
-          </a>
         </div>
       </div>
     </section>

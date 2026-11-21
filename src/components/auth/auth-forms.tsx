@@ -479,8 +479,10 @@ export function AuthForms({
     setForgotCaptchaToken(null);
   };
 
-  const handleOAuth = async (provider: "google" | "azure") => {
-    setLoginError(null);
+  const handleOAuth = async (provider: "google" | "azure", desdeRegistro = false) => {
+    // Desde el registro el error se muestra ahi: el de inicio de sesion no se ve.
+    const mostrarError = desdeRegistro ? setSignupError : setLoginError;
+    mostrarError(null);
     setOauthLoading(provider);
 
     try {
@@ -509,7 +511,7 @@ export function AuthForms({
           error.message.toLowerCase().includes("user not found") ||
           error.message.toLowerCase().includes("user_not_found") ||
           error.message.toLowerCase().includes("not allowed");
-        setLoginError(
+        mostrarError(
           isUnknownUser
             ? t("auth.oauthAccountNotFound")
             : error.message
@@ -518,7 +520,7 @@ export function AuthForms({
       }
     } catch (err) {
       console.error("OAuth error:", err);
-      setLoginError(t("auth.oauthGenericError") || "Error al iniciar sesión con el proveedor");
+      mostrarError(t("auth.oauthGenericError") || "Error al iniciar sesión con el proveedor");
       setOauthLoading(null);
     }
   };
@@ -702,6 +704,32 @@ export function AuthForms({
           <form onSubmit={handleSignup} style={{ alignItems: "stretch" }}>
             <div className="auth-form-center">
               <h1 className="auth-form-title-text">{t("auth.signupTitle")}</h1>
+            </div>
+
+            {/* Quita el riesgo antes de pedir nada: la prueba no pide tarjeta. */}
+            <p
+              className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs text-emerald-800 text-center leading-relaxed"
+              role="note"
+            >
+              {t("auth.signupTrustBanner")}
+            </p>
+
+            {/* Un toque en vez de 8 campos: en celular es donde mas gente se va. */}
+            <div className="auth-social-icons auth-social-icons-buttons">
+              <button
+                type="button"
+                onClick={() => handleOAuth("google", true)}
+                disabled={oauthLoading !== null || signupLoading}
+                className="auth-social-btn"
+                aria-label={t("auth.signupWithGoogle")}
+              >
+                <GoogleIcon />
+                <span>{t("auth.signupWithGoogle")}</span>
+              </button>
+            </div>
+
+            <div className="auth-divider">
+              <span>{t("auth.orSignupWithEmail")}</span>
             </div>
 
             {signupError && (

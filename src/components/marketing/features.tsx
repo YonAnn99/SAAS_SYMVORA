@@ -1,16 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as m from "motion/react-m";
-import { useReducedMotion } from "motion/react";
 import {
   ShoppingCart,
+  ScanBarcode,
   Package,
   FileText,
   BarChart3,
   ArrowRight,
-  AlertTriangle,
   Upload,
+  Store,
+  Gift,
 } from "lucide-react";
 import { easeOutLong, easeOutShort } from "./animations";
 import ScrollStack, { ScrollStackItem } from "@/components/ui/scroll-stack";
@@ -20,12 +22,25 @@ import { useEsMovil } from "@/hooks/use-es-movil";
 const TARJETA =
   "overflow-hidden rounded-3xl md:rounded-[32px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 " +
   "shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] " +
-  "p-6 sm:p-8 md:p-10 md:min-h-[22rem] flex flex-col md:flex-row gap-6 md:gap-10";
+  "p-5 sm:p-8 md:p-10 md:min-h-[22rem] flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-10";
 const TEXTO = "relative z-10 flex flex-col md:flex-1 md:justify-center";
 const ICONO = "w-12 h-12 rounded-xl flex items-center justify-center mb-5";
 const TITULO = "text-xl sm:text-2xl font-bold text-black dark:text-neutral-50 mb-3";
 const DESCRIPCION = "text-neutral-500 dark:text-neutral-400 leading-relaxed";
 const VISUAL = "relative z-10 flex md:flex-1 w-full";
+
+/**
+ * Captura REAL del producto, recortada a lo que importa (`public/landing/funciones`).
+ * Sin degradado ni recorte en vivo: el recorte ya viene hecho. Se revisaron sin
+ * correos, celulares, nombres ni codigos QR de tarjetas.
+ */
+function Captura({ src, alt, ancho, alto }: { src: string; alt: string; ancho: number; alto: number }) {
+  return (
+    <div className="relative mx-auto w-full max-w-[290px] sm:max-w-[340px] md:max-w-[420px] overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-950 shadow-lg">
+      <Image src={src} alt={alt} width={ancho} height={alto} sizes="(min-width: 768px) 420px, 340px" className="w-full h-auto select-none" draggable={false} />
+    </div>
+  );
+}
 
 /** Brillo tenue del color del modulo en la esquina superior. */
 function Brillo({ className }: { className: string }) {
@@ -37,15 +52,26 @@ function Brillo({ className }: { className: string }) {
   );
 }
 
+/** Un modulo de la pila: acento (brillo + icono), texto y captura. */
+const MODULOS = [
+  { key: "pos", icono: ShoppingCart, brillo: "bg-[#1e3a8a]/15 dark:bg-blue-500/10", chip: "bg-[#1e3a8a]/10 text-[#1e3a8a] dark:bg-blue-500/10 dark:text-blue-400", img: "pos", ancho: 367, alto: 435 },
+  { key: "scanner", icono: ScanBarcode, brillo: "bg-orange-500/15 dark:bg-orange-500/10", chip: "bg-orange-50 text-orange-600 dark:bg-orange-500/10", img: "escaner", ancho: 760, alto: 730 },
+  { key: "inventory", icono: Package, brillo: "bg-amber-500/15 dark:bg-amber-500/10", chip: "bg-amber-50 text-amber-600 dark:bg-amber-500/10", img: "inventario", ancho: 373, alto: 330 },
+  { key: "purchases", icono: FileText, brillo: "bg-emerald-500/15 dark:bg-emerald-500/10", chip: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10", img: "ordenes", ancho: 760, alto: 681 },
+  { key: "catalogImport", icono: Upload, brillo: "bg-sky-500/15 dark:bg-sky-500/10", chip: "bg-sky-50 text-sky-600 dark:bg-sky-500/10", img: "migracion", ancho: 373, alto: 310 },
+  { key: "onlineCatalog", icono: Store, brillo: "bg-teal-500/15 dark:bg-teal-500/10", chip: "bg-teal-50 text-teal-600 dark:bg-teal-500/10", img: "catalogo", ancho: 760, alto: 724 },
+  { key: "loyalty", icono: Gift, brillo: "bg-rose-500/15 dark:bg-rose-500/10", chip: "bg-rose-50 text-rose-600 dark:bg-rose-500/10", img: "lealtad", ancho: 760, alto: 507 },
+  { key: "finances", icono: BarChart3, brillo: "bg-purple-500/15 dark:bg-purple-500/10", chip: "bg-purple-50 text-purple-600 dark:bg-purple-500/10", img: "caja", ancho: 720, alto: 415 },
+] as const;
+
 export function Features() {
   const t = useTranslations();
-  const reduceMotion = useReducedMotion();
   const esMovil = useEsMovil();
 
   return (
     <m.section
       id="features"
-      className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 flex flex-col gap-12"
+      className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24 flex flex-col gap-8 sm:gap-12"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
@@ -93,146 +119,31 @@ export function Features() {
 
       {/* Scroll Stack (React Bits): al bajar, cada modulo se apila sobre el
           anterior. Tarjetas OPACAS (al apilarse no debe verse la de abajo) y
-          cada una con el acento de su modulo. */}
+          cada una con el acento de su modulo y una captura real. */}
       <ScrollStack
         className="mx-auto max-w-5xl"
-        itemDistance={esMovil ? 60 : 90}
-        itemStackDistance={esMovil ? 16 : 28}
-        stackPosition={esMovil ? "14%" : "18%"}
+        itemDistance={esMovil ? 40 : 90}
+        itemStackDistance={esMovil ? 8 : 28}
+        stackPosition={esMovil ? "11%" : "18%"}
+        colaSvh={esMovil ? 35 : 15}
         baseScale={0.88}
         itemScale={0.03}
       >
-        {/* 1. Punto de venta: azul de la marca */}
-        <ScrollStackItem className={TARJETA}>
-          <Brillo className="bg-[#1e3a8a]/15 dark:bg-blue-500/10" />
-          <div className={TEXTO}>
-            <span className={`${ICONO} bg-[#1e3a8a]/10 text-[#1e3a8a] dark:bg-blue-500/10 dark:text-blue-400`}>
-              <ShoppingCart className="w-6 h-6" aria-hidden="true" />
-            </span>
-            <h3 className={TITULO}>{t("landing.features.pos.title")}</h3>
-            <p className={DESCRIPCION}>{t("landing.features.pos.description")}</p>
-          </div>
-          <div className={`${VISUAL} items-end gap-2 h-40 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-6 md:pt-0 md:pl-8`}>
-            {[30, 45, 25, 60, 80, 100].map((h, i) => (
-              <m.div
-                key={i}
-                className={`w-1/6 rounded-t-md ${
-                  i === 5 ? "bg-[#1e3a8a] dark:bg-blue-500" : "bg-[#1e3a8a]/10 dark:bg-blue-500/15"
-                }`}
-                style={{ height: `${h}%` }}
-                initial={reduceMotion ? false : { height: 0 }}
-                whileInView={{ height: `${h}%` }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, type: "spring", stiffness: 200, damping: 20 }}
-              />
-            ))}
-          </div>
-        </ScrollStackItem>
-
-        {/* 2. Inventario: ambar */}
-        <ScrollStackItem className={TARJETA}>
-          <Brillo className="bg-amber-500/15 dark:bg-amber-500/10" />
-          <div className={TEXTO}>
-            <span className={`${ICONO} bg-amber-50 text-amber-600 dark:bg-amber-500/10`}>
-              <Package className="w-6 h-6" aria-hidden="true" />
-            </span>
-            <h3 className={TITULO}>{t("landing.features.inventory.title")}</h3>
-            <p className={DESCRIPCION}>{t("landing.features.inventory.description")}</p>
-          </div>
-          <div className={`${VISUAL} items-center`}>
-            <div className="w-full rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" aria-hidden="true" />
-                <span className="truncate text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">
-                  {t("landing.features.inventory.stockAlert")}
-                </span>
-              </div>
-              <span className="text-sm font-bold text-black dark:text-neutral-50">SKU-892</span>
+        {MODULOS.map(({ key, icono: Icono, brillo, chip, img, ancho, alto }) => (
+          <ScrollStackItem key={key} className={TARJETA}>
+            <Brillo className={brillo} />
+            <div className={TEXTO}>
+              <span className={`${ICONO} ${chip}`}>
+                <Icono className="w-6 h-6" aria-hidden="true" />
+              </span>
+              <h3 className={TITULO}>{t(`landing.features.${key}.title`)}</h3>
+              <p className={DESCRIPCION}>{t(`landing.features.${key}.description`)}</p>
             </div>
-          </div>
-        </ScrollStackItem>
-
-        {/* 3. Ordenes de compra: esmeralda */}
-        <ScrollStackItem className={TARJETA}>
-          <Brillo className="bg-emerald-500/15 dark:bg-emerald-500/10" />
-          <div className={TEXTO}>
-            <span className={`${ICONO} bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10`}>
-              <FileText className="w-6 h-6" aria-hidden="true" />
-            </span>
-            <h3 className={TITULO}>{t("landing.features.purchases.title")}</h3>
-            <p className={DESCRIPCION}>{t("landing.features.purchases.description")}</p>
-          </div>
-          <div className={`${VISUAL} items-center justify-center`}>
-            <svg
-              className="w-36 h-36 md:w-44 md:h-44 text-emerald-500/60 dark:text-emerald-400/50"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              viewBox="0 0 100 100"
-              aria-hidden="true"
-            >
-              <circle cx="20" cy="80" r="5" />
-              <circle cx="80" cy="20" r="5" />
-              <circle cx="50" cy="50" r="7" />
-              <path d="M24 76 L45 55 M55 45 L76 24" />
-            </svg>
-          </div>
-        </ScrollStackItem>
-
-        {/* 4. Migra tu catalogo: celeste */}
-        <ScrollStackItem className={TARJETA}>
-          <Brillo className="bg-sky-500/15 dark:bg-sky-500/10" />
-          <div className={TEXTO}>
-            <span className={`${ICONO} bg-sky-50 text-sky-600 dark:bg-sky-500/10`}>
-              <Upload className="w-6 h-6" aria-hidden="true" />
-            </span>
-            <h3 className={TITULO}>{t("landing.features.catalogImport.title")}</h3>
-            <p className={DESCRIPCION}>{t("landing.features.catalogImport.description")}</p>
-          </div>
-          <div className={`${VISUAL} items-center justify-center gap-3`}>
-            <span className="text-sm font-mono px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
-              CSV
-            </span>
-            <ArrowRight className="w-4 h-4 text-neutral-400" aria-hidden="true" />
-            <span className="text-sm font-mono px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600">
-              SYMVORA
-            </span>
-          </div>
-        </ScrollStackItem>
-
-        {/* 5. Finanzas: morado con el azul de la marca */}
-        <ScrollStackItem className={TARJETA}>
-          <Brillo className="bg-purple-500/15 dark:bg-purple-500/10" />
-          <div className={TEXTO}>
-            <span className={`${ICONO} bg-purple-50 text-purple-600 dark:bg-purple-500/10`}>
-              <BarChart3 className="w-6 h-6" aria-hidden="true" />
-            </span>
-            <h3 className={TITULO}>{t("landing.features.finances.title")}</h3>
-            <p className={DESCRIPCION}>{t("landing.features.finances.description")}</p>
-          </div>
-          <div className={`${VISUAL} items-center justify-center`}>
-            <div className="w-40 h-40 md:w-48 md:h-48 rounded-full border-[14px] md:border-[16px] border-neutral-100 dark:border-neutral-800 relative">
-              <m.div
-                className="absolute inset-[-14px] md:inset-[-16px] rounded-full border-[14px] md:border-[16px] border-transparent border-t-[#1e3a8a] border-r-[#1e3a8a] dark:border-t-blue-500 dark:border-r-blue-500 rotate-45"
-                animate={reduceMotion ? undefined : { rotate: 405 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              />
-              <m.div
-                className="absolute inset-[-14px] md:inset-[-16px] rounded-full border-[14px] md:border-[16px] border-transparent border-l-purple-500 rotate-[15deg]"
-                animate={reduceMotion ? undefined : { rotate: -345 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl md:text-4xl font-bold text-black dark:text-neutral-50">
-                  87<span className="text-lg">%</span>
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 uppercase font-medium">
-                  {t("landing.features.finances.efficiency")}
-                </span>
-              </div>
+            <div className={`${VISUAL} items-center justify-center`}>
+              <Captura src={`/landing/funciones/${img}.webp`} ancho={ancho} alto={alto} alt={t(`landing.features.${key}.captura`)} />
             </div>
-          </div>
-        </ScrollStackItem>
+          </ScrollStackItem>
+        ))}
       </ScrollStack>
     </m.section>
   );

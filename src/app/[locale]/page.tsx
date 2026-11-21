@@ -13,7 +13,6 @@ import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import LogoCarousel from "@/components/ui/logo-carousel";
 import { Features } from "@/components/marketing/features";
 import { GirosStrip } from "@/components/marketing/giros-strip";
-import { GirosCatalog } from "@/components/marketing/giros-catalog";
 import { WhyChooseUs } from "@/components/marketing/why-choose-us";
 import { SecuritySection } from "@/components/marketing/security-section";
 import { Benefits } from "@/components/marketing/benefits";
@@ -118,20 +117,32 @@ export default async function LocalePage({
       <SplashEntrada />
       <AppFrame>
       {/* Lo primero que se ve: el visitante se reconoce por su giro antes de
-          leer el hero. "Ver los 20" baja a `GirosCatalog` (#giros). */}
-      <GirosStrip />
-      <Hero />
+          leer el hero. Muestra los 20 giros, deslizable; cada uno lleva a su pagina. */}
+      {/* En celular el hero va PRIMERO (el boton de registro a la vista) y la
+          franja de giros debajo; desde lg, como siempre: franja y luego hero. */}
+      <div className="flex flex-col">
+        <div className="order-2 lg:order-1">
+          <GirosStrip />
+        </div>
+        <div id="hero-landing" className="order-1 lg:order-2">
+          <Hero />
+        </div>
+      </div>
       <LogoCarousel />
       <Features />
-      <GirosCatalog locale={locale} />
+      {/* Los precios van justo tras las funciones (antes estaban al final, tras
+          ~10 secciones): quien ya vio que sirve quiere saber cuanto cuesta. */}
+      <CTA />
       <CompatibilityBar />
       <WhyChooseUs />
       <SecuritySection />
       <Benefits />
       <Setup />
       <FAQ />
-      <InstalarComputadora />
-      <CTA />
+      {/* Instalar en la computadora no aplica a quien llega por celular. */}
+      <div className="hidden lg:block">
+        <InstalarComputadora />
+      </div>
       <Footer locale={locale} />
       <JsonLd id="ld-software" data={software} />
       <JsonLd id="ld-faq" data={faqSchema} />

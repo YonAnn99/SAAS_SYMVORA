@@ -21,13 +21,13 @@ export function Benefits() {
   return (
     <m.section
       id="benefits"
-      className="w-full bg-white dark:bg-[#0C0C0C] py-24 border-t border-neutral-100 dark:border-neutral-800"
+      className="w-full bg-white dark:bg-[#0C0C0C] py-12 sm:py-24 border-t border-neutral-100 dark:border-neutral-800"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={easeOutLong}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center gap-8 lg:gap-24">
         <m.div
           className="lg:w-1/2 flex flex-col gap-6"
           initial="hidden"
@@ -103,7 +103,7 @@ export function Benefits() {
         </m.div>
 
         <m.div
-          className="lg:w-1/2 relative"
+          className="hidden lg:block lg:w-1/2 relative"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}

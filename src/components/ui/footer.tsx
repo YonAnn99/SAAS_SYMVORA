@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SALES_PHONE_DISPLAY, SALES_PHONE_E164 } from "@/lib/contact";
 import Image from "next/image";
+import { MetodosPago } from "@/components/marketing/metodos-pago";
 import { BotonConfigurarCookies } from "@/components/compliance/boton-configurar-cookies";
 
 /**
@@ -69,6 +70,11 @@ export default function Footer({ locale = "es" }: { locale?: string }) {
           </div>
         </div>
 
+      </div>
+
+      {/* Metodos de pago de la suscripcion (escritorio y celular). */}
+      <div className="max-w-7xl mx-auto mt-10 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+        <MetodosPago />
       </div>
     </footer>
   );

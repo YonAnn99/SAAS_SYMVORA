@@ -24,15 +24,15 @@ export function SecuritySection() {
 
   return (
     <m.section
-      className="w-full py-24 bg-[#1A1A1A] dark:bg-[#141414] text-white"
+      className="w-full py-12 sm:py-24 bg-[#1A1A1A] dark:bg-[#141414] text-white"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={easeOutLong}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-16 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-8 lg:gap-16 items-center">
         <m.div
-          className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4 order-2 lg:order-1"
+          className="lg:w-1/2 grid grid-cols-2 gap-3 sm:gap-4 order-2 lg:order-1"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
@@ -41,7 +41,7 @@ export function SecuritySection() {
           {features.map(({ key, icon: Icon }) => (
             <m.div
               key={key}
-              className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col gap-3 hover:bg-white/10 transition-colors"
+              className="bg-white/5 border border-white/10 rounded-xl p-3.5 sm:p-5 flex flex-col gap-2 sm:gap-3 hover:bg-white/10 transition-colors"
               variants={fadeInUp}
               transition={easeOutLong}
               whileHover={{ y: -4, boxShadow: "0 20px 40px -10px rgba(255, 255, 255, 0.05)" }}

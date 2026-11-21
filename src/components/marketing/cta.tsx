@@ -88,7 +88,7 @@ export function CTA() {
   return (
     <m.section
       id="pricing"
-      className="w-full relative py-24 overflow-hidden"
+      className="w-full relative py-12 sm:py-24 overflow-hidden"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -113,7 +113,7 @@ export function CTA() {
         aria-hidden="true"
       />
       <m.div
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center gap-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-8 lg:p-20 rounded-2xl shadow-xl"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center gap-5 sm:gap-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 sm:p-8 lg:p-20 rounded-2xl shadow-xl"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
@@ -121,7 +121,7 @@ export function CTA() {
         transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       >
         <m.div
-          className="w-16 h-16 bg-primary/10 dark:bg-primary/10 rounded-2xl flex items-center justify-center mb-4 transform -rotate-6 shadow-sm border border-primary/10 dark:border-primary/20"
+          className="hidden sm:flex w-16 h-16 bg-primary/10 dark:bg-primary/10 rounded-2xl items-center justify-center mb-4 transform -rotate-6 shadow-sm border border-primary/10 dark:border-primary/20"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: -6 }}
           transition={{ delay: 0.3, ...springIcon }}
@@ -288,10 +288,12 @@ export function CTA() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
-          {features.map((item) => (
+          {features.map((item, i) => (
             <m.div
               key={item.key}
-              className="flex items-center gap-2.5"
+              // Celular: solo las 6 primeras (lo demas sigue en el HTML y se ve
+              // desde `sm`); la lista completa alargaba mucho la tarjeta.
+              className={`items-center gap-2.5 ${i >= 6 ? "hidden sm:flex" : "flex"}`}
               variants={fadeInUp}
               transition={easeOutLong}
             >

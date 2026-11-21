@@ -204,6 +204,9 @@
     "acceptTermsRequired": "You must confirm you are at least 18 years old and accept the Terms and Conditions and the Privacy Policy to continue",
     "captchaRequired": "Solve the captcha to continue",
     "tooManyAttempts": "Too many attempts. Try again in",
+    "signupTrustBanner": "Your {dias}-day free trial is ready · No credit card",
+    "signupWithGoogle": "Sign up with Google",
+    "orSignupWithEmail": "Or sign up with email",
     "continueWithGoogle": "Continue with Google",
     "continueWithMicrosoft": "Continue with Microsoft",
     "oauthAccountNotFound": "We couldn't find an account with this provider. Please sign up first.",
@@ -2492,7 +2495,11 @@
       },
       "subtitle": "Point of sale, inventory and finance — all in one, no per-sale commissions, with Spanish support.",
       "ctaPrimary": "{dias}-day free trial",
-      "ctaSecondary": "See demo",
+      "ctaSecondary": "See live demo",
+      "titleMovil": "Control your cash and inventory from your phone",
+      "subtitleMovil": "Point of sale, inventory and finance in one. No per-sale commissions.",
+      "sinTarjeta": "No credit card · Cancel anytime",
+      "ctaBarra": "Start free · {dias} days",
       "mockups": {
         "grupo": "SYMVORA on a computer, tablet and phone",
         "laptop": "SYMVORA dashboard on a laptop",
@@ -2534,24 +2541,43 @@
       "title": "Everything your business needs",
       "subtitle": "Modules that work together to give you total control of your operations.",
       "viewAll": "See all features",
+      "scanner": {
+        "title": "Scan with your phone camera",
+        "description": "No scanner or manual typing: point the camera at the barcode to add a product or sell it instantly. Works on any phone.",
+        "captura": "Phone scanning a product barcode to add it"
+      },
+      "onlineCatalog": {
+        "title": "Online catalog for your customers",
+        "description": "Publish your products with price and availability on your own link. Customers build their order and send it to you on WhatsApp. Share the link or QR; included in your plan.",
+        "captura": "Online catalog panel with products, featured items and special price"
+      },
+      "loyalty": {
+        "title": "Digital loyalty card",
+        "description": "Give customers a stamp card with a QR and rewards. They keep it on their phone or add it to Google Wallet, and see their stamps instantly.",
+        "captura": "Loyalty card with stamps and a button to add it to Google Wallet"
+      },
       "pos": {
         "title": "Fast Point of Sale",
+        "captura": "Point of sale cart on a phone, with products, total and payment methods",
         "description": "Search by name or scan barcode. 4 payment methods: Cash, Card, Transfer and Credit. 16% VAT calculated automatically. Stock deducted on sale confirmation.",
         "stats": "4 payment methods · Auto VAT · Real-time stock"
       },
       "inventory": {
         "title": "Inventory with full control",
+        "captura": "Product form with stock, minimum stock, batches and variants",
         "description": "Lots with expiry dates and alerts at 7 and 30 days. Size and color variants with independent pricing and stock. Adjustments for shrinkage, physical count or returns with full audit trail.",
         "stockAlert": "Low stock",
         "stats": "Lots · Variants · 5 adjustment types"
       },
       "purchases": {
         "title": "Purchase orders",
+        "captura": "Screen to receive goods from a purchase order",
         "description": "From draft to partial or total receipt. Receiving atomically updates inventory. Register suppliers with lead time and payment terms.",
         "stats": "5 statuses · Atomic receiving · Suppliers"
       },
       "finances": {
         "title": "Finance & reports",
+        "captura": "Cash register closing with opening float, sales, cash in, cash out and expected balance",
         "description": "Open and close cash register with automatic reconciliation — system compares expected balance against actual cash. Sales charts, top products and payment methods.",
         "viewDashboards": "See reports",
         "efficiency": "Precision",
@@ -2559,6 +2585,7 @@
       },
       "catalogImport": {
         "title": "Migrate your catalog easily",
+        "captura": "Window to import the catalog from CSV or Excel",
         "description": "Upload your catalog as CSV or Excel and map the columns yourself. Detects barcode duplicates and lets you decide: skip, update or generate a new one.",
         "stats": "CSV & Excel · Duplicate detection · Batch import"
       }

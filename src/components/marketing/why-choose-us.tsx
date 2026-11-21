@@ -43,13 +43,13 @@ export function WhyChooseUs() {
   return (
     <m.section
       id="why-choose-us"
-      className="w-full bg-[#1A1A1A] dark:bg-[#141414] text-white py-24"
+      className="w-full bg-[#1A1A1A] dark:bg-[#141414] text-white py-12 sm:py-24"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={easeOutLong}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-12 lg:gap-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-8 lg:gap-32">
         <m.div
           className="lg:w-1/3 flex flex-col gap-6 lg:sticky lg:top-32 self-start"
           initial={{ opacity: 0, x: -40 }}
@@ -84,7 +84,7 @@ export function WhyChooseUs() {
         </m.div>
 
         <m.div
-          className="lg:w-2/3 flex flex-col gap-12"
+          className="lg:w-2/3 flex flex-col gap-8 sm:gap-12"
           variants={staggerContainerSlow}
           initial="hidden"
           whileInView="visible"
@@ -122,7 +122,7 @@ export function WhyChooseUs() {
 
                 {benefit.visual === "modular" && (
                   <m.div
-                    className="flex flex-wrap gap-2 mt-4"
+                    className="hidden sm:flex flex-wrap gap-2 mt-4"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, ...easeOutShort }}
@@ -144,7 +144,7 @@ export function WhyChooseUs() {
 
                 {benefit.visual === "search" && (
                   <m.div
-                    className="mt-4 flex flex-col gap-2 max-w-md w-full"
+                    className="hidden sm:flex mt-4 flex-col gap-2 max-w-md w-full"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, ...easeOutShort }}
@@ -164,7 +164,7 @@ export function WhyChooseUs() {
 
                 {benefit.visual === "uptime" && (
                   <m.div
-                    className="mt-4 flex flex-wrap gap-3"
+                    className="hidden sm:flex mt-4 flex-wrap gap-3"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, ...easeOutShort }}

@@ -7,7 +7,7 @@ export function VoiceNarrator() {
   const { isPlaying, currentSection, togglePlay } = useSectionAudio();
 
   return (
-    <div className="absolute bottom-5 right-5 z-[110] flex flex-col items-end gap-2">
+    <div className="absolute bottom-[4.75rem] left-5 items-start lg:bottom-5 lg:left-auto lg:right-5 lg:items-end z-[110] flex flex-col gap-2">
       {isPlaying && currentSection && (
         <div className="animate-fade-in-up rounded-lg bg-black/80 dark:bg-white/90 px-3 py-1.5 text-xs font-medium text-white dark:text-black backdrop-blur-sm shadow-lg max-w-[200px] truncate">
           {currentSection.label}

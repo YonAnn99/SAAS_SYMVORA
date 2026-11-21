@@ -98,13 +98,13 @@ export function FAQ() {
   return (
     <m.section
       id="faq"
-      className="w-full py-24 bg-white dark:bg-[#0C0C0C]"
+      className="w-full py-12 sm:py-24 bg-white dark:bg-[#0C0C0C]"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={easeOutLong}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-8 sm:gap-12">
         <m.div
           className="flex flex-col items-center text-center gap-4 max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 20 }}

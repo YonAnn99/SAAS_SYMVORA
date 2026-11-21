@@ -204,6 +204,9 @@
     "acceptTermsRequired": "Debes declarar que eres mayor de 18 años y aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar",
     "captchaRequired": "Resuelve el captcha para continuar",
     "tooManyAttempts": "Demasiados intentos. Intenta de nuevo en",
+    "signupTrustBanner": "Tu prueba gratuita de {dias} días está lista · Sin tarjeta de crédito",
+    "signupWithGoogle": "Registrarme con Google",
+    "orSignupWithEmail": "O regístrate con tu correo",
     "continueWithGoogle": "Continuar con Google",
     "continueWithMicrosoft": "Continuar con Microsoft",
     "oauthAccountNotFound": "No encontramos una cuenta con este proveedor. Regístrate primero.",
@@ -2492,7 +2495,11 @@
       },
       "subtitle": "Punto de venta, inventario y finanzas — todo en uno, sin comisiones por venta y con soporte en español.",
       "ctaPrimary": "Prueba {dias} días gratis",
-      "ctaSecondary": "Ver demo",
+      "ctaSecondary": "Ver demo en vivo",
+      "titleMovil": "Controla tu caja e inventario desde tu celular",
+      "subtitleMovil": "Punto de venta, inventario y finanzas en uno. Sin comisiones por venta.",
+      "sinTarjeta": "Sin tarjeta de crédito · Cancela cuando quieras",
+      "ctaBarra": "Empieza gratis · {dias} días",
       "mockups": {
         "grupo": "SYMVORA en computadora, tablet y celular",
         "laptop": "Panel de SYMVORA en una computadora portátil",
@@ -2534,24 +2541,43 @@
       "title": "Todo lo que tu negocio necesita",
       "subtitle": "Módulos que trabajan juntos para darte control total de tus operaciones.",
       "viewAll": "Ver todas las funciones",
+      "scanner": {
+        "title": "Escanea con la cámara de tu celular",
+        "description": "Sin lector ni captura manual: apunta la cámara al código de barras para dar de alta un producto o venderlo al instante. Funciona en cualquier celular.",
+        "captura": "Celular escaneando el código de barras de un producto para darlo de alta"
+      },
+      "onlineCatalog": {
+        "title": "Catálogo en línea para tus clientes",
+        "description": "Publica tus productos con precio y disponibilidad en un enlace propio. Tus clientes arman su pedido y te lo mandan por WhatsApp. Comparte el enlace o el QR; incluido en tu plan.",
+        "captura": "Panel del catálogo en línea con productos, destacados y precio especial"
+      },
+      "loyalty": {
+        "title": "Tarjeta de lealtad digital",
+        "description": "Dale a tus clientes una tarjeta de sellos con QR y premios. La guardan en su celular o la agregan a Google Wallet, y ven sus sellos al instante.",
+        "captura": "Tarjeta de lealtad con sellos y botón para agregarla a Google Wallet"
+      },
       "pos": {
         "title": "Punto de Venta rápido",
+        "captura": "Carrito del punto de venta en el celular, con productos, total y formas de pago",
         "description": "Busca por nombre o escanea código de barras. 4 métodos de pago: Efectivo, Tarjeta, Transferencia y Crédito/Fiado. IVA del 16% se calcula automáticamente. El stock se descuenta al confirmar la venta.",
         "stats": "4 métodos de pago · IVA automático · Stock en tiempo real"
       },
       "inventory": {
         "title": "Inventario con control total",
+        "captura": "Formulario de producto con stock, stock mínimo, lotes y variantes",
         "description": "Lotes con fecha de caducidad y alertas a 7 y 30 días. Variantes de talla y color con precio y stock independiente. Ajustes por merma, conteo físico o devolución con bitácora completa.",
         "stockAlert": "Stock bajo",
         "stats": "Lotes · Variantes · 5 tipos de ajuste"
       },
       "purchases": {
         "title": "Órdenes de compra",
+        "captura": "Pantalla para recibir mercancía de una orden de compra",
         "description": "Desde borrador hasta recepción total o parcial. La recepción actualiza el inventario de forma atómica. Registra proveedores con tiempo de surtido y condiciones de pago.",
         "stats": "5 estados · Recepción atómica · Proveedores"
       },
       "finances": {
         "title": "Finanzas y reportes",
+        "captura": "Cierre de caja con fondo inicial, ventas, entradas, salidas y saldo esperado",
         "description": "Abre y cierra caja con conciliación automática — el sistema compara el saldo esperado contra el efectivo real. Gráficas de ventas, productos más vendidos y métodos de pago.",
         "viewDashboards": "Ver reportes",
         "efficiency": "Precisión",
@@ -2559,6 +2585,7 @@
       },
       "catalogImport": {
         "title": "Migra tu catálogo fácil",
+        "captura": "Ventana para importar el catálogo desde CSV o Excel",
         "description": "Sube tu catálogo en CSV o Excel y mapea las columnas tú mismo. Detecta duplicados por código de barras y te deja decidir: omitir, actualizar o generar uno nuevo.",
         "stats": "CSV y Excel · Detección de duplicados · Importación por lotes"
       }

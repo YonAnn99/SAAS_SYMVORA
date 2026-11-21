@@ -51,6 +51,8 @@ interface ScrollStackProps {
   itemScale?: number;
   /** Cuanto asoma cada tarjeta de la pila (px). */
   itemStackDistance?: number;
+  /** Espacio (svh) tras la ultima tarjeta antes de que la pila se suelte: da tiempo de leerla. */
+  colaSvh?: number;
   /** Altura de la pantalla donde se ancla la pila: "18%" (= 18svh) o "120px". */
   stackPosition?: string;
   baseScale?: number;
@@ -73,6 +75,7 @@ export default function ScrollStack({
   itemScale = 0.03,
   itemStackDistance = 30,
   stackPosition = "20%",
+  colaSvh = 15,
   baseScale = 0.85,
   rotationAmount = 0,
   blurAmount = 0,
@@ -93,7 +96,12 @@ export default function ScrollStack({
     tarjetas.forEach((t, i) => {
       t.style.position = "sticky";
       t.style.top = `calc(${base} + ${i * itemStackDistance}px)`;
-      t.style.marginBottom = i < tarjetas.length - 1 ? `${itemDistance}px` : "";
+      // El margen inferior cuenta para el limite de `sticky`: cada tarjeta se
+      // suelta cuando su borde + margen toca el final del contenedor. Con el
+      // mismo margen para todas, las de arriba (ancladas mas arriba) se soltaban
+      // ANTES y la pila se desarmaba al final. Sumando lo que le falta a cada una
+      // para igualar a la ultima, todas salen juntas y conservan su escalonado.
+      t.style.marginBottom = `${itemDistance + (tarjetas.length - 1 - i) * itemStackDistance}px`;
       t.style.transformOrigin = "top center";
     });
 
@@ -166,7 +174,7 @@ export default function ScrollStack({
     <div ref={raizRef} className={cn("relative w-full", className)}>
       {children}
       {/* La ultima tarjeta alcanza a verse apilada antes de que la pila siga. */}
-      <div className="h-[15svh] w-full" aria-hidden="true" />
+      <div className="w-full" style={{ height: `${colaSvh}svh` }} aria-hidden="true" />
     </div>
   );
 }

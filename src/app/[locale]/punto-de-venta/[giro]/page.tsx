@@ -124,7 +124,7 @@ export default async function GiroPage({ params }: { params: Params }) {
             <nav aria-label="Migas de pan" className="flex items-center gap-1.5 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
               <Link href="/es" className="hover:text-black dark:hover:text-white">Inicio</Link>
               <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
-              <Link href="/es#giros" className="hover:text-black dark:hover:text-white">Giros</Link>
+              <Link href="/es" className="hover:text-black dark:hover:text-white">Giros</Link>
               <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
               <span className="font-medium text-black dark:text-neutral-100">{giro.plural}</span>
             </nav>

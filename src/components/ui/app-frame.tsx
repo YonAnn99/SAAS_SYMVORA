@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggleFab } from "@/components/marketing/theme-toggle-fab";
+import { BarraCtaMovil } from "@/components/marketing/barra-cta-movil";
 import { EtiquetaPromo, useTextoPromo } from "@/components/marketing/etiqueta-promo";
 import { useTranslations } from "next-intl";
 import { CAPSULA, CAPSULA_CHICA, CLARA, FLECHA_CAPSULA } from "@/components/marketing/boton-capsula";
@@ -158,6 +159,7 @@ export function AppFrame({
         {/* Hermanos del contenedor de scroll, no hijos: se quedan quietos
             mientras la landing se desplaza. */}
         <ThemeToggleFab />
+        <BarraCtaMovil />
         <VoiceNarrator />
       </div>
     </div>
