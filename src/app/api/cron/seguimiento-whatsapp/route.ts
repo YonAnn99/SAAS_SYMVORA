@@ -133,7 +133,7 @@ async function onboardingAtascado(supabase: Supabase, ahora: Date, enviar: boole
     if (!enviar) continue;
     const envio = await avisarDuenoPorWhatsApp(supabase, s.tenant_id, "onboarding_ayuda", async (ownerId) => ({
       nombre: await nombreDePila(supabase, ownerId),
-      enlace: `${getSiteUrl()}/es/aprende`,
+      enlace: `${getAppUrl()}/es/dashboard`,
     }));
     if (!envio.enviado) {
       // Sin celular no se marca: si lo agrega en estos dias, aun le llega.

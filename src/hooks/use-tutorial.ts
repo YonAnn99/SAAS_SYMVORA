@@ -83,12 +83,12 @@ export function useTutorial(totalSteps: number) {
         setCurrentStep(step);
       }
     } else if (localStorage.getItem(STORAGE_KEY_STEP) === null) {
-      // Nunca se tocó el tutorial en este navegador (ni completado, ni
-      // saltado, ni un paso guardado) — es la primera vez que alguien
-      // entra al sistema, así que se activa solo.
-      setIsActive(true);
+      // El tutorial queda disponible bajo demanda (botón en el header/ayuda)
+      // para no interrumpir ni secuestrar la pantalla de nuevos usuarios,
+      // quienes ahora cuentan con la "Misión: Haz tu 1ª venta" en el Dashboard.
+      setIsActive(false);
       localStorage.setItem(STORAGE_KEY_STEP, "0");
-      autoarrancado.current = true;
+      autoarrancado.current = false;
     }
     /* eslint-enable react-hooks/set-state-in-effect */
     // `isDemo` en las dependencias NO es opcional: es lo que hace que el efecto

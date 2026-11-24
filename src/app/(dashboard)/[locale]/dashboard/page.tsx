@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { calcularGanancia } from "@/lib/profit";
 import { primerNombre } from "@/lib/nombre-usuario";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { MisionPrimerosPasos } from "@/components/dashboard/mision-primeros-pasos";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { ContadorAnimado } from "@/components/ui/contador-animado";
 import { guardarCache, leerCache } from "@/lib/cache-datos";
@@ -57,7 +58,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const t = useTranslations();
   const locale = useLocale();
-  const { tenantId, userName, loading: tenantLoading } = useCurrentTenant();
+  const { tenantId, userName, tenantGiro, loading: tenantLoading } = useCurrentTenant();
   // Saludo con el nombre capturado al crear la cuenta.
   const nombre = primerNombre(userName);
   const { seleccionada: sucursalId } = useSucursal();
@@ -345,23 +346,14 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Empty state for new users */}
-      {!loading && stats.ventasMes === 0 && !error && (
-        <Card className="border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 p-3 rounded-full bg-primary/10 animate-scale-in">
-              <ShoppingCart className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">{t("dashboard.welcomeTitle")}</h3>
-            <p className="text-muted-foreground max-w-md mb-6">
-              {t("dashboard.welcomeDesc")}
-            </p>
-            <SpecularActionButton tone="money" className="h-9 gap-2">
-
-              <Link href="/pos">{t("dashboard.goToPos")}</Link>
-            </SpecularActionButton>
-          </CardContent>
-        </Card>
+      {/* Misión de activación guiada para nuevos usuarios */}
+      {!loading && !error && (
+        <MisionPrimerosPasos
+          tenantId={tenantId}
+          tenantGiro={tenantGiro}
+          totalVentas={stats.ventasMes}
+          onActualizar={fetchDashboardData}
+        />
       )}
 
       {/* Charts - always in DOM but invisible when loading to prevent scrollbar glitch */}
