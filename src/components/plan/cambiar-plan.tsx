@@ -13,9 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SelectorNivel } from "@/components/plan/selector-nivel";
+import { AvisoAjustePlan } from "@/components/plan/aviso-ajuste-plan";
 import { usePlan } from "@/hooks/use-plan";
 import { SALES_WHATSAPP, SUPPORT_EMAIL } from "@/lib/contact";
-import { formatPrecioNivel, type Nivel } from "@/lib/niveles";
+import { formatPrecioNivel, nivelQueCabe, type Nivel } from "@/lib/niveles";
 import type { BillingPeriod } from "@/lib/pricing";
 import {
   modoDeCambio,
@@ -46,7 +47,7 @@ export function CambiarPlan({
   disabled?: boolean;
 }) {
   const t = useTranslations("planes");
-  const { nivel: actual, refrescar } = usePlan();
+  const { nivel: actual, refrescar, sucursalesUsadas, listo: planListo } = usePlan();
   const [elegido, setElegido] = useState<Nivel>(actual ?? "pro");
   const [confirmando, setConfirmando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -54,6 +55,7 @@ export function CambiarPlan({
   const modo = modoDeCambio({ periodo, tieneSuscripcionRecurrente });
   const tipo = tipoDeCambio(actual, elegido);
   const ahora = modo === "tarjeta" && nivelCambiaAhora(tipo);
+  const noCabe = planListo && !nivelQueCabe(elegido, sucursalesUsadas);
   const nombre = (n: Nivel) => t(`names.${n}`);
 
   const textoSoporte = (
@@ -129,10 +131,14 @@ export function CambiarPlan({
             onChange={setElegido}
             disabled={disabled || guardando}
             sinPromo
+            sucursalesActivas={planListo ? sucursalesUsadas : undefined}
           />
+          {planListo && (
+            <AvisoAjustePlan nivel={elegido} sucursalesActivas={sucursalesUsadas} onElegir={setElegido} />
+          )}
           <Button
             className="w-full"
-            disabled={disabled || guardando || tipo === "igual"}
+            disabled={disabled || guardando || tipo === "igual" || noCabe}
             onClick={() => setConfirmando(true)}
           >
             {tipo === "igual" ? t("change.same") : t("change.cta", { nivel: nombre(elegido) })}

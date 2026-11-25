@@ -6,6 +6,7 @@ import {
   NIVELES_ORDEN,
   precioMensualEquivalenteMXN,
   precioNivelMXN,
+  nivelQueCabe,
   precioPromoNivelMXN,
   promoAplicaANivel,
   type Nivel,
@@ -28,6 +29,7 @@ export function SelectorNivel({
   onChange,
   disabled,
   sinPromo = false,
+  sucursalesActivas,
 }: {
   nivel: Nivel;
   periodo: BillingPeriod;
@@ -35,6 +37,8 @@ export function SelectorNivel({
   disabled?: boolean;
   /** Al CAMBIAR de plan no hay promocion (es solo para suscripciones nuevas): precio de lista. */
   sinPromo?: boolean;
+  /** Sucursales activas hoy: los planes a los que no les caben llevan la etiqueta «No alcanza». */
+  sucursalesActivas?: number;
 }) {
   const t = useTranslations("planes");
   return (
@@ -61,6 +65,11 @@ export function SelectorNivel({
               </span>
             )}
             <span className="text-sm font-semibold">{t(`names.${n}`)}</span>
+            {sucursalesActivas !== undefined && !nivelQueCabe(n, sucursalesActivas) && (
+              <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                {t("fit.tag", { n: sucursalesActivas })}
+              </span>
+            )}
             {conPromo && (
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <s>{formatPrecioNivel(precioNivelMXN(n, "monthly"))}</s>

@@ -272,6 +272,34 @@ function nivelDeCobro(sub: { nivel?: string | null; nivel_pendiente?: string | n
 }
 
 /**
+ * El cobro YA salio pero `asignar_nivel` rechazo: se avisa a hola@ para que alguien lo resuelva (el siguiente cobro lo
+ * reintenta). Mejor esfuerzo y fuera de la respuesta del webhook (`after`): nunca lanza ni cambia lo que ya hizo el cobro.
+ */
+function avisarFalloNivel(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  tenantId: string,
+  nivel: string,
+  mensaje: string
+): void {
+  after(async () => {
+    try {
+      const { data } = await supabase.from("tenants").select("nombre_comercial").eq("id", tenantId).maybeSingle();
+      const { describirFalloNivel } = await import("@/features/payments/fallo-nivel");
+      const { sendCorreoInterno } = await import("@/lib/email");
+      const alerta = describirFalloNivel({
+        negocio: (data?.nombre_comercial as string | undefined) ?? "(negocio desconocido)",
+        tenantId,
+        nivel,
+        mensaje,
+      });
+      await sendCorreoInterno({ subject: alerta.subject, html: alerta.html, text: alerta.text });
+    } catch (err) {
+      console.error("[conekta/webhook] no se pudo avisar el fallo de asignar_nivel:", err);
+    }
+  });
+}
+
+/**
  * Confirma el nivel que el cliente eligio en el checkout, SOLO tras un cobro real (`subscription.paid` /
  * `order.paid`). `asignar_nivel` (solo service_role) limpia `nivel_pendiente` y rechaza, sin cambiar nada,
  * si el negocio tiene mas sucursales activas de las que el nivel incluye.
@@ -291,9 +319,13 @@ async function confirmarNivelPagado(
       p_tenant_id: tenantId,
       p_nivel: nivelPendiente,
     });
-    if (error) console.error("[conekta/webhook] asignar_nivel fallo:", error.message);
+    if (error) {
+      console.error("[conekta/webhook] asignar_nivel fallo:", error.message);
+      avisarFalloNivel(supabase, tenantId, nivelPendiente, error.message);
+    }
   } catch (err) {
     console.error("[conekta/webhook] asignar_nivel fallo:", err);
+    avisarFalloNivel(supabase, tenantId, nivelPendiente, err instanceof Error ? err.message : String(err));
   }
 }
 

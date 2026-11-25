@@ -9,11 +9,16 @@ import {
   PRECIOS_NIVEL_CENTS,
   esNivel,
   funcionesDe,
+  funcionesQueSeApagan,
   leerInfoPlan,
+  nivelInicial,
+  nivelQueCabe,
+  nivelSugerido,
   permiteFuncion,
   precioMensualEquivalenteMXN,
   puedeAgregarSucursal,
   rutaPermitidaPorPlan,
+  sucursalesPorCerrar,
   type FuncionesPlan,
   type Nivel,
 } from "@/lib/niveles";
@@ -188,3 +193,38 @@ describe("precios de los niveles", () => {
     expect(SUBSCRIPTION_PRICE_CENTS).toEqual({ monthly: 39900, yearly: 358800 });
   });
 });
+
+describe("encaje de las sucursales con el nivel (aviso antes de pagar)", () => {
+  it("a cada nivel le caben solo las sucursales de su tope", () => {
+    expect(nivelQueCabe("basico", 1)).toBe(true);
+    expect(nivelQueCabe("basico", 2)).toBe(false);
+    expect(nivelQueCabe("pro", 3)).toBe(true);
+    expect(nivelQueCabe("pro", 4)).toBe(false);
+    expect(nivelQueCabe("premium", 50)).toBe(true);
+    expect(nivelQueCabe("basico", 0)).toBe(true);
+  });
+
+  it("el nivel sugerido es el más bajo que cabe, y el inicial prefiere Pro", () => {
+    expect(nivelSugerido(1)).toBe("basico");
+    expect(nivelSugerido(2)).toBe("pro");
+    expect(nivelSugerido(3)).toBe("pro");
+    expect(nivelSugerido(4)).toBe("premium");
+    expect(nivelInicial(1)).toBe("pro");
+    expect(nivelInicial(3)).toBe("pro");
+    expect(nivelInicial(4)).toBe("premium");
+  });
+
+  it("cuántas sucursales tendría que cerrar", () => {
+    expect(sucursalesPorCerrar("basico", 3)).toBe(2);
+    expect(sucursalesPorCerrar("pro", 3)).toBe(0);
+    expect(sucursalesPorCerrar("pro", 5)).toBe(2);
+    expect(sucursalesPorCerrar("premium", 9)).toBe(0);
+  });
+
+  it("lo que se apaga al elegir cada nivel", () => {
+    expect(funcionesQueSeApagan("basico")).toEqual(["catalogo", "lealtad", "pedidos"]);
+    expect(funcionesQueSeApagan("pro")).toEqual([]);
+    expect(funcionesQueSeApagan("premium")).toEqual([]);
+  });
+});
+

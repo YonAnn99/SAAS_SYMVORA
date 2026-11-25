@@ -18,6 +18,7 @@ import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { usePlan } from "@/hooks/use-plan";
+import { nivelesActivos } from "@/lib/niveles";
 import { Link } from "@/i18n/navigation";
 import {
   createSucursal,
@@ -52,7 +53,9 @@ export function SucursalesCard() {
   const { sucursales, refetch, loading } = useSucursal();
   // Tope de sucursales activas del nivel (migracion 140). Esto solo avisa y deshabilita el boton; quien
   // manda es el trigger `limite_sucursales` de la base.
-  const { funciones, puedeAgregarSucursal, refrescar: refrescarPlan } = usePlan();
+  const { funciones, puedeAgregarSucursal, sucursalesUsadas, refrescar: refrescarPlan } = usePlan();
+  // Prueba (sin nivel, sin tope): todo incluido. Se avisa con tiempo cuánto incluye cada plan para que no haya sorpresas al pagar.
+  const enPruebaSinTope = nivelesActivos() && funciones.nivel === null && funciones.sucursalesMax === null;
   const tPlanes = useTranslations("planes");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -176,6 +179,15 @@ export function SucursalesCard() {
               </li>
             ))}
           </ul>
+        )}
+
+        {enPruebaSinTope && sucursalesUsadas >= 1 && (
+          <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground" role="note">
+            {tPlanes("trialBranches")}{" "}
+            <Link href="/billing" className="font-medium underline underline-offset-2">
+              {tPlanes("trialBranchesCta")}
+            </Link>
+          </p>
         )}
 
         {!puedeAgregarSucursal && (

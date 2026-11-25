@@ -133,6 +133,46 @@ export const PRECIOS_NIVEL_CENTS: Record<Nivel, Record<BillingPeriod, number>> =
 };
 
 /**
+ * ¿Le caben a este nivel las sucursales activas que ya tiene el negocio? Es el MISMO criterio que aplican
+ * `create-checkout`/`asignar_nivel` (409 `demasiadas_sucursales`), adelantado a la pantalla para avisar ANTES de pagar.
+ */
+export function nivelQueCabe(nivel: Nivel, sucursalesActivas: number): boolean {
+  const max = FUNCIONES_POR_NIVEL[nivel].sucursalesMax;
+  return max === null || sucursalesActivas <= max;
+}
+
+/** El nivel más bajo al que le caben las sucursales activas (Básico ≤1, Pro ≤3, Premium el resto). */
+export function nivelSugerido(sucursalesActivas: number): Nivel {
+  return NIVELES_ORDEN.find((n) => nivelQueCabe(n, sucursalesActivas)) ?? "premium";
+}
+
+/** Nivel con el que se arranca la selección: Pro (el que se destaca) si le cabe; si no, el más bajo que le quepa. */
+export function nivelInicial(sucursalesActivas: number): Nivel {
+  return nivelQueCabe("pro", sucursalesActivas) ? "pro" : nivelSugerido(sucursalesActivas);
+}
+
+/** Cuántas sucursales tendría que cerrar para que le quepan en este nivel. */
+export function sucursalesPorCerrar(nivel: Nivel, sucursalesActivas: number): number {
+  const max = FUNCIONES_POR_NIVEL[nivel].sucursalesMax;
+  return max === null ? 0 : Math.max(0, sucursalesActivas - max);
+}
+
+export type FuncionQueSeApaga = "catalogo" | "lealtad" | "pedidos";
+
+/**
+ * Lo que dejaría de funcionar al elegir este nivel desde una prueba (todo incluido). Nunca se borra nada: el catálogo
+ * se apaga, las tarjetas de lealtad quedan congeladas y no se reciben pedidos.
+ */
+export function funcionesQueSeApagan(nivel: Nivel): FuncionQueSeApaga[] {
+  const f = FUNCIONES_POR_NIVEL[nivel];
+  const fuera: FuncionQueSeApaga[] = [];
+  if (!f.catalogo) fuera.push("catalogo");
+  if (!f.lealtad) fuera.push("lealtad");
+  if (!f.pedidos) fuera.push("pedidos");
+  return fuera;
+}
+
+/**
  * ¿Le toca la promoción de lanzamiento (−50 %, `PROMO_LANZAMIENTO`) a quien contrata ESTE nivel y periodo
  * ahora? Solo Pro y Premium, y solo mensual: Básico va siempre a precio de lista y el anual no lleva promo.
  * Responde "¿se ofrece?"; lo que se le cobra a una suscripción concreta lo manda su contador en la base.

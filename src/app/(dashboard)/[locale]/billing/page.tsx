@@ -2,7 +2,7 @@
 
 import { localeIntl } from "@/lib/idioma";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -53,8 +53,9 @@ import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { SelectorNivel } from "@/components/plan/selector-nivel";
 import { CambiarPlan } from "@/components/plan/cambiar-plan";
+import { AvisoAjustePlan } from "@/components/plan/aviso-ajuste-plan";
 import { usePlan } from "@/hooks/use-plan";
-import { esNivel, nivelesActivos, type Nivel } from "@/lib/niveles";
+import { esNivel, nivelesActivos, nivelInicial, nivelQueCabe, type Nivel } from "@/lib/niveles";
 
 interface Subscription {
   id: string;
@@ -124,8 +125,18 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   // Niveles Basico / Pro / Premium (migracion 140). Solo con el interruptor encendido y para quien aun
   // no paga; quien ya paga conserva su plan y cambia de nivel con soporte (por ahora).
   const [selectedNivel, setSelectedNivel] = useState<Nivel>("pro");
-  const { nivel: nivelActual, listo: planListo } = usePlan();
+  const { nivel: nivelActual, listo: planListo, sucursalesUsadas } = usePlan();
   const conNiveles = nivelesActivos() && !subscription?.last_payment_at;
+  // El plan elegido no le cabe (sucursales activas de la prueba de más): se avisa y se bloquea el pago ANTES de pagar.
+  const planNoCabe = conNiveles && planListo && !nivelQueCabe(selectedNivel, sucursalesUsadas);
+  // Arranca en Pro si le cabe; si no, en el más bajo que le quepa (una sola vez, al saber cuántas sucursales tiene).
+  const nivelInicialAplicado = useRef(false);
+  useEffect(() => {
+    if (!conNiveles || !planListo || nivelInicialAplicado.current) return;
+    nivelInicialAplicado.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedNivel(nivelInicial(sucursalesUsadas));
+  }, [conNiveles, planListo, sucursalesUsadas]);
   // Quien YA paga (suscripcion activa) con los niveles encendidos cambia de plan desde aqui.
   const puedeCambiarPlan =
     nivelesActivos() && subscription?.status === "active" && Boolean(subscription?.last_payment_at);
@@ -829,7 +840,11 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   periodo={selectedPeriod}
                   onChange={setSelectedNivel}
                   disabled={processing}
+                  sucursalesActivas={planListo ? sucursalesUsadas : undefined}
                 />
+              )}
+              {conNiveles && planListo && (
+                <AvisoAjustePlan nivel={selectedNivel} sucursalesActivas={sucursalesUsadas} onElegir={setSelectedNivel} />
               )}
 
               <Separator />
@@ -864,7 +879,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                     <SpecularActionButton
                       tone="money"
                       onClick={handleAddCard}
-                      disabled={processing || !tenantId}
+                      disabled={processing || !tenantId || planNoCabe}
                       className="w-full h-9"
                     >
                       {t("billing.addCard")}
@@ -876,7 +891,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                     <SpecularActionButton
                       tone="money"
                       onClick={handlePagoUnico}
-                      disabled={processing || !tenantId}
+                      disabled={processing || !tenantId || planNoCabe}
                       className="w-full h-9"
                     >
                       {t("billing.payCash")}

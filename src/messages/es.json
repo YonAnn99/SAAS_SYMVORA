@@ -206,6 +206,7 @@
     "captchaRequired": "Resuelve el captcha para continuar",
     "tooManyAttempts": "Demasiados intentos. Intenta de nuevo en",
     "signupTrustBanner": "Tu prueba gratuita de {dias} días está lista · Sin tarjeta de crédito",
+    "signupTrialNote": "Durante la prueba tienes todo incluido; al terminar eliges tu plan (Básico, Pro o Premium).",
     "signupWithGoogle": "Registrarme con Google",
     "orSignupWithEmail": "O regístrate con tu correo",
     "continueWithGoogle": "Continuar con Google",
@@ -2586,6 +2587,20 @@
     "errors": {
       "tooManyBranches": "Tienes {usadas} sucursales activas y este plan incluye hasta {max}. Cierra alguna o elige un plan mayor.",
       "changeNotAvailable": "El cambio de plan en una cuenta con suscripción activa lo hacemos por ti: escríbenos por WhatsApp o a soporte@symvora.com.mx."
+    },
+    "trialBranches": "Tu prueba incluye todo, sin tope de sucursales. Al contratar: Básico incluye 1, Pro hasta 3 y Premium ilimitadas.",
+    "trialBranchesCta": "Ver planes",
+    "fit": {
+      "tag": "No alcanza: tienes {n}",
+      "tooMany": "Tienes {usadas} sucursales activas y el plan {nivel} incluye hasta {max}. Elige {sugerido} o cierra {sobran, plural, one {# sucursal} other {# sucursales}} antes de pagar.",
+      "choose": "Elegir {nivel}",
+      "goBranches": "Ir a Sucursales",
+      "turnsOff": "Al elegir {nivel} se apagan {funciones}. No se borra nada: tus datos se conservan.",
+      "off": {
+        "catalogo": "el catálogo en línea",
+        "lealtad": "las tarjetas de lealtad (quedan congeladas)",
+        "pedidos": "los pedidos del catálogo"
+      }
     },
     "current": {
       "label": "Plan",

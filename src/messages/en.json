@@ -206,6 +206,7 @@
     "captchaRequired": "Solve the captcha to continue",
     "tooManyAttempts": "Too many attempts. Try again in",
     "signupTrustBanner": "Your {dias}-day free trial is ready · No credit card",
+    "signupTrialNote": "During the trial you get everything included; when it ends you pick your plan (Basic, Pro or Premium).",
     "signupWithGoogle": "Sign up with Google",
     "orSignupWithEmail": "Or sign up with email",
     "continueWithGoogle": "Continue with Google",
@@ -2586,6 +2587,20 @@
     "errors": {
       "tooManyBranches": "You have {usadas} active branches and this plan includes up to {max}. Close some or choose a bigger plan.",
       "changeNotAvailable": "We change the plan on an account with an active subscription for you: write to us on WhatsApp or at soporte@symvora.com.mx."
+    },
+    "trialBranches": "Your trial includes everything, with no branch limit. When you subscribe: Basic includes 1, Pro up to 3 and Premium unlimited.",
+    "trialBranchesCta": "See plans",
+    "fit": {
+      "tag": "Doesn't fit: you have {n}",
+      "tooMany": "You have {usadas} active branches and the {nivel} plan includes up to {max}. Choose {sugerido} or close {sobran, plural, one {# branch} other {# branches}} before paying.",
+      "choose": "Choose {nivel}",
+      "goBranches": "Go to Branches",
+      "turnsOff": "Choosing {nivel} turns off {funciones}. Nothing is deleted: your data is kept.",
+      "off": {
+        "catalogo": "the online catalog",
+        "lealtad": "loyalty cards (they are frozen)",
+        "pedidos": "catalog orders"
+      }
     },
     "current": {
       "label": "Plan",

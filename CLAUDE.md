@@ -415,6 +415,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   endpoint de Conekta que cambia el plan de una suscripción está marcado *deprecated* y su prorrateo no está documentado; no se puede probar sin cobrar
   de verdad (las pruebas lo simulan), así que vigilar el primer cambio real en el panel de Conekta. `pruebas@symvora.com.mx` es cuenta de desarrollo y
   se queda SIN nivel (heredado).
+- **La prueba no tiene tope de sucursales (heredada) y NO se elige plan al registrarse** (decisión 2026-11-25: el registro es el paso a facilitar). Para que nadie choque
+  al pagar: el registro dice «durante la prueba tienes todo; al terminar eliges tu plan»; Sucursales avisa en la prueba cuánto incluye cada plan; y en `/billing` y
+  «Cambiar de plan» `AvisoAjustePlan` (con `nivelQueCabe`/`nivelSugerido`/`funcionesQueSeApagan` de `lib/niveles.ts`) marca y BLOQUEA el pago si el plan elegido no le cabe
+  (sucursales activas de más), propone el nivel sugerido y avisa qué se apaga (catálogo, lealtad, pedidos; nunca se borra nada). El servidor sigue siendo la autoridad
+  (409 `demasiadas_sucursales`). Si `asignar_nivel` falla DESPUÉS del pago, el webhook manda alerta a hola@ (`features/payments/fallo-nivel.ts`).
 - **Conekta:** un plan por nivel y periodo (`symvora-<nivel>-<monthly|yearly>-v1`, claves `proMonthly`…; montos inmutables: si una cifra
   de `PRECIOS_NIVEL_CENTS` cambia, versionar el id). `create-checkout` acepta `nivel` solo con el interruptor encendido; sin él o con
   pestañas viejas cobra como siempre. Rechaza con 409 `demasiadas_sucursales` y `cambio_de_nivel_no_disponible` (quien YA paga no

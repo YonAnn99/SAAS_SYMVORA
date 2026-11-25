@@ -28,6 +28,7 @@ import { crearNegocio } from "@/features/onboarding/crear-negocio";
 import { GIRO_POR_DEFECTO } from "@/features/marketing/giros";
 import { GiroSelect } from "./giro-select";
 import { TituloCinetico } from "./titulo-cinetico";
+import { nivelesActivos } from "@/lib/niveles";
 import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
@@ -705,6 +706,7 @@ export function AuthForms({
               role="note"
             >
               {t("auth.signupTrustBanner")}
+              {nivelesActivos() && <span className="mt-1 block opacity-90">{t("auth.signupTrialNote")}</span>}
             </p>
 
             {/* Un toque en vez de 8 campos: en celular es donde mas gente se va. */}
