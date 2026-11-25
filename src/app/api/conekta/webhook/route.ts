@@ -370,13 +370,18 @@ async function avanzarPromocion(
     const { CONEKTA_PLAN_IDS } = await import("@/features/payments/services/conekta/config");
     // Al plan NORMAL de lo que se contrato: la promo de un nivel vuelve al mensual de ese nivel (Pro o
     // Premium), no al plan unico de siempre. Se decide por el id del plan promocional guardado.
-    const planNormal =
+    const clavePlanNormal =
       promoPlan === CONEKTA_PLAN_IDS.proMonthlyPromo
-        ? CONEKTA_PLAN_IDS.proMonthly
+        ? "proMonthly"
         : promoPlan === CONEKTA_PLAN_IDS.premiumMonthlyPromo
-          ? CONEKTA_PLAN_IDS.premiumMonthly
-          : CONEKTA_PLAN_IDS.monthly;
-    await cambiarPlan(customerId, planNormal);
+          ? "premiumMonthly"
+          : "monthly";
+    // Los planes de Conekta se crean al primer uso: el normal de un nivel puede no existir todavia (con la
+    // promo activa nadie lo ha pedido). Sin esto el cambio fallaria y el cliente seguiria pagando el precio
+    // promocional. `ensurePlanExists` tolera que ya exista.
+    const { ensurePlanExists } = await import("@/features/payments/services/conekta/plans");
+    await ensurePlanExists(clavePlanNormal);
+    await cambiarPlan(customerId, CONEKTA_PLAN_IDS[clavePlanNormal]);
 
     await supabase
       .from("subscriptions")
