@@ -7,6 +7,7 @@ import { DIAS_PRUEBA } from "@/lib/trial";
 import { PRECIO_PROMO_MXN, precioListaMXN } from "@/features/payments/promocion";
 import type { AvisoCobro } from "@/lib/avisos-cobro";
 import { formatearCantidad } from "@/lib/unidades";
+import { precioNivelMXN, precioPromoNivelMXN } from "@/lib/niveles";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -844,6 +845,41 @@ export function construirCorreoNovedadVentas(params: {
     pie: "Recibes este correo porque tienes una cuenta en SYMVORA. Si no quieres avisos de novedades, respóndenos y te sacamos de la lista.",
   });
   return { subject: "Nuevo en SYMVORA: cancela y corrige tus ventas", html };
+}
+
+/**
+ * Anuncio de los NUEVOS PLANES (Básico / Pro / Premium), solo por correo (sin campana ni ventana: lo decidió el
+ * dueño para no interrumpir). Va a los dueños de negocios activos y en prueba (`/api/cron/anuncio-novedad?novedad=nuevos-planes`).
+ * Los precios salen de `lib/niveles.ts` (la misma tabla que cobra Conekta), nunca escritos a mano.
+ */
+export function construirCorreoNovedadPlanes(params: {
+  nombre: string;
+  negocio: string;
+}): { subject: string; html: string } {
+  const saludo = params.nombre ? `Hola, ${esc(params.nombre)}` : "Hola";
+  const punto = (texto: string) =>
+    `<tr><td style="padding:5px 0;font-size:14px;color:${BRAND.ink};line-height:1.6;">&#10003;&nbsp; ${texto}</td></tr>`;
+  const lista = (n: "basico" | "pro" | "premium") => `$${precioNivelMXN(n, "monthly")}`;
+  const promo = (n: "pro" | "premium") => `$${precioPromoNivelMXN(n)}`;
+  const html = buildNoticeHtml({
+    preheader: "SYMVORA estrena planes: Básico, Pro y Premium. Esto es lo que cambia para ti.",
+    heading: `${saludo}: SYMVORA estrena planes`,
+    intro: `Ahora puedes elegir el plan que mejor le queda a <strong>${esc(params.negocio)}</strong>. En todos tienes usuarios y productos ilimitados, punto de venta, inventario, reportes y cero comisiones por venta; lo que cambia son las sucursales y algunos módulos.`,
+    highlight: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${punto(`<strong>Básico · ${lista("basico")} al mes:</strong> 1 sucursal.`)}
+      ${punto(`<strong>Pro · ${lista("pro")} al mes:</strong> hasta 3 sucursales, tarjetas de lealtad, catálogo en línea y pedidos del catálogo.`)}
+      ${punto(`<strong>Premium · ${lista("premium")} al mes:</strong> sucursales ilimitadas, soporte prioritario por WhatsApp y ayuda para migrar tu catálogo.`)}
+      ${punto(`<strong>Promoción de lanzamiento:</strong> Pro a ${promo("pro")} y Premium a ${promo("premium")} los primeros 6 meses (plan mensual). Pagando al año ahorras 25 %.`)}
+      ${punto("<strong>Si ya eres cliente</strong>, tu negocio pasa al plan Pro y <strong>conservas el precio que pagas hoy</strong>. No tienes que hacer nada.")}
+      ${punto("<strong>Si estás en tu prueba gratis</strong>, sigues con todo incluido y eliges tu plan cuando decidas contratar.")}
+      ${punto("Cambiar de plan es sencillo, desde <strong>Suscripción</strong> o escribiéndonos por WhatsApp o a soporte@symvora.com.mx. Bajar de plan nunca borra tus datos.")}
+    </table>`,
+    ctaLabel: "Ver mi plan",
+    ctaHref: `${BRAND.appUrl}/es/billing`,
+    mostrarBeneficios: false,
+    pie: "Recibes este correo porque tienes una cuenta en SYMVORA. Si no quieres avisos de novedades, respóndenos y te sacamos de la lista.",
+  });
+  return { subject: "Nuevo en SYMVORA: planes Básico, Pro y Premium", html };
 }
 
 /** Envía un anuncio ya armado (catálogo, ventas…). */

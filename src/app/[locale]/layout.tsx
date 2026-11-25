@@ -6,7 +6,8 @@ import { CookieConsent } from "@/components/compliance/cookie-consent";
 import { IdiomaHtml } from "@/components/idioma-html";
 import { Movimiento } from "@/components/marketing/movimiento";
 
-const ESPACIOS_CLIENTE = ["landing", "cookies", "notFound", "common"] as const;
+// `planes`: lo usa `cta-niveles.tsx` (nombres y textos de las tarjetas de precios de la landing).
+const ESPACIOS_CLIENTE = ["landing", "cookies", "notFound", "common", "planes"] as const;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

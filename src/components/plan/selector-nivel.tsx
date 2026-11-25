@@ -1,9 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Check } from "lucide-react";
 import {
-  FUNCIONES_POR_NIVEL,
   formatPrecioNivel,
   NIVELES_ORDEN,
   precioMensualEquivalenteMXN,
@@ -12,7 +10,7 @@ import {
   promoAplicaANivel,
   type Nivel,
 } from "@/lib/niveles";
-import { PROMO_LANZAMIENTO, type BillingPeriod } from "@/lib/pricing";
+import type { BillingPeriod } from "@/lib/pricing";
 
 /** Nivel que se destaca como «Más popular» (el que se quiere vender). */
 const NIVEL_POPULAR: Nivel = "pro";
@@ -21,8 +19,8 @@ const NIVEL_POPULAR: Nivel = "pro";
  * Elegir Básico, Pro o Premium al contratar (`/billing`). Solo se pinta con los niveles encendidos
  * (`nivelesActivos`) y para quien aun no paga.
  *
- * Honesto a proposito: cada tarjeta dice lo que SI incluye y el precio real; no inventa un «ahorro». El −50 %
- * de lanzamiento se muestra solo en Pro y Premium mensual (`promoAplicaANivel`).
+ * Compacto a proposito (decision del dueño): solo nombre, precio y las etiquetas «Más popular» y «−50 %»; el
+ * detalle de cada plan vive en la landing. El −50 % se muestra solo en Pro y Premium mensual (`promoAplicaANivel`).
  */
 export function SelectorNivel({
   nivel,
@@ -42,7 +40,6 @@ export function SelectorNivel({
   return (
     <div role="radiogroup" aria-label={t("selector.title")} className="grid gap-2 sm:grid-cols-3">
       {NIVELES_ORDEN.map((n) => {
-        const f = FUNCIONES_POR_NIVEL[n];
         const activo = n === nivel;
         const conPromo = !sinPromo && promoAplicaANivel(n, periodo);
         const mensual = conPromo ? precioPromoNivelMXN(n) : precioMensualEquivalenteMXN(n, periodo);
@@ -76,43 +73,11 @@ export function SelectorNivel({
               {formatPrecioNivel(mensual)}
               <span className="text-xs font-normal text-muted-foreground">{t("selector.perMonth")}</span>
             </span>
-            {conPromo && (
-              <span className="text-[11px] text-muted-foreground">
-                {t("selector.promoNote", {
-                  meses: PROMO_LANZAMIENTO.cobros,
-                  normal: formatPrecioNivel(precioNivelMXN(n, "monthly")),
-                })}
-              </span>
-            )}
             {periodo === "yearly" && (
               <span className="text-[11px] text-muted-foreground">
                 {t("selector.billedYearly", { total: formatPrecioNivel(precioNivelMXN(n, "yearly")) })}
               </span>
             )}
-            <ul className="space-y-1 text-xs text-muted-foreground">
-              <li className="flex gap-1.5">
-                <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" aria-hidden="true" />
-                {f.sucursalesMax === null
-                  ? t("selector.branchesUnlimited")
-                  : t("selector.branches", { n: f.sucursalesMax })}
-              </li>
-              <li className="flex gap-1.5">
-                <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" aria-hidden="true" />
-                {t("selector.unlimited")}
-              </li>
-              {f.lealtad && (
-                <li className="flex gap-1.5">
-                  <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" aria-hidden="true" />
-                  {t("selector.loyalty")}
-                </li>
-              )}
-              {f.catalogo && (
-                <li className="flex gap-1.5">
-                  <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" aria-hidden="true" />
-                  {t("selector.catalog")}
-                </li>
-              )}
-            </ul>
           </button>
         );
       })}

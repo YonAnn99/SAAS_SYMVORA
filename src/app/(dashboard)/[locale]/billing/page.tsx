@@ -53,7 +53,8 @@ import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { SelectorNivel } from "@/components/plan/selector-nivel";
 import { CambiarPlan } from "@/components/plan/cambiar-plan";
-import { nivelesActivos, type Nivel } from "@/lib/niveles";
+import { usePlan } from "@/hooks/use-plan";
+import { esNivel, nivelesActivos, type Nivel } from "@/lib/niveles";
 
 interface Subscription {
   id: string;
@@ -71,6 +72,8 @@ interface Subscription {
   promo_cobros_restantes: number | null;
   promo_plan: string | null;
   promo_codigo_campana?: string | null;
+  /** Migracion 140: nivel elegido que espera su siguiente cobro (bajar de plan, pagos unicos). */
+  nivel_pendiente?: string | null;
   /** Migracion 096; ausente si aun no se aplica. */
   oferta_regreso_hasta?: string | null;
 }
@@ -121,6 +124,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   // Niveles Basico / Pro / Premium (migracion 140). Solo con el interruptor encendido y para quien aun
   // no paga; quien ya paga conserva su plan y cambia de nivel con soporte (por ahora).
   const [selectedNivel, setSelectedNivel] = useState<Nivel>("pro");
+  const { nivel: nivelActual, listo: planListo } = usePlan();
   const conNiveles = nivelesActivos() && !subscription?.last_payment_at;
   // Quien YA paga (suscripcion activa) con los niveles encendidos cambia de plan desde aqui.
   const puedeCambiarPlan =
@@ -558,6 +562,26 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               </Badge>
             </div>
 
+            {nivelesActivos() && planListo && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{t("planes.current.label")}:</span>
+                  <Badge variant="outline" className="text-sm font-semibold">
+                    {nivelActual
+                      ? t(`planes.names.${nivelActual}`)
+                      : subscription?.status === "trial"
+                        ? t("planes.current.trial")
+                        : t("planes.current.legacy")}
+                  </Badge>
+                </div>
+                {esNivel(subscription?.nivel_pendiente) && subscription?.nivel_pendiente !== nivelActual && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("planes.current.pending", { nivel: t(`planes.names.${subscription.nivel_pendiente}`) })}
+                  </p>
+                )}
+              </div>
+            )}
+
             {subscription?.last_payment_at && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
@@ -580,7 +604,7 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               </div>
             )}
 
-            {cobrosPromoRestantes > 0 && (
+            {cobrosPromoRestantes > 0 && !conNiveles && (
               <div className="flex items-center gap-2 text-sm">
                 <Tag className="h-4 w-4 text-red-500" />
                 <span>

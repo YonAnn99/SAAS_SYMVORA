@@ -17,6 +17,43 @@ import {
 import { PROMO_LANZAMIENTO, type BillingPeriod } from "@/lib/pricing";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL } from "./boton-capsula";
 
+type Traductor = ReturnType<typeof useTranslations>;
+
+/**
+ * Lo que dice cada tarjeta. Basico lista lo de base; Pro y Premium arrancan con «Todo lo de …, y ademas:» y
+ * enumeran SOLO lo que suman, para que se vea la diferencia. Lo de Pro sale de `FUNCIONES_POR_NIVEL` (lo que
+ * la base realmente aplica). Lo de Premium: sucursales ilimitadas (aplicado) y soporte prioritario y
+ * migracion asistida (compromisos de servicio del dueño, 2026-11-25: si dejan de cumplirse, quitar de aqui).
+ */
+function caracteristicas(n: Nivel, t: Traductor): { texto: string; encabezado?: boolean }[] {
+  const f = FUNCIONES_POR_NIVEL[n];
+  if (n === "basico") {
+    return [
+      { texto: t("planes.selector.branches", { n: f.sucursalesMax ?? 1 }) },
+      { texto: t("planes.selector.unlimited") },
+      { texto: t("landing.cta.features.pos") },
+      { texto: t("landing.cta.features.inventory") },
+      { texto: t("landing.cta.features.reports") },
+    ];
+  }
+  if (n === "pro") {
+    return [
+      { texto: t("planes.selector.includesBasic"), encabezado: true },
+      { texto: t("planes.selector.branches", { n: f.sucursalesMax ?? 3 }) },
+      { texto: t("planes.selector.transfers") },
+      { texto: t("planes.selector.loyalty") },
+      { texto: t("planes.selector.catalogOnly") },
+      { texto: t("planes.selector.orders") },
+    ];
+  }
+  return [
+    { texto: t("planes.selector.includesPro"), encabezado: true },
+    { texto: t("planes.selector.branchesUnlimited") },
+    { texto: t("planes.selector.prioritySupport") },
+    { texto: t("planes.selector.assistedMigration") },
+  ];
+}
+
 /** El nivel que se destaca. */
 const NIVEL_POPULAR: Nivel = "pro";
 
@@ -46,7 +83,7 @@ export function CtaNiveles() {
 
         <div
           role="radiogroup"
-          aria-label={t("billing.page.period")}
+          aria-label={t("landing.cta.periodLabel")}
           className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-800"
         >
           {(["monthly", "yearly"] as const).map((p) => (
@@ -75,7 +112,6 @@ export function CtaNiveles() {
 
         <div className="grid w-full gap-4 text-left md:grid-cols-3">
           {NIVELES_ORDEN.map((n) => {
-            const f = FUNCIONES_POR_NIVEL[n];
             const popular = n === NIVEL_POPULAR;
             const conPromo = promoAplicaANivel(n, periodo);
             return (
@@ -123,19 +159,12 @@ export function CtaNiveles() {
                   )}
                 </div>
                 <ul className="flex-1 space-y-2.5 text-sm text-neutral-700 dark:text-neutral-300">
-                  {[
-                    f.sucursalesMax === null
-                      ? t("planes.selector.branchesUnlimited")
-                      : t("planes.selector.branches", { n: f.sucursalesMax }),
-                    t("planes.selector.unlimited"),
-                    t("landing.cta.features.pos"),
-                    t("landing.cta.features.inventory"),
-                    t("landing.cta.features.reports"),
-                    ...(f.lealtad ? [t("planes.selector.loyalty")] : []),
-                    ...(f.catalogo ? [t("planes.selector.catalog")] : []),
-                  ].map((texto) => (
-                    <li key={texto} className="flex gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  {caracteristicas(n, t).map(({ texto, encabezado }) => (
+                    <li
+                      key={texto}
+                      className={encabezado ? "pb-0.5 font-semibold text-neutral-900 dark:text-neutral-50" : "flex gap-2"}
+                    >
+                      {!encabezado && <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
                       {texto}
                     </li>
                   ))}
@@ -144,7 +173,7 @@ export function CtaNiveles() {
                   href="/signup"
                   className={`${CAPSULA} ${CAPSULA_GRANDE} ${popular ? PRINCIPAL : ""} w-full justify-center`}
                 >
-                  {t("landing.cta.primary")}
+                  {t("landing.cta.primaryShort")}
                   <ArrowRight className={`h-5 w-5 ${FLECHA_CAPSULA}`} aria-hidden="true" />
                 </Link>
               </div>

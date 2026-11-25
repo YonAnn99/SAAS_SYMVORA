@@ -50,10 +50,11 @@ describe("planes de Conekta por nivel", () => {
   });
 
   it("la promo de lanzamiento es -50 % y solo de Pro y Premium mensual", () => {
-    expect(precioPromoNivelCents("pro")).toBe(22450);
-    expect(precioPromoNivelCents("premium")).toBe(29950);
+    // Redondeados a mano por el dueño: Pro $225 (lista $449) y Premium $299 (lista $599).
+    expect(precioPromoNivelCents("pro")).toBe(22500);
+    expect(precioPromoNivelCents("premium")).toBe(29900);
     for (const n of ["pro", "premium"] as const) {
-      expect(precioPromoNivelCents(n) * 2).toBe(PRECIOS_NIVEL_CENTS[n].monthly);
+      expect(precioPromoNivelCents(n)).toBeLessThan(PRECIOS_NIVEL_CENTS[n].monthly);
       expect(promoAplicaANivel(n, "monthly")).toBe(true);
       expect(promoAplicaANivel(n, "yearly")).toBe(false);
     }
@@ -78,10 +79,10 @@ describe("planes de Conekta por nivel", () => {
   });
 
   it("el cobro lo manda el contador: con cobros restantes, promo; sin ellos, lista (aunque la promo se apague)", () => {
-    expect(precioNivelCobroCents("pro", "monthly", 6)).toBe(22450);
-    expect(precioNivelCobroCents("pro", "monthly", 1)).toBe(22450);
+    expect(precioNivelCobroCents("pro", "monthly", 6)).toBe(22500);
+    expect(precioNivelCobroCents("pro", "monthly", 1)).toBe(22500);
     expect(precioNivelCobroCents("pro", "monthly", 0)).toBe(44900);
-    expect(precioNivelCobroCents("premium", "monthly", 3)).toBe(29950);
+    expect(precioNivelCobroCents("premium", "monthly", 3)).toBe(29900);
     expect(precioNivelCobroCents("basico", "monthly", 6)).toBe(24900);
     expect(precioNivelCobroCents("pro", "yearly", 6)).toBe(404400);
   });
@@ -90,16 +91,16 @@ describe("planes de Conekta por nivel", () => {
     const { CONEKTA_PLAN_IDS, CONEKTA_PLAN_AMOUNTS } = await import("@/features/payments/services/conekta/config");
     expect(CONEKTA_PLAN_IDS.proMonthlyPromo).toBe("symvora-pro-monthly-promo50-v1");
     expect(CONEKTA_PLAN_IDS.premiumMonthlyPromo).toBe("symvora-premium-monthly-promo50-v1");
-    expect(CONEKTA_PLAN_AMOUNTS.proMonthlyPromo).toBe(22450);
-    expect(CONEKTA_PLAN_AMOUNTS.premiumMonthlyPromo).toBe(29950);
+    expect(CONEKTA_PLAN_AMOUNTS.proMonthlyPromo).toBe(22500);
+    expect(CONEKTA_PLAN_AMOUNTS.premiumMonthlyPromo).toBe(29900);
     expect(CONEKTA_PLAN_IDS.monthlyPromo).toBe("symvora-basic-monthly-promo50-v1");
     expect(CONEKTA_PLAN_AMOUNTS.monthlyPromo).toBe(19900);
   });
 
   it("/billing muestra el precio de la promo que SI tiene la suscripcion", async () => {
     const { CONEKTA_PLAN_IDS } = await import("@/features/payments/services/conekta/config");
-    expect(preciosPromoEnCurso(CONEKTA_PLAN_IDS.proMonthlyPromo)).toEqual({ promo: 224.5, normal: 449 });
-    expect(preciosPromoEnCurso(CONEKTA_PLAN_IDS.premiumMonthlyPromo)).toEqual({ promo: 299.5, normal: 599 });
+    expect(preciosPromoEnCurso(CONEKTA_PLAN_IDS.proMonthlyPromo)).toEqual({ promo: 225, normal: 449 });
+    expect(preciosPromoEnCurso(CONEKTA_PLAN_IDS.premiumMonthlyPromo)).toEqual({ promo: 299, normal: 599 });
     expect(preciosPromoEnCurso(CONEKTA_PLAN_IDS.monthlyPromo)).toEqual({ promo: 199, normal: 399 });
     expect(preciosPromoEnCurso(null)).toEqual({ promo: 199, normal: 399 });
   });

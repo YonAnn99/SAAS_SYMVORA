@@ -141,9 +141,16 @@ export function promoAplicaANivel(nivel: Nivel, periodo: BillingPeriod): boolean
   return PROMO_LANZAMIENTO.activa && periodo === PROMO_LANZAMIENTO.periodo && nivel !== "basico";
 }
 
-/** Precio promocional mensual de un nivel, en centavos: el descuento de la promo sobre su precio de lista. */
+/**
+ * Precio promocional mensual de cada nivel, en centavos, REDONDEADO por decision del dueño (2026-11-25):
+ * Pro $225 (lista $449) y Premium $299 (lista $599). Basico no tiene promo. Los planes de Conekta
+ * (`proMonthlyPromo`/`premiumMonthlyPromo`) toman el monto de aqui: si cambia una cifra, versionar el id (-v2).
+ */
+export const PRECIOS_PROMO_NIVEL_CENTS = { pro: 22500, premium: 29900 } as const;
+
+/** Precio promocional mensual de un nivel Pro/Premium, en centavos. Basico no lo tiene (devuelve su lista). */
 export function precioPromoNivelCents(nivel: Nivel): number {
-  return Math.round((PRECIOS_NIVEL_CENTS[nivel].monthly * (100 - PROMO_LANZAMIENTO.descuentoPct)) / 100);
+  return nivel === "basico" ? PRECIOS_NIVEL_CENTS.basico.monthly : PRECIOS_PROMO_NIVEL_CENTS[nivel];
 }
 
 export function precioPromoNivelMXN(nivel: Nivel): number {

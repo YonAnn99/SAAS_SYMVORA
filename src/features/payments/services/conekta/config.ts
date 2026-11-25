@@ -76,7 +76,7 @@ export const CONEKTA_PLAN_IDS = {
   // Promocion de lanzamiento de los niveles: -50 % los primeros cobros, SOLO Pro y Premium y solo mensual.
   // Planes PARALELOS (como `monthlyPromo`): al agotarse el contador la suscripcion vuelve al plan normal del
   // nivel con `cambiarPlan()`. Montos inmutables: si cambia el precio o el descuento, versionar el id (-v2).
-  //   $224.50 (Pro) · $299.50 (Premium)
+  //   $225 (Pro) · $299 (Premium), redondeados (`PRECIOS_PROMO_NIVEL_CENTS`)
   proMonthlyPromo: "symvora-pro-monthly-promo50-v1",
   premiumMonthlyPromo: "symvora-premium-monthly-promo50-v1",
 } as const;

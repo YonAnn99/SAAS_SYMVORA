@@ -2568,12 +2568,25 @@
       "unlimited": "Usuarios y productos ilimitados",
       "loyalty": "Tarjetas de lealtad",
       "catalog": "Catálogo en línea y pedidos",
+      "includesBasic": "Todo lo de Básico, y además:",
+      "includesPro": "Todo lo de Pro, y además:",
+      "transfers": "Inventario por sucursal y traspasos entre ellas",
+      "catalogOnly": "Catálogo en línea con tu enlace y QR",
+      "orders": "Pedidos del catálogo con seguimiento y venta al confirmar",
+      "prioritySupport": "Soporte prioritario por WhatsApp",
+      "assistedMigration": "Te ayudamos a migrar tu catálogo desde Excel o tu sistema actual",
       "promoBadge": "−50%",
       "promoNote": "Los primeros {meses} meses. Después {normal} MXN/mes."
     },
     "errors": {
       "tooManyBranches": "Tienes {usadas} sucursales activas y este plan incluye hasta {max}. Cierra alguna o elige un plan mayor.",
       "changeNotAvailable": "El cambio de plan en una cuenta con suscripción activa lo hacemos por ti: escríbenos por WhatsApp o a soporte@symvora.com.mx."
+    },
+    "current": {
+      "label": "Plan",
+      "trial": "Prueba gratuita · todo incluido",
+      "legacy": "Plan completo",
+      "pending": "Pasarás al plan {nivel} en tu próximo cobro."
     },
     "change": {
       "title": "Cambiar de plan",
@@ -2875,7 +2888,7 @@
         },
         "11": {
           "question": "¿Qué plan me conviene?",
-          "answer": "Básico si tienes un solo local y quieres vender y controlar tu inventario. Pro si tienes hasta 3 sucursales o quieres tarjetas de lealtad, catálogo en línea y pedidos. Premium si necesitas sucursales ilimitadas. Todos incluyen usuarios y productos ilimitados."
+          "answer": "Básico si tienes un solo local y quieres vender y controlar tu inventario. Pro si tienes hasta 3 sucursales o quieres tarjetas de lealtad, catálogo en línea y pedidos. Premium si necesitas sucursales ilimitadas, soporte prioritario y ayuda para migrar tu catálogo. Todos incluyen usuarios y productos ilimitados."
         }
       },
       "cta": {
@@ -2893,6 +2906,8 @@
       "tabletPromoNota": "Promoción Especial: Suscripción Anual incluye Tablet.",
       "tabletPromoVigencia": "Promoción válida del 13 al 17 de noviembre.",
       "promoBadge": "−50%",
+      "periodLabel": "Periodo de facturación",
+      "primaryShort": "Probar 14 días gratis",
       "promoNota": "Precio promocional los primeros {meses} meses. Después {normal} MXN/mes.",
       "promoSoloNiveles": "Promoción de lanzamiento: −50% los primeros {meses} meses en Pro y Premium (plan mensual).",
       "priceMonthly": "$399",

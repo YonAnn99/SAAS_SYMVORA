@@ -2568,12 +2568,25 @@
       "unlimited": "Unlimited users and products",
       "loyalty": "Loyalty cards",
       "catalog": "Online catalog and orders",
+      "includesBasic": "Everything in Basic, plus:",
+      "includesPro": "Everything in Pro, plus:",
+      "transfers": "Per-branch inventory and transfers between them",
+      "catalogOnly": "Online catalog with your own link and QR",
+      "orders": "Catalog orders with tracking and a sale when confirmed",
+      "prioritySupport": "Priority support on WhatsApp",
+      "assistedMigration": "We help you migrate your catalog from Excel or your current system",
       "promoBadge": "−50%",
       "promoNote": "First {meses} months. Then {normal} MXN/month."
     },
     "errors": {
       "tooManyBranches": "You have {usadas} active branches and this plan includes up to {max}. Close some or choose a bigger plan.",
       "changeNotAvailable": "We change the plan on an account with an active subscription for you: write to us on WhatsApp or at soporte@symvora.com.mx."
+    },
+    "current": {
+      "label": "Plan",
+      "trial": "Free trial · everything included",
+      "legacy": "Full plan",
+      "pending": "You will move to the {nivel} plan at your next charge."
     },
     "change": {
       "title": "Change plan",
@@ -2875,7 +2888,7 @@
         },
         "11": {
           "question": "Which plan is right for me?",
-          "answer": "Basic if you have a single location and want to sell and control your inventory. Pro if you have up to 3 branches or want loyalty cards, an online catalog and orders. Premium if you need unlimited branches. All plans include unlimited users and products."
+          "answer": "Basic if you have a single location and want to sell and control your inventory. Pro if you have up to 3 branches or want loyalty cards, an online catalog and orders. Premium if you need unlimited branches, priority support and help migrating your catalog. All plans include unlimited users and products."
         }
       },
       "cta": {
@@ -2893,6 +2906,8 @@
       "tabletPromoNota": "Special Promo: Yearly subscription includes Tablet.",
       "tabletPromoVigencia": "Promotion valid from November 13 to 17.",
       "promoBadge": "−50%",
+      "periodLabel": "Billing period",
+      "primaryShort": "Try free for 14 days",
       "promoNota": "Promotional price for the first {meses} months. Then {normal} MXN/month.",
       "promoSoloNiveles": "Launch promotion: 50% off the first {meses} months on Pro and Premium (monthly plan).",
       "priceMonthly": "$399",

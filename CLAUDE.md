@@ -391,8 +391,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Tabla** (única fuente en código: `lib/niveles.ts`; espejo en la base: `plan_funciones`, y `niveles.test.ts` los compara leyendo la
   migración): Básico $249/mes · $2,244/año, 1 sucursal, sin Sucursales, sin lealtad, sin catálogo, sin pedidos; Pro $449 · $4,044, hasta
   3 sucursales + lealtad + catálogo + pedidos; Premium $599 · $5,388, sucursales ilimitadas (ancla). Usuarios y productos ilimitados en
-  todos. **Los extras de Premium (soporte prioritario, migración asistida) son PROPUESTA: no están en la landing ni en `/billing` hasta
-  que el usuario confirme que los cumple.** Anual = mensual × 0.75 redondeado × 12.
+  todos. **Premium se diferencia en la landing (`cta-niveles.tsx`, `caracteristicas()`) por sucursales ilimitadas + soporte prioritario por WhatsApp + migración asistida del catálogo (2026-11-25): los dos últimos son COMPROMISOS DE SERVICIO del dueño; si dejan de cumplirse, quitar sus claves `planes.selector.prioritySupport`/`assistedMigration` y del FAQ 11.** El selector de `/billing` es compacto a propósito: solo nombre, precio y etiquetas «Más popular» y «−50 %». Anual = mensual × 0.75 redondeado × 12.
 - **`nivel` NULL = heredado** (clientes de antes y la prueba de 14 días): todo permitido y sin tope; nunca se les cambia nada.
   `nivel_pendiente` guarda lo elegido en el checkout MIENTRAS no se paga; solo `asignar_nivel` (service_role, lo llama el webhook
   `subscription.paid`/`order.paid` vía `confirmarNivelPagado`) lo confirma, y rechaza si hay más sucursales activas que el tope.
@@ -402,7 +401,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   Pro») envuelve `/branches` y `/online-catalog`, Clientes quita la pestaña de lealtad, `usePosLealtad` apaga la tarjeta, y
   `SucursalesCard` avisa del tope. **Bajar de nivel nunca borra datos.**
 - **Promo −50 % de lanzamiento en niveles:** SOLO Pro y Premium y SOLO mensual (`promoAplicaANivel` en `lib/niveles.ts`; Básico y el anual
-  van a lista). 6 cobros (`PROMO_LANZAMIENTO.cobros`): Pro $224.50, Premium $299.50 (`precioPromoNivelCents`). Planes paralelos
+  van a lista). 6 cobros (`PROMO_LANZAMIENTO.cobros`): Pro $225 y Premium $299, redondeados por el dueño (`PRECIOS_PROMO_NIVEL_CENTS`). Planes paralelos
   `symvora-pro-monthly-promo50-v1` / `symvora-premium-monthly-promo50-v1` (claves `proMonthlyPromo`/`premiumMonthlyPromo`); `create-checkout`
   siembra `promo_cobros_restantes`/`promo_plan` y al agotarse el contador el webhook (`avanzarPromocion`) devuelve al mensual del NIVEL, no al plan
   único. Manda el contador de la suscripción, no `activa` (`precioNivelCobroCents(nivel, periodo, cobros)`); `/billing` pinta el precio con
@@ -421,7 +420,8 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   pestañas viejas cobra como siempre. Rechaza con 409 `demasiadas_sucursales` y `cambio_de_nivel_no_disponible` (quien YA paga no
   cambia de nivel por aquí: crearía una segunda suscripción; el cambio con `cambiarPlan` está pendiente). Los planes se crean en el
   primer checkout real: **nunca pagar para probar**; la primera compra real es la prueba de verdad.
-- **Pendiente:** aplicar la 143, encender `NEXT_PUBLIC_NIVELES_ACTIVOS=1` (redeploy) y, si algún día se quiere, `cambiarPlan` automático para quien ya paga.
+- **Anuncio de los planes:** SOLO por correo (sin campana ni ventana, decisión del dueño): `/api/cron/anuncio-novedad?novedad=nuevos-planes` (sin `enviar=1` es simulacro; con él manda, una vez por persona), a dueños activos y en prueba (`construirCorreoNovedadPlanes` en `lib/email.ts`). Se corre a mano con `CRON_SECRET` (no está en `.env.local`, solo en Vercel).
+- **Hecho:** 143 aplicada, `NEXT_PUBLIC_NIVELES_ACTIVOS=1` en Vercel y desplegado. Suscripción muestra «Plan: …» (`planes.current.*`).
   Usuarios y productos siguen ilimitados en los tres niveles (el FAQ de «límites» se reescribió, no se quitó). Fase 2 resuelta sin
   búsqueda en servidor (20 mil productos cargan en ~4.5 s; ver «Lecturas de listas grandes»); Pedidos: ver su sección.
 
@@ -812,7 +812,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 143 —141-142 pedidos, aplicadas; 143 nivel Pro de los clientes actuales, PENDIENTE de aplicar con OK—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 143 —141-142 pedidos y 143 nivel Pro de los 4 clientes que ya pagaban, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**
