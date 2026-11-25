@@ -558,7 +558,7 @@ export function construirCorreoPagoRecibido(p: DatosPagoConfirmado): CorreoInter
     ["Giro", esc(o(p.giro))],
     ["Dueño", esc(o(p.dueno))],
     ["Correo", p.correo ? `<a href="mailto:${esc(p.correo)}" style="color:${AZUL};">${esc(p.correo)}</a>` : "—"],
-    ["Celular", celularHtml(p.celular)],
+    ["Celular", celularHtml(p.celular ?? null)],
     ["Tipo de cobro", `${esc(tipoPagoTexto)} (${esc(periodoTexto)})`],
     ["Monto pagado", `<strong style="color:#059669;">${pesos(p.monto)} MXN</strong>`],
     ["Método de pago", esc(etiquetaMetodoPago(p.metodo ?? "card"))],
