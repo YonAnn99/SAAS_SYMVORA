@@ -464,6 +464,20 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   pública y el panel se probaron por servidor y en SQL con rollback; el envío completo desde el navegador (Turnstile real) falta
   probarlo a mano en `localhost` con «Pruebas SYMVORA».
 
+## Activación de cuentas nuevas (2026-11-25)
+- **Por qué:** 12 de 13 pruebas vigentes no tenían productos ni ventas (y 8 de 18 vencidas nunca hicieron nada). Antes no salía NINGÚN mensaje entre el registro y el
+  aviso de fin de prueba; WhatsApp sigue apagado, el correo sí funciona. La Misión de 3 pasos, los catálogos de muestra por giro y el embudo
+  (`140_cartera_clientes_funnel.sql`, **sin aplicar y con número repetido: renumerarla antes de aplicarla**) ya existían.
+- **Correos por etapa** (`/api/cron/activacion`, diario 16:00 UTC, `?dry=1` = simulacro; reglas puras en `lib/activacion-correos.ts`): `primer_producto` (≥20 h, 0
+  productos), `primera_venta` (≥2 días, con productos), `ayuda` (≥4 días); solo pruebas vigentes de negocios reales sin ventas ni pagos, con VENTANAS de edad (nunca a
+  cuentas viejas), máx. 3 por cuenta y ≥36 h entre uno y otro. Marca por (etapa, negocio) en `rate_limits` (`activacion:<etapa>:<tenant>`) ANTES de enviar. Las plantillas
+  (`construirCorreoActivacion`) nombran solo lo que existe en la Misión del dashboard: si esos textos cambian, cambiar el correo (lo vigila `correos-activacion.test.ts`).
+- **+7 días de prueba a la PRIMERA venta** (migración 145): `subscriptions.trial_bono_en` + disparador en `ventas` (solo la primera venta del negocio con `total > 0`,
+  dentro de `EXCEPTION WHEN OTHERS`: un bono nunca tumba una venta). Una sola vez, solo en `trial` vigente, no en demos ni pagadas; limpia las marcas de aviso de fin de
+  prueba y deja un aviso de campana (`novedad`, `datos.novedad = 'bono-primera-venta'`). Quien ya vendió antes no recibe nada.
+- **Reactivar vencidas** (`/api/cron/reactivar-pruebas`, MANUAL, fuera de `vercel.json`; sin `?enviar=1` es simulacro): pruebas vencidas, nunca pagaron, 0 productos y 0
+  ventas, ≤ 90 días → `trial_end = ahora + 7 días` + correo (`construirCorreoReactivarPrueba`); una vez por cuenta (`reactivar-prueba:<tenant>`).
+
 ## Lecturas de listas grandes (2026-11-24)
 - PostgREST corta en **1,000 filas** (`max-rows`): una consulta sin paginar devuelve el corte en silencio. **REGLA:** toda lectura de una
   lista que puede pasar de mil filas (productos, variantes, stock por sucursal, clientes, lotes, ajustes, ventas del reporte) usa
@@ -821,7 +835,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 144 —141-142 pedidos, 143 nivel Pro de los 4 clientes que ya pagaban y 144 costo de envío, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 145 —141-142 pedidos, 143 nivel Pro de los 4 clientes que ya pagaban, 144 costo de envío y 145 bono de primera venta, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**

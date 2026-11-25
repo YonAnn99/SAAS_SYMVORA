@@ -1,7 +1,8 @@
 import { formatMoneda, type Moneda } from "@/lib/money";
 import { Resend } from "resend";
 import { getReferralSignupUrl } from "@/lib/referrals";
-import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SUPPORT_EMAIL } from "@/lib/contact";
+import { CONTACT_EMAIL, HELLO_EMAIL, NO_REPLY_EMAIL, SALES_WHATSAPP, SUPPORT_EMAIL } from "@/lib/contact";
+import { DIAS_PRUEBA_REGALADOS, type EtapaActivacion } from "@/lib/activacion-correos";
 import { TIMEOUTS, withTimeout } from "@/lib/http/timeout";
 import { DIAS_PRUEBA } from "@/lib/trial";
 import { PRECIO_PROMO_MXN, precioListaMXN } from "@/features/payments/promocion";
@@ -914,6 +915,113 @@ export function construirCorreoNovedadPedidos(params: {
     pie: "Recibes este correo porque tienes una cuenta en SYMVORA. Si no quieres avisos de novedades, respóndenos y te sacamos de la lista.",
   });
   return { subject: "Nuevo en SYMVORA: recibe pedidos desde tu catálogo en línea", html };
+}
+
+/**
+ * Correos de ACTIVACIÓN de una cuenta nueva (`/api/cron/activacion`, reglas en `lib/activacion-correos.ts`). Todo lo que
+ * nombran existe en la Misión de primeros pasos del dashboard: «Cargar 3 productos muestra (1 clic)», «Crear 1 rápido»,
+ * «Excel», «Abrir caja rápida con $0» y «Cobrar primera venta». Pie: quien no quiera recibirlos, responde.
+ */
+export function construirCorreoActivacion(
+  etapa: EtapaActivacion,
+  params: { nombre: string; negocio: string; diasRestantes?: number }
+): { subject: string; html: string } {
+  const saludo = params.nombre ? `Hola, ${esc(params.nombre)}` : "Hola";
+  const negocio = esc(params.negocio);
+  const punto = (texto: string) =>
+    `<tr><td style="padding:5px 0;font-size:14px;color:${BRAND.ink};line-height:1.6;">&#10003;&nbsp; ${texto}</td></tr>`;
+  const tabla = (...filas: string[]) =>
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${filas.join("")}</table>`;
+  const pie =
+    "Recibes este correo porque creaste una cuenta en SYMVORA. Si no quieres estos mensajes, respóndenos y te sacamos de la lista.";
+  const whatsapp = `https://wa.me/${SALES_WHATSAPP}?text=${encodeURIComponent("Hola, necesito ayuda para empezar con SYMVORA.")}`;
+
+  if (etapa === "primer_producto") {
+    return {
+      subject: "Carga tu primer producto en 2 minutos",
+      html: buildNoticeHtml({
+        preheader: "Entra al dashboard y carga tus primeros productos con un clic.",
+        heading: `${saludo}: arranquemos con tu primer producto`,
+        intro: `Creaste la cuenta de <strong>${negocio}</strong>. Lo que sigue toma 2 minutos y es lo que más ayuda a ver SYMVORA funcionando.`,
+        highlight: tabla(
+          punto("Entra a tu dashboard: ahí está la <strong>Misión de primeros pasos</strong>."),
+          punto("Toca <strong>«Cargar 3 productos muestra (1 clic)»</strong>: se crean productos típicos de tu giro y los editas cuando quieras."),
+          punto("O crea uno propio con <strong>«Crear 1 rápido»</strong>, o sube tu lista con <strong>«Excel»</strong>."),
+          punto("También puedes agregar productos escaneando el código de barras con la cámara de tu celular.")
+        ),
+        ctaLabel: "Ir a mi dashboard",
+        ctaHref: `${BRAND.appUrl}/es/dashboard`,
+        mostrarBeneficios: false,
+        pie,
+      }),
+    };
+  }
+
+  if (etapa === "primera_venta") {
+    return {
+      subject: "Estás a un paso: cobra tu primera venta",
+      html: buildNoticeHtml({
+        preheader: "Ya tienes productos. Cobra una venta y ve cómo cuadra tu caja.",
+        heading: `${saludo}: ya casi, cobra tu primera venta`,
+        intro: `<strong>${negocio}</strong> ya tiene productos. Falta lo mejor: cobrar una venta y ver cómo baja el inventario y cuadra tu caja.`,
+        highlight: tabla(
+          punto("Abre tu caja con <strong>«Abrir caja rápida con $0»</strong> (o con tu fondo), desde la Misión del dashboard."),
+          punto("Entra al <strong>Punto de venta</strong>, toca un producto y cobra."),
+          punto(`<strong>Tu primera venta te regala ${DIAS_PRUEBA_REGALADOS} días más de prueba</strong>, sin hacer nada extra.`),
+          ...(params.diasRestantes ? [punto(`Te quedan <strong>${params.diasRestantes} días</strong> de prueba gratis.`)] : [])
+        ),
+        ctaLabel: "Cobrar mi primera venta",
+        ctaHref: `${BRAND.appUrl}/es/pos`,
+        mostrarBeneficios: false,
+        pie,
+      }),
+    };
+  }
+
+  return {
+    subject: "¿Te ayudamos a empezar con SYMVORA?",
+    html: buildNoticeHtml({
+      preheader: "Si algo te trabó, responde este correo o escríbenos por WhatsApp.",
+      heading: `${saludo}: ¿se te complicó algo?`,
+      intro: `Vimos que <strong>${negocio}</strong> aún no cobra su primera venta, y a veces es porque algo no quedó claro. Cuéntanos qué te frenó y te ayudamos a resolverlo.`,
+      highlight: tabla(
+        punto("Responde este correo o <a href=\"" + whatsapp + "\" style=\"color:" + BRAND.ink + ";font-weight:600;\">escríbenos por WhatsApp</a>: te guiamos paso a paso."),
+        punto("En el dashboard tienes la <strong>Misión de primeros pasos</strong>: tres pasos y listo (productos, caja y primera venta)."),
+        ...(params.diasRestantes ? [punto(`Te quedan <strong>${params.diasRestantes} días</strong> de prueba gratis; aprovéchalos.`)] : [])
+      ),
+      ctaLabel: "Ir a mi dashboard",
+      ctaHref: `${BRAND.appUrl}/es/dashboard`,
+      mostrarBeneficios: false,
+      pie,
+    }),
+  };
+}
+
+/** Correo único a las pruebas vencidas que nunca probaron la app: se les regalan días (`/api/cron/reactivar-pruebas`). */
+export function construirCorreoReactivarPrueba(params: {
+  nombre: string;
+  negocio: string;
+}): { subject: string; html: string } {
+  const saludo = params.nombre ? `Hola, ${esc(params.nombre)}` : "Hola";
+  const punto = (texto: string) =>
+    `<tr><td style="padding:5px 0;font-size:14px;color:${BRAND.ink};line-height:1.6;">&#10003;&nbsp; ${texto}</td></tr>`;
+  return {
+    subject: `Te regalamos ${DIAS_PRUEBA_REGALADOS} días para probar SYMVORA`,
+    html: buildNoticeHtml({
+      preheader: "Tu prueba terminó antes de que pudieras probar el sistema. Te damos más días.",
+      heading: `${saludo}: no alcanzaste a probarlo`,
+      intro: `La prueba de <strong>${esc(params.negocio)}</strong> venció sin que cargaras productos, así que te regalamos <strong>${DIAS_PRUEBA_REGALADOS} días más</strong> con todo incluido para que lo pruebes de verdad. Ya está activa, no tienes que hacer nada.`,
+      highlight: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${punto("Entra a tu dashboard y toca <strong>«Cargar 3 productos muestra (1 clic)»</strong> para empezar en segundos.")}
+        ${punto("Abre tu caja con <strong>«Abrir caja rápida con $0»</strong> y cobra tu primera venta.")}
+        ${punto("Si algo se complica, responde este correo o escríbenos por WhatsApp: te ayudamos.")}
+      </table>`,
+      ctaLabel: "Entrar a SYMVORA",
+      ctaHref: `${BRAND.appUrl}/es/dashboard`,
+      mostrarBeneficios: false,
+      pie: "Recibes este correo porque creaste una cuenta en SYMVORA. Si no quieres más mensajes, respóndenos y te sacamos de la lista.",
+    }),
+  };
 }
 
 /** Envía un anuncio ya armado (catálogo, ventas…). */
