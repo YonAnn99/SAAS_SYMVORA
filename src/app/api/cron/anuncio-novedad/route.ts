@@ -3,6 +3,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { consumirRateLimit } from "@/lib/rate-limit";
 import {
   construirCorreoNovedadCatalogo,
+  construirCorreoNovedadPedidos,
   construirCorreoNovedadPlanes,
   construirCorreoNovedadVentas,
   sendCorreoNovedad,
@@ -21,6 +22,7 @@ import {
  * - `catalogo-en-linea`: excluye a quien ya creó su catálogo.
  * - `cancelar-ventas` (migración 137): todos los dueños activos.
  * - `nuevos-planes` (migración 140-143): dueños activos y en prueba; SOLO correo (sin campana ni ventana).
+ * - `pedidos-catalogo` (migraciones 141-142): igual, SOLO correo.
  *
  * NO está en `vercel.json`: se corre a mano, una vez, después del deploy.
  * - Sin parámetros es un SIMULACRO: devuelve a quién le llegaría, a quién no y
@@ -41,6 +43,8 @@ const ANUNCIOS = {
   "cancelar-ventas": { construir: construirCorreoNovedadVentas, excluirConCatalogo: false },
   // Planes Basico/Pro/Premium (2026-11-25): solo por correo, a duenos activos y en prueba (sin solo lectura ni demos).
   "nuevos-planes": { construir: construirCorreoNovedadPlanes, excluirConCatalogo: false },
+  // Pedidos del catalogo (migraciones 141-142): solo correo, mismos destinatarios que los demas anuncios.
+  "pedidos-catalogo": { construir: construirCorreoNovedadPedidos, excluirConCatalogo: false },
 } as const;
 type NovedadAnunciable = keyof typeof ANUNCIOS;
 const VENTANA_SEGUNDOS = 60 * 24 * 60 * 60;

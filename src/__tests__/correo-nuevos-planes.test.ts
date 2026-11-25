@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { construirCorreoNovedadPlanes } from "@/lib/email";
+import { construirCorreoNovedadPedidos, construirCorreoNovedadPlanes } from "@/lib/email";
 import { precioNivelMXN, precioPromoNivelMXN } from "@/lib/niveles";
 
 describe("correo de los nuevos planes", () => {
@@ -21,5 +21,25 @@ describe("correo de los nuevos planes", () => {
   it("escapa el nombre del negocio y menciona el soporte", () => {
     expect(html).not.toContain("<Uno>");
     expect(html).toContain("soporte@symvora.com.mx");
+  });
+});
+
+describe("correo de pedidos del catálogo", () => {
+  const { subject, html } = construirCorreoNovedadPedidos({ nombre: "Ana", negocio: "Tienda <Uno>" });
+
+  it("explica el flujo completo y que está apagado hasta activarlo", () => {
+    expect(subject).toMatch(/pedidos/i);
+    for (const t of ["Pedidos", "WhatsApp", "venta real", "apagado", "Recibir pedidos en la página", "Pro y Premium"]) {
+      expect(html).toContain(t);
+    }
+  });
+
+  it("avisa que la venta entra a la caja abierta de quien confirma", () => {
+    expect(html).toContain("caja que tengas abierta");
+  });
+
+  it("escapa el negocio y lleva al catálogo en línea", () => {
+    expect(html).not.toContain("<Uno>");
+    expect(html).toContain("/es/online-catalog");
   });
 });

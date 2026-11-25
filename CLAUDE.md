@@ -420,7 +420,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   pestañas viejas cobra como siempre. Rechaza con 409 `demasiadas_sucursales` y `cambio_de_nivel_no_disponible` (quien YA paga no
   cambia de nivel por aquí: crearía una segunda suscripción; el cambio con `cambiarPlan` está pendiente). Los planes se crean en el
   primer checkout real: **nunca pagar para probar**; la primera compra real es la prueba de verdad.
-- **Anuncio de los planes:** SOLO por correo (sin campana ni ventana, decisión del dueño): `/api/cron/anuncio-novedad?novedad=nuevos-planes` (sin `enviar=1` es simulacro; con él manda, una vez por persona), a dueños activos y en prueba (`construirCorreoNovedadPlanes` en `lib/email.ts`). Se corre a mano con `CRON_SECRET` (no está en `.env.local`, solo en Vercel).
+- **Anuncio de los planes:** SOLO por correo (sin campana ni ventana, decisión del dueño): `/api/cron/anuncio-novedad?novedad=nuevos-planes` (sin `enviar=1` es simulacro; con él manda, una vez por persona), a dueños activos y en prueba (`construirCorreoNovedadPlanes` en `lib/email.ts`). También `?novedad=pedidos-catalogo` (`construirCorreoNovedadPedidos`: catálogo con pedidos + módulo Pedidos, solo correo). Se corre a mano con `CRON_SECRET` (no está en `.env.local`, solo en Vercel).
 - **Hecho:** 143 aplicada, `NEXT_PUBLIC_NIVELES_ACTIVOS=1` en Vercel y desplegado. Suscripción muestra «Plan: …» (`planes.current.*`).
   Usuarios y productos siguen ilimitados en los tres niveles (el FAQ de «límites» se reescribió, no se quitó). Fase 2 resuelta sin
   búsqueda en servidor (20 mil productos cargan en ~4.5 s; ver «Lecturas de listas grandes»); Pedidos: ver su sección.

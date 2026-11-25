@@ -882,6 +882,40 @@ export function construirCorreoNovedadPlanes(params: {
   return { subject: "Nuevo en SYMVORA: planes Básico, Pro y Premium", html };
 }
 
+/**
+ * Anuncio de PEDIDOS DEL CATÁLOGO: el catálogo en línea ahora recibe pedidos y el módulo Pedidos les da seguimiento.
+ * Solo por correo (`/api/cron/anuncio-novedad?novedad=pedidos-catalogo`), mismas reglas de destinatarios que los demás.
+ * Todo lo que dice existe y está aplicado: estados de `features/pedidos/transiciones.ts`, confirmar = venta real
+ * (motor de ventas, baja el stock) y entra a la caja abierta de quien confirma.
+ */
+export function construirCorreoNovedadPedidos(params: {
+  nombre: string;
+  negocio: string;
+}): { subject: string; html: string } {
+  const saludo = params.nombre ? `Hola, ${esc(params.nombre)}` : "Hola";
+  const punto = (texto: string) =>
+    `<tr><td style="padding:5px 0;font-size:14px;color:${BRAND.ink};line-height:1.6;">&#10003;&nbsp; ${texto}</td></tr>`;
+  const html = buildNoticeHtml({
+    preheader: "Tu catálogo en línea ahora puede recibir pedidos y tú les das seguimiento desde SYMVORA.",
+    heading: `${saludo}: tu catálogo ahora recibe pedidos`,
+    intro: `Hasta hoy tus clientes armaban su carrito en el catálogo y lo mandaban por WhatsApp. Ahora, si lo activas, <strong>${esc(params.negocio)}</strong> puede recibir el pedido completo dentro de SYMVORA y llevarlo hasta la entrega, desde el nuevo módulo <strong>Pedidos</strong>.`,
+    highlight: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${punto("<strong>Tu cliente</strong> deja su nombre, celular, si recoge o quiere entrega a domicilio y una nota. Recibe un enlace para ver en qué va su pedido.")}
+      ${punto("<strong>Tú</strong> ves cada pedido en <strong>Pedidos</strong> (menú, después de Catálogo en línea) y te avisa la campana cuando llega uno nuevo.")}
+      ${punto("Lo mueves por estados: nuevo, confirmado, pago, en producción, listo, en camino y entregado, y avisas a tu cliente por WhatsApp en un toque.")}
+      ${punto("<strong>Al confirmar</strong>, el pedido se convierte en una venta real y baja el inventario. Si lo cancelas, el inventario regresa.")}
+      ${punto("Los precios los calcula SYMVORA con tu catálogo; nadie puede cambiarlos desde el celular del cliente.")}
+      ${punto("Ojo: la venta se registra en la caja que tengas abierta al confirmar. Si el cliente paga en efectivo, cuenta en tu corte de ese día.")}
+      ${punto("Está <strong>apagado</strong> hasta que lo actives, en <strong>Catálogo en línea → Personalizar → Recibir pedidos en la página</strong>. Disponible en los planes Pro y Premium, y durante tu prueba gratis.")}
+    </table>`,
+    ctaLabel: "Activar pedidos en mi catálogo",
+    ctaHref: `${BRAND.appUrl}/es/online-catalog`,
+    mostrarBeneficios: false,
+    pie: "Recibes este correo porque tienes una cuenta en SYMVORA. Si no quieres avisos de novedades, respóndenos y te sacamos de la lista.",
+  });
+  return { subject: "Nuevo en SYMVORA: recibe pedidos desde tu catálogo en línea", html };
+}
+
 /** Envía un anuncio ya armado (catálogo, ventas…). */
 export async function sendCorreoNovedad(
   params: { to: string; nombre: string; negocio: string },
