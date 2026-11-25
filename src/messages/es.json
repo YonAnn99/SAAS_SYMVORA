@@ -293,6 +293,7 @@
     "products": "Productos",
     "customers": "Clientes",
     "onlineCatalog": "Catálogo en línea",
+    "orders": "Pedidos",
     "purchases": "Compras",
     "purchaseOrders": "Órdenes de Compra",
     "purchaseOrdersCorto": "Órdenes",
@@ -2107,6 +2108,10 @@
           "label": "Catálogo en línea",
           "description": "Página pública de productos con pedidos por WhatsApp"
         },
+        "orders": {
+          "label": "Pedidos",
+          "description": "Pedidos que tus clientes mandan desde el catálogo en línea"
+        },
         "settings": {
           "label": "Configuración",
           "description": "Datos del negocio y módulos activos"
@@ -2437,7 +2442,7 @@
       },
       "billing": {
         "title": "Gestiona tu suscripción",
-        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Tu plan es SYMVORA Basic a $399 MXN/mes con {dias} días de prueba."
+        "description": "Consulta el estado de tu suscripción, agrega métodos de pago y revisa el historial de pagos. Incluye {dias} días de prueba."
       },
       "advancedSettings": {
         "title": "Configuración avanzada",
@@ -2455,6 +2460,86 @@
           "description": "Ya conoces lo necesario para tu turno: Abrir caja → Vender → Cerrar caja. Si quieres repasarlo, haz clic en 'Ver tutorial' en la barra superior."
         }
       }
+    }
+  },
+  "orders": {
+    "title": "Pedidos",
+    "subtitle": "Pedidos que tus clientes mandan desde tu catálogo en línea",
+    "loading": "Cargando pedidos…",
+    "loadError": "No se pudieron cargar los pedidos. Intenta actualizar.",
+    "empty": "Aún no tienes pedidos",
+    "emptyHint": "Activa «Recibir pedidos en la página» en Catálogo en línea → Personalizar. Cuando un cliente mande su pedido, aparece aquí y en la campana.",
+    "newCount": "{count, plural, one {# nuevo} other {# nuevos}}",
+    "filters": {
+      "label": "Filtrar pedidos",
+      "activos": "En curso",
+      "todos": "Todos"
+    },
+    "status": {
+      "nuevo": "Nuevo",
+      "confirmado": "Confirmado",
+      "pago": "Pago recibido",
+      "en_produccion": "En preparación",
+      "listo": "Listo",
+      "en_camino": "En camino",
+      "entregado": "Entregado",
+      "cancelado": "Cancelado"
+    },
+    "delivery": {
+      "recoger": "Pasa a recogerlo",
+      "domicilio": "A domicilio"
+    },
+    "detail": {
+      "title": "Pedido #{folio}",
+      "total": "Total",
+      "hasSale": "Ya está registrado como venta: el stock ya bajó.",
+      "needSalesPermission": "Para confirmar necesitas el permiso de registrar ventas."
+    },
+    "actions": {
+      "confirm": "Confirmar pedido",
+      "cancel": "Cancelar pedido",
+      "back": "Volver",
+      "notify": "Avisar por WhatsApp",
+      "advance": {
+        "pago": "Marcar pago recibido",
+        "en_produccion": "Marcar en preparación",
+        "listo": "Marcar listo",
+        "en_camino": "Marcar en camino",
+        "entregado": "Marcar entregado"
+      }
+    },
+    "confirm": {
+      "title": "Confirmar pedido #{folio}",
+      "desc": "Se registra como venta y baja el stock de tus productos.",
+      "method": "¿Cómo va a pagar?",
+      "methods": {
+        "TRANSFERENCIA": "Transferencia",
+        "TARJETA": "Tarjeta",
+        "EFECTIVO": "Efectivo"
+      },
+      "cashNote": "Con efectivo, la venta entra al corte de tu caja abierta (si tienes una).",
+      "diffTitle": "El precio cambió",
+      "diffBody": "El cliente vio {pedido}, pero hoy en tu punto de venta suma {venta}. Si confirmas, se cobra {venta}.",
+      "acceptDiff": "Confirmar con el precio actual"
+    },
+    "cancel": {
+      "title": "Cancelar pedido #{folio}",
+      "noSale": "Aún no se registró venta: solo se marca como cancelado.",
+      "withSale": "Se cancela la venta y el stock regresa a tu inventario.",
+      "reason": "Motivo de la cancelación"
+    },
+    "toast": {
+      "confirmed": "Pedido confirmado y registrado como venta",
+      "updated": "Pedido actualizado",
+      "cancelled": "Pedido cancelado"
+    },
+    "errors": {
+      "noStock": "No hay existencias suficientes para confirmar este pedido.",
+      "plan": "Los pedidos vienen incluidos desde el plan Pro.",
+      "readOnly": "Tu cuenta está en solo lectura. Reactiva tu plan para continuar.",
+      "noPermission": "No tienes permiso para esta acción.",
+      "final": "Este pedido ya no se puede cambiar así.",
+      "generic": "No se pudo completar la acción. Intenta de nuevo."
     }
   },
   "planes": {
@@ -2482,11 +2567,39 @@
       "branchesUnlimited": "Sucursales ilimitadas",
       "unlimited": "Usuarios y productos ilimitados",
       "loyalty": "Tarjetas de lealtad",
-      "catalog": "Catálogo en línea y pedidos"
+      "catalog": "Catálogo en línea y pedidos",
+      "promoBadge": "−50%",
+      "promoNote": "Los primeros {meses} meses. Después {normal} MXN/mes."
     },
     "errors": {
       "tooManyBranches": "Tienes {usadas} sucursales activas y este plan incluye hasta {max}. Cierra alguna o elige un plan mayor.",
-      "changeNotAvailable": "Por ahora el cambio de plan en una cuenta con suscripción activa se hace con soporte. Escríbenos y lo hacemos por ti."
+      "changeNotAvailable": "El cambio de plan en una cuenta con suscripción activa lo hacemos por ti: escríbenos por WhatsApp o a soporte@symvora.com.mx."
+    },
+    "change": {
+      "title": "Cambiar de plan",
+      "current": "Tu plan actual: {nivel}.",
+      "currentLegacy": "Tu plan actual incluye todo, sin tope de sucursales.",
+      "cta": "Cambiar a {nivel}",
+      "same": "Es tu plan actual",
+      "confirmTitle": "¿Cambiar a {nivel}?",
+      "confirmPrice": "Desde tu próximo cobro pagarás {precio} MXN al mes.",
+      "whenUpgrade": "Las funciones del plan nuevo se activan ahora; no se te cobra nada extra hoy.",
+      "whenDowngrade": "Seguirás con las funciones de tu plan actual hasta tu próximo cobro; ahí baja el plan.",
+      "whenOneTime": "El plan nuevo empieza con tu siguiente pago.",
+      "losesPromo": "Al cambiar pierdes tu precio promocional: el plan nuevo va a precio normal.",
+      "noDataLost": "No se borra nada: tus productos, clientes y ventas se conservan.",
+      "back": "Volver",
+      "confirm": "Confirmar cambio",
+      "saving": "Cambiando…",
+      "doneNow": "Listo: ya estás en el plan {nivel}.",
+      "doneLater": "Listo: pasarás al plan {nivel} en tu próximo cobro.",
+      "yearlyBySupport": "Tu suscripción es anual: el cambio de plan lo hacemos por ti para no cobrarte de más ni de menos.",
+      "support": "Escríbenos a {correo} o por",
+      "supportMessage": "Hola, quiero cambiar de plan en SYMVORA.",
+      "supportOnly": "Este cambio lo hacemos por ti. Escríbenos a {correo} o por WhatsApp.",
+      "providerFailed": "No pudimos cambiar el plan en este momento y no se hizo ningún cambio. Escríbenos a {correo} y lo resolvemos.",
+      "tooMany": "Demasiados intentos. Espera un rato e inténtalo de nuevo.",
+      "failed": "No se pudo cambiar el plan. Escríbenos a {correo}."
     },
     "limit": {
       "sucursales": "Tu plan {nivel} incluye hasta {max, plural, one {# sucursal activa} other {# sucursales activas}}. Cierra una o sube de plan.",
@@ -2743,6 +2856,26 @@
         "9": {
           "question": "¿Hay límite de usuarios o de productos?",
           "answer": "No. Puedes agregar a todo tu equipo y todo tu catálogo sin costo extra: el precio de la suscripción es el mismo tengas 1 o 20 usuarios, y 50 o 5,000 productos. Tampoco cobramos comisión por venta."
+        },
+        "3n": {
+          "question": "¿Qué pasa cuando termina mi prueba gratuita de {dias} días?",
+          "answer": "Al finalizar los {dias} días eliges tu plan (Básico $249, Pro $449 o Premium $599 MXN/mes) y lo pagas para seguir vendiendo. Si no contratas, tu cuenta pasa a solo lectura: puedes ver y exportar tus datos, y nada se borra."
+        },
+        "5n": {
+          "question": "¿Cobra comisión por venta?",
+          "answer": "No. SYMVORA cobra una suscripción mensual fija según tu plan (desde $249 MXN) independientemente del número de transacciones. Lo que vendas es tuyo — sin comisiones ocultas, sin porcentaje por venta."
+        },
+        "9n": {
+          "question": "¿Hay límite de usuarios o de productos?",
+          "answer": "No. En ningún plan hay límite de usuarios ni de productos: el precio es el mismo tengas 1 o 20 usuarios, y 50 o 5,000 productos. Lo que cambia entre planes son las sucursales (1, hasta 3 o ilimitadas) y los módulos de tarjetas de lealtad, catálogo en línea y pedidos, que van de Pro en adelante. Tampoco cobramos comisión por venta."
+        },
+        "10": {
+          "question": "¿Puedo cambiar de plan más adelante?",
+          "answer": "Sí. Escríbenos por WhatsApp o a soporte@symvora.com.mx y cambiamos tu plan por ti. Si bajas de plan nunca borramos tus datos: tus productos, clientes y ventas se conservan."
+        },
+        "11": {
+          "question": "¿Qué plan me conviene?",
+          "answer": "Básico si tienes un solo local y quieres vender y controlar tu inventario. Pro si tienes hasta 3 sucursales o quieres tarjetas de lealtad, catálogo en línea y pedidos. Premium si necesitas sucursales ilimitadas. Todos incluyen usuarios y productos ilimitados."
         }
       },
       "cta": {
@@ -2761,6 +2894,7 @@
       "tabletPromoVigencia": "Promoción válida del 13 al 17 de noviembre.",
       "promoBadge": "−50%",
       "promoNota": "Precio promocional los primeros {meses} meses. Después {normal} MXN/mes.",
+      "promoSoloNiveles": "Promoción de lanzamiento: −50% los primeros {meses} meses en Pro y Premium (plan mensual).",
       "priceMonthly": "$399",
       "priceYearly": "$299",
       "priceYearlyTablet": "$4,788",
@@ -3331,6 +3465,7 @@
   "onlineCatalog": {
     "errors": {
       "slugTaken": "Ese enlace ya lo usa otro negocio. Prueba con otro.",
+      "planOrders": "Recibir pedidos en la página viene incluido desde el plan Pro.",
       "readOnly": "Tu cuenta está en solo lectura.",
       "noPermission": "No tienes permiso para cambiar el catálogo.",
       "invalid": "Hay un dato que no es válido. Revisa el enlace, el WhatsApp, el color o el precio.",
@@ -3397,6 +3532,9 @@
       "showPricesHint": "Apagado, tus clientes preguntan el precio en el pedido.",
       "showSoldOut": "Mostrar productos agotados",
       "showSoldOutHint": "Salen al final, marcados como «Agotado».",
+      "receiveOrders": "Recibir pedidos en la página",
+      "receiveOrdersHint": "Tus clientes mandan su pedido desde el catálogo y tú le das seguimiento en Pedidos. Sin esto, el pedido sigue yendo por WhatsApp.",
+      "receiveOrdersPlan": "Disponible desde el plan Pro.",
       "save": "Guardar cambios"
     },
     "products": {

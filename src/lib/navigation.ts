@@ -14,6 +14,7 @@ import {
   Lightbulb,
   Store,
   Globe,
+  ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { permissionForPath } from "@/lib/modules";
@@ -65,6 +66,8 @@ export const NAVIGATION: NavItem[] = [
   { name: "layout.customers", href: "/customers", icon: Contact },
   // Catalogo en linea (migraciones 124-125): la pagina publica de productos.
   { name: "layout.onlineCatalog", href: "/online-catalog", icon: Globe },
+  // Pedidos del catalogo (migracion 141): lo que el cliente final manda desde la pagina publica.
+  { name: "layout.orders", href: "/orders", icon: ClipboardList },
 
   // --- Dinero y analisis.
   // Finanzas ya NO lleva `minRole`: desde la migracion 062 la ruta exige

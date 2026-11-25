@@ -129,6 +129,19 @@ export async function generateNextSku(tenantId: string): Promise<string> {
 }
 
 export async function fetchProducts(tenantId: string): Promise<Producto[]> {
+  // Una lectura IGUAL que ya va en camino se comparte (la pagina arranca dos recargas casi a la vez; con
+  // 20 mil productos cada una son 20 peticiones). Solo mientras esta en vuelo: nunca sirve datos viejos.
+  let enCamino = catalogoEnCamino.get(tenantId);
+  if (!enCamino) {
+    enCamino = pedirCatalogo(tenantId).finally(() => catalogoEnCamino.delete(tenantId));
+    catalogoEnCamino.set(tenantId, enCamino);
+  }
+  return (await enCamino).map((p) => ({ ...p }));
+}
+
+const catalogoEnCamino = new Map<string, Promise<Producto[]>>();
+
+async function pedirCatalogo(tenantId: string): Promise<Producto[]> {
   const supabase = createSupabaseBrowserClient();
   // Por tramos: PostgREST corta en 1,000 filas sin avisar (`lib/leer-por-tramos.ts`).
   return leerPorTramos<Producto>((desde, hasta) =>

@@ -257,7 +257,7 @@ export async function fetchPosProducts(
 
   // Por tramos: PostgREST corta en 1,000 filas sin avisar y el POS vendia con un
   // catalogo incompleto (`lib/leer-por-tramos.ts`).
-  const leerCatalogo = () =>
+  const pedirCatalogo = () =>
     leerPorTramos<Producto>((desde, hasta) =>
       supabase
         .from("productos")
@@ -272,9 +272,21 @@ export async function fetchPosProducts(
         .range(desde, hasta)
     );
 
-  if (stockLocal) return conStockDeSucursal(await leerCatalogo(), stockLocal);
-  return leerCatalogo();
+  // Una lectura IGUAL que ya va en camino se comparte: el POS arranca dos recargas casi a la vez (al
+  // resolver el usuario y la sucursal) y con 20 mil productos cada una son 20 peticiones. Solo mientras
+  // esta en vuelo: al llegar se olvida, asi que nunca se sirve un catalogo viejo (mismo criterio que
+  // `fetchStockSucursal`). Cada quien recibe copias de las filas.
+  let enCamino = catalogoEnCamino.get(tenantId);
+  if (!enCamino) {
+    enCamino = pedirCatalogo().finally(() => catalogoEnCamino.delete(tenantId));
+    catalogoEnCamino.set(tenantId, enCamino);
+  }
+  const catalogo = (await enCamino).map((p) => ({ ...p }));
+  if (stockLocal) return conStockDeSucursal(catalogo, stockLocal);
+  return catalogo;
 }
+
+const catalogoEnCamino = new Map<string, Promise<Producto[]>>();
 
 /**
  * Variantes del tenant para el POS.

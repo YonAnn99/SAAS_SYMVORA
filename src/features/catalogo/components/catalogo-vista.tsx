@@ -26,6 +26,7 @@ import {
   type LineaPedido,
 } from "../pedido";
 import type { CatalogoEncabezado, CatalogoPagina, CatalogoProducto, CatalogoVariante } from "../types";
+import { FormularioPedido } from "./formulario-pedido";
 
 /** Moneda del negocio para todas las partes del catálogo (la pone `CatalogoVista`). */
 const MonedaCatalogo = createContext<Moneda>("MXN");
@@ -399,6 +400,9 @@ export function CatalogoVista({
         <HojaCarrito
           negocio={encabezado.negocio}
           whatsapp={whatsapp}
+          slug={slug}
+          color={color}
+          recibirPedidos={Boolean(encabezado.recibir_pedidos)}
           vistaPrevia={vistaPrevia}
           lineas={lineas}
           despachar={despachar}
@@ -689,6 +693,9 @@ function HojaEleccion({
 function HojaCarrito({
   negocio,
   whatsapp,
+  slug,
+  color,
+  recibirPedidos,
   vistaPrevia,
   lineas,
   despachar,
@@ -696,6 +703,10 @@ function HojaCarrito({
 }: {
   negocio: string;
   whatsapp: string;
+  slug: string;
+  color: string;
+  /** El negocio guarda los pedidos (141-142): formulario en vez del envio por WhatsApp. */
+  recibirPedidos: boolean;
   vistaPrevia: boolean;
   lineas: LineaPedido[];
   despachar: React.Dispatch<Parameters<typeof reducirPedido>[1]>;
@@ -721,7 +732,7 @@ function HojaCarrito({
                 <span>{precio(estimado)}</span>
               </p>
             )}
-            {vistaPrevia || !enlace ? (
+            {recibirPedidos && !vistaPrevia && slug ? null : vistaPrevia || !enlace ? (
               <>
                 <div className="flex h-12 w-full items-center justify-center rounded-2xl bg-slate-200 text-sm font-semibold text-slate-500">
                   Enviar pedido por WhatsApp
@@ -762,16 +773,29 @@ function HojaCarrito({
               <LineaCarrito key={l.clave} linea={l} despachar={despachar} />
             ))}
           </ul>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">Tu nombre (opcional)</span>
-            <input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value.slice(0, 60))}
-              placeholder="Para que el negocio sepa quién pide"
-              className="h-11 w-full rounded-xl border border-slate-200 px-3 text-base"
-              autoComplete="given-name"
+          {recibirPedidos && !vistaPrevia && slug ? (
+            <FormularioPedido
+              slug={slug}
+              negocio={negocio}
+              lineas={lineas}
+              color={color}
+              onEnviado={() => {
+                despachar({ tipo: "vaciar" });
+                onCerrar();
+              }}
             />
-          </label>
+          ) : (
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Tu nombre (opcional)</span>
+              <input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value.slice(0, 60))}
+                placeholder="Para que el negocio sepa quién pide"
+                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-base"
+                autoComplete="given-name"
+              />
+            </label>
+          )}
           <button
             type="button"
             onClick={() => despachar({ tipo: "vaciar" })}

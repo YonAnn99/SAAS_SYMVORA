@@ -25,6 +25,8 @@ import { VoiceNarrator } from "@/components/marketing/voice-narrator";
 import Footer from "@/components/ui/footer";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
+import { faqClaves } from "@/features/marketing/faq-claves";
+import { nivelesActivos, precioNivelMXN } from "@/lib/niveles";
 import {
   faqPageSchema,
   softwareApplicationSchema,
@@ -98,14 +100,17 @@ export default async function LocalePage({
     t("features.catalogImport.title"),
   ];
 
-  const faqs = FAQ_KEYS.map((key) => ({
+  const faqs = faqClaves(FAQ_KEYS).map((key) => ({
     question: t(`faq.items.${key}.question`),
     answer: t(`faq.items.${key}.answer`),
   }));
 
+  const conNiveles = nivelesActivos();
   const software = softwareApplicationSchema(siteUrl, {
-    description:
-      "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $399 MXN/mes con usuarios y productos ilimitados y sin comisiones por venta.",
+    description: conNiveles
+      ? `Punto de venta, inventarios y finanzas para PyMEs mexicanas. Planes desde $${precioNivelMXN("basico", "monthly")} MXN/mes con usuarios y productos ilimitados y sin comisiones por venta.`
+      : "Punto de venta, inventarios y finanzas para PyMEs mexicanas. Suscripción fija de $399 MXN/mes con usuarios y productos ilimitados y sin comisiones por venta.",
+    precioMensual: conNiveles ? precioNivelMXN("basico", "monthly") : undefined,
     featureList,
   });
 

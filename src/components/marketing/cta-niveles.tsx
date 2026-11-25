@@ -4,15 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Check } from "lucide-react";
-import { formatMXN } from "@/lib/money";
 import {
   FUNCIONES_POR_NIVEL,
+  formatPrecioNivel,
   NIVELES_ORDEN,
   precioMensualEquivalenteMXN,
   precioNivelMXN,
+  precioPromoNivelMXN,
+  promoAplicaANivel,
   type Nivel,
 } from "@/lib/niveles";
-import type { BillingPeriod } from "@/lib/pricing";
+import { PROMO_LANZAMIENTO, type BillingPeriod } from "@/lib/pricing";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL } from "./boton-capsula";
 
 /** El nivel que se destaca. */
@@ -24,7 +26,8 @@ const NIVEL_POPULAR: Nivel = "pro";
  *
  * Los numeros salen de `lib/niveles.ts`, la misma tabla que cobra Conekta: la landing no puede anunciar
  * un precio distinto del que se cobra. Sin cifras de «ahorro» inventadas: cada tarjeta dice lo que
- * incluye. Las promociones de lanzamiento del plan unico NO aplican a los niveles (decision pendiente).
+ * incluye. La promocion de lanzamiento (−50 % los primeros 6 cobros) aplica SOLO a Pro y Premium y solo al
+ * mensual (`promoAplicaANivel`); Basico y el anual van a precio de lista.
  */
 export function CtaNiveles() {
   const t = useTranslations();
@@ -64,10 +67,17 @@ export function CtaNiveles() {
           ))}
         </div>
 
+        {periodo === "monthly" && PROMO_LANZAMIENTO.activa && (
+          <p className="rounded-full bg-red-50 px-4 py-1.5 text-sm font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            {t("landing.cta.promoSoloNiveles", { meses: PROMO_LANZAMIENTO.cobros })}
+          </p>
+        )}
+
         <div className="grid w-full gap-4 text-left md:grid-cols-3">
           {NIVELES_ORDEN.map((n) => {
             const f = FUNCIONES_POR_NIVEL[n];
             const popular = n === NIVEL_POPULAR;
+            const conPromo = promoAplicaANivel(n, periodo);
             return (
               <div
                 key={n}
@@ -84,15 +94,31 @@ export function CtaNiveles() {
                   {t(`planes.names.${n}`)}
                 </h3>
                 <div>
+                  {conPromo && (
+                    <span className="mb-1 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                      <s>{formatPrecioNivel(precioNivelMXN(n, "monthly"))}</s>
+                      <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
+                        {t("planes.selector.promoBadge")}
+                      </span>
+                    </span>
+                  )}
                   <span className="text-4xl font-bold text-black dark:text-neutral-50">
-                    {formatMXN(precioMensualEquivalenteMXN(n, periodo))}
+                    {formatPrecioNivel(conPromo ? precioPromoNivelMXN(n) : precioMensualEquivalenteMXN(n, periodo))}
                   </span>
                   <span className="text-sm text-neutral-500 dark:text-neutral-400">
                     {t("planes.selector.perMonth")}
                   </span>
+                  {conPromo && (
+                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      {t("planes.selector.promoNote", {
+                        meses: PROMO_LANZAMIENTO.cobros,
+                        normal: formatPrecioNivel(precioNivelMXN(n, "monthly")),
+                      })}
+                    </p>
+                  )}
                   {anual && (
                     <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                      {t("planes.selector.billedYearly", { total: formatMXN(precioNivelMXN(n, "yearly")) })}
+                      {t("planes.selector.billedYearly", { total: formatPrecioNivel(precioNivelMXN(n, "yearly")) })}
                     </p>
                   )}
                 </div>

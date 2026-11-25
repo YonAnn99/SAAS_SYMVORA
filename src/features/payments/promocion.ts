@@ -19,7 +19,7 @@
  * el que estuviera en su mes 2.
  */
 
-import { precioNivelCents, type Nivel } from "@/lib/niveles";
+import { precioNivelCents, precioPromoNivelCents, promoAplicaANivel, type Nivel } from "@/lib/niveles";
 import {
   PROMO_LANZAMIENTO,
   PROMO_ANUAL_TABLET,
@@ -40,18 +40,59 @@ export type ClavePlan =
   | "proMonthly"
   | "proYearly"
   | "premiumMonthly"
-  | "premiumYearly";
+  | "premiumYearly"
+  // Promocion de lanzamiento de los niveles: solo Pro y Premium, solo mensual.
+  | "proMonthlyPromo"
+  | "premiumMonthlyPromo";
 
-/** Plan de Conekta de un nivel. Los niveles no llevan promocion de lanzamiento (decision pendiente). */
-export function clavePlanDeNivel(nivel: Nivel, period: BillingPeriod): ClavePlan {
+/**
+ * Plan de Conekta de un nivel. Con `conPromo` y si el nivel lo admite (`promoAplicaANivel`: Pro/Premium
+ * mensual), el plan promocional paralelo; si no, el de lista.
+ */
+export function clavePlanDeNivel(nivel: Nivel, period: BillingPeriod, conPromo: boolean = false): ClavePlan {
+  if (conPromo && promoAplicaANivel(nivel, period)) return `${nivel}MonthlyPromo` as ClavePlan;
   const sufijo = period === "yearly" ? "Yearly" : "Monthly";
   return `${nivel}${sufijo}` as ClavePlan;
 }
 
-/** Lo que cuesta en centavos un nivel (sin promocion). */
-export function precioNivelCobroCents(nivel: Nivel, period: BillingPeriod): number {
+/**
+ * Lo que cuesta en centavos un nivel. Sin contador, su precio de lista; con `cobrosPromoRestantes > 0`
+ * (mensual, Pro/Premium) el promocional. Igual que `precioCobroCents`, manda el contador de la
+ * suscripcion y NO el interruptor `activa`: apagar la oferta no sube el recibo a quien ya la tiene.
+ */
+export function precioNivelCobroCents(
+  nivel: Nivel,
+  period: BillingPeriod,
+  cobrosPromoRestantes: number = 0
+): number {
+  if (period === PROMO_LANZAMIENTO.periodo && cobrosPromoRestantes > 0 && nivel !== "basico") {
+    return precioPromoNivelCents(nivel);
+  }
   return precioNivelCents(nivel, period);
 }
+
+/**
+ * Precio promocional y precio normal (en pesos) de la promo en curso de una suscripcion, segun el plan
+ * promocional que guarda (`subscriptions.promo_plan`). Un plan de nivel (`symvora-pro-monthly-promo50-v1`,
+ * `symvora-premium-…`) lleva el precio de su nivel; cualquier otro es la promo del plan unico. Es lo que
+ * pinta `/billing` en «te quedan N cobros a $X»: sin esto mostraria $199 a quien tiene Pro.
+ */
+export function preciosPromoEnCurso(promoPlan: string | null | undefined): { promo: number; normal: number } {
+  const nivel = /^symvora-(pro|premium)-monthly-promo50/.exec(promoPlan ?? "")?.[1] as Nivel | undefined;
+  if (nivel) return { promo: precioPromoNivelCents(nivel) / 100, normal: precioNivelCents(nivel, "monthly") / 100 };
+  return { promo: PRECIO_PROMO_MXN, normal: precioListaMXN("monthly") };
+}
+
+/** Cobros promocionales con los que nace una suscripcion nueva de un nivel (6 en Pro/Premium mensual, 0 si no). */
+export function cobrosPromoInicialesNivel(nivel: Nivel, period: BillingPeriod): number {
+  return promoAplicaANivel(nivel, period) ? PROMO_LANZAMIENTO.cobros : 0;
+}
+
+/** Plan normal al que vuelve una suscripcion de nivel cuando se agota su promocion (siempre mensual). */
+export function clavePlanNormalDeNivel(nivel: Nivel): ClavePlan {
+  return `${nivel}Monthly` as ClavePlan;
+}
+
 /** ?Se le ofrece la promocion a quien contrata en este momento? */
 export function promoAplica(period: BillingPeriod): boolean {
   return PROMO_LANZAMIENTO.activa && period === PROMO_LANZAMIENTO.periodo;

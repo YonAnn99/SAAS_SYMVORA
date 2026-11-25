@@ -48,6 +48,8 @@ const ADMIN_ONLY_PATHS = [
   "/activity",
   // Catalogo en linea (migracion 125): `catalog.manage`, cedible a un cajero.
   "/online-catalog",
+  // Pedidos del catalogo (migracion 141): `orders.manage`, cedible a un cajero.
+  "/orders",
 ];
 
 // Modules temporarily disabled for everyone, regardless of role.

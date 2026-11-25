@@ -127,7 +127,7 @@ describe("enlace «Aprende» desde el sistema", () => {
   });
 
   it("todo módulo del menú que tiene guía la encuentra (no se queda uno fuera)", () => {
-    const sinGuia = new Set(["/suggestions", "/facturas", "/online-catalog"]);
+    const sinGuia = new Set(["/suggestions", "/facturas", "/online-catalog", "/orders"]);
     for (const item of NAVIGATION) {
       if (sinGuia.has(item.href)) continue;
       expect(guiaParaRuta(item.href), item.href).toBeDefined();

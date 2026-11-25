@@ -6,10 +6,12 @@ import { TIPOS_NOTIFICACION } from "@/lib/notificaciones";
 /**
  * Los tipos que conoce la campana tienen que ser exactamente los que acepta el
  * CHECK de `notificaciones.tipo`, en la migración MÁS RECIENTE que lo define
- * (hoy la 137). Un tipo que la base acepta y la campana no conoce saldría con el
+ * (hoy la 141). Un tipo que la base acepta y la campana no conoce saldría con el
  * icono por defecto.
  */
-const PATRON_CHECK = /ADD CONSTRAINT notificaciones_tipo_check CHECK \(tipo IN \(([\s\S]*?)\)\)/;
+// Dos formas de escribir el mismo CHECK: `tipo IN (...)` (137) y `tipo = ANY (ARRAY[...])` (141).
+const PATRON_CHECK =
+  /ADD CONSTRAINT notificaciones_tipo_check\s+CHECK \(tipo (?:IN \(|= ANY \(ARRAY\[)([\s\S]*?)(?:\)\)|\]\))/;
 
 function ultimoCheck(): { archivo: string; sql: string } {
   const carpeta = join(process.cwd(), "supabase/migrations");
@@ -23,7 +25,7 @@ function ultimoCheck(): { archivo: string; sql: string } {
 describe("tipos de notificación", () => {
   it("coinciden con el CHECK de la migración más reciente", () => {
     const { archivo, sql } = ultimoCheck();
-    expect(archivo >= "137").toBe(true);
+    expect(archivo >= "141").toBe(true);
     const check = sql.match(PATRON_CHECK);
     expect(check).not.toBeNull();
     const enBase = [...check![1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
@@ -32,6 +34,7 @@ describe("tipos de notificación", () => {
 
   it("incluye la venta cancelada por un colaborador (137)", () => {
     expect(TIPOS_NOTIFICACION).toContain("venta_cancelada");
+    expect(TIPOS_NOTIFICACION).toContain("pedido_nuevo");
   });
 
   it("incluye el aviso de novedad (126)", () => {

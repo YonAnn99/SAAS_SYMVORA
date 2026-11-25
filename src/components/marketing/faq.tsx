@@ -1,6 +1,7 @@
 "use client";
 
 import { SALES_WHATSAPP } from "@/lib/contact";
+import { faqClaves } from "@/features/marketing/faq-claves";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import * as m from "motion/react-m";
@@ -139,7 +140,7 @@ export function FAQ() {
           viewport={{ once: true, amount: 0.2 }}
           className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-w-5xl mx-auto w-full"
         >
-          {FAQ_KEYS.map((key, i) => (
+          {faqClaves(FAQ_KEYS).map((key, i) => (
             <m.div key={key} variants={fadeInUp} transition={easeOutShort}>
               <AccordionRow
                 index={i}

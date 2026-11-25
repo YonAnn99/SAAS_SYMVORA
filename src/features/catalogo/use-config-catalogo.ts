@@ -71,6 +71,7 @@ export function useConfigCatalogo() {
             mensaje: null,
             color: null,
             portada_url: null,
+            recibir_pedidos: false,
           }
         );
       } catch {

@@ -20,6 +20,15 @@ describe("limpieza de URLs para Vercel Analytics", () => {
     expect(limpiarUrl(`${APP}/es/tarjeta/unirse/ABCD1234`)).toBe(`${APP}/es/tarjeta/unirse/[codigo]`);
   });
 
+  it("oculta el código de seguimiento de un pedido del catálogo", () => {
+    expect(limpiarUrl(`${WWW}/es/catalogo/mi-tienda/pedido/E7VK9ZW9T56G`)).toBe(
+      `${WWW}/es/catalogo/mi-tienda/pedido/[codigo]`
+    );
+    expect(limpiarUrl(`${WWW}/en/catalogo/mi-tienda/pedido/E7VK9ZW9T56G?x=1#y`)).toBe(
+      `${WWW}/en/catalogo/mi-tienda/pedido/[codigo]`
+    );
+  });
+
   it("deja intactas las páginas sin secretos", () => {
     for (const url of [`${WWW}/es`, `${WWW}/es/precios`, `${WWW}/es/catalogo/mi-tienda`, `${APP}/es/pos`]) {
       expect(limpiarUrl(url)).toBe(url);

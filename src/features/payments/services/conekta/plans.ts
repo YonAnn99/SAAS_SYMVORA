@@ -17,6 +17,8 @@ const DEFINICION: Record<ClavePlan, { nombre: string; intervalo: "month" | "year
   proYearly: { nombre: "SYMVORA Pro Anual", intervalo: "year" },
   premiumMonthly: { nombre: "SYMVORA Premium Mensual", intervalo: "month" },
   premiumYearly: { nombre: "SYMVORA Premium Anual", intervalo: "year" },
+  proMonthlyPromo: { nombre: "SYMVORA Pro Mensual - Promo -50%", intervalo: "month" },
+  premiumMonthlyPromo: { nombre: "SYMVORA Premium Mensual - Promo -50%", intervalo: "month" },
 };
 
 export async function ensurePlanExists(clave: ClavePlan): Promise<string> {

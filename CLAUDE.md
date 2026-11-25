@@ -387,7 +387,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 ## Niveles de suscripción Básico · Pro · Premium (migración 140, 2026-11-24) — APAGADOS
 - **Interruptor:** `NEXT_PUBLIC_NIVELES_ACTIVOS=1` (`nivelesActivos()` en `lib/niveles.ts`; cambiarlo requiere redeploy). Apagado,
   la landing, `/billing` y el checkout venden el plan único de siempre ($399 / $3,588), igual que hoy. **No encenderlo** hasta
-  alinear los reels de Meta Ads («de $399 a $199») y la landing, y decidir si la promo −50 % aplica a los niveles (hoy NO aplica).
+  alinear los reels de Meta Ads («de $399 a $199»; los cambia el dueño). Con el interruptor encendido la landing, el selector de `/billing` y el FAQ (`features/marketing/faq-claves.ts`: claves `3n`, `5n`, `9n`, `10`, `11`) ya hablan de niveles.
 - **Tabla** (única fuente en código: `lib/niveles.ts`; espejo en la base: `plan_funciones`, y `niveles.test.ts` los compara leyendo la
   migración): Básico $249/mes · $2,244/año, 1 sucursal, sin Sucursales, sin lealtad, sin catálogo, sin pedidos; Pro $449 · $4,044, hasta
   3 sucursales + lealtad + catálogo + pedidos; Premium $599 · $5,388, sucursales ilimitadas (ancla). Usuarios y productos ilimitados en
@@ -401,19 +401,68 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   heredado), `filterNavigation`/`puedeVerRuta`/`accionesDisponibles`/`pasosParaUsuario` reciben el plan, `PlanGate` («Disponible en
   Pro») envuelve `/branches` y `/online-catalog`, Clientes quita la pestaña de lealtad, `usePosLealtad` apaga la tarjeta, y
   `SucursalesCard` avisa del tope. **Bajar de nivel nunca borra datos.**
+- **Promo −50 % de lanzamiento en niveles:** SOLO Pro y Premium y SOLO mensual (`promoAplicaANivel` en `lib/niveles.ts`; Básico y el anual
+  van a lista). 6 cobros (`PROMO_LANZAMIENTO.cobros`): Pro $224.50, Premium $299.50 (`precioPromoNivelCents`). Planes paralelos
+  `symvora-pro-monthly-promo50-v1` / `symvora-premium-monthly-promo50-v1` (claves `proMonthlyPromo`/`premiumMonthlyPromo`); `create-checkout`
+  siembra `promo_cobros_restantes`/`promo_plan` y al agotarse el contador el webhook (`avanzarPromocion`) devuelve al mensual del NIVEL, no al plan
+  único. Manda el contador de la suscripción, no `activa` (`precioNivelCobroCents(nivel, periodo, cobros)`); `/billing` pinta el precio con
+  `preciosPromoEnCurso(promo_plan)`. Con la promo el primer año mensual cuesta casi igual que el anual (Pro $4,041 vs $4,044).
+- **Quien ya paga** (decisión 2026-11-24): los 4 negocios con pago completado pasan a Pro SIN tocar su cobro (migración 143, lista explícita;
+  «Abarrotes Don Pedro» es el demo viejo, no entra). La prueba de 14 días y quien aún no paga siguen heredados. El cambio de nivel de quien ya paga
+  se hace en Suscripción → «Cambiar de plan» (`components/plan/cambiar-plan.tsx` → `POST /api/conekta/cambiar-plan`, reglas puras en
+  `features/payments/cambio-de-plan.ts`). SUBIR: `cambiarPlan` en Conekta y el nivel cambia YA (`asignar_nivel`); BAJAR y pagos únicos: `nivel_pendiente`
+  que confirma el siguiente cobro (webhook). Sin promo al cambiar (cierra `promo_*`), sin prorrateo, nunca borra datos; falla cerrado (la base solo se
+  toca si Conekta respondió bien). **Anual y cambio de periodo: por SOPORTE** (409 `cambio_por_soporte`; WhatsApp o soporte@symvora.com.mx). Ojo: el
+  endpoint de Conekta que cambia el plan de una suscripción está marcado *deprecated* y su prorrateo no está documentado; no se puede probar sin cobrar
+  de verdad (las pruebas lo simulan), así que vigilar el primer cambio real en el panel de Conekta. `pruebas@symvora.com.mx` es cuenta de desarrollo y
+  se queda SIN nivel (heredado).
 - **Conekta:** un plan por nivel y periodo (`symvora-<nivel>-<monthly|yearly>-v1`, claves `proMonthly`…; montos inmutables: si una cifra
   de `PRECIOS_NIVEL_CENTS` cambia, versionar el id). `create-checkout` acepta `nivel` solo con el interruptor encendido; sin él o con
   pestañas viejas cobra como siempre. Rechaza con 409 `demasiadas_sucursales` y `cambio_de_nivel_no_disponible` (quien YA paga no
   cambia de nivel por aquí: crearía una segunda suscripción; el cambio con `cambiarPlan` está pendiente). Los planes se crean en el
   primer checkout real: **nunca pagar para probar**; la primera compra real es la prueba de verdad.
-- **Pendiente:** cambio de nivel para quien ya paga, FAQ/landing sin «ilimitado»/«5,000 productos» donde ya no aplique, Fase 2
-  (búsqueda y paginación en servidor para 20k+) y Fase 3 (módulo de Pedidos del catálogo, con su propio plan).
+- **Pendiente:** aplicar la 143, encender `NEXT_PUBLIC_NIVELES_ACTIVOS=1` (redeploy) y, si algún día se quiere, `cambiarPlan` automático para quien ya paga.
+  Usuarios y productos siguen ilimitados en los tres niveles (el FAQ de «límites» se reescribió, no se quitó). Fase 2 resuelta sin
+  búsqueda en servidor (20 mil productos cargan en ~4.5 s; ver «Lecturas de listas grandes»); Pedidos: ver su sección.
+
+## Pedidos del catálogo en línea (migraciones 141-142, 2026-11-24) — APAGADO por negocio
+- **Qué es:** el cliente final manda su pedido desde `/catalogo/<slug>` (nombre, celular, recoger o domicilio, nota) y el negocio le da
+  seguimiento en `/orders` (módulo «Pedidos», permiso `orders.manage`, concedible a un cajero; solo Pro/Premium: `plan_funciones.pedidos`,
+  `rutaPermitidaPorPlan('/orders')` y `PlanGate`). **`catalogos_en_linea.recibir_pedidos` nace en `false`**: nada cambia para ningún
+  catálogo hasta que su dueño lo active (Catálogo en línea → Personalizar). Sin él (o sin el plan) la página sigue con el envío por
+  WhatsApp de siempre; `_catalogo_encabezado` lo expone como `recibir_pedidos` (ausente = `false`, compatible con pestañas viejas).
+- **Es la primera escritura anónima del catálogo** (patrón de `alta_publica_lealtad`): `crear_pedido_publico` es **solo de `service_role`**;
+  la única puerta es `POST /api/catalogo/[slug]/pedido` (zod, honeypot `sitio`, rate limit 5/10 min por IP, Turnstile en el servidor,
+  falla cerrado sin `TURNSTILE_SECRET_KEY`). La base **recalcula los precios** con `_catalogo_productos` (el cliente solo manda ids y
+  cantidades), exige producto visible/no archivado/disponible, y topa: 50 renglones, 9,999 por renglón, 100 pedidos/día y negocio (CDMX),
+  5 «nuevos» por celular; rechaza demo, solo-lectura y Básico. `anon` NO toca las tablas; `pedido_publico(codigo)` (anon) solo devuelve
+  folio, estado, renglones, total, negocio y WhatsApp: nunca teléfono, dirección ni notas. El código de seguimiento (12 caracteres) ES el
+  acceso: la URL `/catalogo/<slug>/pedido/<codigo>` está en `limpiarUrl` (analítica) y es `noindex`.
+- **Las tablas** (`pedidos_catalogo`, `pedido_items`, `pedido_eventos`) tienen SOLO `SELECT` por RLS (`authorize('orders.manage')`); toda
+  escritura va por `SECURITY DEFINER`: `cambiar_estado_pedido`, `confirmar_pedido`, `cancelar_pedido`. **REGLA:** no reabrir políticas de
+  escritura (lección de la 138). Estados: `nuevo → confirmado → pago · en_produccion · listo · en_camino · entregado` y `cancelado`
+  (`features/pedidos/transiciones.ts` es el espejo de la base; la base manda).
+- **Stock y dinero:** «Confirmar» crea una VENTA real con `_crear_venta_desde_items` (`p_include_iva => false`, un pedido = una venta:
+  `venta_id` único + `idempotency_key = id del pedido`). El stock baja ahí, con lotes y por sucursal; la sucursal es la de la caja abierta de
+  quien confirma o la por defecto. **Ojo:** el motor registra la venta en la caja abierta de quien confirma, y con «Efectivo» entra a su
+  corte aunque el dinero llegue después; la pantalla lo avisa. Si el total del POS difiere del que vio el cliente (precio especial del
+  catálogo, cambio de precio), `confirmar_pedido` lanza `diferencia_de_precio:<pedido>:<venta>` y TODO se revierte (sirve de ensayo); el
+  negocio lo acepta explícitamente. Cancelar un pedido confirmado usa `_cancelar_venta` (regresa stock, lotes y caja como «Cancelar venta»).
+- **Campana:** tipo `pedido_nuevo` (sin actor, permiso `orders.manage`); el CHECK de `notificaciones.tipo` se escribe ahora como
+  `= ANY (ARRAY[...])` (la prueba `notificaciones-tipos.test.ts` acepta las dos formas).
+- **Pendiente:** novedad/anuncio (campana + correo + ventana) **después del deploy y con OK del usuario** (interrumpe a todos los dueños),
+  guía en Aprende, estados propios del negocio, WhatsApp automático, pago en línea, edición de renglones tras confirmar. La interfaz
+  pública y el panel se probaron por servidor y en SQL con rollback; el envío completo desde el navegador (Turnstile real) falta
+  probarlo a mano en `localhost` con «Pruebas SYMVORA».
 
 ## Lecturas de listas grandes (2026-11-24)
 - PostgREST corta en **1,000 filas** (`max-rows`): una consulta sin paginar devuelve el corte en silencio. **REGLA:** toda lectura de una
   lista que puede pasar de mil filas (productos, variantes, stock por sucursal, clientes, lotes, ajustes, ventas del reporte) usa
   `leerPorTramos` (`lib/leer-por-tramos.ts`) con `.order(...).order("id").range(desde, hasta)` y una consulta NUEVA por tramo (el
   builder se muta). Los errores lanzan en vez de devolver una lista vacía.
+- **Medido el 2026-11-24 con 20,190 productos** (dev, Supabase remoto): el catálogo completo carga en ~4.5 s, búsqueda y escaneo en el POS de
+  140-320 ms, ~100 MB de memoria. `fetchPosProducts` y `fetchProducts` comparten la lectura EN VUELO (arrancaban dos recargas y pedían todo
+  dos veces); nunca sirven datos viejos. No hizo falta búsqueda en el servidor.
 
 ## Moneda del negocio (migración 133, 2026-11-12)
 - Pedido de un cliente de España. `tenants.moneda` (`MXN` por defecto, `USD`, `EUR`; CHECK) se elige en Configuración →
@@ -763,7 +812,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 140 —niveles, aplicada—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 143 —141-142 pedidos, aplicadas; 143 nivel Pro de los clientes actuales, PENDIENTE de aplicar con OK—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { consumirRateLimit, obtenerIpCliente } from "@/lib/rate-limit";
 import { slugValido } from "./slug";
-import type { CatalogoEncabezado, CatalogoPagina } from "./types";
+import type { CatalogoEncabezado, CatalogoPagina, PedidoPublico } from "./types";
 
 /**
  * Datos del catálogo público (migración 124) para /catalogo/<slug> y su ruta de
@@ -68,4 +68,23 @@ export const obtenerCatalogoPublico = cache(async function obtenerCatalogoPublic
   const pagina = await consultarProductosCatalogo(slug);
   if (!pagina) return null;
   return { encabezado: data as CatalogoEncabezado, pagina };
+});
+
+/**
+ * Seguimiento de un pedido (migración 141): `pedido_publico` solo devuelve folio, estado, renglones, total y datos
+ * públicos del negocio (nunca teléfono, dirección ni notas). El código de 12 caracteres ES el acceso al pedido.
+ * Mismo límite por IP que el resto del catálogo; pasado el límite se responde como si no existiera.
+ */
+export const obtenerPedidoPublico = cache(async function obtenerPedidoPublico(
+  codigoCrudo: string
+): Promise<PedidoPublico | null> {
+  const codigo = decodeURIComponent(codigoCrudo).trim().toUpperCase();
+  if (!/^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{12}$/.test(codigo)) return null;
+  if (!(await permitirConsultaCatalogo(await headers()))) return null;
+  const { data, error } = await clienteAnonimo().rpc("pedido_publico", { p_codigo: codigo });
+  if (error) {
+    console.error("[catalogo-publico] fallo pedido_publico:", error.message);
+    return null;
+  }
+  return (data as PedidoPublico | null) ?? null;
 });

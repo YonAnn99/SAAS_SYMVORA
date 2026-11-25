@@ -120,6 +120,7 @@ describe("menú según el nivel", () => {
     expect(rutaPermitidaPorPlan("/branches", f)).toBe(false);
     expect(rutaPermitidaPorPlan("/online-catalog", f)).toBe(false);
     expect(rutaPermitidaPorPlan("/online-catalog/algo", f)).toBe(false);
+    expect(rutaPermitidaPorPlan("/orders", f)).toBe(false);
   });
   it("Básico sí ve todo lo demás", () => {
     const f = funcionesDe("basico");
@@ -131,6 +132,7 @@ describe("menú según el nivel", () => {
     for (const f of [funcionesDe("pro"), funcionesDe("premium"), funcionesDe(null)]) {
       expect(rutaPermitidaPorPlan("/branches", f)).toBe(true);
       expect(rutaPermitidaPorPlan("/online-catalog", f)).toBe(true);
+      expect(rutaPermitidaPorPlan("/orders", f)).toBe(true);
     }
   });
 });

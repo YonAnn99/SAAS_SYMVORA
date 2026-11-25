@@ -43,6 +43,7 @@ import {
   ofertaRegresoVigente,
   precioListaMXN,
   promoAplica,
+  preciosPromoEnCurso,
 } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO, PROMO_META_99, esPromoAnualTabletVigente, esPromoMeta99Vigente } from "@/lib/pricing";
 import { DescargaDatosCuenta } from "@/features/payments/components/descarga-datos-cuenta";
@@ -51,6 +52,7 @@ import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { SelectorNivel } from "@/components/plan/selector-nivel";
+import { CambiarPlan } from "@/components/plan/cambiar-plan";
 import { nivelesActivos, type Nivel } from "@/lib/niveles";
 
 interface Subscription {
@@ -120,6 +122,9 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   // no paga; quien ya paga conserva su plan y cambia de nivel con soporte (por ahora).
   const [selectedNivel, setSelectedNivel] = useState<Nivel>("pro");
   const conNiveles = nivelesActivos() && !subscription?.last_payment_at;
+  // Quien YA paga (suscripcion activa) con los niveles encendidos cambia de plan desde aqui.
+  const puedeCambiarPlan =
+    nivelesActivos() && subscription?.status === "active" && Boolean(subscription?.last_payment_at);
 
   const fetchSubscription = async () => {
     if (!tenantId) {
@@ -581,8 +586,8 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 <span>
                   {t("billing.promoRestante", {
                     cobros: cobrosPromoRestantes,
-                    promo: `$${PRECIO_PROMO_MXN}`,
-                    normal: `$${precioListaMXN("monthly")}`,
+                    promo: `$${preciosPromoEnCurso(subscription?.promo_plan).promo}`,
+                    normal: `$${preciosPromoEnCurso(subscription?.promo_plan).normal}`,
                   })}
                 </span>
               </div>
@@ -618,6 +623,20 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   ).toLocaleDateString(localeIntl(locale))}
                 </span>
               </div>
+            )}
+
+            {puedeCambiarPlan && tenantId && !enAppAndroid && (
+              <>
+                <Separator />
+                <CambiarPlan
+                  tenantId={tenantId}
+                  periodo={subscription?.billing_period === "yearly" ? "yearly" : "monthly"}
+                  tieneSuscripcionRecurrente={Boolean(subscription?.conekta_subscription_id)}
+                  tienePromo={cobrosPromoRestantes > 0}
+                  onCambiado={fetchSubscription}
+                  disabled={isDemo}
+                />
+              </>
             )}
 
             {payments[0]?.status === "pending" && subscription?.status !== "active" && (

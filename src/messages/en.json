@@ -293,6 +293,7 @@
     "products": "Products",
     "customers": "Customers",
     "onlineCatalog": "Online catalog",
+    "orders": "Orders",
     "purchases": "Purchases",
     "purchaseOrders": "Purchase Orders",
     "purchaseOrdersCorto": "Orders",
@@ -2107,6 +2108,10 @@
           "label": "Online catalog",
           "description": "Public product page with WhatsApp orders"
         },
+        "orders": {
+          "label": "Orders",
+          "description": "Orders your customers send from the online catalog"
+        },
         "settings": {
           "label": "Settings",
           "description": "Business details and active modules"
@@ -2437,7 +2442,7 @@
       },
       "billing": {
         "title": "Manage your subscription",
-        "description": "Check your subscription status, add payment methods and review your payment history. Your plan is SYMVORA Basic at $399 MXN/month with a {dias}-day trial."
+        "description": "Check your subscription status, add payment methods and review your payment history. Includes a {dias}-day trial."
       },
       "advancedSettings": {
         "title": "Advanced settings",
@@ -2455,6 +2460,86 @@
           "description": "You now know what you need for your shift: Open register → Sell → Close register. To go over it again, click 'View tutorial' in the top bar."
         }
       }
+    }
+  },
+  "orders": {
+    "title": "Orders",
+    "subtitle": "Orders your customers send from your online catalog",
+    "loading": "Loading orders…",
+    "loadError": "Couldn't load orders. Try refreshing.",
+    "empty": "You don't have orders yet",
+    "emptyHint": "Turn on \"Receive orders on the page\" in Online catalog → Customize. When a customer sends an order, it shows up here and in the bell.",
+    "newCount": "{count, plural, one {# new} other {# new}}",
+    "filters": {
+      "label": "Filter orders",
+      "activos": "In progress",
+      "todos": "All"
+    },
+    "status": {
+      "nuevo": "New",
+      "confirmado": "Confirmed",
+      "pago": "Paid",
+      "en_produccion": "In preparation",
+      "listo": "Ready",
+      "en_camino": "On the way",
+      "entregado": "Delivered",
+      "cancelado": "Cancelled"
+    },
+    "delivery": {
+      "recoger": "Pickup",
+      "domicilio": "Home delivery"
+    },
+    "detail": {
+      "title": "Order #{folio}",
+      "total": "Total",
+      "hasSale": "Already recorded as a sale: stock has been deducted.",
+      "needSalesPermission": "To confirm you need the permission to record sales."
+    },
+    "actions": {
+      "confirm": "Confirm order",
+      "cancel": "Cancel order",
+      "back": "Back",
+      "notify": "Notify on WhatsApp",
+      "advance": {
+        "pago": "Mark as paid",
+        "en_produccion": "Mark in preparation",
+        "listo": "Mark ready",
+        "en_camino": "Mark on the way",
+        "entregado": "Mark delivered"
+      }
+    },
+    "confirm": {
+      "title": "Confirm order #{folio}",
+      "desc": "It is recorded as a sale and your product stock goes down.",
+      "method": "How will they pay?",
+      "methods": {
+        "TRANSFERENCIA": "Bank transfer",
+        "TARJETA": "Card",
+        "EFECTIVO": "Cash"
+      },
+      "cashNote": "With cash, the sale goes into your open register's cut (if you have one).",
+      "diffTitle": "The price changed",
+      "diffBody": "The customer saw {pedido}, but today your point of sale adds up to {venta}. If you confirm, {venta} is charged.",
+      "acceptDiff": "Confirm at the current price"
+    },
+    "cancel": {
+      "title": "Cancel order #{folio}",
+      "noSale": "No sale has been recorded yet: it's just marked as cancelled.",
+      "withSale": "The sale is cancelled and the stock goes back to your inventory.",
+      "reason": "Reason for cancelling"
+    },
+    "toast": {
+      "confirmed": "Order confirmed and recorded as a sale",
+      "updated": "Order updated",
+      "cancelled": "Order cancelled"
+    },
+    "errors": {
+      "noStock": "There isn't enough stock to confirm this order.",
+      "plan": "Orders are included from the Pro plan.",
+      "readOnly": "Your account is read-only. Reactivate your plan to continue.",
+      "noPermission": "You don't have permission for this action.",
+      "final": "This order can no longer be changed this way.",
+      "generic": "The action couldn't be completed. Try again."
     }
   },
   "planes": {
@@ -2482,11 +2567,39 @@
       "branchesUnlimited": "Unlimited branches",
       "unlimited": "Unlimited users and products",
       "loyalty": "Loyalty cards",
-      "catalog": "Online catalog and orders"
+      "catalog": "Online catalog and orders",
+      "promoBadge": "−50%",
+      "promoNote": "First {meses} months. Then {normal} MXN/month."
     },
     "errors": {
       "tooManyBranches": "You have {usadas} active branches and this plan includes up to {max}. Close some or choose a bigger plan.",
-      "changeNotAvailable": "For now, changing plans on an account with an active subscription is done through support. Write to us and we'll do it for you."
+      "changeNotAvailable": "We change the plan on an account with an active subscription for you: write to us on WhatsApp or at soporte@symvora.com.mx."
+    },
+    "change": {
+      "title": "Change plan",
+      "current": "Your current plan: {nivel}.",
+      "currentLegacy": "Your current plan includes everything, with no branch limit.",
+      "cta": "Change to {nivel}",
+      "same": "This is your current plan",
+      "confirmTitle": "Change to {nivel}?",
+      "confirmPrice": "From your next charge you will pay {precio} MXN per month.",
+      "whenUpgrade": "The new plan's features are turned on now; nothing extra is charged today.",
+      "whenDowngrade": "You keep your current plan's features until your next charge, when the plan changes.",
+      "whenOneTime": "The new plan starts with your next payment.",
+      "losesPromo": "By changing you lose your promotional price: the new plan is at the regular price.",
+      "noDataLost": "Nothing is deleted: your products, customers and sales are kept.",
+      "back": "Back",
+      "confirm": "Confirm change",
+      "saving": "Changing…",
+      "doneNow": "Done: you are now on the {nivel} plan.",
+      "doneLater": "Done: you will move to the {nivel} plan at your next charge.",
+      "yearlyBySupport": "Your subscription is yearly: we change the plan for you so you are not over- or under-charged.",
+      "support": "Write to us at {correo} or on",
+      "supportMessage": "Hi, I want to change my plan on SYMVORA.",
+      "supportOnly": "We make this change for you. Write to us at {correo} or on WhatsApp.",
+      "providerFailed": "We couldn't change the plan right now and nothing was changed. Write to us at {correo} and we'll sort it out.",
+      "tooMany": "Too many attempts. Wait a while and try again.",
+      "failed": "The plan could not be changed. Write to us at {correo}."
     },
     "limit": {
       "sucursales": "Your {nivel} plan includes up to {max, plural, one {# active branch} other {# active branches}}. Close one or upgrade your plan.",
@@ -2743,6 +2856,26 @@
         "9": {
           "question": "Is there a limit on users or products?",
           "answer": "No. You can add your whole team and your whole catalog at no extra cost: the subscription price is the same whether you have 1 or 20 users, and 50 or 5,000 products. We don't charge sales commissions either."
+        },
+        "3n": {
+          "question": "What happens when my {dias}-day free trial ends?",
+          "answer": "When the {dias} days are over you pick your plan (Basic $249, Pro $449 or Premium $599 MXN/month) and pay to keep selling. If you don't subscribe, your account becomes read-only: you can view and export your data, and nothing is deleted."
+        },
+        "5n": {
+          "question": "Do you charge a commission per sale?",
+          "answer": "No. SYMVORA charges a fixed monthly subscription based on your plan (from $249 MXN) regardless of the number of transactions. What you sell is yours — no hidden fees, no percentage per sale."
+        },
+        "9n": {
+          "question": "Is there a limit on users or products?",
+          "answer": "No. No plan limits users or products: the price is the same whether you have 1 or 20 users, and 50 or 5,000 products. What changes between plans is the number of branches (1, up to 3 or unlimited) and the loyalty cards, online catalog and orders modules, which start at Pro. We don't charge sales commissions either."
+        },
+        "10": {
+          "question": "Can I change plans later?",
+          "answer": "Yes. Write to us on WhatsApp or at soporte@symvora.com.mx and we'll change your plan for you. If you move to a lower plan we never delete your data: your products, customers and sales are kept."
+        },
+        "11": {
+          "question": "Which plan is right for me?",
+          "answer": "Basic if you have a single location and want to sell and control your inventory. Pro if you have up to 3 branches or want loyalty cards, an online catalog and orders. Premium if you need unlimited branches. All plans include unlimited users and products."
         }
       },
       "cta": {
@@ -2761,6 +2894,7 @@
       "tabletPromoVigencia": "Promotion valid from November 13 to 17.",
       "promoBadge": "−50%",
       "promoNota": "Promotional price for the first {meses} months. Then {normal} MXN/month.",
+      "promoSoloNiveles": "Launch promotion: 50% off the first {meses} months on Pro and Premium (monthly plan).",
       "priceMonthly": "$399",
       "priceYearly": "$299",
       "priceYearlyTablet": "$4,788",
@@ -3331,6 +3465,7 @@
   "onlineCatalog": {
     "errors": {
       "slugTaken": "That link is already used by another business. Try a different one.",
+      "planOrders": "Receiving orders on the page is included from the Pro plan.",
       "readOnly": "Your account is read-only.",
       "noPermission": "You don't have permission to change the catalog.",
       "invalid": "Some data isn't valid. Check the link, WhatsApp, color or price.",
@@ -3397,6 +3532,9 @@
       "showPricesHint": "When off, your customers ask for the price in their order.",
       "showSoldOut": "Show sold-out products",
       "showSoldOutHint": "They show at the end, marked \"Sold out\".",
+      "receiveOrders": "Receive orders on the page",
+      "receiveOrdersHint": "Your customers send their order from the catalog and you track it in Orders. When off, orders keep going through WhatsApp.",
+      "receiveOrdersPlan": "Available from the Pro plan.",
       "save": "Save changes"
     },
     "products": {

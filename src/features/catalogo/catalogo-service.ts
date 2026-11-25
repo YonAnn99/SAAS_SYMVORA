@@ -14,7 +14,7 @@ import type {
  */
 
 const COLUMNAS =
-  "tenant_id, activo, slug, whatsapp, mostrar_precios, mostrar_agotados, mensaje, color, portada_url";
+  "tenant_id, activo, slug, whatsapp, mostrar_precios, mostrar_agotados, mensaje, color, portada_url, recibir_pedidos";
 
 export async function obtenerConfigCatalogo(tenantId: string): Promise<CatalogoConfig | null> {
   const supabase = createSupabaseBrowserClient();
@@ -168,13 +168,14 @@ export async function obtenerVistaPreviaProductos(
 }
 
 /** Mensaje para el usuario según el error de la base. */
-export type CodigoErrorCatalogo = "slugTaken" | "readOnly" | "noPermission" | "invalid" | "generic";
+export type CodigoErrorCatalogo = "slugTaken" | "readOnly" | "noPermission" | "invalid" | "planOrders" | "generic";
 
 const MENSAJE_ERROR_CATALOGO: Record<CodigoErrorCatalogo, string> = {
   slugTaken: "Ese enlace ya lo usa otro negocio. Prueba con otro.",
   readOnly: "Tu cuenta está en solo lectura.",
   noPermission: "No tienes permiso para cambiar el catálogo.",
   invalid: "Hay un dato que no es válido. Revisa el enlace, el WhatsApp, el color o el precio.",
+  planOrders: "Recibir pedidos en la página viene incluido desde el plan Pro.",
   generic: "No se pudo guardar. Intenta de nuevo.",
 };
 
@@ -188,6 +189,7 @@ export function mensajeErrorCatalogo(
 ): string {
   const e = error as { code?: string; message?: string; hint?: string } | null;
   const texto = (codigo: CodigoErrorCatalogo) => (traducir ? traducir(codigo) : MENSAJE_ERROR_CATALOGO[codigo]);
+  if (e?.message?.includes("plan_sin_pedidos")) return texto("planOrders");
   if (e?.code === "23505") return texto("slugTaken");
   if (e?.hint === "CUENTA_SOLO_LECTURA") return e.message ?? texto("readOnly");
   if (e?.code === "42501") return texto("noPermission");

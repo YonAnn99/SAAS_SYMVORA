@@ -21,7 +21,7 @@
  * (`CONEKTA_PLAN_IDS`, ids `-v1`). Si una cifra cambia, hay que versionar el id (`-v2`).
  */
 
-import type { BillingPeriod } from "@/lib/pricing";
+import { PROMO_LANZAMIENTO, type BillingPeriod } from "@/lib/pricing";
 
 export type Nivel = "basico" | "pro" | "premium";
 
@@ -112,11 +112,12 @@ export function puedeAgregarSucursal(f: FuncionesPlan, usadas: number): boolean 
 }
 
 /**
- * Rutas del menú que el nivel no incluye. Básico no tiene el módulo de Sucursales ni el Catálogo en línea.
+ * Rutas del menú que el nivel no incluye. Básico no tiene el módulo de Sucursales, el Catálogo en línea ni Pedidos.
  * Solo esconde el acceso: la regla de verdad la aplican los triggers de la migración 140.
  */
 export function rutaPermitidaPorPlan(ruta: string, f: FuncionesPlan): boolean {
   if (ruta === "/online-catalog" || ruta.startsWith("/online-catalog/")) return f.catalogo;
+  if (ruta === "/orders" || ruta.startsWith("/orders/")) return f.pedidos;
   if (ruta === "/branches" || ruta.startsWith("/branches/")) return permiteFuncion(f, "sucursales");
   return true;
 }
@@ -130,6 +131,29 @@ export const PRECIOS_NIVEL_CENTS: Record<Nivel, Record<BillingPeriod, number>> =
   pro: { monthly: 44900, yearly: 404400 }, // $449 · $4,044 ($337/mes)
   premium: { monthly: 59900, yearly: 538800 }, // $599 · $5,388 ($449/mes)
 };
+
+/**
+ * ¿Le toca la promoción de lanzamiento (−50 %, `PROMO_LANZAMIENTO`) a quien contrata ESTE nivel y periodo
+ * ahora? Solo Pro y Premium, y solo mensual: Básico va siempre a precio de lista y el anual no lleva promo.
+ * Responde "¿se ofrece?"; lo que se le cobra a una suscripción concreta lo manda su contador en la base.
+ */
+export function promoAplicaANivel(nivel: Nivel, periodo: BillingPeriod): boolean {
+  return PROMO_LANZAMIENTO.activa && periodo === PROMO_LANZAMIENTO.periodo && nivel !== "basico";
+}
+
+/** Precio promocional mensual de un nivel, en centavos: el descuento de la promo sobre su precio de lista. */
+export function precioPromoNivelCents(nivel: Nivel): number {
+  return Math.round((PRECIOS_NIVEL_CENTS[nivel].monthly * (100 - PROMO_LANZAMIENTO.descuentoPct)) / 100);
+}
+
+export function precioPromoNivelMXN(nivel: Nivel): number {
+  return precioPromoNivelCents(nivel) / 100;
+}
+
+/** «$449» si es entero y «$224.50» si no: los precios de la landing no llevan «.00». */
+export function formatPrecioNivel(mxn: number): string {
+  return Number.isInteger(mxn) ? `$${mxn.toLocaleString("es-MX")}` : `$${mxn.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 export function precioNivelCents(nivel: Nivel, periodo: BillingPeriod): number {
   return PRECIOS_NIVEL_CENTS[nivel][periodo];

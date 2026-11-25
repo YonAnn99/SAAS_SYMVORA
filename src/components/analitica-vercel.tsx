@@ -20,6 +20,8 @@ const RUTAS_CON_CODIGO: [RegExp, string][] = [
   [/\/tarjeta\/unirse\/[^/]+/, "/tarjeta/unirse/[codigo]"],
   // Tarjeta de lealtad del cliente final: el codigo ES el acceso.
   [/\/tarjeta\/(?!unirse\/|\[codigo\])[^/]+/, "/tarjeta/[codigo]"],
+  // Seguimiento de un pedido del catalogo (141): el codigo ES el acceso al pedido.
+  [/\/catalogo\/([^/]+)\/pedido\/[^/]+/, "/catalogo/$1/pedido/[codigo]"],
 ];
 
 export function limpiarUrl(url: string): string {

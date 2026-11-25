@@ -6,6 +6,7 @@ import { getAppUrl } from "@/lib/site";
 import {
   COBROS_OFERTA_REGRESO,
   clavePlanDeNivel,
+  cobrosPromoInicialesNivel,
   claveDePlanNuevo,
   cobrosPromoIniciales,
   ofertaRegresoVigente,
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     // Get subscription
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("id, conekta_customer_id, status, last_payment_at, promo_codigo_campana")
+      .select("id, conekta_customer_id, conekta_subscription_id, status, last_payment_at, promo_codigo_campana")
       .eq("tenant_id", tenant_id)
       .single();
 
@@ -119,7 +120,9 @@ export async function POST(request: Request) {
     // Un nivel NO se mezcla con las promociones del plan unico (decision pendiente para los niveles) ni
     // con una cuenta que ya paga: cambiar de nivel a quien ya tiene una suscripcion activa es otro flujo
     // (cambiarPlan) que aun no esta; crear aqui una segunda suscripcion cobraria doble.
-    if (nivelElegido && yaPaga) {
+    // Con suscripcion recurrente el cambio va por `/api/conekta/cambiar-plan`; quien paga con pagos unicos
+    // (efectivo, SPEI) puede elegir otro nivel aqui: queda en `nivel_pendiente` y lo confirma ese pago.
+    if (nivelElegido && yaPaga && subscription.conekta_subscription_id) {
       return NextResponse.json({ error: "cambio_de_nivel_no_disponible" }, { status: 409 });
     }
     if (nivelElegido) {
@@ -142,7 +145,7 @@ export async function POST(request: Request) {
     }
 
     const clavePlan = nivelElegido
-      ? clavePlanDeNivel(nivelElegido, period)
+      ? clavePlanDeNivel(nivelElegido, period, true)
       : conOfertaRegreso
         ? "monthlyPromo"
         : claveDePlanNuevo(period, esNuevoCliente);
@@ -155,9 +158,17 @@ export async function POST(request: Request) {
     if (esCampanaMeta99 && !nivelElegido) {
       cambios.promo_codigo_campana = PROMO_META_99.codigo;
     }
+    // Cobros promocionales del nivel (−50 % los primeros 6, solo Pro/Premium mensual). Quien ya paga no llega
+    // aqui (409 arriba), asi que siempre es una cuenta que aun no paga: el contador nace con la suscripcion.
+    const cobrosPromoNivel = nivelElegido && !yaPaga ? cobrosPromoInicialesNivel(nivelElegido, period) : 0;
     if (nivelElegido) {
-      cambios.promo_cobros_restantes = 0;
-      cambios.promo_plan = null;
+      cambios.promo_cobros_restantes = cobrosPromoNivel;
+      if (cobrosPromoNivel > 0) {
+        const { CONEKTA_PLAN_IDS } = await import("@/features/payments/services/conekta/config");
+        cambios.promo_plan = CONEKTA_PLAN_IDS[clavePlan as "proMonthlyPromo" | "premiumMonthlyPromo"];
+      } else {
+        cambios.promo_plan = null;
+      }
     } else if (conOfertaRegreso) {
       // A diferencia de la promocion de lanzamiento, esta SI se siembra en
       // quien ya pago: es justo a quien va dirigida. Un solo cobro.
@@ -297,14 +308,14 @@ export async function POST(request: Request) {
     // promocion por su cuenta: si no, la landing anunciaria $199 y el cliente
     // que elige OXXO se encontraria una ficha de $399.
     const cobrosPromo = nivelElegido
-      ? 0
+      ? cobrosPromoNivel
       : conOfertaRegreso
         ? COBROS_OFERTA_REGRESO
         : esPromo && !yaPaga
           ? cobrosPromoIniciales(period)
           : 0;
     const amount = nivelElegido
-      ? precioNivelCobroCents(nivelElegido, period)
+      ? precioNivelCobroCents(nivelElegido, period, cobrosPromo)
       : esCampanaMeta99
         ? PROMO_META_99.precioCents
         : precioCobroCents(period, cobrosPromo, esNuevoCliente);
@@ -312,7 +323,7 @@ export async function POST(request: Request) {
       ? { basico: "Basico", pro: "Pro", premium: "Premium" }[nivelElegido]
       : null;
     const description = nivelElegido
-      ? `SYMVORA ${nombreNivel} - ${period === "yearly" ? "Anual" : "Mensual"}`
+      ? `SYMVORA ${nombreNivel} - ${period === "yearly" ? "Anual" : "Mensual"}${cobrosPromo > 0 ? " (promo -50%)" : ""}`
       : esCampanaMeta99
       ? "SYMVORA - Promoción Fin de Año ($99 MXN)"
       : clavePlan === "yearlyTablet"

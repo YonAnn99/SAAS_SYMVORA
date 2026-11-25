@@ -21,6 +21,8 @@ export interface CatalogoEncabezado {
   mostrar_precios: boolean;
   /** Moneda del negocio (133). Ausente en respuestas anteriores: pesos. */
   moneda?: string | null;
+  /** Pedidos guardados (141-142): el formulario de pedido en vez del envío por WhatsApp. Ausente = no. */
+  recibir_pedidos?: boolean;
   total: number;
   categorias: { nombre: string; total: number }[];
   /** Hasta 12, para la fila de arriba (125). */
@@ -74,6 +76,8 @@ export interface CatalogoConfig {
   /** Color del catálogo (125); NULL = el del negocio o el azul de SYMVORA. */
   color: string | null;
   portada_url: string | null;
+  /** Guarda los pedidos del cliente final (141); apagado de fábrica. Solo con el plan que lo incluye. */
+  recibir_pedidos: boolean;
 }
 
 /** Ajustes de un producto en el catálogo (tabla `catalogo_productos`, 125). */
@@ -81,4 +85,21 @@ export interface AjusteProductoCatalogo {
   oculto: boolean;
   destacado: boolean;
   precio_especial: number | null;
+}
+
+/** Lo que devuelve `pedido_publico` (141-142): la página de seguimiento. Sin teléfono, dirección ni notas. */
+export interface PedidoPublico {
+  folio: number;
+  estado: string;
+  entrega: "recoger" | "domicilio";
+  pagado: boolean;
+  creado_en: string;
+  negocio: string;
+  moneda: string | null;
+  color: string | null;
+  slug: string | null;
+  whatsapp: string | null;
+  /** NULL si el negocio no muestra precios. */
+  total: number | null;
+  items: { nombre: string; variante: string | null; unidad: string | null; cantidad: number; precio: number | null }[];
 }

@@ -261,7 +261,7 @@ function fallbackAmountCents(
   // reembolso del credito de referido: con una promocion en curso, dar por
   // hecho $399 haria que un mes regalado devolviera $200 de mas.
   const periodo = billingPeriod === "yearly" ? "yearly" : "monthly";
-  if (esNivel(nivel)) return precioNivelCobroCents(nivel, periodo);
+  if (esNivel(nivel)) return precioNivelCobroCents(nivel, periodo, cobrosPromoRestantes);
   return precioCobroCents(periodo, cobrosPromoRestantes);
 }
 
@@ -368,7 +368,15 @@ async function avanzarPromocion(
   try {
     const { cambiarPlan } = await import("@/features/payments/services/conekta/subscriptions");
     const { CONEKTA_PLAN_IDS } = await import("@/features/payments/services/conekta/config");
-    await cambiarPlan(customerId, CONEKTA_PLAN_IDS.monthly);
+    // Al plan NORMAL de lo que se contrato: la promo de un nivel vuelve al mensual de ese nivel (Pro o
+    // Premium), no al plan unico de siempre. Se decide por el id del plan promocional guardado.
+    const planNormal =
+      promoPlan === CONEKTA_PLAN_IDS.proMonthlyPromo
+        ? CONEKTA_PLAN_IDS.proMonthly
+        : promoPlan === CONEKTA_PLAN_IDS.premiumMonthlyPromo
+          ? CONEKTA_PLAN_IDS.premiumMonthly
+          : CONEKTA_PLAN_IDS.monthly;
+    await cambiarPlan(customerId, planNormal);
 
     await supabase
       .from("subscriptions")

@@ -26,7 +26,8 @@ export type TipoNotificacion =
   // 126: un modulo nuevo de SYMVORA (`lib/novedades.ts`)
   | "novedad"
   // 137: un colaborador cancelo una venta
-  | "venta_cancelada";
+  | "venta_cancelada"
+  | "pedido_nuevo";
 
 /** Todos los tipos: la campana tiene que saber pintar cada uno. */
 export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
@@ -45,6 +46,7 @@ export const TIPOS_NOTIFICACION: readonly TipoNotificacion[] = [
   "lealtad_alta",
   "novedad",
   "venta_cancelada",
+  "pedido_nuevo",
 ];
 
 export interface Notificacion {

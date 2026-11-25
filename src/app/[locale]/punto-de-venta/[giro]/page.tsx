@@ -29,6 +29,7 @@ import { breadcrumbSchema, faqPageSchema } from "@/lib/seo/structured-data";
 import { getSiteUrl } from "@/lib/site";
 import { DIAS_PRUEBA } from "@/lib/trial";
 import { PROMO_LANZAMIENTO, SUBSCRIPTION_PRICE_MXN } from "@/lib/pricing";
+import { nivelesActivos, precioNivelMXN } from "@/lib/niveles";
 import { urlWhatsApp } from "@/lib/whatsapp";
 
 /**
@@ -80,10 +81,14 @@ function faqsGenerales(giro: Giro) {
   const promo = PROMO_LANZAMIENTO.activa
     ? ` Por lanzamiento, los primeros ${PROMO_LANZAMIENTO.cobros} meses cuestan $${PROMO_LANZAMIENTO.precioCents / 100}.`
     : "";
+  const conNiveles = nivelesActivos();
+  const precio = conNiveles
+    ? `Tres planes: Básico $${precioNivelMXN("basico", "monthly")}, Pro $${precioNivelMXN("pro", "monthly")} y Premium $${precioNivelMXN("premium", "monthly")} MXN al mes (hasta 25 % menos pagando al año), con usuarios y productos ilimitados y sin comisiones por venta.${PROMO_LANZAMIENTO.activa ? ` Por lanzamiento, Pro y Premium cuestan la mitad los primeros ${PROMO_LANZAMIENTO.cobros} meses (plan mensual).` : ""}`
+    : null;
   return [
     {
       pregunta: `¿Cuánto cuesta SYMVORA para ${giro.tu}?`,
-      respuesta: `$${SUBSCRIPTION_PRICE_MXN.monthly} MXN al mes, o $${SUBSCRIPTION_PRICE_MXN.yearly.toLocaleString("es-MX")} MXN al año, sin comisiones por venta.${promo}`,
+      respuesta: precio ?? `$${SUBSCRIPTION_PRICE_MXN.monthly} MXN al mes, o $${SUBSCRIPTION_PRICE_MXN.yearly.toLocaleString("es-MX")} MXN al año, sin comisiones por venta.${promo}`,
     },
     {
       pregunta: "¿Puedo probarlo antes de pagar?",

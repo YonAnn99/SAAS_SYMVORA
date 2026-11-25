@@ -152,8 +152,11 @@ export function softwareApplicationSchema(
   options: {
     description: string;
     featureList: string[];
+    /** Precio mensual publicado (el del plan unico, o el mas bajo de los niveles). */
+    precioMensual?: number;
   }
 ): SoftwareApplicationSchema {
+  const precio = options.precioMensual ?? 399;
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -170,14 +173,14 @@ export function softwareApplicationSchema(
       "@type": "Offer",
       url: `${siteUrl}/es`,
       priceCurrency: "MXN",
-      price: 399,
+      price: precio,
       priceValidUntil: "2027-12-31",
       availability: "https://schema.org/InStock",
       category: "subscription",
       priceSpecification: [
         {
           "@type": "UnitPriceSpecification",
-          price: 399,
+          price: precio,
           priceCurrency: "MXN",
           unitText: "mes",
           referenceQuantity: {

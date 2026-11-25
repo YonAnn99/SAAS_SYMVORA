@@ -35,6 +35,8 @@ describe("orden del menú", () => {
       "/products",
       "/customers",
       "/online-catalog",
+      // Pedidos del catalogo (141): junto al catalogo del que salen.
+      "/orders",
       "/finances",
       "/reports",
       "/purchases",

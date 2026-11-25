@@ -156,6 +156,16 @@ export const MODULES: ModuleDefinition[] = [
     grantable: true,
   },
   {
+    // Pedidos del catalogo en linea (migracion 141): ver, confirmar y dar seguimiento a lo que el cliente final manda
+    // desde la pagina publica. Concedible: el dueño se lo puede dar al cajero que atiende los pedidos.
+    key: "orders",
+    label: "Pedidos",
+    description: "Pedidos que tus clientes mandan desde el catálogo en línea",
+    paths: ["/orders"],
+    permission: "orders.manage",
+    grantable: true,
+  },
+  {
     key: "settings",
     label: "Configuración",
     description: "Datos del negocio y módulos activos",

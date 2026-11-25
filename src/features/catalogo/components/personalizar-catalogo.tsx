@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { usePlan } from "@/hooks/use-plan";
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -60,6 +61,10 @@ export function PersonalizarCatalogo({
   const [mensaje, setMensaje] = useState(borrador.mensaje ?? "");
   const [mostrarPrecios, setMostrarPrecios] = useState(borrador.mostrar_precios);
   const [mostrarAgotados, setMostrarAgotados] = useState(borrador.mostrar_agotados);
+  const [recibirPedidos, setRecibirPedidos] = useState(borrador.recibir_pedidos);
+  // Recibir pedidos viene en Pro y Premium (migracion 141): sin el plan el interruptor no se puede encender.
+  const { permite } = usePlan();
+  const planConPedidos = permite("pedidos");
   const [guardando, setGuardando] = useState(false);
   const archivo = useRef<HTMLInputElement>(null);
 
@@ -77,6 +82,7 @@ export function PersonalizarCatalogo({
     (guardado.whatsapp ?? null) !== whatsapp ||
     guardado.mostrar_precios !== mostrarPrecios ||
     guardado.mostrar_agotados !== mostrarAgotados ||
+    Boolean(guardado.recibir_pedidos) !== recibirPedidos ||
     (guardado.mensaje ?? "") !== mensaje.trim() ||
     (guardado.color ?? null) !== colorListo ||
     (guardado.portada_url ?? null) !== portada;
@@ -110,6 +116,7 @@ export function PersonalizarCatalogo({
         whatsapp,
         mostrar_precios: mostrarPrecios,
         mostrar_agotados: mostrarAgotados,
+        recibir_pedidos: recibirPedidos && planConPedidos,
         mensaje: mensaje.trim() ? mensaje.trim().slice(0, MENSAJE_MAX) : null,
         color: colorListo,
         portada_url: portada,
@@ -305,6 +312,21 @@ export function PersonalizarCatalogo({
               <p className="text-[11px] text-muted-foreground">{t("showSoldOutHint")}</p>
             </div>
             <Switch checked={mostrarAgotados} onCheckedChange={setMostrarAgotados} aria-label={t("showSoldOut")} />
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label className="text-xs">{t("receiveOrders")}</Label>
+              <p className="text-[11px] text-muted-foreground">
+                {planConPedidos ? t("receiveOrdersHint") : t("receiveOrdersPlan")}
+              </p>
+            </div>
+            <Switch
+              checked={recibirPedidos && planConPedidos}
+              onCheckedChange={setRecibirPedidos}
+              disabled={!planConPedidos}
+              aria-label={t("receiveOrders")}
+            />
           </div>
         </CardContent>
       </Card>
