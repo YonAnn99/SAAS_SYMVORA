@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { EstadoCuentaDialog } from "@/features/customers/components/estado-cuenta-dialog";
 import { usePermissions } from "@/hooks/use-permissions";
+import { usePlan } from "@/hooks/use-plan";
 import {
   useCustomers,
   CreditPaymentDialog,
@@ -68,9 +69,13 @@ export default function CustomersPage() {
   // Tarjetas de lealtad (migracion 115): viven en este modulo. La pestaña la
   // ve quien puede configurarla, y el resto del equipo cuando ya esta activa.
   const lealtad = useLealtad(tenantId);
+  // Basico no incluye las tarjetas (migracion 140): sin pestaña, sin «Crear tarjeta» y sin sellos en la
+  // lista. Los datos no se tocan: si el negocio sube de nivel, todo vuelve como estaba.
+  const { permite } = usePlan();
+  const planConLealtad = permite("lealtad");
   const puedeConfigurar = can("loyalty.manage");
-  const programaActivo = Boolean(lealtad.programa?.activo);
-  const verPestanaLealtad = puedeConfigurar || programaActivo;
+  const programaActivo = planConLealtad && Boolean(lealtad.programa?.activo);
+  const verPestanaLealtad = planConLealtad && (puedeConfigurar || programaActivo);
   const [ventana, setVentana] = useState<TarjetaParaVentana | null>(null);
   const [emitiendo, setEmitiendo] = useState<string | null>(null);
   // Editar: misma regla que la base (RLS de `clientes`: `inventory.manage`).

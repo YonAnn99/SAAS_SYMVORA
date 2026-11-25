@@ -1,4 +1,5 @@
 import { puedeVerRuta } from "@/lib/navigation";
+import { FUNCIONES_HEREDADO, type FuncionesPlan } from "@/lib/niveles";
 import type { UserRole } from "@/lib/types/database";
 import type { TutorialStep } from "./steps-data";
 
@@ -19,13 +20,15 @@ import type { TutorialStep } from "./steps-data";
 export function pasosParaUsuario(
   pasos: TutorialStep[],
   role: UserRole | null,
-  can: (permission: string) => boolean
+  can: (permission: string) => boolean,
+  // Un paso de un modulo que el nivel no incluye (Sucursales, Catalogo en linea en Basico) no se muestra.
+  plan: FuncionesPlan = FUNCIONES_HEREDADO
 ): TutorialStep[] {
   return pasos
     .filter((paso) => {
       const general = !paso.navigates && paso.targetSelector === null;
       if (general) return true;
-      if (!puedeVerRuta(paso.route, role, can)) return false;
+      if (!puedeVerRuta(paso.route, role, can, plan)) return false;
       return !paso.permiso || can(paso.permiso);
     })
     .map((paso) =>

@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { mensajeDeError } from "@/features/inventory/error-message";
@@ -71,17 +72,21 @@ export function ExistenciasSucursal({
     setCargando(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const [{ data, error }, filas] = await Promise.all([
-        supabase
-          .from("productos")
-          .select("id, nombre, sku, es_servicio, stock_actual")
-          .eq("tenant_id", tenantId)
-          .is("archivado_en", null)
-          .order("nombre"),
+      // Por tramos: PostgREST corta en 1,000 filas sin avisar (`lib/leer-por-tramos.ts`).
+      const [data, filas] = await Promise.all([
+        leerPorTramos((desde, hasta) =>
+          supabase
+            .from("productos")
+            .select("id, nombre, sku, es_servicio, stock_actual")
+            .eq("tenant_id", tenantId)
+            .is("archivado_en", null)
+            .order("nombre")
+            .order("id")
+            .range(desde, hasta)
+        ),
         fetchStockSucursal(seleccionada),
       ]);
-      if (error) throw error;
-      setProductos(conStockDeSucursal((data ?? []) as ProductoLocal[], filas));
+      setProductos(conStockDeSucursal(data as ProductoLocal[], filas));
       setBorradores({});
     } catch (error) {
       toast.error(mensajeDeError(error, te));

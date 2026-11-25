@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type {
   ProductoOption,
   VarianteProducto,
@@ -47,34 +48,41 @@ function faltaColumnaAtributos(error: { code?: string; message?: string } | null
 
 export async function fetchVariants(tenantId: string): Promise<VarianteProducto[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("variantes_producto")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    // Las archivadas (migracion 110) solo se ven en la pestaña "Archivados"
-    // (`fetchArchivedVariants`).
-    .is("archivado_en", null)
-    .order("creado_en", { ascending: false });
-  return data ?? [];
+  // Por tramos: PostgREST corta en 1,000 filas sin avisar (`lib/leer-por-tramos.ts`).
+  return leerPorTramos<VarianteProducto>((desde, hasta) =>
+    supabase
+      .from("variantes_producto")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      // Las archivadas (migracion 110) solo se ven en la pestaña "Archivados"
+      // (`fetchArchivedVariants`).
+      .is("archivado_en", null)
+      .order("creado_en", { ascending: false })
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 export async function fetchVariantProducts(
   tenantId: string
 ): Promise<ProductoOption[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("productos")
-    .select(
-      "id, nombre, permite_variantes, permite_lotes, stock_minimo, unidad_medida, es_servicio, contenido_cantidad, contenido_unidad"
-    )
-    .eq("tenant_id", tenantId)
-    .is("archivado_en", null)
-    // Todos los productos, no solo los que ya tienen variantes: si no,
-    // la PRIMERA variante de un producto nunca se podia crear (el selector
-    // salia vacio). Mismo arreglo que `fetchLotProducts`. Los servicios
-    // tambien: un servicio puede tener variantes (Corte chico / grande).
-    .order("nombre");
-  return data ?? [];
+  return leerPorTramos<ProductoOption>((desde, hasta) =>
+    supabase
+      .from("productos")
+      .select(
+        "id, nombre, permite_variantes, permite_lotes, stock_minimo, unidad_medida, es_servicio, contenido_cantidad, contenido_unidad"
+      )
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      // Todos los productos, no solo los que ya tienen variantes: si no,
+      // la PRIMERA variante de un producto nunca se podia crear (el selector
+      // salia vacio). Mismo arreglo que `fetchLotProducts`. Los servicios
+      // tambien: un servicio puede tener variantes (Corte chico / grande).
+      .order("nombre")
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 /** Devuelve el id: con varias sucursales el stock inicial se carga despues. */
@@ -179,14 +187,17 @@ export type VarianteArchivada = VarianteProducto & {
 
 export async function fetchArchivedVariants(tenantId: string): Promise<VarianteArchivada[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("variantes_producto")
-    .select("*, productos(nombre, archivado_en)")
-    .eq("tenant_id", tenantId)
-    .not("archivado_en", "is", null)
-    .order("archivado_en", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as VarianteArchivada[];
+  const data = await leerPorTramos((desde, hasta) =>
+    supabase
+      .from("variantes_producto")
+      .select("*, productos(nombre, archivado_en)")
+      .eq("tenant_id", tenantId)
+      .not("archivado_en", "is", null)
+      .order("archivado_en", { ascending: false })
+      .order("id")
+      .range(desde, hasta)
+  );
+  return data as unknown as VarianteArchivada[];
 }
 
 /**

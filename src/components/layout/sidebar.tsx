@@ -11,6 +11,7 @@ import { useRubberBordes, type Borde } from "@/components/ui/rubber-bordes";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
+import { usePlan } from "@/hooks/use-plan";
 import { filterNavigation, stripLocale } from "@/lib/navigation";
 import type { User } from "@supabase/supabase-js";
 import { ProfileDialog } from "@/components/profile/profile-dialog";
@@ -67,7 +68,8 @@ function SidebarContent({ collapsed, onCollapsedChange }: SidebarProps) {
   // El filtro vive en `lib/navigation.ts` para que el menú lateral y la
   // búsqueda global (Ctrl+K) decidan con la misma regla. Ver la nota de esa
   // función sobre por qué se decide por permiso efectivo y no por rol.
-  const visibleNav = filterNavigation(role, can);
+  const { funciones: plan } = usePlan();
+  const visibleNav = filterNavigation(role, can, plan);
   const cargando = tenantLoading || permsLoading;
 
   // Escritorio: la pestaña del color de la pantalla viaja a la opción activa

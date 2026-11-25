@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { useMoneda } from "@/hooks/use-moneda";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { mensajeDeError } from "@/features/inventory/error-message";
@@ -91,7 +92,19 @@ export function ResumenSucursales({
           .gte("fecha_venta", inicioMes),
         // Acotado a las sucursales de ESTE negocio: RLS deja ver las de todos
         // los negocios del usuario, y sumarlas mezclaria locales ajenos.
-        supabase.from("stock_sucursal").select("sucursal_id, cantidad").in("sucursal_id", ids),
+        // Por tramos: con 1,000+ filas de stock el total por sucursal salia
+        // truncado y SIN error (`lib/leer-por-tramos.ts`).
+        leerPorTramos((desde, hasta) =>
+          supabase
+            .from("stock_sucursal")
+            .select("sucursal_id, cantidad")
+            .in("sucursal_id", ids)
+            .order("id")
+            .range(desde, hasta)
+        ).then(
+          (data) => ({ data, error: null }),
+          (error: { message: string }) => ({ data: null, error })
+        ),
         supabase
           .from("cajas")
           .select("sucursal_id, estado, diferencia")

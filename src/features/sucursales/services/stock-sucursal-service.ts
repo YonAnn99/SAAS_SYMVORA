@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type { FilaStockSucursal } from "@/features/sucursales/stock";
 
 /**
@@ -36,12 +37,17 @@ const stockEnCamino = new Map<string, Promise<FilaStockSucursal[]>>();
 
 async function pedirStockSucursal(ids: string[]): Promise<FilaStockSucursal[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("stock_sucursal")
-    .select("producto_id, variante_id, cantidad, se_vende")
-    .in("sucursal_id", ids);
-  if (error) throw error;
-  return (data ?? []).map((f) => ({
+  // Por tramos: con 2 sucursales y 500 productos ya son 1,000 filas, el tope de
+  // PostgREST, y las existencias llegaban incompletas sin ningun error.
+  const data = await leerPorTramos((desde, hasta) =>
+    supabase
+      .from("stock_sucursal")
+      .select("producto_id, variante_id, cantidad, se_vende")
+      .in("sucursal_id", ids)
+      .order("id")
+      .range(desde, hasta)
+  );
+  return data.map((f) => ({
     producto_id: f.producto_id as string,
     variante_id: (f.variante_id as string | null) ?? null,
     cantidad: Number(f.cantidad),

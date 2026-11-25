@@ -21,6 +21,7 @@ import {
   ComboboxTrigger,
 } from "@/components/ui/combobox";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useMoneda } from "@/hooks/use-moneda";
 import { ICONO_SELLO, TarjetaVisual } from "@/features/lealtad/components/tarjeta-visual";
@@ -99,16 +100,23 @@ export function FormularioPrograma({
   useEffect(() => {
     if (!tenantId) return;
     let vigente = true;
-    createSupabaseBrowserClient()
-      .from("productos")
-      .select("id, nombre")
-      .eq("tenant_id", tenantId)
-      .is("archivado_en", null)
-      .order("nombre")
-      .then(({ data }) => {
+    const supabase = createSupabaseBrowserClient();
+    leerPorTramos<{ id: string; nombre: string }>((desde, hasta) =>
+      supabase
+        .from("productos")
+        .select("id, nombre")
+        .eq("tenant_id", tenantId)
+        .is("archivado_en", null)
+        .order("nombre")
+        .order("id")
+        .range(desde, hasta)
+    )
+      .then((data) => {
         if (!vigente) return;
-        setProductos(((data ?? []) as { id: string; nombre: string }[]).map((p) => ({ value: p.id, label: p.nombre })));
-      });
+        setProductos(data.map((p) => ({ value: p.id, label: p.nombre })));
+      })
+      // El selector queda vacio si falla: no es critico para guardar el programa.
+      .catch(() => {});
     return () => {
       vigente = false;
     };

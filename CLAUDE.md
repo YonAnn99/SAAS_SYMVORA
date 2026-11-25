@@ -384,6 +384,37 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     (mayoría de edad: la casilla del registro dice «Declaro ser mayor de 18 años…» y la sección 2 de los
     Términos lo exige; los invitados no la aceptan, responde el titular). Sin fecha de nacimiento: no se recaba; la **edad** es opcional y se captura en Mi perfil (`user_metadata.edad`, 18-120).
 
+## Niveles de suscripción Básico · Pro · Premium (migración 140, 2026-11-24) — APAGADOS
+- **Interruptor:** `NEXT_PUBLIC_NIVELES_ACTIVOS=1` (`nivelesActivos()` en `lib/niveles.ts`; cambiarlo requiere redeploy). Apagado,
+  la landing, `/billing` y el checkout venden el plan único de siempre ($399 / $3,588), igual que hoy. **No encenderlo** hasta
+  alinear los reels de Meta Ads («de $399 a $199») y la landing, y decidir si la promo −50 % aplica a los niveles (hoy NO aplica).
+- **Tabla** (única fuente en código: `lib/niveles.ts`; espejo en la base: `plan_funciones`, y `niveles.test.ts` los compara leyendo la
+  migración): Básico $249/mes · $2,244/año, 1 sucursal, sin Sucursales, sin lealtad, sin catálogo, sin pedidos; Pro $449 · $4,044, hasta
+  3 sucursales + lealtad + catálogo + pedidos; Premium $599 · $5,388, sucursales ilimitadas (ancla). Usuarios y productos ilimitados en
+  todos. **Los extras de Premium (soporte prioritario, migración asistida) son PROPUESTA: no están en la landing ni en `/billing` hasta
+  que el usuario confirme que los cumple.** Anual = mensual × 0.75 redondeado × 12.
+- **`nivel` NULL = heredado** (clientes de antes y la prueba de 14 días): todo permitido y sin tope; nunca se les cambia nada.
+  `nivel_pendiente` guarda lo elegido en el checkout MIENTRAS no se paga; solo `asignar_nivel` (service_role, lo llama el webhook
+  `subscription.paid`/`order.paid` vía `confirmarNivelPagado`) lo confirma, y rechaza si hay más sucursales activas que el tope.
+- **La regla vive en la base** (triggers aditivos, no se reescribió ninguna función de cobro): `limite_sucursales`, `plan_sin_lealtad`,
+  `plan_sin_catalogo`. La interfaz solo esconde: `usePlan()` (`hooks/use-plan.ts`, store con `info_plan`, **falla abierto**: sin red =
+  heredado), `filterNavigation`/`puedeVerRuta`/`accionesDisponibles`/`pasosParaUsuario` reciben el plan, `PlanGate` («Disponible en
+  Pro») envuelve `/branches` y `/online-catalog`, Clientes quita la pestaña de lealtad, `usePosLealtad` apaga la tarjeta, y
+  `SucursalesCard` avisa del tope. **Bajar de nivel nunca borra datos.**
+- **Conekta:** un plan por nivel y periodo (`symvora-<nivel>-<monthly|yearly>-v1`, claves `proMonthly`…; montos inmutables: si una cifra
+  de `PRECIOS_NIVEL_CENTS` cambia, versionar el id). `create-checkout` acepta `nivel` solo con el interruptor encendido; sin él o con
+  pestañas viejas cobra como siempre. Rechaza con 409 `demasiadas_sucursales` y `cambio_de_nivel_no_disponible` (quien YA paga no
+  cambia de nivel por aquí: crearía una segunda suscripción; el cambio con `cambiarPlan` está pendiente). Los planes se crean en el
+  primer checkout real: **nunca pagar para probar**; la primera compra real es la prueba de verdad.
+- **Pendiente:** cambio de nivel para quien ya paga, FAQ/landing sin «ilimitado»/«5,000 productos» donde ya no aplique, Fase 2
+  (búsqueda y paginación en servidor para 20k+) y Fase 3 (módulo de Pedidos del catálogo, con su propio plan).
+
+## Lecturas de listas grandes (2026-11-24)
+- PostgREST corta en **1,000 filas** (`max-rows`): una consulta sin paginar devuelve el corte en silencio. **REGLA:** toda lectura de una
+  lista que puede pasar de mil filas (productos, variantes, stock por sucursal, clientes, lotes, ajustes, ventas del reporte) usa
+  `leerPorTramos` (`lib/leer-por-tramos.ts`) con `.order(...).order("id").range(desde, hasta)` y una consulta NUEVA por tramo (el
+  builder se muta). Los errores lanzan en vez de devolver una lista vacía.
+
 ## Moneda del negocio (migración 133, 2026-11-12)
 - Pedido de un cliente de España. `tenants.moneda` (`MXN` por defecto, `USD`, `EUR`; CHECK) se elige en Configuración →
   General (permiso `org.manage_settings`, el mismo del nombre del negocio). **Solo formato: NO convierte montos.** Si ya
@@ -732,7 +763,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 139; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 140 —niveles, aplicada—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**

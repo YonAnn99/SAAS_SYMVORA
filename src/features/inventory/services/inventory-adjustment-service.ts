@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type {
   AjusteInventario,
   LoteOption,
@@ -38,13 +39,16 @@ export async function fetchAdjustmentProducts(
   tenantId: string
 ): Promise<ProductOption[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("productos")
-    .select("id, nombre")
-    .eq("tenant_id", tenantId)
-    .is("archivado_en", null)
-    .order("nombre");
-  return data ?? [];
+  return leerPorTramos<ProductOption>((desde, hasta) =>
+    supabase
+      .from("productos")
+      .select("id, nombre")
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .order("nombre")
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 export async function fetchProductVariants(

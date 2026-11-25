@@ -31,6 +31,7 @@ import {
   ventasPorHora,
 } from "@/features/reports/series-graficas";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useSucursal } from "@/contexts/sucursal-context";
 import { SucursalSelector } from "@/features/sucursales/components/sucursal-selector";
@@ -235,30 +236,45 @@ export default function ReportsPage() {
     }
     const { desde: startDate, hasta: endDate } = rango;
 
-    let qVentas = supabase
-      .from("ventas")
-      .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
-      .eq("tenant_id", tenantId)
-      .gte("fecha_venta", startDate.toISOString())
-      .lte("fecha_venta", endDate.toISOString())
-      .eq("estado", "COMPLETADA");
-
-    // Mismo criterio que el dashboard: `null` = todas las sucursales. Todo el
-    // reporte (graficas, top de productos, clientes) sale de estas ventas y del
-    // detalle de ESTAS ventas, asi que filtrar aqui acota el reporte entero.
-    if (sucursalId) qVentas = qVentas.eq("sucursal_id", sucursalId);
+    // UNA consulta nueva por tramo (`leerPorTramos`): el constructor de Supabase
+    // se muta al encadenar `.range()`, asi que no se puede reutilizar entre tramos.
+    const armarVentas = () => {
+      let q = supabase
+        .from("ventas")
+        .select("id, total, metodo_pago, fecha_venta, estado, cliente_id")
+        .eq("tenant_id", tenantId)
+        .gte("fecha_venta", startDate.toISOString())
+        .lte("fecha_venta", endDate.toISOString())
+        .eq("estado", "COMPLETADA");
+      // Mismo criterio que el dashboard: `null` = todas las sucursales. Todo el
+      // reporte (graficas, top de productos, clientes) sale de estas ventas y del
+      // detalle de ESTAS ventas, asi que filtrar aqui acota el reporte entero.
+      if (sucursalId) q = q.eq("sucursal_id", sucursalId);
+      return q;
+    };
 
     // Periodo anterior, solo para la linea de comparacion: fecha y total, con
     // los mismos filtros. Va en el mismo `Promise.all` (no suma otra espera).
     const anterior = rangoAnterior(periodo, rango);
-    let qVentasAnterior = supabase
-      .from("ventas")
-      .select("fecha_venta, total")
-      .eq("tenant_id", tenantId)
-      .gte("fecha_venta", anterior.desde.toISOString())
-      .lte("fecha_venta", anterior.hasta.toISOString())
-      .eq("estado", "COMPLETADA");
-    if (sucursalId) qVentasAnterior = qVentasAnterior.eq("sucursal_id", sucursalId);
+    const armarVentasAnterior = () => {
+      let q = supabase
+        .from("ventas")
+        .select("fecha_venta, total")
+        .eq("tenant_id", tenantId)
+        .gte("fecha_venta", anterior.desde.toISOString())
+        .lte("fecha_venta", anterior.hasta.toISOString())
+        .eq("estado", "COMPLETADA");
+      if (sucursalId) q = q.eq("sucursal_id", sucursalId);
+      return q;
+    };
+
+    // Mismo contrato que una respuesta de Supabase (`data`/`error`) para no tocar
+    // el resto de la funcion.
+    const comoRespuesta = <T,>(lectura: Promise<T[]>) =>
+      lectura.then(
+        (data) => ({ data, error: null as { message: string } | null }),
+        (error: { message: string }) => ({ data: null as T[] | null, error })
+      );
 
     const [
       { data: ventas, error: ventasError },
@@ -266,25 +282,52 @@ export default function ReportsPage() {
       { data: clientes },
       { data: ventasPrevias },
     ] = await Promise.all([
-      qVentas
-        // Tope duro: todo el reporte se agrega en el navegador, asi que sin
-        // limite un negocio con un año de historial congela la pestaña del
-        // comerciante. Se ordena por fecha descendente para que, si se trunca,
-        // lo que se conserve sea lo mas reciente (lo util) y no un corte
-        // arbitrario.
-        .order("fecha_venta", { ascending: false })
-        .limit(MAX_VENTAS_REPORTE),
-      supabase
-        .from("productos")
-        .select("id, nombre, categoria")
-        .eq("tenant_id", tenantId),
-      supabase
-        .from("clientes")
-        .select("id, nombre")
-        .eq("tenant_id", tenantId),
-      qVentasAnterior
-        .order("fecha_venta", { ascending: false })
-        .limit(MAX_VENTAS_REPORTE),
+      // Tope duro (`maximo`): todo el reporte se agrega en el navegador, asi que
+      // sin limite un negocio con un año de historial congela la pestaña del
+      // comerciante. Se ordena por fecha descendente para que, si se trunca, lo
+      // que se conserve sea lo mas reciente (lo util) y no un corte arbitrario.
+      // Antes era `.limit(5000)`, pero Supabase entrega 1,000 como maximo: con
+      // mas de 1,000 ventas el reporte salia CORTADO y sin el aviso de truncado.
+      comoRespuesta(
+        leerPorTramos(
+          (desde, hasta) =>
+            armarVentas()
+              .order("fecha_venta", { ascending: false })
+              .order("id")
+              .range(desde, hasta),
+          { maximo: MAX_VENTAS_REPORTE }
+        )
+      ),
+      comoRespuesta(
+        leerPorTramos((desde, hasta) =>
+          supabase
+            .from("productos")
+            .select("id, nombre, categoria")
+            .eq("tenant_id", tenantId)
+            .order("id")
+            .range(desde, hasta)
+        )
+      ),
+      comoRespuesta(
+        leerPorTramos((desde, hasta) =>
+          supabase
+            .from("clientes")
+            .select("id, nombre")
+            .eq("tenant_id", tenantId)
+            .order("id")
+            .range(desde, hasta)
+        )
+      ),
+      comoRespuesta(
+        leerPorTramos(
+          (desde, hasta) =>
+            armarVentasAnterior()
+              .order("fecha_venta", { ascending: false })
+              .order("id")
+              .range(desde, hasta),
+          { maximo: MAX_VENTAS_REPORTE }
+        )
+      ),
     ]);
 
     const truncado = (ventas?.length ?? 0) >= MAX_VENTAS_REPORTE;

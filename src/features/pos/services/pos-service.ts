@@ -1,5 +1,6 @@
 import { insumosParaRpc, type InsumoLinea } from "@/features/inventory/insumos";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type { Producto } from "@/lib/types/database";
 import type { MetodoPago, SaleTotals, VarianteProducto } from "../types/pos.types";
 import {
@@ -254,29 +255,25 @@ export async function fetchPosProducts(
 ): Promise<Producto[]> {
   const supabase = createSupabaseBrowserClient();
 
-  if (stockLocal) {
-    const { data, error } = await supabase
-      .from("productos")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .is("archivado_en", null)
-      .order("nombre");
-    if (error) throw error;
-    return conStockDeSucursal(data ?? [], stockLocal);
-  }
+  // Por tramos: PostgREST corta en 1,000 filas sin avisar y el POS vendia con un
+  // catalogo incompleto (`lib/leer-por-tramos.ts`).
+  const leerCatalogo = () =>
+    leerPorTramos<Producto>((desde, hasta) =>
+      supabase
+        .from("productos")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        // Un producto archivado (migracion 102) ya no se vende.
+        .is("archivado_en", null)
+        // Sin filtro de existencias aqui (ver arriba): los servicios entran en 0 y
+        // un producto con variantes entra si alguna tiene stock (`vendibleEnPos`).
+        .order("nombre")
+        .order("id")
+        .range(desde, hasta)
+    );
 
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    // Un producto archivado (migracion 102) ya no se vende.
-    .is("archivado_en", null)
-    // Sin filtro de existencias aqui (ver arriba): los servicios entran en 0 y
-    // un producto con variantes entra si alguna tiene stock (`vendibleEnPos`).
-    .order("nombre");
-
-  if (error) throw error;
-  return data ?? [];
+  if (stockLocal) return conStockDeSucursal(await leerCatalogo(), stockLocal);
+  return leerCatalogo();
 }
 
 /**
@@ -291,21 +288,23 @@ export async function fetchPosVariants(
   stockLocal: FilaStockSucursal[] | null = null
 ): Promise<VarianteProducto[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("variantes_producto")
-    // `productos!inner` solo para filtrar: las tallas de un producto archivado
-    // (migracion 102) tampoco se venden, ni escaneando su codigo. Ni las
-    // variantes archivadas (migracion 110).
-    .select(
-      "id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras, imagen_url, unidad_medida, stock_minimo, productos!inner(archivado_en)"
-    )
-    .eq("tenant_id", tenantId)
-    .is("archivado_en", null)
-    .is("productos.archivado_en", null)
-    .order("talla");
-
-  if (error) throw error;
-  const variantes = (data ?? []) as VarianteProducto[];
+  const data = await leerPorTramos((desde, hasta) =>
+    supabase
+      .from("variantes_producto")
+      // `productos!inner` solo para filtrar: las tallas de un producto archivado
+      // (migracion 102) tampoco se venden, ni escaneando su codigo. Ni las
+      // variantes archivadas (migracion 110).
+      .select(
+        "id, producto_id, talla, color, precio_venta, stock_actual, codigo_barras, imagen_url, unidad_medida, stock_minimo, productos!inner(archivado_en)"
+      )
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .is("productos.archivado_en", null)
+      .order("talla")
+      .order("id")
+      .range(desde, hasta)
+  );
+  const variantes = data as unknown as VarianteProducto[];
   // Cada talla con lo que hay EN EL LOCAL de la caja, no en todo el negocio.
   return stockLocal ? conStockDeSucursalVariantes(variantes, stockLocal) : variantes;
 }

@@ -8,6 +8,8 @@ import * as m from "motion/react-m";
 import { ArrowRight, Rocket } from "lucide-react";
 import { PRECIO_PROMO_MXN, precioListaMXN, promoAplica } from "@/features/payments/promocion";
 import { PROMO_LANZAMIENTO, esPromoAnualTabletVigente } from "@/lib/pricing";
+import { nivelesActivos } from "@/lib/niveles";
+import { CtaNiveles } from "./cta-niveles";
 import { WhatsAppLogo } from "./whatsapp-logo";
 import { CAPSULA, CAPSULA_GRANDE, FLECHA_CAPSULA, PRINCIPAL, WHATSAPP_CONTORNO } from "./boton-capsula";
 import {
@@ -53,7 +55,7 @@ function buildWhatsAppUrl() {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
 }
 
-export function CTA() {
+function CtaPlanUnico() {
   const t = useTranslations();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
@@ -376,4 +378,12 @@ export function CTA() {
       </m.div>
     </m.section>
   );
+}
+
+/**
+ * Precios de la landing. Con `NEXT_PUBLIC_NIVELES_ACTIVOS=1` son tres niveles (Basico / Pro / Premium,
+ * migracion 140); sin el, el plan unico de siempre, exactamente como antes.
+ */
+export function CTA() {
+  return nivelesActivos() ? <CtaNiveles /> : <CtaPlanUnico />;
 }

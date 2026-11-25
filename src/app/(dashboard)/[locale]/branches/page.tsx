@@ -15,6 +15,7 @@ import { ResumenSucursales } from "@/features/sucursales/components/resumen-sucu
 import { ExistenciasSucursal } from "@/features/sucursales/components/existencias-sucursal";
 import { TraspasosSucursal } from "@/features/sucursales/components/traspasos-sucursal";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { PlanGate } from "@/components/plan/plan-gate";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 
 // En celular: sin íconos y con menos relleno, como Configuración. Con íconos la
@@ -36,7 +37,7 @@ const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-
  * compararlos, ver y corregir las existencias de cada uno, y mover mercancia
  * entre ellos.
  */
-export default function BranchesPage() {
+function BranchesContenido() {
   const t = useTranslations("branches");
   const { tenantId, loading } = useCurrentTenant();
   const { hayVarias, refetch: refetchSucursales } = useSucursal();
@@ -163,5 +164,14 @@ export default function BranchesPage() {
         </Tabs>
       )}
     </div>
+  );
+}
+
+/** Basico no incluye el modulo de Sucursales (migracion 140): ahi sale «Disponible en Pro». */
+export default function BranchesPage() {
+  return (
+    <PlanGate funcion="sucursales">
+      <BranchesContenido />
+    </PlanGate>
   );
 }

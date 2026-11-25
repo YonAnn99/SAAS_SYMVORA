@@ -11,6 +11,7 @@
  */
 
 import type { ClaveModulo } from "@/lib/modulos";
+import { FUNCIONES_HEREDADO, rutaPermitidaPorPlan, type FuncionesPlan } from "@/lib/niveles";
 
 export interface AccionRapida {
   id: string;
@@ -267,9 +268,14 @@ export function coincideBusqueda(
 /** Acciones que puede usar quien busca (permiso y modulos encendidos). */
 export function accionesDisponibles(
   can: (permiso: string) => boolean,
-  modulos: Partial<Record<ClaveModulo, boolean>>
+  modulos: Partial<Record<ClaveModulo, boolean>>,
+  // Lo que el nivel de suscripcion no incluye (Basico: alta de sucursal) no se ofrece.
+  plan: FuncionesPlan = FUNCIONES_HEREDADO
 ): AccionRapida[] {
   return ACCIONES_RAPIDAS.filter(
-    (a) => (!a.permiso || can(a.permiso)) && (!a.modulo || modulos[a.modulo])
+    (a) =>
+      (!a.permiso || can(a.permiso)) &&
+      (!a.modulo || modulos[a.modulo]) &&
+      rutaPermitidaPorPlan(a.href.split("?")[0], plan)
   );
 }

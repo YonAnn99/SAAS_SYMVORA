@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { inicioDeSemana, type SelloParaPanel } from "./lealtad";
 import type { EstadoTarjeta, IconoSello, ProgramaLealtad, TarjetaLealtad, TipoPremio, PaletaTarjeta } from "./types";
 
@@ -100,20 +101,27 @@ export async function fetchResumen(tenantId: string, ahora = new Date()): Promis
   inicioSemanas.setDate(inicioSemanas.getDate() - 7 * (SEMANAS_PANEL - 1));
   const desde = inicioMes < inicioSemanas ? inicioMes : inicioSemanas;
 
-  const [{ count: activas }, { data: movimientos }] = await Promise.all([
+  const [{ count: activas }, movimientos] = await Promise.all([
     supabase
       .from("tarjetas_lealtad")
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId)
       .eq("activa", true),
-    supabase
-      .from("movimientos_lealtad")
-      .select("tipo, tarjeta_id, creado_en")
-      .eq("tenant_id", tenantId)
-      .in("tipo", ["sello", "canje"])
-      .gte("creado_en", desde.toISOString())
-      .order("creado_en", { ascending: false })
-      .limit(10000),
+    // Antes `.limit(10000)`, pero Supabase entrega 1,000 como maximo: con mas de
+    // 1,000 sellos en el periodo el panel contaba de menos. Por tramos, con tope.
+    leerPorTramos(
+      (desde_, hasta) =>
+        supabase
+          .from("movimientos_lealtad")
+          .select("tipo, tarjeta_id, creado_en")
+          .eq("tenant_id", tenantId)
+          .in("tipo", ["sello", "canje"])
+          .gte("creado_en", desde.toISOString())
+          .order("creado_en", { ascending: false })
+          .order("id")
+          .range(desde_, hasta),
+      { maximo: 10000 }
+    ),
   ]);
   const filas = (movimientos ?? []) as { tipo: string; tarjeta_id: string; creado_en: string }[];
   const delMes = filas.filter((m) => new Date(m.creado_en) >= inicioMes);
@@ -180,5 +188,8 @@ export async function tarjetaDeCliente(clienteId: string): Promise<TarjetaConCli
 /** Mensaje legible de un error de Supabase/Postgres (los RPC ya hablan en español). */
 export function mensajeDeError(error: unknown, porDefecto: string): string {
   const mensaje = (error as { message?: unknown } | null)?.message;
+  // Los codigos del nivel de suscripcion (migracion 140) no son para mostrarse: la interfaz ya esconde
+  // lo que el nivel no incluye y esto solo cubre quien se salta la pantalla.
+  if (typeof mensaje === "string" && /^plan_sin_|^limite_/.test(mensaje.trim())) return porDefecto;
   return typeof mensaje === "string" && mensaje.trim() ? mensaje : porDefecto;
 }

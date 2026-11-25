@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type { ListaPrecios, PrecioLista } from "@/lib/types/database";
 
 /**
@@ -35,13 +36,16 @@ export async function fetchVariantsForPricing(
   tenantId: string
 ): Promise<VarianteConPrecio[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("variantes_producto")
-    .select("id, producto_id, talla, color, precio_venta")
-    .eq("tenant_id", tenantId)
-    .is("archivado_en", null)
-    .order("talla");
-  return data ?? [];
+  return leerPorTramos<VarianteConPrecio>((desde, hasta) =>
+    supabase
+      .from("variantes_producto")
+      .select("id, producto_id, talla, color, precio_venta")
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .order("talla")
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 export async function fetchPriceLists(
@@ -82,11 +86,14 @@ export async function fetchPriceListItems(
   listaId: string
 ): Promise<PrecioLista[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("precios_lista")
-    .select("*")
-    .eq("lista_id", listaId);
-  return data ?? [];
+  return leerPorTramos<PrecioLista>((desde, hasta) =>
+    supabase
+      .from("precios_lista")
+      .select("*")
+      .eq("lista_id", listaId)
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 export async function createPriceList(

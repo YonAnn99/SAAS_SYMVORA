@@ -14,6 +14,7 @@ import { useCerrarSesion } from "@/components/layout/cerrar-sesion";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
+import { usePlan } from "@/hooks/use-plan";
 import { filterNavigation, navegacionDock, stripLocale } from "@/lib/navigation";
 import { useNovedades } from "@/features/novedades/use-novedades";
 import { EtiquetaNuevo, PuntoNuevo } from "@/features/novedades/etiqueta-nuevo";
@@ -84,6 +85,7 @@ export function DockMovil() {
   const pathname = usePathname();
   const { tenantName, tenantLogo, role, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
+  const { funciones: plan } = usePlan();
   const [masAbierto, setMasAbierto] = useState(false);
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -100,7 +102,7 @@ export function DockMovil() {
   const cargando = tenantLoading || permsLoading;
   // Con el rol sin resolver, el filtro daría el subconjunto de cajero unos
   // instantes (bug del sidebar del 2026-09-04): se espera a que cargue.
-  const { fijos, resto } = cargando ? { fijos: [], resto: [] } : navegacionDock(filterNavigation(role, can));
+  const { fijos, resto } = cargando ? { fijos: [], resto: [] } : navegacionDock(filterNavigation(role, can, plan));
   const ruta = stripLocale(pathname);
   const enMas = resto.some((i) => i.href === ruta);
   const enPos = ruta === "/pos";

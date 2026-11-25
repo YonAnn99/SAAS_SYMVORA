@@ -5,11 +5,14 @@ import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { getAppUrl } from "@/lib/site";
 import {
   COBROS_OFERTA_REGRESO,
+  clavePlanDeNivel,
   claveDePlanNuevo,
   cobrosPromoIniciales,
   ofertaRegresoVigente,
   precioCobroCents,
+  precioNivelCobroCents,
 } from "@/features/payments/promocion";
+import { esNivel, funcionesDe, nivelesActivos, NIVELES_ORDEN, type Nivel } from "@/lib/niveles";
 import { METODOS_POR_TIPO, metodoPendiente } from "@/features/payments/metodo-pago-conekta";
 import {
   PROMO_META_99,
@@ -33,6 +36,16 @@ export async function POST(request: Request) {
       ? body.locale
       : "es";
     const period = body.period === "yearly" ? "yearly" : "monthly";
+    // Nivel de suscripcion (migracion 140). Solo cuenta con los niveles encendidos; sin el, o sin `nivel`
+    // en la peticion (pestañas abiertas de antes del deploy), se cobra el plan unico de siempre.
+    const nivelElegido: Nivel | null =
+      nivelesActivos() && esNivel(body.nivel) ? body.nivel : null;
+    if (nivelesActivos() && body.nivel != null && !esNivel(body.nivel)) {
+      return NextResponse.json(
+        { error: "nivel_invalido", niveles: NIVELES_ORDEN },
+        { status: 400 }
+      );
+    }
 
     if (!tenant_id) {
       return NextResponse.json(
@@ -103,16 +116,49 @@ export async function POST(request: Request) {
       (esCodigoPromoMeta99(codigoPromoParam ?? "") ||
         subscription.promo_codigo_campana === PROMO_META_99.codigo);
 
-    const clavePlan = conOfertaRegreso
-      ? "monthlyPromo"
-      : claveDePlanNuevo(period, esNuevoCliente);
+    // Un nivel NO se mezcla con las promociones del plan unico (decision pendiente para los niveles) ni
+    // con una cuenta que ya paga: cambiar de nivel a quien ya tiene una suscripcion activa es otro flujo
+    // (cambiarPlan) que aun no esta; crear aqui una segunda suscripcion cobraria doble.
+    if (nivelElegido && yaPaga) {
+      return NextResponse.json({ error: "cambio_de_nivel_no_disponible" }, { status: 409 });
+    }
+    if (nivelElegido) {
+      // Si ya tiene mas sucursales activas de las que incluye el nivel, que cierre alguna o elija otro:
+      // `asignar_nivel` lo rechazaria despues de cobrar.
+      const max = funcionesDe(nivelElegido).sucursalesMax;
+      if (max !== null) {
+        const { count } = await supabase
+          .from("sucursales")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenant_id)
+          .eq("activa", true);
+        if ((count ?? 0) > max) {
+          return NextResponse.json(
+            { error: "demasiadas_sucursales", max, usadas: count ?? 0 },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
+    const clavePlan = nivelElegido
+      ? clavePlanDeNivel(nivelElegido, period)
+      : conOfertaRegreso
+        ? "monthlyPromo"
+        : claveDePlanNuevo(period, esNuevoCliente);
     const esPromo = clavePlan === "monthlyPromo";
 
     const cambios: Record<string, unknown> = { billing_period: period };
-    if (esCampanaMeta99) {
+    // El nivel elegido espera al pago: lo confirma el webhook con `asignar_nivel`. Si el pago no se
+    // completa, el negocio sigue con lo que ya tenia.
+    if (nivelElegido) cambios.nivel_pendiente = nivelElegido;
+    if (esCampanaMeta99 && !nivelElegido) {
       cambios.promo_codigo_campana = PROMO_META_99.codigo;
     }
-    if (conOfertaRegreso) {
+    if (nivelElegido) {
+      cambios.promo_cobros_restantes = 0;
+      cambios.promo_plan = null;
+    } else if (conOfertaRegreso) {
       // A diferencia de la promocion de lanzamiento, esta SI se siembra en
       // quien ya pago: es justo a quien va dirigida. Un solo cobro.
       const { CONEKTA_PLAN_IDS } = await import(
@@ -250,15 +296,24 @@ export async function POST(request: Request) {
     // Efectivo/transferencia arma el monto a mano, asi que tiene que aplicar la
     // promocion por su cuenta: si no, la landing anunciaria $199 y el cliente
     // que elige OXXO se encontraria una ficha de $399.
-    const cobrosPromo = conOfertaRegreso
-      ? COBROS_OFERTA_REGRESO
-      : esPromo && !yaPaga
-        ? cobrosPromoIniciales(period)
-        : 0;
-    const amount = esCampanaMeta99
-      ? PROMO_META_99.precioCents
-      : precioCobroCents(period, cobrosPromo, esNuevoCliente);
-    const description = esCampanaMeta99
+    const cobrosPromo = nivelElegido
+      ? 0
+      : conOfertaRegreso
+        ? COBROS_OFERTA_REGRESO
+        : esPromo && !yaPaga
+          ? cobrosPromoIniciales(period)
+          : 0;
+    const amount = nivelElegido
+      ? precioNivelCobroCents(nivelElegido, period)
+      : esCampanaMeta99
+        ? PROMO_META_99.precioCents
+        : precioCobroCents(period, cobrosPromo, esNuevoCliente);
+    const nombreNivel = nivelElegido
+      ? { basico: "Basico", pro: "Pro", premium: "Premium" }[nivelElegido]
+      : null;
+    const description = nivelElegido
+      ? `SYMVORA ${nombreNivel} - ${period === "yearly" ? "Anual" : "Mensual"}`
+      : esCampanaMeta99
       ? "SYMVORA - Promoción Fin de Año ($99 MXN)"
       : clavePlan === "yearlyTablet"
         ? "SYMVORA ANUAL TABLET"
@@ -273,7 +328,8 @@ export async function POST(request: Request) {
     // con un plan — Conekta guarda la tarjeta y cobra sola cada periodo.
     // Para la campaña SYMVORA99 ($99 hasta fin de año), es una orden de pago único
     // (no recurrente inmediata), disponible con tarjeta, transferencia o efectivo.
-    const isCardSubscription = type === "card" && !esCampanaMeta99;
+    // (La campaña de $99 no aplica a un nivel: con nivel elegido, la tarjeta es siempre la suscripcion.)
+    const isCardSubscription = type === "card" && (!esCampanaMeta99 || Boolean(nivelElegido));
 
     let order;
     try {
@@ -298,9 +354,10 @@ export async function POST(request: Request) {
           cancelUrl: `${APP_URL}/${locale}/billing`,
           failureUrl: `${APP_URL}/${locale}/billing`,
           allowedPaymentMethods: allowedMethods,
-          metadata: esCampanaMeta99
-            ? { promo_campana: PROMO_META_99.codigo, tenant_id }
-            : undefined,
+          metadata:
+            esCampanaMeta99 && !nivelElegido
+              ? { promo_campana: PROMO_META_99.codigo, tenant_id }
+              : undefined,
         });
       }
     } catch (orderError: unknown) {

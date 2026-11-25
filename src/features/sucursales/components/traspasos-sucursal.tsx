@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { logActivity } from "@/lib/supabase/activity-logger";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useSucursal } from "@/contexts/sucursal-context";
@@ -95,23 +96,30 @@ export function TraspasosSucursal({
     }
     try {
       const supabase = createSupabaseBrowserClient();
+      // Por tramos: PostgREST corta en 1,000 filas sin avisar (`lib/leer-por-tramos.ts`).
       const [prods, vars, filas, lotes] = await Promise.all([
-        supabase
-          .from("productos")
-          .select("id, nombre, es_servicio")
-          .eq("tenant_id", tenantId)
-          .is("archivado_en", null),
-        supabase
-          .from("variantes_producto")
-          .select("id, producto_id, talla, color")
-          .eq("tenant_id", tenantId)
-          .is("archivado_en", null),
+        leerPorTramos((desde, hasta) =>
+          supabase
+            .from("productos")
+            .select("id, nombre, es_servicio")
+            .eq("tenant_id", tenantId)
+            .is("archivado_en", null)
+            .order("id")
+            .range(desde, hasta)
+        ),
+        leerPorTramos((desde, hasta) =>
+          supabase
+            .from("variantes_producto")
+            .select("id, producto_id, talla, color")
+            .eq("tenant_id", tenantId)
+            .is("archivado_en", null)
+            .order("id")
+            .range(desde, hasta)
+        ),
         fetchStockSucursal(origen),
         fetchLotesEnSucursal(origen).catch(() => [] as LoteEnSucursal[]),
       ]);
-      if (prods.error) throw prods.error;
-      if (vars.error) throw vars.error;
-      setOpciones(opcionesDeTraspaso(prods.data ?? [], vars.data ?? [], filas));
+      setOpciones(opcionesDeTraspaso(prods, vars, filas));
       setLotesOrigen(lotes);
     } catch (error) {
       toast.error(mensajeDeError(error, te));

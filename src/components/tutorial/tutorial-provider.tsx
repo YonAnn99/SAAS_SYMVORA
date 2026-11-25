@@ -5,6 +5,7 @@ import { usePathname } from "@/i18n/navigation";
 import { useTutorial } from "@/hooks/use-tutorial";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
+import { usePlan } from "@/hooks/use-plan";
 import { tutorialSteps, type TutorialStep } from "./steps-data";
 import { pasosParaUsuario } from "./pasos-por-usuario";
 
@@ -46,14 +47,15 @@ export function useTutorialContext() {
 export function TutorialProvider({ children }: { children: ReactNode }) {
   const { role, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
+  const { funciones: plan } = usePlan();
   // Solo los pasos de los modulos a los que esta persona entra (el cajero no
   // ve Configuracion, Usuarios, Dashboard...). Mientras rol y permisos cargan
   // no hay paso: si no, se veria un instante el tutorial del dueño (como le
   // paso al menu lateral el 2026-09-04).
   const listo = !tenantLoading && !permsLoading;
   const pasos = useMemo(
-    () => (listo ? pasosParaUsuario(tutorialSteps, role, can) : tutorialSteps),
-    [listo, role, can]
+    () => (listo ? pasosParaUsuario(tutorialSteps, role, can, plan) : tutorialSteps),
+    [listo, role, can, plan]
   );
   const tutorial = useTutorial(pasos.length);
   const pathname = usePathname();

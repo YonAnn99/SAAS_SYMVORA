@@ -50,6 +50,8 @@ import { useEsAppAndroid } from "@/features/app-android/use-es-app-android";
 import { useAccesoCuenta } from "@/hooks/use-acceso-cuenta";
 import { AvisoCelularFaltante } from "@/components/profile/celular-perfil";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { SelectorNivel } from "@/components/plan/selector-nivel";
+import { nivelesActivos, type Nivel } from "@/lib/niveles";
 
 interface Subscription {
   id: string;
@@ -114,6 +116,10 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [promoApplying, setPromoApplying] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<"monthly" | "yearly">("monthly");
+  // Niveles Basico / Pro / Premium (migracion 140). Solo con el interruptor encendido y para quien aun
+  // no paga; quien ya paga conserva su plan y cambia de nivel con soporte (por ahora).
+  const [selectedNivel, setSelectedNivel] = useState<Nivel>("pro");
+  const conNiveles = nivelesActivos() && !subscription?.last_payment_at;
 
   const fetchSubscription = async () => {
     if (!tenantId) {
@@ -232,6 +238,14 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
     }
   };
 
+  // Errores del checkout con nivel (migracion 140): un texto claro en vez del codigo crudo.
+  const errorDeCheckout = (data: { error?: string; max?: number; usadas?: number }) =>
+    data.error === "demasiadas_sucursales"
+      ? t("planes.errors.tooManyBranches", { max: data.max ?? 0, usadas: data.usadas ?? 0 })
+      : data.error === "cambio_de_nivel_no_disponible"
+        ? t("planes.errors.changeNotAvailable")
+        : data.error || t("common.error");
+
   const handleAddCard = async () => {
     if (!tenantId) return;
     setProcessing(true);
@@ -239,14 +253,20 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "card", locale, period: selectedPeriod }),
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          type: "card",
+          locale,
+          period: selectedPeriod,
+          ...(conNiveles ? { nivel: selectedNivel } : {}),
+        }),
       });
 
       const data = await response.json();
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
-        toast.error(data.error || t("common.error"));
+        toast.error(errorDeCheckout(data));
         setProcessing(false);
       }
     } catch {
@@ -264,14 +284,20 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
       const response = await fetch("/api/conekta/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, type: "unico", locale, period: selectedPeriod }),
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          type: "unico",
+          locale,
+          period: selectedPeriod,
+          ...(conNiveles ? { nivel: selectedNivel } : {}),
+        }),
       });
 
       const data = await response.json();
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
-        toast.error(data.error || t("common.error"));
+        toast.error(errorDeCheckout(data));
         setProcessing(false);
       }
     } catch {
@@ -646,6 +672,8 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {!conNiveles && (
+              <>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   {t("billing.plan")}:
@@ -705,6 +733,9 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                 </div>
               )}
 
+              </>
+              )}
+
               <div
                 role="radiogroup"
                 aria-label={t("billing.page.period")}
@@ -748,6 +779,15 @@ const [subscription, setSubscription] = useState<Subscription | null>(null);
                   )}
                 </button>
               </div>
+
+              {conNiveles && (
+                <SelectorNivel
+                  nivel={selectedNivel}
+                  periodo={selectedPeriod}
+                  onChange={setSelectedNivel}
+                  disabled={processing}
+                />
+              )}
 
               <Separator />
 

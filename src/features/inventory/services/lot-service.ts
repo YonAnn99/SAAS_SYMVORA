@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type {
   Lote,
   ProductoOption,
@@ -72,25 +73,32 @@ export async function fetchLotProducts(
   tenantId: string
 ): Promise<ProductoOption[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("productos")
-    .select("id, nombre, permite_variantes, permite_lotes, costo_compra")
-    .eq("tenant_id", tenantId)
-    .is("archivado_en", null)
-    .eq("es_servicio", false)
-    .order("nombre");
-  return data ?? [];
+  return leerPorTramos<ProductoOption>((desde, hasta) =>
+    supabase
+      .from("productos")
+      .select("id, nombre, permite_variantes, permite_lotes, costo_compra")
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .eq("es_servicio", false)
+      .order("nombre")
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 /** Variantes activas: el lote de un producto con variantes es de UNA variante. */
 export async function fetchLotVariants(tenantId: string): Promise<VarianteLoteOption[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("variantes_producto")
-    .select("id, producto_id, talla, color, atributos")
-    .eq("tenant_id", tenantId)
-    .is("archivado_en", null);
-  return (data ?? []).map((v) => ({
+  const data = await leerPorTramos((desde, hasta) =>
+    supabase
+      .from("variantes_producto")
+      .select("id, producto_id, talla, color, atributos")
+      .eq("tenant_id", tenantId)
+      .is("archivado_en", null)
+      .order("id")
+      .range(desde, hasta)
+  );
+  return data.map((v) => ({
     id: v.id as string,
     producto_id: v.producto_id as string,
     etiqueta: etiquetaAtributos(v) || "Variante",

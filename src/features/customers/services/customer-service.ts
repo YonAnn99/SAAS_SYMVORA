@@ -1,18 +1,21 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { normalizarEstadoCuenta, type EstadoCuenta } from "../estado-cuenta";
 import type { Cliente, PagoCredito } from "@/lib/types/database";
 import type { CreditMetodoPago, NewCustomerForm } from "../types/customer.types";
 
 export async function fetchCustomers(tenantId: string): Promise<Cliente[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("clientes")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .order("nombre");
-
-  if (error) throw error;
-  return data ?? [];
+  // Por tramos: PostgREST corta en 1,000 filas sin avisar (`lib/leer-por-tramos.ts`).
+  return leerPorTramos<Cliente>((desde, hasta) =>
+    supabase
+      .from("clientes")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("nombre")
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 export async function createCustomer(

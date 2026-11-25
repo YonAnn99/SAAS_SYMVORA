@@ -2457,6 +2457,42 @@
       }
     }
   },
+  "planes": {
+    "names": {
+      "basico": "Básico",
+      "pro": "Pro",
+      "premium": "Premium"
+    },
+    "upgrade": {
+      "title": "Disponible en el plan {nivel}",
+      "cta": "Ver planes",
+      "body": {
+        "catalogo": "El catálogo en línea viene incluido desde el plan {nivel}. Tus productos siguen guardados y nada se borra.",
+        "sucursales": "Varias sucursales, con inventario por local y traspasos entre ellas, vienen incluidas desde el plan {nivel}.",
+        "lealtad": "Las tarjetas de lealtad vienen incluidas desde el plan {nivel}. Tus clientes y sus sellos se conservan.",
+        "pedidos": "El seguimiento de pedidos del catálogo viene incluido desde el plan {nivel}."
+      }
+    },
+    "selector": {
+      "title": "Elige tu plan",
+      "popular": "Más popular",
+      "perMonth": "/mes",
+      "billedYearly": "{total} al año",
+      "branches": "{n, plural, one {# sucursal} other {Hasta # sucursales}}",
+      "branchesUnlimited": "Sucursales ilimitadas",
+      "unlimited": "Usuarios y productos ilimitados",
+      "loyalty": "Tarjetas de lealtad",
+      "catalog": "Catálogo en línea y pedidos"
+    },
+    "errors": {
+      "tooManyBranches": "Tienes {usadas} sucursales activas y este plan incluye hasta {max}. Cierra alguna o elige un plan mayor.",
+      "changeNotAvailable": "Por ahora el cambio de plan en una cuenta con suscripción activa se hace con soporte. Escríbenos y lo hacemos por ti."
+    },
+    "limit": {
+      "sucursales": "Tu plan {nivel} incluye hasta {max, plural, one {# sucursal activa} other {# sucursales activas}}. Cierra una o sube de plan.",
+      "sucursalesTitle": "Llegaste al límite de sucursales de tu plan"
+    }
+  },
   "landing": {
     "audio": {
       "play": "Narrar esta sección",
@@ -3194,6 +3230,7 @@
       "closed": "\"{nombre}\" cerrada. Su historial se conserva.",
       "reopened": "\"{nombre}\" reabierta",
       "toggleError": "No se pudo cambiar la sucursal. Revisa tus permisos.",
+      "limitReached": "Tu plan incluye hasta {max, plural, one {# sucursal activa} other {# sucursales activas}}. Cierra una o sube de plan.",
       "title": "Sucursales",
       "desc": "Cada local tiene sus propias existencias y sus propias cifras: la venta descuenta del local de la caja donde se cobró. El catálogo y los proveedores son comunes a todo el negocio.",
       "none": "Todavía no tienes sucursales. Si tu negocio es un solo local, no necesitas crear ninguna.",

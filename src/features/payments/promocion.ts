@@ -19,6 +19,7 @@
  * el que estuviera en su mes 2.
  */
 
+import { precioNivelCents, type Nivel } from "@/lib/niveles";
 import {
   PROMO_LANZAMIENTO,
   PROMO_ANUAL_TABLET,
@@ -28,8 +29,29 @@ import {
 } from "@/lib/pricing";
 
 /** Clave de plan, no id de Conekta. La traduce `conekta/config.ts`. */
-export type ClavePlan = "monthly" | "yearly" | "monthlyPromo" | "yearlyTablet";
+export type ClavePlan =
+  | "monthly"
+  | "yearly"
+  | "monthlyPromo"
+  | "yearlyTablet"
+  // Niveles de suscripcion (migracion 140): un plan de Conekta por nivel y periodo.
+  | "basicoMonthly"
+  | "basicoYearly"
+  | "proMonthly"
+  | "proYearly"
+  | "premiumMonthly"
+  | "premiumYearly";
 
+/** Plan de Conekta de un nivel. Los niveles no llevan promocion de lanzamiento (decision pendiente). */
+export function clavePlanDeNivel(nivel: Nivel, period: BillingPeriod): ClavePlan {
+  const sufijo = period === "yearly" ? "Yearly" : "Monthly";
+  return `${nivel}${sufijo}` as ClavePlan;
+}
+
+/** Lo que cuesta en centavos un nivel (sin promocion). */
+export function precioNivelCobroCents(nivel: Nivel, period: BillingPeriod): number {
+  return precioNivelCents(nivel, period);
+}
 /** ?Se le ofrece la promocion a quien contrata en este momento? */
 export function promoAplica(period: BillingPeriod): boolean {
   return PROMO_LANZAMIENTO.activa && period === PROMO_LANZAMIENTO.periodo;

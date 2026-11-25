@@ -31,6 +31,7 @@ import {
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useModulos } from "@/hooks/use-modulos";
+import { usePlan } from "@/hooks/use-plan";
 import { filterNavigation } from "@/lib/navigation";
 import {
   PALABRAS_CLAVE_MODULOS,
@@ -78,6 +79,7 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
   const [search, setSearch] = useState("");
   const { role, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permsLoading } = usePermissions();
+  const { funciones: plan } = usePlan();
 
   // Mismo origen y mismo filtro que el menú lateral. Antes esta lista era una
   // copia aparte con 8 de los 14 módulos y SIN filtrar por permisos, así que un
@@ -90,12 +92,12 @@ export function CommandMenu({ open, setOpen }: CommandMenuProps) {
   const navItems =
     tenantLoading || permsLoading
       ? []
-      : filterNavigation(role, can);
+      : filterNavigation(role, can, plan);
 
   // Los botones del sistema que se pueden buscar por lo que hacen ("abrir
   // caja", "corte"...). Mismo filtro de permisos, mas los modulos encendidos.
   const { modulos } = useModulos();
-  const acciones = tenantLoading || permsLoading ? [] : accionesDisponibles(can, modulos);
+  const acciones = tenantLoading || permsLoading ? [] : accionesDisponibles(can, modulos, plan);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

@@ -17,6 +17,8 @@ import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useSucursal } from "@/contexts/sucursal-context";
+import { usePlan } from "@/hooks/use-plan";
+import { Link } from "@/i18n/navigation";
 import {
   createSucursal,
   updateSucursal,
@@ -48,6 +50,10 @@ export function SucursalesCard() {
   const t = useTranslations("branches.card");
   const { can, loading: permisosLoading } = usePermissions();
   const { sucursales, refetch, loading } = useSucursal();
+  // Tope de sucursales activas del nivel (migracion 140). Esto solo avisa y deshabilita el boton; quien
+  // manda es el trigger `limite_sucursales` de la base.
+  const { funciones, puedeAgregarSucursal, refrescar: refrescarPlan } = usePlan();
+  const tPlanes = useTranslations("planes");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -59,6 +65,10 @@ export function SucursalesCard() {
       return;
     }
     if (!tenantId) return;
+    if (!puedeAgregarSucursal) {
+      toast.error(t("limitReached", { max: funciones.sucursalesMax ?? 0 }));
+      return;
+    }
 
     // El choque con el nombre ya existente se detecta aquí para poder decirlo
     // en castellano; la restricción UNIQUE de la base sigue siendo la que manda.
@@ -73,9 +83,12 @@ export function SucursalesCard() {
       setNombre("");
       setDireccion("");
       await refetch();
+      void refrescarPlan();
       toast.success(t("created", { nombre: limpio }));
-    } catch {
-      toast.error(t("createError"));
+    } catch (error) {
+      toast.error(
+        esErrorDeLimite(error) ? t("limitReached", { max: funciones.sucursalesMax ?? 0 }) : t("createError")
+      );
     } finally {
       setGuardando(false);
     }
@@ -85,13 +98,16 @@ export function SucursalesCard() {
     try {
       await updateSucursal(id, { activa: !activa });
       await refetch();
+      void refrescarPlan();
       toast.success(
         activa
           ? t("closed", { nombre: nombreSucursal })
           : t("reopened", { nombre: nombreSucursal })
       );
-    } catch {
-      toast.error(t("toggleError"));
+    } catch (error) {
+      toast.error(
+        esErrorDeLimite(error) ? t("limitReached", { max: funciones.sucursalesMax ?? 0 }) : t("toggleError")
+      );
     }
   }
 
@@ -162,6 +178,24 @@ export function SucursalesCard() {
           </ul>
         )}
 
+        {!puedeAgregarSucursal && (
+          <div
+            className="flex flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+          >
+            <p>
+              <span className="font-medium">{tPlanes("limit.sucursalesTitle")}. </span>
+              {tPlanes("limit.sucursales", {
+                nivel: funciones.nivel ? tPlanes(`names.${funciones.nivel}`) : "",
+                max: funciones.sucursalesMax ?? 0,
+              })}
+            </p>
+            <Link href="/billing" className="shrink-0 font-medium underline underline-offset-2">
+              {tPlanes("upgrade.cta")}
+            </Link>
+          </div>
+        )}
+
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
           <div className="space-y-1.5">
             <Label className="text-xs" htmlFor="sucursal-nombre">
@@ -190,7 +224,7 @@ export function SucursalesCard() {
           <SpecularActionButton
             tone="add"
             className="h-9 gap-1.5 sm:h-8"
-            disabled={guardando || !nombre.trim()}
+            disabled={guardando || !nombre.trim() || !puedeAgregarSucursal}
             onClick={() => void agregar()}
           >
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -200,4 +234,15 @@ export function SucursalesCard() {
       </CardContent>
     </Card>
   );
+}
+
+/** El trigger `limite_sucursales` (migracion 140) rechazo la operacion por el tope del nivel. */
+function esErrorDeLimite(error: unknown): boolean {
+  const texto =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null
+        ? String((error as { message?: unknown }).message ?? "")
+        : String(error ?? "");
+  return texto.includes("limite_sucursales");
 }

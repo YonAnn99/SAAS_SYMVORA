@@ -1,7 +1,8 @@
 import { NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
-import { precioCobroCents, trasCobrar } from "@/features/payments/promocion";
+import { precioCobroCents, precioNivelCobroCents, trasCobrar } from "@/features/payments/promocion";
+import { esNivel, type Nivel } from "@/lib/niveles";
 import { metodoDePagoConekta } from "@/features/payments/metodo-pago-conekta";
 import { PROMO_META_99 } from "@/lib/pricing";
 
@@ -252,13 +253,48 @@ async function consumeFreeMonthCredit(
 // cantidad equivocada.
 function fallbackAmountCents(
   billingPeriod: string | null | undefined,
-  cobrosPromoRestantes: number = 0
+  cobrosPromoRestantes: number = 0,
+  // Nivel con el que se cobra (migracion 140): el confirmado o, en el primer pago, el pendiente.
+  nivel: string | null | undefined = null
 ): number {
   // El contador entra aqui porque este fallback alimenta `payment_history` Y el
   // reembolso del credito de referido: con una promocion en curso, dar por
   // hecho $399 haria que un mes regalado devolviera $200 de mas.
   const periodo = billingPeriod === "yearly" ? "yearly" : "monthly";
+  if (esNivel(nivel)) return precioNivelCobroCents(nivel, periodo);
   return precioCobroCents(periodo, cobrosPromoRestantes);
+}
+
+/** Nivel con el que se esta cobrando una suscripcion: el ya confirmado o el que espera su primer pago. */
+function nivelDeCobro(sub: { nivel?: string | null; nivel_pendiente?: string | null } | null | undefined): Nivel | null {
+  const n = sub?.nivel ?? sub?.nivel_pendiente ?? null;
+  return esNivel(n) ? n : null;
+}
+
+/**
+ * Confirma el nivel que el cliente eligio en el checkout, SOLO tras un cobro real (`subscription.paid` /
+ * `order.paid`). `asignar_nivel` (solo service_role) limpia `nivel_pendiente` y rechaza, sin cambiar nada,
+ * si el negocio tiene mas sucursales activas de las que el nivel incluye.
+ *
+ * Nunca lanza: Conekta reintenta el evento entero mientras no reciba un 200, y un fallo aqui no puede
+ * hacer que se reprocese un cobro. Si falla, `nivel_pendiente` se queda y el siguiente cobro lo reintenta;
+ * mientras tanto el negocio conserva lo que tenia.
+ */
+async function confirmarNivelPagado(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  tenantId: string | null | undefined,
+  nivelPendiente: string | null | undefined
+): Promise<void> {
+  if (!tenantId || !esNivel(nivelPendiente)) return;
+  try {
+    const { error } = await supabase.rpc("asignar_nivel", {
+      p_tenant_id: tenantId,
+      p_nivel: nivelPendiente,
+    });
+    if (error) console.error("[conekta/webhook] asignar_nivel fallo:", error.message);
+  } catch (err) {
+    console.error("[conekta/webhook] asignar_nivel fallo:", err);
+  }
 }
 
 /**
@@ -469,7 +505,7 @@ export async function POST(request: Request) {
 
         const { data: sub } = await supabase
           .from("subscriptions")
-          .select("id, billing_period")
+          .select("id, billing_period, nivel, nivel_pendiente")
           .eq("conekta_customer_id", customerId)
           .single();
 
@@ -487,7 +523,7 @@ export async function POST(request: Request) {
           if (!existingPayment) {
             await supabase.from("payment_history").insert({
               subscription_id: sub.id,
-              amount: (data.amount || fallbackAmountCents(sub.billing_period)) / 100,
+              amount: (data.amount || fallbackAmountCents(sub.billing_period, 0, nivelDeCobro(sub))) / 100,
               payment_method: "card",
               status: "completed",
               conekta_order_id: data.last_billing_cycle_order_id,
@@ -520,7 +556,7 @@ export async function POST(request: Request) {
         const { data: preSub } = await supabase
           .from("subscriptions")
           .select(
-            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_customer_id"
+            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_customer_id, nivel, nivel_pendiente"
           )
           .eq("conekta_customer_id", customerId)
           .maybeSingle();
@@ -575,7 +611,7 @@ export async function POST(request: Request) {
             ? supabase.from("payment_history").insert({
                 subscription_id: preSub.id,
                 amount:
-                  (data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes)) /
+                  (data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes, nivelDeCobro(preSub))) /
                   100,
                 payment_method: "card",
                 status: "completed",
@@ -591,6 +627,11 @@ export async function POST(request: Request) {
             : Promise.resolve(),
         ]);
 
+        // El nivel elegido en el checkout se confirma con el cobro real. Fuera de la guarda de
+        // `alreadyProcessed` a proposito: si `asignar_nivel` fallo la primera vez, el reenvio del mismo
+        // evento lo reintenta (es idempotente: tras confirmarse, `nivel_pendiente` queda en NULL).
+        if (preSub) await confirmarNivelPagado(supabase, preSub.tenant_id, preSub.nivel_pendiente);
+
         let creditoConsumido = false;
         if (preSub && !alreadyProcessed) {
           if (isFirstPayment) {
@@ -604,7 +645,7 @@ export async function POST(request: Request) {
                 tenantId: preSub.tenant_id,
                 conektaOrderId: data.last_billing_cycle_order_id,
                 amountCents:
-                  data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes),
+                  data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes, nivelDeCobro(preSub)),
               })
             ).consumed;
           }
@@ -633,7 +674,7 @@ export async function POST(request: Request) {
           // ocurriendo, solo que despues de contestar.
           const periodo = preSub.billing_period === "yearly" ? "yearly" : "monthly";
           const montoCents =
-            data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes);
+            data.amount || fallbackAmountCents(preSub.billing_period, promoRestantes, nivelDeCobro(preSub));
           const tenantId = preSub.tenant_id;
           after(async () => {
             await sendWelcomeEmailToOwner(supabase, tenantId, periodo, montoCents);
@@ -728,7 +769,7 @@ export async function POST(request: Request) {
         const { data: subData } = await supabase
           .from("subscriptions")
           .select(
-            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_subscription_id, promo_codigo_campana"
+            "id, tenant_id, last_payment_at, billing_period, promo_cobros_restantes, promo_plan, conekta_subscription_id, promo_codigo_campana, nivel, nivel_pendiente"
           )
           .eq("conekta_customer_id", customerId)
           .single();
@@ -821,7 +862,8 @@ export async function POST(request: Request) {
               data.amount ||
               fallbackAmountCents(
                 subData.billing_period,
-                subData.promo_cobros_restantes ?? 0
+                subData.promo_cobros_restantes ?? 0,
+                nivelDeCobro(subData)
               );
             const tenantOrden = subData.tenant_id;
             after(async () => {
@@ -843,11 +885,15 @@ export async function POST(request: Request) {
                   data.amount ||
                   fallbackAmountCents(
                     subData.billing_period,
-                    subData.promo_cobros_restantes ?? 0
+                    subData.promo_cobros_restantes ?? 0,
+                    nivelDeCobro(subData)
                   ),
               })
             ).consumed;
           }
+
+          // El nivel elegido en el checkout se confirma con el cobro real (tambien en efectivo/SPEI).
+          await confirmarNivelPagado(supabase, subData.tenant_id, subData.nivel_pendiente);
 
           // Efectivo tambien consume promocion: son tres fichas de $199 y la
           // cuarta ya sale a $399. Sin esto, quien paga en OXXO se quedaria con

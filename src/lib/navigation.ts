@@ -18,6 +18,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { permissionForPath } from "@/lib/modules";
 import { hasRole } from "@/lib/rbac";
+import { FUNCIONES_HEREDADO, rutaPermitidaPorPlan, type FuncionesPlan } from "@/lib/niveles";
 import type { UserRole } from "@/lib/types/database";
 
 /**
@@ -168,9 +169,10 @@ export function moduleLabelKeyForPath(path: string): string | null {
  */
 export function filterNavigation(
   role: UserRole | null,
-  can: (permission: string) => boolean
+  can: (permission: string) => boolean,
+  plan: FuncionesPlan = FUNCIONES_HEREDADO
 ): NavItem[] {
-  return NAVIGATION.filter((item) => puedeVerRuta(item.href, role, can));
+  return NAVIGATION.filter((item) => puedeVerRuta(item.href, role, can, plan));
 }
 
 /**
@@ -181,10 +183,14 @@ export function filterNavigation(
 export function puedeVerRuta(
   href: string,
   role: UserRole | null,
-  can: (permission: string) => boolean
+  can: (permission: string) => boolean,
+  plan: FuncionesPlan = FUNCIONES_HEREDADO
 ): boolean {
   const item = NAVIGATION.find((i) => i.href === href);
   if (item?.hidden) return false;
+  // Lo que el nivel de suscripcion no incluye (Basico: Sucursales y Catalogo en linea). Por defecto
+  // `FUNCIONES_HEREDADO`: sin nivel no se esconde nada.
+  if (!rutaPermitidaPorPlan(href, plan)) return false;
   const permission = permissionForPath(href);
   if (permission) return can(permission);
   return !item?.minRole || hasRole(role, item.minRole);

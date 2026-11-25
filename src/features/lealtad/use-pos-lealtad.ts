@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchPrograma, tarjetaDeCliente, tarjetaPorCodigo, type TarjetaConCliente } from "./lealtad-service";
+import { usePlan } from "@/hooks/use-plan";
 import type { ProgramaLealtad } from "./types";
 
 /**
@@ -30,7 +31,9 @@ export function usePosLealtad(tenantId: string | null) {
     };
   }, [tenantId]);
 
-  const activo = Boolean(programa?.activo);
+  // Sin tarjetas de lealtad en el nivel (Basico, migracion 140) el POS se comporta como si no hubiera programa.
+  const { permite } = usePlan();
+  const activo = permite("lealtad") && Boolean(programa?.activo);
 
   const soltar = useCallback(() => {
     turno.current++;

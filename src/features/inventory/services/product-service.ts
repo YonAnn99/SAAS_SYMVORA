@@ -1,6 +1,7 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cropToSquareWebP } from "@/lib/image";
 import { elegirCodigosLibres } from "@/lib/codigo-barras";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import type { Producto } from "../types/inventory.types";
 
 export interface ProductInput {
@@ -129,15 +130,19 @@ export async function generateNextSku(tenantId: string): Promise<string> {
 
 export async function fetchProducts(tenantId: string): Promise<Producto[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    // Los archivados (migracion 102) no son parte del catalogo; se ven en
-    // "Archivados" (`fetchArchivedProducts`).
-    .is("archivado_en", null)
-    .order("nombre");
-  return data ?? [];
+  // Por tramos: PostgREST corta en 1,000 filas sin avisar (`lib/leer-por-tramos.ts`).
+  return leerPorTramos<Producto>((desde, hasta) =>
+    supabase
+      .from("productos")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      // Los archivados (migracion 102) no son parte del catalogo; se ven en
+      // "Archivados" (`fetchArchivedProducts`).
+      .is("archivado_en", null)
+      .order("nombre")
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 
 /**
@@ -276,14 +281,16 @@ export async function restoreProduct(productId: string): Promise<void> {
 
 export async function fetchArchivedProducts(tenantId: string): Promise<Producto[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .not("archivado_en", "is", null)
-    .order("archivado_en", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return leerPorTramos<Producto>((desde, hasta) =>
+    supabase
+      .from("productos")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .not("archivado_en", "is", null)
+      .order("archivado_en", { ascending: false })
+      .order("id")
+      .range(desde, hasta)
+  );
 }
 /**
  * Convierte la imagen elegida y la sube, devolviendo su URL publica.

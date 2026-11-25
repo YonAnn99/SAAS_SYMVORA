@@ -11,6 +11,12 @@ const DEFINICION: Record<ClavePlan, { nombre: string; intervalo: "month" | "year
   yearly: { nombre: "SYMVORA Basico Anual", intervalo: "year" },
   yearlyTablet: { nombre: "SYMVORA ANUAL TABLET", intervalo: "year" },
   monthlyPromo: { nombre: "SYMVORA Basico Mensual - Promo -50%", intervalo: "month" },
+  basicoMonthly: { nombre: "SYMVORA Basico (nivel) Mensual", intervalo: "month" },
+  basicoYearly: { nombre: "SYMVORA Basico (nivel) Anual", intervalo: "year" },
+  proMonthly: { nombre: "SYMVORA Pro Mensual", intervalo: "month" },
+  proYearly: { nombre: "SYMVORA Pro Anual", intervalo: "year" },
+  premiumMonthly: { nombre: "SYMVORA Premium Mensual", intervalo: "month" },
+  premiumYearly: { nombre: "SYMVORA Premium Anual", intervalo: "year" },
 };
 
 export async function ensurePlanExists(clave: ClavePlan): Promise<string> {

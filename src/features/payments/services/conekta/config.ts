@@ -6,6 +6,7 @@ import {
   PROMO_ANUAL_TABLET,
 } from "@/lib/pricing";
 import { TIMEOUTS } from "@/lib/http/timeout";
+import { PRECIOS_NIVEL_CENTS } from "@/lib/niveles";
 
 const apiKey = process.env.CONEKTA_PRIVATE_KEY;
 
@@ -63,6 +64,15 @@ export const CONEKTA_PLAN_IDS = {
   yearly: "symvora-basic-yearly-v3",
   yearlyTablet: "symvora-anual-tablet",
   monthlyPromo: "symvora-basic-monthly-promo50-v1",
+  // Niveles (migracion 140). Montos inmutables: si una cifra de `PRECIOS_NIVEL_CENTS` cambia, versionar
+  // el id (-v2). `niveles.test.ts` / `conekta-niveles.test.ts` vigilan que cada id lleve su monto.
+  //   $249 / $2,244 · $449 / $4,044 · $599 / $5,388
+  basicoMonthly: "symvora-basico-monthly-v1",
+  basicoYearly: "symvora-basico-yearly-v1",
+  proMonthly: "symvora-pro-monthly-v1",
+  proYearly: "symvora-pro-yearly-v1",
+  premiumMonthly: "symvora-premium-monthly-v1",
+  premiumYearly: "symvora-premium-yearly-v1",
 } as const;
 
 // Monto de cada plan, en centavos. Los dos normales salen de la fuente unica de
@@ -72,4 +82,10 @@ export const CONEKTA_PLAN_AMOUNTS = {
   ...SUBSCRIPTION_PRICE_CENTS,
   yearlyTablet: PROMO_ANUAL_TABLET.precioCents,
   monthlyPromo: PROMO_LANZAMIENTO.precioCents,
+  basicoMonthly: PRECIOS_NIVEL_CENTS.basico.monthly,
+  basicoYearly: PRECIOS_NIVEL_CENTS.basico.yearly,
+  proMonthly: PRECIOS_NIVEL_CENTS.pro.monthly,
+  proYearly: PRECIOS_NIVEL_CENTS.pro.yearly,
+  premiumMonthly: PRECIOS_NIVEL_CENTS.premium.monthly,
+  premiumYearly: PRECIOS_NIVEL_CENTS.premium.yearly,
 } as const;

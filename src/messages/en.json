@@ -2457,6 +2457,42 @@
       }
     }
   },
+  "planes": {
+    "names": {
+      "basico": "Basic",
+      "pro": "Pro",
+      "premium": "Premium"
+    },
+    "upgrade": {
+      "title": "Available on the {nivel} plan",
+      "cta": "See plans",
+      "body": {
+        "catalogo": "The online catalog is included from the {nivel} plan. Your products stay saved and nothing is deleted.",
+        "sucursales": "Multiple branches, with per-location inventory and transfers between them, are included from the {nivel} plan.",
+        "lealtad": "Loyalty cards are included from the {nivel} plan. Your customers and their stamps are kept.",
+        "pedidos": "Catalog order tracking is included from the {nivel} plan."
+      }
+    },
+    "selector": {
+      "title": "Choose your plan",
+      "popular": "Most popular",
+      "perMonth": "/mo",
+      "billedYearly": "{total} per year",
+      "branches": "{n, plural, one {# branch} other {Up to # branches}}",
+      "branchesUnlimited": "Unlimited branches",
+      "unlimited": "Unlimited users and products",
+      "loyalty": "Loyalty cards",
+      "catalog": "Online catalog and orders"
+    },
+    "errors": {
+      "tooManyBranches": "You have {usadas} active branches and this plan includes up to {max}. Close some or choose a bigger plan.",
+      "changeNotAvailable": "For now, changing plans on an account with an active subscription is done through support. Write to us and we'll do it for you."
+    },
+    "limit": {
+      "sucursales": "Your {nivel} plan includes up to {max, plural, one {# active branch} other {# active branches}}. Close one or upgrade your plan.",
+      "sucursalesTitle": "You reached your plan's branch limit"
+    }
+  },
   "landing": {
     "audio": {
       "play": "Narrate this section",
@@ -3194,6 +3230,7 @@
       "closed": "\"{nombre}\" closed. Its history is kept.",
       "reopened": "\"{nombre}\" reopened",
       "toggleError": "Couldn't change the branch. Check your permissions.",
+      "limitReached": "Your plan includes up to {max, plural, one {# active branch} other {# active branches}}. Close one or upgrade your plan.",
       "title": "Branches",
       "desc": "Each location has its own stock and figures: a sale is deducted from the location of the register where it was charged. The catalog and suppliers are shared across the business.",
       "none": "You don't have branches yet. If your business is a single location, you don't need to create any.",

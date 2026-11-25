@@ -7,6 +7,7 @@ import { Eye, Loader2, Package, Palette } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
+import { PlanGate } from "@/components/plan/plan-gate";
 import { useIsDemo } from "@/hooks/use-is-demo";
 import { EstadoCatalogo } from "@/features/catalogo/components/estado-catalogo";
 import { PersonalizarCatalogo } from "@/features/catalogo/components/personalizar-catalogo";
@@ -23,7 +24,7 @@ const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-
  * (ocultar, destacar, precio especial), se personaliza y se ve la vista previa.
  * Permiso `catalog.manage` (lo protege el middleware por `modules.ts`).
  */
-export default function OnlineCatalogPage() {
+function OnlineCatalogContenido() {
   const t = useTranslations("onlineCatalog");
   const searchParams = useSearchParams();
   const [pestana, setPestana] = useState(() => {
@@ -105,5 +106,14 @@ export default function OnlineCatalogPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Basico no incluye el catalogo en linea (migracion 140): ahi sale «Disponible en Pro». */
+export default function OnlineCatalogPage() {
+  return (
+    <PlanGate funcion="catalogo">
+      <OnlineCatalogContenido />
+    </PlanGate>
   );
 }

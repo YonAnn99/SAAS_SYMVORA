@@ -532,3 +532,68 @@ export function construirCorreoNuevoNegocio(n: NegocioNuevo & { referido?: strin
 
   return { subject, html: documento(subject, cuerpo), text };
 }
+
+export interface DatosPagoConfirmado {
+  negocio: string;
+  giro?: string | null;
+  dueno?: string | null;
+  correo?: string | null;
+  celular?: string | null;
+  monto: number;
+  periodo: "monthly" | "yearly";
+  metodo?: string | null;
+  esPrimerPago?: boolean;
+  pagado_en?: string;
+  vigencia_hasta?: string | null;
+}
+
+/** Aviso al momento: un negocio acaba de pagar su mensualidad o anualidad. */
+export function construirCorreoPagoRecibido(p: DatosPagoConfirmado): CorreoInterno {
+  const periodoTexto = p.periodo === "yearly" ? "Anual" : "Mensual";
+  const tipoPagoTexto = p.esPrimerPago ? "Nueva suscripción" : "Renovación";
+  const subject = `💰 Pago recibido: ${p.negocio} (${pesos(p.monto)} · ${periodoTexto})`;
+
+  const filas: [string, string][] = [
+    ["Negocio", `<strong>${esc(p.negocio)}</strong>`],
+    ["Giro", esc(o(p.giro))],
+    ["Dueño", esc(o(p.dueno))],
+    ["Correo", p.correo ? `<a href="mailto:${esc(p.correo)}" style="color:${AZUL};">${esc(p.correo)}</a>` : "—"],
+    ["Celular", celularHtml(p.celular)],
+    ["Tipo de cobro", `${esc(tipoPagoTexto)} (${esc(periodoTexto)})`],
+    ["Monto pagado", `<strong style="color:#059669;">${pesos(p.monto)} MXN</strong>`],
+    ["Método de pago", esc(etiquetaMetodoPago(p.metodo ?? "card"))],
+    ["Fecha del cobro", esc(fechaHora(p.pagado_en || new Date().toISOString()))],
+  ];
+  if (p.vigencia_hasta) {
+    filas.push(["Vigencia hasta", esc(fechaHora(p.vigencia_hasta))]);
+  }
+
+  const tabla = filas
+    .map(
+      ([k, v]) =>
+        `<tr><td style="font-size:12px;color:${GRIS};padding:8px 12px 8px 0;border-bottom:1px solid ${BORDE};white-space:nowrap;">${esc(k)}</td><td style="font-size:14px;color:${TINTA};padding:8px 0;border-bottom:1px solid ${BORDE};">${v}</td></tr>`
+    )
+    .join("");
+
+  const cuerpo =
+    `<h1 style="margin:20px 0 4px;font-size:20px;color:${TINTA};">💰 Pago recibido en SYMVORA</h1>` +
+    `<p style="margin:0 0 16px;font-size:13px;color:${GRIS};">Se confirmó el pago de ${esc(p.negocio)} por <strong style="color:#059669;">${pesos(p.monto)} MXN</strong> (${esc(periodoTexto)}).</p>` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${tabla}</table>`;
+
+  const text = [
+    "Pago recibido en SYMVORA",
+    `Negocio: ${p.negocio}`,
+    `Giro: ${o(p.giro)}`,
+    `Dueño: ${o(p.dueno)}`,
+    `Correo: ${o(p.correo)}`,
+    `Celular: ${o(p.celular)}`,
+    `Tipo de cobro: ${tipoPagoTexto} (${periodoTexto})`,
+    `Monto pagado: ${pesos(p.monto)} MXN`,
+    `Método de pago: ${etiquetaMetodoPago(p.metodo ?? "card")}`,
+    `Fecha del pago: ${fechaHora(p.pagado_en || new Date().toISOString())}`,
+    ...(p.vigencia_hasta ? [`Vigencia hasta: ${fechaHora(p.vigencia_hasta)}`] : []),
+  ].join("\n");
+
+  return { subject, html: documento(subject, cuerpo), text };
+}
+

@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { etiquetaAtributos } from "../atributos-variante";
 import type { InsumoLinea, RecetasServicio } from "../insumos";
 import { construirOpciones, type OpcionCompra } from "../purchase-order-items";
@@ -89,23 +90,29 @@ export async function guardarRecetaServicio(servicioId: string, insumos: InsumoL
 export async function fetchOpcionesInsumo(tenantId: string): Promise<OpcionCompra[]> {
   const supabase = createSupabaseBrowserClient();
   const [productos, variantes] = await Promise.all([
-    supabase
-      .from("productos")
-      .select("id, nombre, costo_compra, categoria")
-      .eq("tenant_id", tenantId)
-      .eq("es_servicio", false)
-      .is("archivado_en", null)
-      .order("nombre"),
-    supabase
-      .from("variantes_producto")
-      .select("id, producto_id, talla, color, atributos, costo_compra")
-      .eq("tenant_id", tenantId)
-      .is("archivado_en", null),
+    leerPorTramos((desde, hasta) =>
+      supabase
+        .from("productos")
+        .select("id, nombre, costo_compra, categoria")
+        .eq("tenant_id", tenantId)
+        .eq("es_servicio", false)
+        .is("archivado_en", null)
+        .order("nombre")
+        .order("id")
+        .range(desde, hasta)
+    ),
+    leerPorTramos((desde, hasta) =>
+      supabase
+        .from("variantes_producto")
+        .select("id, producto_id, talla, color, atributos, costo_compra")
+        .eq("tenant_id", tenantId)
+        .is("archivado_en", null)
+        .order("id")
+        .range(desde, hasta)
+    ),
   ]);
-  if (productos.error) throw productos.error;
-  if (variantes.error) throw variantes.error;
-  const conVariantes = new Set((variantes.data ?? []).map((v) => v.producto_id as string));
-  return construirOpciones(productos.data ?? [], variantes.data ?? []).filter(
+  const conVariantes = new Set(variantes.map((v) => v.producto_id as string));
+  return construirOpciones(productos, variantes).filter(
     (o) => o.varianteId !== null || !conVariantes.has(o.productoId)
   );
 }
