@@ -12,7 +12,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { monedaDe, type Moneda } from "@/lib/money";
-import { Loader2, MapPin, Minus, Package, Plus, Search, ShoppingBag, Sparkles, Star, Trash2, X } from "lucide-react";
+import { ClipboardList, Loader2, MapPin, Minus, Package, Plus, Search, ShoppingBag, Sparkles, Star, Trash2, X } from "lucide-react";
 import { abreviatura, esFraccionable, normalizarCantidad, textoContenido } from "@/lib/unidades";
 import { urlWhatsApp } from "@/lib/whatsapp";
 import {
@@ -27,6 +27,7 @@ import {
 } from "../pedido";
 import type { CatalogoEncabezado, CatalogoPagina, CatalogoProducto, CatalogoVariante } from "../types";
 import { FormularioPedido } from "./formulario-pedido";
+import { almacenDelNavegador, leerPedidosGuardados, type PedidoGuardado } from "../mis-pedidos";
 
 /** Moneda del negocio para todas las partes del catálogo (la pone `CatalogoVista`). */
 const MonedaCatalogo = createContext<Moneda>("MXN");
@@ -128,6 +129,16 @@ export function CatalogoVista({
   const [error, setError] = useState<string | null>(null);
   const [elegido, setElegido] = useState<CatalogoProducto | null>(null);
   const [carritoAbierto, setCarritoAbierto] = useState(false);
+  // «Mis pedidos»: lo que el navegador recuerda de este negocio (solo con pedidos activos y fuera de la vista previa).
+  const [misPedidos, setMisPedidos] = useState<PedidoGuardado[]>([]);
+  const [misPedidosAbierto, setMisPedidosAbierto] = useState(false);
+  const recibePedidos = Boolean(encabezado.recibir_pedidos) && !vistaPrevia && Boolean(slug);
+  useEffect(() => {
+    if (!recibePedidos) return;
+    // Los guarda este navegador (localStorage): no existe en el servidor, por eso se lee ya montado.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMisPedidos(leerPedidosGuardados(almacenDelNavegador(), slug));
+  }, [recibePedidos, slug]);
   const temporizador = useRef<number | null>(null);
   const peticion = useRef<AbortController | null>(null);
 
@@ -252,6 +263,16 @@ export function CatalogoVista({
               </p>
             )}
           </div>
+          {recibePedidos && misPedidos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setMisPedidosAbierto(true)}
+              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm hover:bg-white/30"
+            >
+              <ClipboardList className="h-4 w-4" aria-hidden="true" />
+              Mis pedidos ({misPedidos.length})
+            </button>
+          )}
         </div>
         {encabezado.mensaje && (
           <p className="relative mx-auto max-w-5xl px-4 pb-5 text-sm opacity-90">{encabezado.mensaje}</p>
@@ -396,6 +417,29 @@ export function CatalogoVista({
         />
       )}
 
+      {misPedidosAbierto && (
+        <Hoja titulo="Mis pedidos" onCerrar={() => setMisPedidosAbierto(false)}>
+          <p className="mb-3 text-xs text-slate-500">
+            Los pedidos que hiciste desde este navegador. Toca uno para ver en qué va.
+          </p>
+          <ul className="space-y-2">
+            {misPedidos.map((p) => (
+              <li key={p.codigo}>
+                <a
+                  href={`/es/catalogo/${slug}/pedido/${p.codigo}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3 hover:bg-slate-50"
+                >
+                  <span className="text-sm font-semibold">{p.folio ? `Pedido #${p.folio}` : "Pedido"}</span>
+                  <span className="text-xs text-slate-500">
+                    {new Date(p.creado).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Hoja>
+      )}
+
       {carritoAbierto && (
         <HojaCarrito
           negocio={encabezado.negocio}
@@ -403,6 +447,7 @@ export function CatalogoVista({
           slug={slug}
           color={color}
           recibirPedidos={Boolean(encabezado.recibir_pedidos)}
+          costoEnvio={encabezado.costo_envio}
           vistaPrevia={vistaPrevia}
           lineas={lineas}
           despachar={despachar}
@@ -696,6 +741,7 @@ function HojaCarrito({
   slug,
   color,
   recibirPedidos,
+  costoEnvio,
   vistaPrevia,
   lineas,
   despachar,
@@ -707,6 +753,8 @@ function HojaCarrito({
   color: string;
   /** El negocio guarda los pedidos (141-142): formulario en vez del envio por WhatsApp. */
   recibirPedidos: boolean;
+  /** Costo de envío a domicilio (144). */
+  costoEnvio?: number | null;
   vistaPrevia: boolean;
   lineas: LineaPedido[];
   despachar: React.Dispatch<Parameters<typeof reducirPedido>[1]>;
@@ -779,6 +827,9 @@ function HojaCarrito({
               negocio={negocio}
               lineas={lineas}
               color={color}
+              costoEnvio={costoEnvio}
+              subtotal={estimado}
+              moneda={moneda}
               onEnviado={() => {
                 despachar({ tipo: "vaciar" });
                 onCerrar();

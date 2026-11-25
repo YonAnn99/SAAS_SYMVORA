@@ -72,6 +72,7 @@ export function useConfigCatalogo() {
             color: null,
             portada_url: null,
             recibir_pedidos: false,
+            costo_envio: null,
           }
         );
       } catch {

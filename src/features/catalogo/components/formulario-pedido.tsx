@@ -9,6 +9,10 @@ import { aE164, PAIS_POR_DEFECTO } from "@/lib/telefono";
 import { nombreAltaValido } from "@/features/lealtad/lealtad";
 import { DIRECCION_MAX, NOTA_MAX, direccionValida, lineasAItems, type EntregaPedido, type ResultadoPedido } from "../pedido-envio";
 import type { LineaPedido } from "../pedido";
+import { almacenDelNavegador, guardarPedido } from "../mis-pedidos";
+import { costoEnvioDeBase, textoEnvio, totalConEnvio } from "../envio";
+import { formatearPrecio } from "../pedido";
+import type { Moneda } from "@/lib/money";
 
 /**
  * Datos del cliente final al mandar su pedido desde el catálogo (migración 141): nombre, celular, recoger o
@@ -22,12 +26,20 @@ export function FormularioPedido({
   negocio,
   lineas,
   color,
+  costoEnvio,
+  subtotal,
+  moneda,
   onEnviado,
 }: {
   slug: string;
   negocio: string;
   lineas: LineaPedido[];
   color: string;
+  /** Lo fijó el negocio (144): null/ausente = lo confirma el negocio, 0 = gratis. */
+  costoEnvio?: number | null;
+  /** Total estimado de los productos (null si el negocio no muestra precios). */
+  subtotal: number | null;
+  moneda: Moneda;
   onEnviado: () => void;
 }) {
   const router = useRouter();
@@ -76,6 +88,12 @@ export function FormularioPedido({
       });
       const cuerpo = (await res.json().catch(() => null)) as (Partial<ResultadoPedido> & { error?: string }) | null;
       if (!res.ok || !cuerpo?.codigo) throw new Error(cuerpo?.error ?? "No se pudo enviar el pedido. Intenta de nuevo.");
+      // El navegador recuerda el pedido para «Mis pedidos» (solo código, folio y fecha: nada personal).
+      guardarPedido(almacenDelNavegador(), slug, {
+        codigo: cuerpo.codigo,
+        folio: typeof cuerpo.folio === "number" ? cuerpo.folio : null,
+        creado: new Date().toISOString(),
+      });
       onEnviado();
       router.push(`/catalogo/${slug}/pedido/${cuerpo.codigo}`);
     } catch (err) {
@@ -165,6 +183,17 @@ export function FormularioPedido({
             aria-invalid={tocado && !direccionOk}
           />
           {tocado && !direccionOk && aviso("Escribe tu dirección de entrega.")}
+          <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
+            {textoEnvio(costoEnvio, moneda)}
+            {costoEnvioDeBase(costoEnvio) !== null && subtotal !== null && (
+              <>
+                {" "}
+                <span className="font-semibold">
+                  Total con envío: {formatearPrecio(totalConEnvio(subtotal, costoEnvio) ?? subtotal, moneda)}
+                </span>
+              </>
+            )}
+          </p>
         </label>
       )}
 

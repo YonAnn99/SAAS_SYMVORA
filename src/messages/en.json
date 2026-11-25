@@ -2493,6 +2493,9 @@
       "title": "Order #{folio}",
       "total": "Total",
       "hasSale": "Already recorded as a sale: stock has been deducted.",
+      "shipping": "Home delivery: {monto}. It is not in the sale: collect it separately.",
+      "shippingFree": "Home delivery: free.",
+      "shippingNone": "Home delivery: you did not set a cost, confirm it with the customer.",
       "needSalesPermission": "To confirm you need the permission to record sales."
     },
     "actions": {
@@ -2518,6 +2521,8 @@
         "EFECTIVO": "Cash"
       },
       "cashNote": "With cash, the sale goes into your open register's cut (if you have one).",
+      "deliveryNote": "This is a home delivery: if the customer pays in cash you receive the money on delivery, but the sale counts today in your open register.",
+      "shippingNote": "Shipping ({monto}) is not in the sale: collect it separately.",
       "diffTitle": "The price changed",
       "diffBody": "The customer saw {pedido}, but today your point of sale adds up to {venta}. If you confirm, {venta} is charged.",
       "acceptDiff": "Confirm at the current price"
@@ -3550,6 +3555,10 @@
       "receiveOrders": "Receive orders on the page",
       "receiveOrdersHint": "Your customers send their order from the catalog and you track it in Orders. When off, orders keep going through WhatsApp.",
       "receiveOrdersPlan": "Available from the Pro plan.",
+      "shippingCost": "Home delivery cost (optional)",
+      "shippingPlaceholder": "E.g. 30",
+      "shippingHint": "Your customer sees it when choosing \"Home delivery\". Empty: you tell them you will confirm the cost. 0: free shipping. Shipping is not part of the sale: you collect it separately.",
+      "shippingInvalid": "Enter a valid shipping amount (0 to 99,999).",
       "save": "Save changes"
     },
     "products": {

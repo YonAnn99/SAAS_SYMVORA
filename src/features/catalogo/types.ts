@@ -23,6 +23,8 @@ export interface CatalogoEncabezado {
   moneda?: string | null;
   /** Pedidos guardados (141-142): el formulario de pedido en vez del envío por WhatsApp. Ausente = no. */
   recibir_pedidos?: boolean;
+  /** Costo de envío a domicilio (144): null/ausente = el negocio lo confirma; 0 = gratis. */
+  costo_envio?: number | null;
   total: number;
   categorias: { nombre: string; total: number }[];
   /** Hasta 12, para la fila de arriba (125). */
@@ -78,6 +80,8 @@ export interface CatalogoConfig {
   portada_url: string | null;
   /** Guarda los pedidos del cliente final (141); apagado de fábrica. Solo con el plan que lo incluye. */
   recibir_pedidos: boolean;
+  /** Costo de envío a domicilio (144); NULL = «el negocio confirma el costo», 0 = gratis. */
+  costo_envio: number | null;
 }
 
 /** Ajustes de un producto en el catálogo (tabla `catalogo_productos`, 125). */
@@ -99,6 +103,8 @@ export interface PedidoPublico {
   color: string | null;
   slug: string | null;
   whatsapp: string | null;
+  /** Costo de envío que vio el cliente (144); null en pedidos para recoger o sin costo definido. */
+  costo_envio?: number | null;
   /** NULL si el negocio no muestra precios. */
   total: number | null;
   items: { nombre: string; variante: string | null; unidad: string | null; cantidad: number; precio: number | null }[];

@@ -78,6 +78,15 @@ describe("avisar por WhatsApp", () => {
     expect(mensajeAlCliente("listo", { ...base, entrega: "domicilio" })).toContain("domicilio");
     expect(mensajeAlCliente("listo", { ...base, urlSeguimiento: null })).not.toContain("Sigue tu pedido");
   });
+  it("el envío a domicilio aparece mientras el pedido sigue en curso y nunca en recoger", () => {
+    const dom = { ...base, entrega: "domicilio" as const, envio: "$30.00" };
+    for (const e of ["nuevo", "confirmado", "pago", "en_produccion", "listo", "en_camino"] as const) {
+      expect(mensajeAlCliente(e, dom)).toContain("Envío a domicilio: $30.00.");
+    }
+    for (const e of ["entregado", "cancelado"] as const) expect(mensajeAlCliente(e, dom)).not.toContain("Envío a domicilio");
+    expect(mensajeAlCliente("nuevo", { ...base, envio: "$30.00" })).not.toContain("Envío a domicilio");
+    expect(mensajeAlCliente("nuevo", { ...dom, envio: null })).not.toContain("Envío a domicilio");
+  });
   it("arma el enlace wa.me solo con un número válido", () => {
     expect(enlaceWhatsAppCliente("+525512345678", "hola")).toBe("https://wa.me/525512345678?text=hola");
     expect(enlaceWhatsAppCliente("123", "hola")).toBeNull();

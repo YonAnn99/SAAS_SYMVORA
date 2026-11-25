@@ -11,11 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { TelefonoInput } from "@/components/ui/telefono-input";
 import { aE164, desdeE164 } from "@/lib/telefono";
 import { urlWhatsApp } from "@/lib/whatsapp";
 import { mensajeErrorCatalogo, subirPortadaCatalogo } from "../catalogo-service";
 import { limpiarSlugTecleado, slugValido, SLUG_MIN } from "../slug";
+import { costoEnvioDeBase, leerCostoEnvio } from "../envio";
 import type { CatalogoConfig } from "../types";
 
 const MENSAJE_MAX = 200;
@@ -62,6 +64,10 @@ export function PersonalizarCatalogo({
   const [mostrarPrecios, setMostrarPrecios] = useState(borrador.mostrar_precios);
   const [mostrarAgotados, setMostrarAgotados] = useState(borrador.mostrar_agotados);
   const [recibirPedidos, setRecibirPedidos] = useState(borrador.recibir_pedidos);
+  const [costoEnvio, setCostoEnvio] = useState(() => {
+    const c = costoEnvioDeBase(borrador.costo_envio);
+    return c === null ? "" : String(c);
+  });
   // Recibir pedidos viene en Pro y Premium (migracion 141): sin el plan el interruptor no se puede encender.
   const { permite } = usePlan();
   const planConPedidos = permite("pedidos");
@@ -73,6 +79,8 @@ export function PersonalizarCatalogo({
   const colorListo = color.trim() ? color.trim() : null;
   const errorSlug = slugValido(slugListo) ? null : t("slugInvalid", { min: SLUG_MIN });
   const errorWhatsapp = numero.trim() && !whatsapp ? t("phoneInvalid") : null;
+  const envioListo = leerCostoEnvio(costoEnvio);
+  const errorEnvio = envioListo === undefined ? t("shippingInvalid") : null;
   const errorColor = colorListo && !PATRON_COLOR.test(colorListo) ? t("colorInvalid") : null;
   const colorVista = colorListo && !errorColor ? colorListo : AZUL_SYMVORA;
 
@@ -83,6 +91,7 @@ export function PersonalizarCatalogo({
     guardado.mostrar_precios !== mostrarPrecios ||
     guardado.mostrar_agotados !== mostrarAgotados ||
     Boolean(guardado.recibir_pedidos) !== recibirPedidos ||
+    costoEnvioDeBase(guardado.costo_envio) !== (envioListo ?? null) ||
     (guardado.mensaje ?? "") !== mensaje.trim() ||
     (guardado.color ?? null) !== colorListo ||
     (guardado.portada_url ?? null) !== portada;
@@ -105,6 +114,7 @@ export function PersonalizarCatalogo({
     if (errorSlug) return toast.error(errorSlug);
     if (errorWhatsapp) return toast.error(errorWhatsapp);
     if (errorColor) return toast.error(errorColor);
+    if (errorEnvio) return toast.error(errorEnvio);
     const activo = guardado?.activo ?? false;
     if (activo && !whatsapp) return toast.error(t("whatsappNeeded"));
     setGuardando(true);
@@ -117,6 +127,7 @@ export function PersonalizarCatalogo({
         mostrar_precios: mostrarPrecios,
         mostrar_agotados: mostrarAgotados,
         recibir_pedidos: recibirPedidos && planConPedidos,
+        costo_envio: envioListo ?? null,
         mensaje: mensaje.trim() ? mensaje.trim().slice(0, MENSAJE_MAX) : null,
         color: colorListo,
         portada_url: portada,
@@ -328,6 +339,26 @@ export function PersonalizarCatalogo({
               aria-label={t("receiveOrders")}
             />
           </div>
+
+          {recibirPedidos && planConPedidos && (
+            <div className="space-y-1.5">
+              <Label htmlFor="costo-envio" className="text-xs">
+                {t("shippingCost")}
+              </Label>
+              <Input
+                id="costo-envio"
+                inputMode="decimal"
+                value={costoEnvio}
+                onChange={(e) => setCostoEnvio(e.target.value.slice(0, 9))}
+                placeholder={t("shippingPlaceholder")}
+                aria-invalid={Boolean(errorEnvio)}
+                className="max-w-40"
+              />
+              <p className={`text-[11px] ${errorEnvio ? "text-destructive" : "text-muted-foreground"}`}>
+                {errorEnvio ?? t("shippingHint")}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

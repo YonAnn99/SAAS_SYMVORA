@@ -23,6 +23,8 @@ export interface Pedido {
   pagado: boolean;
   metodo_pago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | null;
   total: number;
+  /** Costo de envío que vio el cliente (144). NO está en la venta: se cobra aparte. */
+  costo_envio: number | null;
   venta_id: string | null;
   creado_en: string;
   pedido_items: ItemPedido[];

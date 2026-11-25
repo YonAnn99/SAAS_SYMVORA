@@ -1,6 +1,7 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { leerPorTramos } from "@/lib/leer-por-tramos";
 import { esEstadoPedido } from "@/features/catalogo/pedido-envio";
+import { costoEnvioDeBase } from "@/features/catalogo/envio";
 import type { Pedido } from "./types";
 
 /**
@@ -9,7 +10,7 @@ import type { Pedido } from "./types";
  */
 
 const COLUMNAS =
-  "id, folio, codigo_seguimiento, cliente_nombre, cliente_telefono, entrega, direccion, nota, estado, pagado, metodo_pago, total, venta_id, creado_en, pedido_items(id, nombre, variante, unidad, cantidad, precio_unitario)";
+  "id, folio, codigo_seguimiento, cliente_nombre, cliente_telefono, entrega, direccion, nota, estado, pagado, metodo_pago, total, costo_envio, venta_id, creado_en, pedido_items(id, nombre, variante, unidad, cantidad, precio_unitario)";
 
 export async function fetchPedidos(tenantId: string): Promise<Pedido[]> {
   const supabase = createSupabaseBrowserClient();
@@ -26,6 +27,7 @@ export async function fetchPedidos(tenantId: string): Promise<Pedido[]> {
     ...(f as unknown as Pedido),
     estado: esEstadoPedido(f.estado) ? f.estado : "nuevo",
     total: Number(f.total),
+    costo_envio: costoEnvioDeBase(f.costo_envio),
     pedido_items: ((f.pedido_items as Pedido["pedido_items"] | null) ?? []).map((i) => ({
       ...i,
       cantidad: Number(i.cantidad),

@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { Check, PackageSearch } from "lucide-react";
 import { obtenerPedidoPublico } from "@/features/catalogo/catalogo-publico.server";
 import { ActualizarSeguimiento } from "@/features/catalogo/components/actualizar-seguimiento";
+import { GuardarPedido } from "@/features/catalogo/components/guardar-pedido";
 import {
   ETIQUETA_ESTADO_PUBLICO,
   esEstadoPedido,
@@ -11,6 +12,7 @@ import {
   type EstadoPedido,
 } from "@/features/catalogo/pedido-envio";
 import { formatearPrecio } from "@/features/catalogo/pedido";
+import { costoEnvioDeBase, textoEnvio, totalConEnvio } from "@/features/catalogo/envio";
 import { monedaDe } from "@/lib/money";
 import { formatearCantidad } from "@/lib/unidades";
 import { urlWhatsApp } from "@/lib/whatsapp";
@@ -29,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SeguimientoPedidoPage({ params }: Props) {
-  const { locale, codigo } = await params;
+  const { locale, slug: slugUrl, codigo } = await params;
   setRequestLocale(locale);
   const pedido = await obtenerPedidoPublico(codigo);
 
@@ -56,6 +58,7 @@ export default async function SeguimientoPedidoPage({ params }: Props) {
   return (
     <main className="min-h-dvh bg-slate-50 px-4 py-8 text-slate-900">
       <ActualizarSeguimiento activo={!estadoFinal(estado)} />
+      <GuardarPedido slug={pedido.slug ?? slugUrl} codigo={codigo} folio={pedido.folio} creado={pedido.creado_en} />
       <div className="mx-auto w-full max-w-md space-y-4">
         <header className="text-center">
           <p className="text-sm text-slate-500">{pedido.negocio}</p>
@@ -113,6 +116,17 @@ export default async function SeguimientoPedidoPage({ params }: Props) {
               <span>Total estimado</span>
               <span>{formatearPrecio(pedido.total, moneda)}</span>
             </p>
+          )}
+          {pedido.entrega === "domicilio" && (
+            <div className="mt-2 text-sm text-slate-700">
+              <p>{textoEnvio(pedido.costo_envio, moneda)}</p>
+              {pedido.total != null && costoEnvioDeBase(pedido.costo_envio) !== null && (
+                <p className="mt-1 flex justify-between text-base font-semibold">
+                  <span>Total con envío</span>
+                  <span>{formatearPrecio(totalConEnvio(pedido.total, pedido.costo_envio) ?? pedido.total, moneda)}</span>
+                </p>
+              )}
+            </div>
           )}
           <p className="mt-2 text-xs text-slate-500">
             {pedido.entrega === "domicilio" ? "Entrega a domicilio" : "Lo recoges en el negocio"}. {pedido.negocio} confirma

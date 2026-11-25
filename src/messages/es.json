@@ -2493,6 +2493,9 @@
       "title": "Pedido #{folio}",
       "total": "Total",
       "hasSale": "Ya está registrado como venta: el stock ya bajó.",
+      "shipping": "Envío a domicilio: {monto}. No está en la venta: cóbralo aparte.",
+      "shippingFree": "Envío a domicilio: gratis.",
+      "shippingNone": "Envío a domicilio: no definiste un costo, confírmalo con el cliente.",
       "needSalesPermission": "Para confirmar necesitas el permiso de registrar ventas."
     },
     "actions": {
@@ -2518,6 +2521,8 @@
         "EFECTIVO": "Efectivo"
       },
       "cashNote": "Con efectivo, la venta entra al corte de tu caja abierta (si tienes una).",
+      "deliveryNote": "Es a domicilio: si el cliente paga en efectivo, el dinero lo recibes al entregar, pero la venta cuenta hoy en tu caja abierta.",
+      "shippingNote": "El envío ({monto}) no está en la venta: cóbralo aparte.",
       "diffTitle": "El precio cambió",
       "diffBody": "El cliente vio {pedido}, pero hoy en tu punto de venta suma {venta}. Si confirmas, se cobra {venta}.",
       "acceptDiff": "Confirmar con el precio actual"
@@ -3550,6 +3555,10 @@
       "receiveOrders": "Recibir pedidos en la página",
       "receiveOrdersHint": "Tus clientes mandan su pedido desde el catálogo y tú le das seguimiento en Pedidos. Sin esto, el pedido sigue yendo por WhatsApp.",
       "receiveOrdersPlan": "Disponible desde el plan Pro.",
+      "shippingCost": "Costo del envío a domicilio (opcional)",
+      "shippingPlaceholder": "Ej. 30",
+      "shippingHint": "Lo ve tu cliente al elegir «A domicilio». Vacío: le dices que tú le confirmas el costo. 0: envío gratis. El envío no entra a la venta: lo cobras aparte.",
+      "shippingInvalid": "Escribe un monto válido para el envío (de 0 a 99,999).",
       "save": "Guardar cambios"
     },
     "products": {

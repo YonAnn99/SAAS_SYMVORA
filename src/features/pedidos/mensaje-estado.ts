@@ -6,7 +6,15 @@ import type { EntregaPedido, EstadoPedido } from "@/features/catalogo/pedido-env
  */
 export function mensajeAlCliente(
   estado: EstadoPedido,
-  datos: { negocio: string; folio: number; nombre: string; entrega: EntregaPedido; urlSeguimiento: string | null }
+  datos: {
+    negocio: string;
+    folio: number;
+    nombre: string;
+    entrega: EntregaPedido;
+    urlSeguimiento: string | null;
+    /** Envío ya formateado en la moneda del negocio («$30.00»); solo pedidos a domicilio con costo definido. */
+    envio?: string | null;
+  }
 ): string {
   const primer = datos.nombre.trim().split(/\s+/)[0] || "";
   const saludo = primer ? `Hola, ${primer}.` : "Hola.";
@@ -24,7 +32,11 @@ export function mensajeAlCliente(
     entregado: `Entregamos ${pedido}. ¡Gracias por tu compra!`,
     cancelado: `Cancelamos ${pedido}. Si tienes dudas, escríbenos.`,
   };
-  return [saludo, cuerpo[estado], ...(datos.urlSeguimiento ? ["", `Sigue tu pedido aquí: ${datos.urlSeguimiento}`] : [])].join(
+  const lineaEnvio =
+    datos.entrega === "domicilio" && datos.envio && estado !== "entregado" && estado !== "cancelado"
+      ? [`Envío a domicilio: ${datos.envio}.`]
+      : [];
+  return [saludo, cuerpo[estado], ...lineaEnvio, ...(datos.urlSeguimiento ? ["", `Sigue tu pedido aquí: ${datos.urlSeguimiento}`] : [])].join(
     "\n"
   );
 }

@@ -448,6 +448,15 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   corte aunque el dinero llegue después; la pantalla lo avisa. Si el total del POS difiere del que vio el cliente (precio especial del
   catálogo, cambio de precio), `confirmar_pedido` lanza `diferencia_de_precio:<pedido>:<venta>` y TODO se revierte (sirve de ensayo); el
   negocio lo acepta explícitamente. Cancelar un pedido confirmado usa `_cancelar_venta` (regresa stock, lotes y caja como «Cancelar venta»).
+- **El cliente da seguimiento** en `/catalogo/<slug>/pedido/<codigo>` (se refresca solo cada 30 s). «Avisar por WhatsApp» del panel ya incluye ese enlace en el mensaje
+  (`mensajeAlCliente`, `urlSeguimiento`). **«Mis pedidos»** (`features/catalogo/mis-pedidos.ts`): el navegador del cliente recuerda por negocio (`localStorage`
+  `symvora-pedidos:<slug>`, máx. 20) solo código, folio y fecha, nunca datos personales; se guarda al enviar el pedido y al abrir el seguimiento
+  (`GuardarPedido`), y el catálogo muestra el botón «Mis pedidos (N)» solo si ese negocio recibe pedidos. Sin cuenta: otro navegador no lo ve.
+- **Envío a domicilio** (migración 144, 2026-11-25): el admin fija `catalogos_en_linea.costo_envio` en Catálogo en línea → Personalizar (NULL = «el negocio
+  lo confirma», 0 = gratis, n = costo, 0–99,999). Un trigger BEFORE INSERT (`_pedido_copiar_costo_envio`) lo COPIA a `pedidos_catalogo.costo_envio` en pedidos a
+  domicilio (los hechos conservan el que vio su cliente); recoger lo deja NULL. **El envío NO entra a la venta** (el motor solo conoce productos y la comparación
+  con el POS no cambia): el cliente lo ve en el formulario y en su seguimiento (`features/catalogo/envio.ts`), el panel lo muestra «cóbralo aparte» y el mensaje de
+  WhatsApp lo incluye. El diálogo de confirmar avisa en pedidos a domicilio que el efectivo llega al entregar pero la venta cuenta hoy en la caja abierta.
 - **Campana:** tipo `pedido_nuevo` (sin actor, permiso `orders.manage`); el CHECK de `notificaciones.tipo` se escribe ahora como
   `= ANY (ARRAY[...])` (la prueba `notificaciones-tipos.test.ts` acepta las dos formas).
 - **Pendiente:** novedad/anuncio (campana + correo + ventana) **después del deploy y con OK del usuario** (interrumpe a todos los dueños),
@@ -812,7 +821,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 143 —141-142 pedidos y 143 nivel Pro de los 4 clientes que ya pagaban, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 144 —141-142 pedidos, 143 nivel Pro de los 4 clientes que ya pagaban y 144 costo de envío, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**

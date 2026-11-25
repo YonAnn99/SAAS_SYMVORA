@@ -60,6 +60,7 @@ export function DetallePedido({
       nombre: pedido.cliente_nombre,
       entrega: pedido.entrega,
       urlSeguimiento,
+      envio: pedido.entrega === "domicilio" && pedido.costo_envio ? formatear(pedido.costo_envio) : null,
     })
   );
 
@@ -141,6 +142,15 @@ export function DetallePedido({
                 <span>{t("detail.total")}</span>
                 <span>{formatear(pedido.total)}</span>
               </p>
+              {pedido.entrega === "domicilio" && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {pedido.costo_envio === null
+                    ? t("detail.shippingNone")
+                    : pedido.costo_envio === 0
+                      ? t("detail.shippingFree")
+                      : t("detail.shipping", { monto: formatear(pedido.costo_envio) })}
+                </p>
+              )}
               {pedido.venta_id && <p className="mt-1 text-xs text-muted-foreground">{t("detail.hasSale")}</p>}
             </section>
           </div>
@@ -214,6 +224,12 @@ export function DetallePedido({
               </label>
             ))}
             <p className="text-xs text-muted-foreground">{t("confirm.cashNote")}</p>
+            {pedido.entrega === "domicilio" && (
+              <p className="rounded-md bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
+                {t("confirm.deliveryNote")}
+                {pedido.costo_envio ? ` ${t("confirm.shippingNote", { monto: formatear(pedido.costo_envio) })}` : ""}
+              </p>
+            )}
           </fieldset>
           {diferencia && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm" role="alert">
