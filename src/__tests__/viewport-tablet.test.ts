@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { scriptViewportTablet, viewportDeseado, type EntradaViewport } from "@/lib/viewport-tablet";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { aplicarViewport, viewportDeseado, type EntradaViewport } from "@/lib/viewport-tablet";
 
 const tablet = (extra: Partial<EntradaViewport> = {}): EntradaViewport => ({
   tactil: true,
@@ -37,14 +37,8 @@ describe("viewportDeseado", () => {
   });
 });
 
-/** Ejecuta el script en línea con un `window`, `document`, `screen` y `navigator` simulados. */
-function correrScript(config: {
-  ancho: number;
-  alto: number;
-  tactil: boolean;
-  horizontal: boolean;
-  contenidoInicial: string;
-}) {
+/** Corre `aplicarViewport` con `document`, `window`, `screen` y `navigator` simulados. */
+function aplicarCon(config: { ancho: number; alto: number; tactil: boolean; horizontal: boolean; contenidoInicial: string }) {
   const meta = {
     attrs: { content: config.contenidoInicial } as Record<string, string>,
     getAttribute(n: string) {
@@ -54,40 +48,36 @@ function correrScript(config: {
       this.attrs[n] = v;
     },
   };
-  const listeners: Array<() => void> = [];
-  const doc = { querySelector: (sel: string) => (sel === 'meta[name="viewport"]' ? meta : null) };
-  const win: Record<string, unknown> = {
+  vi.stubGlobal("document", { querySelector: (sel: string) => (sel === 'meta[name="viewport"]' ? meta : null) });
+  vi.stubGlobal("screen", { width: config.ancho, height: config.alto });
+  vi.stubGlobal("navigator", { maxTouchPoints: config.tactil ? 5 : 0 });
+  vi.stubGlobal("window", {
     matchMedia: (q: string) => ({
       matches: q === "(orientation: landscape)" ? config.horizontal : q === "(pointer: coarse)" ? config.tactil : false,
     }),
-    addEventListener: (_: string, fn: () => void) => listeners.push(fn),
-  };
-  const pantalla = { width: config.ancho, height: config.alto };
-  const nav = { maxTouchPoints: config.tactil ? 5 : 0 };
-  const fn = new Function("window", "document", "screen", "navigator", scriptViewportTablet());
-  fn(win, doc, pantalla, nav);
-  return { meta, listeners, pantalla, nav };
+  });
+  aplicarViewport(viewportDeseado, 1024);
+  return meta;
 }
 
-describe("scriptViewportTablet", () => {
+describe("aplicarViewport", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("una tablet en horizontal recibe width=1024 y guarda el original", () => {
-    const r = correrScript({ ancho: 960, alto: 600, tactil: true, horizontal: true, contenidoInicial: "width=device-width, initial-scale=1" });
-    expect(r.meta.attrs.content).toBe("width=1024, initial-scale=1, maximum-scale=5");
-    expect(r.meta.attrs["data-original"]).toBe("width=device-width, initial-scale=1");
+    const meta = aplicarCon({ ancho: 960, alto: 600, tactil: true, horizontal: true, contenidoInicial: "width=device-width, initial-scale=1" });
+    expect(meta.attrs.content).toBe("width=1024, initial-scale=1, maximum-scale=5");
+    expect(meta.attrs["data-original"]).toBe("width=device-width, initial-scale=1");
   });
 
   it("al girar a vertical vuelve al viewport original", () => {
-    const r = correrScript({ ancho: 960, alto: 600, tactil: true, horizontal: false, contenidoInicial: "width=device-width, initial-scale=1" });
-    expect(r.meta.attrs.content).toBe("width=device-width, initial-scale=1");
+    const meta = aplicarCon({ ancho: 960, alto: 600, tactil: true, horizontal: false, contenidoInicial: "width=device-width, initial-scale=1" });
+    expect(meta.attrs.content).toBe("width=device-width, initial-scale=1");
   });
 
   it("un celular en horizontal no se toca", () => {
-    const r = correrScript({ ancho: 932, alto: 430, tactil: true, horizontal: true, contenidoInicial: "width=device-width, initial-scale=1" });
-    expect(r.meta.attrs.content).toBe("width=device-width, initial-scale=1");
-  });
-
-  it("se registra un solo listener de resize", () => {
-    const r = correrScript({ ancho: 960, alto: 600, tactil: true, horizontal: true, contenidoInicial: "width=device-width" });
-    expect(r.listeners).toHaveLength(1);
+    const meta = aplicarCon({ ancho: 932, alto: 430, tactil: true, horizontal: true, contenidoInicial: "width=device-width, initial-scale=1" });
+    expect(meta.attrs.content).toBe("width=device-width, initial-scale=1");
   });
 });

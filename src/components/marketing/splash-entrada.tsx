@@ -2,7 +2,7 @@ import "@/styles/splash-entrada.css";
 import { GIROS } from "@/features/marketing/giros";
 import { TRAZO_GIRO } from "./giro-estilos";
 import { SplashControl } from "./splash-control";
-import { decidirSplash, type VarianteSplash } from "./splash-logica";
+import type { VarianteSplash } from "./splash-logica";
 
 /**
  * Pantalla de entrada de la landing (diseño aprobado en el canvas "Splash SYMVORA").
@@ -40,11 +40,8 @@ const PIEZAS_LOGO = [
   "M160 312L302 455H18Z",
 ];
 
-// Corre en cuanto el navegador lo lee, antes de pintar el splash: decide si se muestra.
-// Los tiempos de la salida no salen de aqui: `SplashControl` espera a que las animaciones
-// de entrada terminen de verdad.
-const scriptDecision = (variante: VarianteSplash) =>
-  `(${decidirSplash.toString()})(undefined,${JSON.stringify(variante)})`;
+// La decision (si sale o no) la toma el script del layout raiz (`splash-script.ts`): un <script>
+// dentro de este componente lo avisa React al navegar y no se ejecuta.
 
 /**
  * - `landing`: al final el logo y la palabra vuelan al header de la landing.
@@ -61,7 +58,6 @@ export function SplashEntrada({ variante = "landing" }: { variante?: VarianteSpl
       className={variante === "app" ? "splash-entrada sp-app" : "splash-entrada"}
       aria-hidden="true"
     >
-      <script dangerouslySetInnerHTML={{ __html: scriptDecision(variante) }} />
       <div className="sp-capa">
         <div className="sp-mar" />
         <div className="sp-brillo" />

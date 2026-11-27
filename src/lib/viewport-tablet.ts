@@ -54,13 +54,3 @@ export function aplicarViewport(decidir: (e: EntradaViewport, ancho: number) => 
   const nuevo = modo === "escritorio" ? "width=" + ancho + ", initial-scale=1, maximum-scale=5" : original;
   if (meta.getAttribute("content") !== nuevo) meta.setAttribute("content", nuevo);
 }
-
-/** Script en línea: aplica al cargar y en cada cambio de tamaño o giro. Una sola vez por página. */
-export function scriptViewportTablet(ancho = 1024): string {
-  return (
-    "(function(){if(window.__viewportTablet)return;window.__viewportTablet=true;" +
-    "(" + aplicarViewport.toString() + ")(" + viewportDeseado.toString() + "," + ancho + ");" +
-    "window.addEventListener('resize',function(){(" + aplicarViewport.toString() + ")(" +
-    viewportDeseado.toString() + "," + ancho + ")});})();"
-  );
-}

@@ -6,6 +6,7 @@ import { MarcaAppAndroid } from "@/features/app-android/marca-app-android";
 import { CapturaInstalacion } from "@/features/instalar-app/captura-instalacion";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getSiteUrl } from "@/lib/site";
+import { scriptSplash } from "@/components/marketing/splash-script";
 import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import "./globals.css";
 import "sonner/dist/styles.css";
@@ -160,6 +161,8 @@ export default function RootLayout({
           <CapturaInstalacion />
           {children}
         </Providers>
+        {/* Decide el splash (ver splash-script.ts). Va después del contenido, donde ya está su elemento. */}
+        <script dangerouslySetInnerHTML={{ __html: scriptSplash() }} />
         {/* Core Web Vitals reales por ruta (INP, LCP, TTFB) en Vercel →
             Speed Insights. Mide el plan de rendimiento; script del propio
             dominio (/_vercel), la CSP no cambia. Los dos se apagan si la persona

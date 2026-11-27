@@ -150,7 +150,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     equipo mal o página en caché, `110620` sin interacción a tiempo, `300xxx`/`600xxx` fallo genérico del reto.
   - **El modo sin conexión está RETIRADO.** No reintroducirlo; se hará con una app nativa. La PWA sigue
     siendo instalable: no borres `sw.ts`.
-  - **Tablet en horizontal = escritorio** (2026-11-27, `lib/viewport-tablet.ts` + `components/ajuste-tablet-horizontal.tsx`, solo en el panel y el login): una tablet táctil de lado corto ≥ 600 px y lado largo < 1024 en horizontal cambia el `viewport` a `width=1024` (el navegador escala). `viewportDeseado` y `aplicarViewport` se SERIALIZAN: no pueden usar nada de fuera. La landing y el catálogo público NO lo montan.
+  - **Tablet en horizontal = escritorio** (2026-11-27, `lib/viewport-tablet.ts` + `components/ajuste-tablet-horizontal.tsx`, solo en el panel y el login): una tablet táctil de lado corto ≥ 600 px y lado largo < 1024 en horizontal cambia el `viewport` a `width=1024` (el navegador escala). Lo aplica `components/ajuste-tablet-horizontal.tsx` (componente de cliente, `useLayoutEffect`; sin `<script>`). La landing y el catálogo público NO lo montan.
   - CSS global: `html, body { overflow-x: clip }`. **No volver a `hidden`**: crea un segundo scroll.
 
 ## Módulos y piezas clave
@@ -319,6 +319,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Webhook de Conekta firmado (fail-closed, idempotente).
   - Cancelación con encuesta.
 - **Landing:**
+  - **Splash y `<script>`** (2026-11-27): el script que decide el splash va al final del `<body>` del layout raíz (`components/marketing/splash-script.ts`). Un `<script>` dentro de un componente que se re-renderiza al navegar no se ejecuta y React avisa en consola: **no poner `<script>` en layouts ni en componentes; si hace falta pre-pintado, va en el layout raíz.**
   - **Narración (audios):** al cambiar un `.mp3` de `public/audio/landing/`, renombrarlo a otra versión (`.v3`) y actualizar `audio-config.ts`. El service worker guarda los audios con CacheFirst: con el mismo nombre, los navegadores que ya los escucharon siguen con la voz vieja.
   - Header: Precios · Aprende · Nosotros · Contáctanos (`components/ui/app-frame.tsx`).
   - Secciones: Scroll Stack de módulos, guías en `/aprende`, página Nosotros con carrusel.
