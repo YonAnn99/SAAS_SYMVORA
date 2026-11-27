@@ -62,6 +62,7 @@ import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
 import { usePosCatalog } from "@/features/pos/hooks/use-pos-catalog";
 import { CheckoutPanel } from "@/features/pos/components/checkout-panel";
 import { MobileCartBar } from "@/features/pos/components/mobile-cart-bar";
+import { GuardarPedidoPos } from "@/features/pos/components/guardar-pedido-pos";
 import {
   PosSearchBar,
   SIN_LISTA,
@@ -733,6 +734,14 @@ export default function POSPage() {
       ? null
       : customers.find((c) => c.id === selectedCustomer) ?? null;
   const customerName = selectedCustomerObj?.nombre ?? null;
+  const guardarPedidoPos = (
+    <GuardarPedidoPos
+      tenantId={tenantId ?? ""}
+      items={items}
+      cliente={selectedCustomerObj ? { nombre: selectedCustomerObj.nombre, telefono: selectedCustomerObj.telefono ?? null } : null}
+      onGuardado={clearCart}
+    />
+  );
 
   const isEfectivo = selectedPayment === "EFECTIVO";
   const montoRecibidoNum = montoRecibido === "" ? null : Number(montoRecibido);
@@ -1185,6 +1194,7 @@ export default function POSPage() {
           insumosDe={insumosDe}
           onEditarInsumos={setLineaInsumos}
           bajoCliente={tiraLealtad}
+          accionesExtra={guardarPedidoPos}
           itemCount={itemCount}
           includeIva={includeIva}
           onUpdateQuantity={updateQuantity}
@@ -1239,6 +1249,7 @@ export default function POSPage() {
               insumosDe={insumosDe}
               onEditarInsumos={setLineaInsumos}
               bajoCliente={tiraLealtad}
+              accionesExtra={guardarPedidoPos}
               itemCount={itemCount}
               includeIva={includeIva}
               onUpdateQuantity={updateQuantity}

@@ -14,7 +14,7 @@ import type {
  */
 
 const COLUMNAS =
-  "tenant_id, activo, slug, whatsapp, mostrar_precios, mostrar_agotados, mensaje, color, portada_url, recibir_pedidos, costo_envio";
+  "tenant_id, activo, slug, whatsapp, mostrar_precios, mostrar_agotados, mensaje, color, portada_url, recibir_pedidos, costo_envio, plazo_retiro_dias";
 
 export async function obtenerConfigCatalogo(tenantId: string): Promise<CatalogoConfig | null> {
   const supabase = createSupabaseBrowserClient();

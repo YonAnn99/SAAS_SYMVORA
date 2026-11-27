@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BotonActualizar } from "@/components/ui/boton-actualizar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AdministrarEstados } from "@/features/pedidos/components/administrar-estados";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { PlanGate } from "@/components/plan/plan-gate";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useMoneda } from "@/hooks/use-moneda";
 import { localeIntl } from "@/lib/idioma";
 import { obtenerConfigCatalogo } from "@/features/catalogo/catalogo-service";
-import { estadoFinal } from "@/features/catalogo/pedido-envio";
+import { estaCerrado } from "@/features/pedidos/transiciones";
+import { fetchEstadosPedido } from "@/features/pedidos/pedidos-service";
+import type { EstadoPropio } from "@/features/pedidos/types";
 import { DetallePedido } from "@/features/pedidos/components/detalle-pedido";
 import { usePedidos } from "@/features/pedidos/use-pedidos";
 
-type Filtro = "activos" | "todos";
+type Filtro = "activos" | "porCobrar" | "todos";
 
 /**
  * Pedidos del catálogo en línea (migración 141): lo que los clientes mandan desde la página pública. Lista con
@@ -32,6 +38,22 @@ function PedidosContenido() {
   const [filtro, setFiltro] = useState<Filtro>("activos");
   const [abierto, setAbierto] = useState<string | null>(null);
   const [slug, setSlug] = useState<string | null>(null);
+  const [estados, setEstados] = useState<EstadoPropio[]>([]);
+  const [administrando, setAdministrando] = useState(false);
+
+  // Los estados propios del negocio: se crean la primera vez y se recargan al cambiarlos.
+  const cargarEstados = useCallback(async () => {
+    if (!tenantId) return;
+    try {
+      setEstados(await fetchEstadosPedido(tenantId));
+    } catch {
+      toast.error(t("loadError"));
+    }
+  }, [tenantId, t]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void cargarEstados();
+  }, [cargarEstados]);
 
   // El enlace del catálogo, para que el aviso por WhatsApp lleve el seguimiento.
   useEffect(() => {
@@ -46,7 +68,12 @@ function PedidosContenido() {
   }, [tenantId]);
 
   const visibles = useMemo(
-    () => (filtro === "activos" ? pedidos.filter((p) => !estadoFinal(p.estado)) : pedidos),
+    () =>
+      filtro === "activos"
+        ? pedidos.filter((p) => !estaCerrado(p.estado))
+        : filtro === "porCobrar"
+          ? pedidos.filter((p) => !p.pagado && p.estado !== "cancelado" && p.estado !== "nuevo")
+          : pedidos,
     [pedidos, filtro]
   );
   const nuevos = pedidos.filter((p) => p.estado === "nuevo").length;
@@ -58,11 +85,16 @@ function PedidosContenido() {
         <div>
           <EncabezadoModulo titulo={t("title")} descripcion={t("subtitle")} />
         </div>
-        <BotonActualizar onActualizar={refrescar} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setAdministrando(true)}>
+            {t("v2.manageStates")}
+          </Button>
+          <BotonActualizar onActualizar={refrescar} />
+        </div>
       </div>
 
       <div className="flex items-center gap-2" role="tablist" aria-label={t("filters.label")}>
-        {(["activos", "todos"] as const).map((f) => (
+        {(["activos", "porCobrar", "todos"] as const).map((f) => (
           <button
             key={f}
             type="button"
@@ -115,9 +147,13 @@ function PedidosContenido() {
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-1">
                   <span className="text-sm font-semibold">{formatear(p.total)}</span>
-                  <Badge variant={p.estado === "nuevo" ? "default" : p.estado === "cancelado" ? "destructive" : "secondary"}>
-                    {t(`status.${p.estado}`)}
-                  </Badge>
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                    style={{ backgroundColor: p.estado_color ?? "#64748B" }}
+                  >
+                    {p.estado_nombre ?? t(`status.${p.estado}`)}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{p.pagado ? t("v2.paid") : t("v2.unpaid")}</span>
                 </span>
               </button>
             </li>
@@ -125,13 +161,32 @@ function PedidosContenido() {
         </ul>
       )}
 
+      <Dialog open={administrando} onOpenChange={setAdministrando}>
+        <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("v2.manage.title")}</DialogTitle>
+          </DialogHeader>
+          {tenantId && (
+            <AdministrarEstados
+              tenantId={tenantId}
+              estados={estados}
+              onCambio={cargarEstados}
+              onVolver={() => setAdministrando(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {seleccionado && (
         <DetallePedido
           pedido={seleccionado}
           slug={slug}
           negocio={tenantName}
+          tenantId={tenantId ?? ""}
+          estados={estados}
           onCerrar={() => setAbierto(null)}
           onCambio={refrescar}
+          onEstados={cargarEstados}
         />
       )}
     </div>

@@ -1,33 +1,53 @@
-import type { EntregaPedido, EstadoPedido } from "@/features/catalogo/pedido-envio";
+import type { EstadoPropio, EstadoBase, Pedido } from "./types";
 
 /**
- * Qué puede hacer el negocio con un pedido según su estado (migración 141). Espejo de las funciones de la base
- * (`confirmar_pedido`, `cambiar_estado_pedido`, `cancelar_pedido`): la base manda; esto decide qué botones se pintan.
+ * Qué puede hacer el negocio con un pedido (migración 146). Espejo de las funciones de la base: la base manda; esto
+ * decide qué botones se pintan.
  *
- *   nuevo ──confirmar──▶ confirmado ──▶ pago · en_produccion · listo · en_camino · entregado (se puede saltar lo que
- *   no aplique y corregir hacia atrás entre ellos). `entregado` y `cancelado` son finales; cancelar vale en cualquier
- *   momento antes de entregar (y, si ya hay venta, la cancela y regresa el stock).
+ *   nuevo ──aceptar──▶ confirmado ──▶ (estados propios del negocio, en_curso) ──▶ entregado
+ *   Pagar es APARTE del estado: `registrar_pago_pedido` crea la venta (stock + caja) una sola vez.
+ *   Editar productos solo mientras no esté pagado ni cerrado. Cancelar vale hasta entregado.
  */
 
-export type AccionPedido = "confirmar" | "pago" | "en_produccion" | "listo" | "en_camino" | "entregado" | "cancelar";
-
-/** Estados que se mueven con `cambiar_estado_pedido`, en orden. */
-export const ESTADOS_DE_AVANCE = ["pago", "en_produccion", "listo", "en_camino", "entregado"] as const;
-export type EstadoDeAvance = (typeof ESTADOS_DE_AVANCE)[number];
-
-export function accionesDe(estado: EstadoPedido, entrega: EntregaPedido): AccionPedido[] {
-  if (estado === "nuevo") return ["confirmar", "cancelar"];
-  if (estado === "entregado" || estado === "cancelado") return [];
-  const avance = ESTADOS_DE_AVANCE.filter((e) => e !== estado && !(e === "en_camino" && entrega === "recoger"));
-  return [...avance, "cancelar"];
+/** ¿Se puede aceptar? Solo un pedido nuevo. Verifica existencias en la base. */
+export function puedeAceptar(p: Pick<Pedido, "estado">): boolean {
+  return p.estado === "nuevo";
 }
 
-/** El paso que el botón principal propone: el siguiente de la lista que aplica. */
-export function siguientePaso(estado: EstadoPedido, entrega: EntregaPedido): EstadoDeAvance | null {
-  if (estado === "nuevo" || estado === "entregado" || estado === "cancelado") return null;
-  const orden = ESTADOS_DE_AVANCE.filter((e) => !(e === "en_camino" && entrega === "recoger"));
-  const i = estado === "confirmado" ? -1 : orden.indexOf(estado as EstadoDeAvance);
-  return orden[i + 1] ?? null;
+/** ¿Se puede cambiar su estado propio? Ya aceptado y no cancelado. */
+export function puedeCambiarEstado(p: Pick<Pedido, "estado">): boolean {
+  return p.estado !== "nuevo" && p.estado !== "cancelado";
+}
+
+/** ¿Se puede marcar como pagado? Aceptado, no cancelado y todavía sin venta. */
+export function puedePagar(p: Pick<Pedido, "estado" | "pagado" | "venta_id">): boolean {
+  return !p.pagado && !p.venta_id && p.estado !== "nuevo" && p.estado !== "cancelado";
+}
+
+/** ¿Se pueden editar los productos? Mientras no esté pagado ni cerrado. */
+export function puedeEditar(p: Pick<Pedido, "estado" | "pagado" | "venta_id">): boolean {
+  return !p.pagado && !p.venta_id && p.estado !== "entregado" && p.estado !== "cancelado";
+}
+
+/** ¿Se puede cancelar? Hasta entregado (si ya hay venta, la cancela y regresa el stock). */
+export function puedeCancelar(p: Pick<Pedido, "estado">): boolean {
+  return p.estado !== "entregado" && p.estado !== "cancelado";
+}
+
+/**
+ * Los estados propios que se le pueden poner a este pedido: activos, de su tipo (recoger o domicilio) y que no sean
+ * de cancelación (eso va por «Cancelar»).
+ */
+export function estadosDisponibles(p: Pick<Pedido, "entrega">, estados: EstadoPropio[]): EstadoPropio[] {
+  return estados
+    .filter((e) => e.activo && e.base !== "cancelado")
+    .filter((e) => e.aplica_a === "ambos" || e.aplica_a === p.entrega)
+    .sort((a, b) => a.orden - b.orden);
+}
+
+/** Pedido cerrado para el cliente: ya entregado o cancelado. */
+export function estaCerrado(base: EstadoBase): boolean {
+  return base === "entregado" || base === "cancelado";
 }
 
 /**
@@ -42,7 +62,15 @@ export function diferenciaDePrecio(mensaje: string | null | undefined): { pedido
   return Number.isFinite(pedido) && Number.isFinite(venta) ? { pedido, venta } : null;
 }
 
-export type CodigoErrorPedido = "noStock" | "plan" | "readOnly" | "noPermission" | "final" | "generic";
+export type CodigoErrorPedido =
+  | "noStock"
+  | "plan"
+  | "readOnly"
+  | "noPermission"
+  | "final"
+  | "yaPagado"
+  | "recarga"
+  | "generic";
 
 /** Códigos para traducir; el texto crudo de la base no sale. */
 export function codigoDeErrorPedido(mensaje: string | null | undefined): CodigoErrorPedido {
@@ -50,7 +78,9 @@ export function codigoDeErrorPedido(mensaje: string | null | undefined): CodigoE
   if (/plan_sin_pedidos/.test(t)) return "plan";
   if (/solo lectura/i.test(t)) return "readOnly";
   if (/No tienes permiso|No perteneces|No autorizado/i.test(t)) return "noPermission";
-  if (/stock|existencia|insuficiente|disponible/i.test(t)) return "noStock";
-  if (/ya no se puede|Solo se puede confirmar/i.test(t)) return "final";
+  if (/ya está pagado|ya esta pagado/i.test(t)) return "yaPagado";
+  if (/cambió: recarga|recarga la página/i.test(t)) return "recarga";
+  if (/stock|existencia|insuficiente|disponible|ya no existe|ya no están/i.test(t)) return "noStock";
+  if (/ya no se puede|Solo se acepta|Primero acepta/i.test(t)) return "final";
   return "generic";
 }

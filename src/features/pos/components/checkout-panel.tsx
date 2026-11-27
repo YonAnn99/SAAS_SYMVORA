@@ -70,6 +70,8 @@ interface CheckoutPanelProps {
 
   /** Debajo del selector de cliente: la tarjeta de lealtad de la venta. */
   bajoCliente?: ReactNode;
+  /** Acciones extra del cobro (p. ej. «Guardar pedido»), bajo el carrito. */
+  accionesExtra?: ReactNode;
   /** Premio de lealtad aplicado, para separarlo del descuento manual. */
   premioLealtad?: { etiqueta: string; monto: number } | null;
   /** Insumos de los servicios del carrito (117). */
@@ -107,6 +109,7 @@ export function CheckoutPanel({
   ventasCobradas,
   onClearCart,
   bajoCliente,
+  accionesExtra,
   premioLealtad = null,
   insumosDe,
   onEditarInsumos,
@@ -133,6 +136,7 @@ export function CheckoutPanel({
         onNewCustomer={onNewCustomer}
       />
       {bajoCliente}
+      {accionesExtra && <div className="px-1 pb-2">{accionesExtra}</div>}
 
       <PosCart
         items={items}

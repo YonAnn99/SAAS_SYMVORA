@@ -64,6 +64,7 @@ export function PersonalizarCatalogo({
   const [mostrarPrecios, setMostrarPrecios] = useState(borrador.mostrar_precios);
   const [mostrarAgotados, setMostrarAgotados] = useState(borrador.mostrar_agotados);
   const [recibirPedidos, setRecibirPedidos] = useState(borrador.recibir_pedidos);
+  const [plazoRetiro, setPlazoRetiro] = useState(borrador.plazo_retiro_dias ? String(borrador.plazo_retiro_dias) : "");
   const [costoEnvio, setCostoEnvio] = useState(() => {
     const c = costoEnvioDeBase(borrador.costo_envio);
     return c === null ? "" : String(c);
@@ -80,6 +81,8 @@ export function PersonalizarCatalogo({
   const errorSlug = slugValido(slugListo) ? null : t("slugInvalid", { min: SLUG_MIN });
   const errorWhatsapp = numero.trim() && !whatsapp ? t("phoneInvalid") : null;
   const envioListo = leerCostoEnvio(costoEnvio);
+  const plazoListo = plazoRetiro.trim() === "" ? null : Number(plazoRetiro);
+  const errorPlazo = plazoListo !== null && (!Number.isInteger(plazoListo) || plazoListo < 1 || plazoListo > 30) ? t("pickupDaysInvalid") : null;
   const errorEnvio = envioListo === undefined ? t("shippingInvalid") : null;
   const errorColor = colorListo && !PATRON_COLOR.test(colorListo) ? t("colorInvalid") : null;
   const colorVista = colorListo && !errorColor ? colorListo : AZUL_SYMVORA;
@@ -92,6 +95,7 @@ export function PersonalizarCatalogo({
     guardado.mostrar_agotados !== mostrarAgotados ||
     Boolean(guardado.recibir_pedidos) !== recibirPedidos ||
     costoEnvioDeBase(guardado.costo_envio) !== (envioListo ?? null) ||
+    (guardado.plazo_retiro_dias ?? null) !== plazoListo ||
     (guardado.mensaje ?? "") !== mensaje.trim() ||
     (guardado.color ?? null) !== colorListo ||
     (guardado.portada_url ?? null) !== portada;
@@ -115,6 +119,7 @@ export function PersonalizarCatalogo({
     if (errorWhatsapp) return toast.error(errorWhatsapp);
     if (errorColor) return toast.error(errorColor);
     if (errorEnvio) return toast.error(errorEnvio);
+    if (errorPlazo) return toast.error(errorPlazo);
     const activo = guardado?.activo ?? false;
     if (activo && !whatsapp) return toast.error(t("whatsappNeeded"));
     setGuardando(true);
@@ -128,6 +133,7 @@ export function PersonalizarCatalogo({
         mostrar_agotados: mostrarAgotados,
         recibir_pedidos: recibirPedidos && planConPedidos,
         costo_envio: envioListo ?? null,
+        plazo_retiro_dias: plazoListo,
         mensaje: mensaje.trim() ? mensaje.trim().slice(0, MENSAJE_MAX) : null,
         color: colorListo,
         portada_url: portada,
@@ -339,6 +345,26 @@ export function PersonalizarCatalogo({
               aria-label={t("receiveOrders")}
             />
           </div>
+
+          {recibirPedidos && planConPedidos && (
+            <div className="space-y-1.5">
+              <Label htmlFor="plazo-retiro" className="text-xs">
+                {t("pickupDays")}
+              </Label>
+              <Input
+                id="plazo-retiro"
+                inputMode="numeric"
+                value={plazoRetiro}
+                onChange={(e) => setPlazoRetiro(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                placeholder={t("pickupDaysPlaceholder")}
+                aria-invalid={Boolean(errorPlazo)}
+                className="max-w-40"
+              />
+              <p className={`text-[11px] ${errorPlazo ? "text-destructive" : "text-muted-foreground"}`}>
+                {errorPlazo ?? t("pickupDaysHint")}
+              </p>
+            </div>
+          )}
 
           {recibirPedidos && planConPedidos && (
             <div className="space-y-1.5">

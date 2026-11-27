@@ -1024,6 +1024,33 @@ export function construirCorreoReactivarPrueba(params: {
   };
 }
 
+/**
+ * Aviso INMEDIATO al dueño y a los administradores cuando entra un pedido del catálogo (migración 146). Lleva a la
+ * lista de pedidos. Los datos del cliente se escapan: vienen de un formulario público.
+ */
+export function construirCorreoPedidoNuevo(params: {
+  folio: number;
+  negocio: string;
+  cliente: string;
+  entrega: "recoger" | "domicilio";
+  total: number;
+  moneda?: Moneda | null;
+}): { subject: string; html: string } {
+  const monto = formatMoneda(params.total, params.moneda ?? "MXN");
+  const tipo = params.entrega === "domicilio" ? "A domicilio" : "Para recoger";
+  const html = buildNoticeHtml({
+    preheader: `Pedido #${params.folio} de ${esc(params.cliente)} por ${esc(monto)}.`,
+    heading: `Nuevo pedido #${params.folio} en ${esc(params.negocio)}`,
+    intro: `<strong>${esc(params.cliente)}</strong> acaba de mandar un pedido desde tu catálogo en línea: <strong>${esc(tipo)}</strong>, por <strong>${esc(monto)}</strong>.`,
+    highlight: `<p style="font-size:14px;color:${BRAND.ink};margin:0;line-height:1.6;">Ábrelo en <strong>Pedidos</strong> para aceptarlo: al aceptar, SYMVORA revisa que haya existencias. Lo cobras cuando el cliente pague.</p>`,
+    ctaLabel: "Ver pedidos",
+    ctaHref: `${BRAND.appUrl}/es/orders`,
+    mostrarBeneficios: false,
+    pie: "Recibes este correo porque tu catálogo en línea recibió un pedido. Puedes apagar los pedidos en Catálogo en línea → Personalizar.",
+  });
+  return { subject: `Nuevo pedido #${params.folio}: ${params.cliente} (${monto})`, html };
+}
+
 /** Envía un anuncio ya armado (catálogo, ventas…). */
 export async function sendCorreoNovedad(
   params: { to: string; nombre: string; negocio: string },

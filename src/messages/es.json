@@ -1295,6 +1295,36 @@
       "loadError": "No se pudo cargar la venta a corregir",
       "noTerminal": "Una corrección no se cobra con la terminal. Elige otro método de pago.",
       "done": "Venta #{numero} corregida"
+    },
+    "pedido": {
+      "button": "Guardar pedido",
+      "title": "Guardar como pedido",
+      "desc": "El cliente pagará después. Queda confirmado y no descuenta stock ni entra a la caja hasta que lo marques como pagado en Pedidos.",
+      "delivery": {
+        "recoger": "Para recoger",
+        "domicilio": "A domicilio"
+      },
+      "name": "Nombre del cliente",
+      "phone": "Celular (opcional)",
+      "address": "Dirección de entrega",
+      "customerMessage": "Mensaje para el cliente (opcional)",
+      "internalNote": "Nota interna (opcional)",
+      "note": "El descuento del punto de venta no se guarda en el pedido: se aplica al cobrarlo.",
+      "back": "Volver",
+      "save": "Guardar pedido",
+      "saved": "Pedido #{folio} guardado. Cóbralo desde Pedidos cuando lo pague.",
+      "needName": "Escribe el nombre del cliente",
+      "needAddress": "Escribe la dirección de entrega",
+      "errors": {
+        "noStock": "Algún producto ya no está disponible.",
+        "plan": "Tu plan no incluye pedidos.",
+        "readOnly": "Tu cuenta está en solo lectura.",
+        "noPermission": "No tienes permiso para guardar pedidos.",
+        "final": "No se pudo guardar el pedido.",
+        "yaPagado": "Ese pedido ya está pagado.",
+        "recarga": "Recarga la página para seguir.",
+        "generic": "No se pudo guardar el pedido. Intenta de nuevo."
+      }
     }
   },
   "purchases": {
@@ -2474,7 +2504,8 @@
     "filters": {
       "label": "Filtrar pedidos",
       "activos": "En curso",
-      "todos": "Todos"
+      "todos": "Todos",
+      "porCobrar": "Por cobrar"
     },
     "status": {
       "nuevo": "Nuevo",
@@ -2484,7 +2515,8 @@
       "listo": "Listo",
       "en_camino": "En camino",
       "entregado": "Entregado",
-      "cancelado": "Cancelado"
+      "cancelado": "Cancelado",
+      "en_curso": "En curso"
     },
     "delivery": {
       "recoger": "Pasa a recogerlo",
@@ -2545,7 +2577,82 @@
       "readOnly": "Tu cuenta está en solo lectura. Reactiva tu plan para continuar.",
       "noPermission": "No tienes permiso para esta acción.",
       "final": "Este pedido ya no se puede cambiar así.",
-      "generic": "No se pudo completar la acción. Intenta de nuevo."
+      "generic": "No se pudo completar la acción. Intenta de nuevo.",
+      "yaPagado": "Este pedido ya está pagado; no se puede editar.",
+      "recarga": "El módulo de pedidos se actualizó: recarga la página para seguir."
+    },
+    "v2": {
+      "paid": "Pagado",
+      "unpaid": "Por cobrar",
+      "fromPos": "Creado en el punto de venta",
+      "customerMessage": "Mensaje para el cliente (sale en su seguimiento)",
+      "internalNote": "Nota interna (solo tu equipo)",
+      "saveNotes": "Guardar mensajes",
+      "stateDesc": "Elige el estado en que va el pedido. El cliente lo ve en su seguimiento.",
+      "noStates": "No hay estados disponibles para este tipo de pedido.",
+      "current": "actual",
+      "manageStates": "Administrar mis estados",
+      "accept": "Aceptar pedido",
+      "markPaid": "Marcar pagado",
+      "changeStatus": "Cambiar estado",
+      "edit": "Editar productos",
+      "copyLink": "Copiar enlace de seguimiento",
+      "editHint": "Puedes cambiar los productos mientras el pedido no esté pagado. El cliente verá que se actualizó.",
+      "editVariants": "Los productos con variantes se conservan; para cambiarlos, cancela y crea el pedido de nuevo.",
+      "editEmpty": "El pedido debe tener al menos un producto.",
+      "searchProduct": "Buscar producto para agregar…",
+      "less": "Quitar uno",
+      "more": "Agregar uno",
+      "remove": "Quitar del pedido",
+      "saveEdit": "Guardar cambios",
+      "toast": {
+        "paid": "Pago registrado: la venta ya descontó el stock",
+        "accepted": "Pedido aceptado",
+        "edited": "Productos actualizados",
+        "notes": "Mensajes guardados",
+        "state": "Estado actualizado",
+        "copied": "Enlace copiado"
+      },
+      "manage": {
+        "title": "Mis estados",
+        "desc": "Crea los estados que usas en tu negocio (ej. «Empacando», «Listo para recoger»). Los del sistema cambian de nombre y color, pero no de función.",
+        "saved": "Estado guardado",
+        "deleted": "Estado borrado",
+        "deactivated": "Estado desactivado: ya lo usan pedidos, así que se conserva en el historial",
+        "max": "Máximo {max} estados por negocio",
+        "systemLocked": "Ese estado es del sistema: puedes cambiarle nombre y color, no su función ni borrarlo",
+        "failed": "No se pudo guardar el estado",
+        "newTitle": "Nuevo estado",
+        "editTitle": "Editar estado",
+        "name": "Nombre",
+        "color": "Color",
+        "base": "Qué significa para el motor",
+        "bases": {
+          "confirmado": "Aceptado (confirmado)",
+          "en_curso": "En curso",
+          "entregado": "Entregado (cierra el pedido)"
+        },
+        "appliesTo": "Aplica a",
+        "applies": {
+          "ambos": "Recoger y a domicilio",
+          "recoger": "Solo para recoger",
+          "domicilio": "Solo a domicilio"
+        },
+        "systemNote": "Estado del sistema: solo puedes cambiarle el nombre y el color.",
+        "active": "Activo",
+        "back": "Volver",
+        "save": "Guardar",
+        "inactive": "inactivo",
+        "system": "sistema",
+        "up": "Subir",
+        "down": "Bajar",
+        "delete": "Borrar",
+        "add": "Nuevo estado"
+      },
+      "stateTitle": "Estado del pedido",
+      "notifyAsk": "¿Avisarle al cliente este cambio?",
+      "notifySend": "Enviar por WhatsApp",
+      "notifySkip": "Omitir"
     }
   },
   "planes": {
@@ -3574,7 +3681,11 @@
       "shippingPlaceholder": "Ej. 30",
       "shippingHint": "Lo ve tu cliente al elegir «A domicilio». Vacío: le dices que tú le confirmas el costo. 0: envío gratis. El envío no entra a la venta: lo cobras aparte.",
       "shippingInvalid": "Escribe un monto válido para el envío (de 0 a 99,999).",
-      "save": "Guardar cambios"
+      "save": "Guardar cambios",
+      "pickupDays": "Plazo para recoger el pedido (días, opcional)",
+      "pickupDaysPlaceholder": "Ej. 2",
+      "pickupDaysHint": "Se muestra al cliente que va a recoger: «Plazo para retirar el pedido». Vacío = no se muestra.",
+      "pickupDaysInvalid": "El plazo va de 1 a 30 días."
     },
     "products": {
       "filters": {

@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
-import { Check, PackageSearch } from "lucide-react";
+import { Check, Circle, MapPin, PackageSearch, Phone } from "lucide-react";
 import { obtenerPedidoPublico } from "@/features/catalogo/catalogo-publico.server";
 import { ActualizarSeguimiento } from "@/features/catalogo/components/actualizar-seguimiento";
 import { GuardarPedido } from "@/features/catalogo/components/guardar-pedido";
-import {
-  ETIQUETA_ESTADO_PUBLICO,
-  esEstadoPedido,
-  estadoFinal,
-  pasosSeguimiento,
-  type EstadoPedido,
-} from "@/features/catalogo/pedido-envio";
 import { formatearPrecio } from "@/features/catalogo/pedido";
 import { costoEnvioDeBase, textoEnvio, totalConEnvio } from "@/features/catalogo/envio";
 import { monedaDe } from "@/lib/money";
@@ -18,9 +12,9 @@ import { formatearCantidad } from "@/lib/unidades";
 import { urlWhatsApp } from "@/lib/whatsapp";
 
 /**
- * Seguimiento de un pedido del catálogo (migración 141). Público y SIN cuenta: el código de 12 caracteres de la
- * URL es el acceso. Dinámico (el estado cambia desde el panel del negocio) y fuera de buscadores. La URL con el
- * código no sale a Vercel Analytics (`limpiarUrl`).
+ * Seguimiento de un pedido del catálogo (141-146), estilo «Progreso del pedido». Público y SIN cuenta: el código de 12
+ * caracteres de la URL es el acceso. Se refresca solo mientras el pedido siga abierto. Fuera de buscadores y sin la URL
+ * con el código en la analítica (`limpiarUrl`). Nunca muestra teléfono, dirección del cliente ni notas internas.
  */
 export const dynamic = "force-dynamic";
 
@@ -29,6 +23,9 @@ type Props = { params: Promise<{ locale: string; slug: string; codigo: string }>
 export async function generateMetadata(): Promise<Metadata> {
   return { title: "Seguimiento de tu pedido", robots: { index: false, follow: false } };
 }
+
+const fechaHora = (iso: string) =>
+  new Date(iso).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Mexico_City" });
 
 export default async function SeguimientoPedidoPage({ params }: Props) {
   const { locale, slug: slugUrl, codigo } = await params;
@@ -47,90 +44,120 @@ export default async function SeguimientoPedidoPage({ params }: Props) {
     );
   }
 
-  const estado: EstadoPedido = esEstadoPedido(pedido.estado) ? pedido.estado : "nuevo";
-  const cancelado = estado === "cancelado";
-  const pasos = pasosSeguimiento(pedido.entrega);
-  const indice = pasos.indexOf(estado);
+  const cerrado = pedido.estado === "entregado" || pedido.estado === "cancelado";
+  const cancelado = pedido.estado === "cancelado";
   const moneda = monedaDe(pedido.moneda);
   const color = pedido.color && /^#[0-9a-f]{6}$/i.test(pedido.color) ? pedido.color : "#1E3A8A";
+  const colorEstado = pedido.estado_color && /^#[0-9a-f]{6}$/i.test(pedido.estado_color) ? pedido.estado_color : color;
   const whatsapp = (pedido.whatsapp ?? "").replace(/\D/g, "");
+  const envio = pedido.entrega === "domicilio" ? costoEnvioDeBase(pedido.costo_envio) : null;
+  const eventos = pedido.eventos.filter((e) => e.tipo !== "mensaje");
+  const mapa = pedido.direccion_negocio
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion_negocio)}`
+    : null;
 
   return (
     <main className="min-h-dvh bg-slate-50 px-4 py-8 text-slate-900">
-      <ActualizarSeguimiento activo={!estadoFinal(estado)} />
+      <ActualizarSeguimiento activo={!cerrado} />
       <GuardarPedido slug={pedido.slug ?? slugUrl} codigo={codigo} folio={pedido.folio} creado={pedido.creado_en} />
       <div className="mx-auto w-full max-w-md space-y-4">
-        <header className="text-center">
+        <header className="flex flex-col items-center gap-2 text-center">
+          {pedido.logo_url ? (
+            <Image src={pedido.logo_url} alt="" width={56} height={56} unoptimized className="h-14 w-14 rounded-xl bg-white object-contain p-1" />
+          ) : null}
           <p className="text-sm text-slate-500">{pedido.negocio}</p>
-          <h1 className="text-xl font-semibold">Pedido #{pedido.folio}</h1>
-          <p
-            className={`mt-1 inline-block rounded-full px-3 py-1 text-sm font-medium ${
-              cancelado ? "bg-red-100 text-red-700" : "bg-slate-200 text-slate-800"
-            }`}
-          >
-            {ETIQUETA_ESTADO_PUBLICO[estado]}
-          </p>
+          <h1 className="flex items-center gap-2 text-lg font-semibold">
+            <PackageSearch className="h-5 w-5" aria-hidden="true" />
+            Progreso del pedido #{pedido.folio}
+          </h1>
         </header>
 
-        {!cancelado && (
-          <ol className="space-y-3 rounded-2xl bg-white p-5 shadow-sm" aria-label="Avance de tu pedido">
-            {pasos.map((paso, i) => {
-              const hecho = indice >= 0 && i <= indice;
-              return (
-                <li key={paso} className="flex items-center gap-3 text-sm">
-                  <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-white ${
-                      hecho ? "border-transparent" : "border-slate-300 bg-white"
-                    }`}
-                    style={hecho ? { backgroundColor: color } : undefined}
-                    aria-hidden="true"
-                  >
-                    {hecho && <Check className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className={hecho ? "font-medium" : "text-slate-400"}>
-                    {paso === "nuevo" ? "Pedido recibido" : ETIQUETA_ESTADO_PUBLICO[paso]}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+        <section className="space-y-3 rounded-2xl bg-white p-5 text-center shadow-sm">
+          <span
+            className="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-white"
+            style={{ backgroundColor: colorEstado }}
+            aria-hidden="true"
+          >
+            {cancelado ? <Circle className="h-6 w-6" /> : <Check className="h-6 w-6" />}
+          </span>
+          <p className="text-xl font-semibold" style={{ color: colorEstado }}>
+            {pedido.estado_nombre}
+          </p>
+          <p className="text-xs text-slate-500">{fechaHora(pedido.actualizado_en ?? pedido.creado_en)}</p>
+
+          {pedido.entrega === "recoger" && pedido.plazo_retiro_dias && !cerrado && (
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-100 px-4 py-3 text-left text-sm">
+              <span>
+                Plazo para retirar el pedido: <strong>{pedido.plazo_retiro_dias} {pedido.plazo_retiro_dias === 1 ? "día" : "días"}</strong>
+              </span>
+              {mapa && (
+                <a href={mapa} target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-1 font-medium underline underline-offset-2">
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  Cómo llegar
+                </a>
+              )}
+            </div>
+          )}
+
+          {pedido.entrega === "domicilio" && envio !== null && !cerrado && (
+            <p className="text-sm text-slate-600">{textoEnvio(envio, moneda)}</p>
+          )}
+          {pedido.mensaje_cliente && (
+            <p className="rounded-xl bg-amber-50 px-4 py-3 text-left text-sm text-amber-900">{pedido.mensaje_cliente}</p>
+          )}
+        </section>
+
+        {eventos.length > 0 && (
+          <section className="rounded-2xl bg-white p-5 shadow-sm">
+            <h2 className="mb-3 text-sm font-semibold">Avance</h2>
+            <ol className="space-y-3" aria-label="Avance de tu pedido">
+              {eventos.map((e, i) => {
+                const etiqueta = e.etiqueta === "nuevo" ? "Pedido recibido" : e.etiqueta;
+                return (
+                  <li key={`${e.en}-${i}`} className="flex items-start gap-3 text-sm">
+                    <span
+                      className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: e.color ?? color }}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium">{etiqueta}</span>
+                      <span className="block text-xs text-slate-500">{fechaHora(e.en)}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
         )}
 
         <section className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-2 text-sm font-semibold">Tu pedido</h2>
+          <h2 className="mb-2 text-sm font-semibold">Detalles del pedido</h2>
           <ul className="divide-y divide-slate-100 text-sm">
             {pedido.items.map((it, i) => (
-              <li key={i} className="flex justify-between gap-3 py-2">
-                <span>
+              <li key={i} className="flex items-center gap-3 py-2">
+                {it.imagen ? (
+                  <Image src={it.imagen} alt="" width={44} height={44} unoptimized className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                ) : (
+                  <span className="h-11 w-11 shrink-0 rounded-lg bg-slate-100" aria-hidden="true" />
+                )}
+                <span className="min-w-0 flex-1">
                   {formatearCantidad(Number(it.cantidad), it.unidad ?? "PIEZA")} {it.nombre}
                   {it.variante ? ` (${it.variante})` : ""}
                 </span>
-                {it.precio != null && (
-                  <span className="shrink-0">{formatearPrecio(it.precio * Number(it.cantidad), moneda)}</span>
-                )}
+                {it.precio != null && <span className="shrink-0">{formatearPrecio(it.precio * Number(it.cantidad), moneda)}</span>}
               </li>
             ))}
           </ul>
           {pedido.total != null && (
             <p className="mt-3 flex justify-between border-t border-slate-100 pt-3 text-base font-semibold">
               <span>Total estimado</span>
-              <span>{formatearPrecio(pedido.total, moneda)}</span>
+              <span>{formatearPrecio(totalConEnvio(pedido.total, pedido.costo_envio) ?? pedido.total, moneda)}</span>
             </p>
           )}
-          {pedido.entrega === "domicilio" && (
-            <div className="mt-2 text-sm text-slate-700">
-              <p>{textoEnvio(pedido.costo_envio, moneda)}</p>
-              {pedido.total != null && costoEnvioDeBase(pedido.costo_envio) !== null && (
-                <p className="mt-1 flex justify-between text-base font-semibold">
-                  <span>Total con envío</span>
-                  <span>{formatearPrecio(totalConEnvio(pedido.total, pedido.costo_envio) ?? pedido.total, moneda)}</span>
-                </p>
-              )}
-            </div>
-          )}
           <p className="mt-2 text-xs text-slate-500">
-            {pedido.entrega === "domicilio" ? "Entrega a domicilio" : "Lo recoges en el negocio"}. {pedido.negocio} confirma
-            precio y disponibilidad.
+            {pedido.entrega === "domicilio" ? "Entrega a domicilio" : "Lo recoges en el negocio"} ·{" "}
+            {pedido.pagado ? "Pagado" : "Pago pendiente"}. {pedido.negocio} confirma precio y disponibilidad.
           </p>
         </section>
 
@@ -140,9 +167,10 @@ export default async function SeguimientoPedidoPage({ params }: Props) {
             target="_blank"
             rel="noopener noreferrer"
             style={{ backgroundColor: "#16a34a" }}
-            className="flex h-12 w-full items-center justify-center rounded-2xl text-base font-semibold text-white"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-base font-semibold text-white"
           >
-            Escribir al negocio por WhatsApp
+            <Phone className="h-4 w-4" aria-hidden="true" />
+            ¿Dudas? Escribe al negocio por WhatsApp
           </a>
         )}
         <p className="text-center text-xs text-slate-400">Guarda este enlace para ver el avance de tu pedido.</p>

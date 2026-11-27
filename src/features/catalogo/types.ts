@@ -82,6 +82,8 @@ export interface CatalogoConfig {
   recibir_pedidos: boolean;
   /** Costo de envío a domicilio (144); NULL = «el negocio confirma el costo», 0 = gratis. */
   costo_envio: number | null;
+  /** Días para recoger el pedido (146); NULL = no se muestra. */
+  plazo_retiro_dias: number | null;
 }
 
 /** Ajustes de un producto en el catálogo (tabla `catalogo_productos`, 125). */
@@ -91,21 +93,33 @@ export interface AjusteProductoCatalogo {
   precio_especial: number | null;
 }
 
-/** Lo que devuelve `pedido_publico` (141-142): la página de seguimiento. Sin teléfono, dirección ni notas. */
+/** Lo que devuelve `pedido_publico` (141-146): la página de seguimiento. Sin teléfono, dirección del cliente ni notas. */
 export interface PedidoPublico {
   folio: number;
+  /** Estado base del motor (`nuevo`…`cancelado`). */
   estado: string;
+  /** Nombre del estado propio del negocio (146). */
+  estado_nombre: string;
+  estado_color: string | null;
   entrega: "recoger" | "domicilio";
   pagado: boolean;
   creado_en: string;
+  actualizado_en: string | null;
   negocio: string;
+  logo_url: string | null;
+  /** Dirección del NEGOCIO (no del cliente): para «Cómo llegar». */
+  direccion_negocio: string | null;
   moneda: string | null;
   color: string | null;
   slug: string | null;
   whatsapp: string | null;
-  /** Costo de envío que vio el cliente (144); null en pedidos para recoger o sin costo definido. */
-  costo_envio?: number | null;
+  /** Costo de envío que vio el cliente; null = el negocio lo confirma. */
+  costo_envio: number | null;
+  /** Días para recoger el pedido (catálogo, 146); null = no se muestra. */
+  plazo_retiro_dias: number | null;
+  mensaje_cliente: string | null;
   /** NULL si el negocio no muestra precios. */
   total: number | null;
-  items: { nombre: string; variante: string | null; unidad: string | null; cantidad: number; precio: number | null }[];
+  eventos: { etiqueta: string; color: string | null; tipo: string; en: string }[];
+  items: { nombre: string; variante: string | null; unidad: string | null; cantidad: number; precio: number | null; imagen: string | null }[];
 }

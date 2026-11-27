@@ -1295,6 +1295,36 @@
       "loadError": "The sale to correct couldn't be loaded",
       "noTerminal": "A correction can't be charged with the terminal. Choose another payment method.",
       "done": "Sale #{numero} corrected"
+    },
+    "pedido": {
+      "button": "Save order",
+      "title": "Save as order",
+      "desc": "The customer will pay later. It is confirmed and does not deduct stock or enter the cash register until you mark it paid in Orders.",
+      "delivery": {
+        "recoger": "Pickup",
+        "domicilio": "Home delivery"
+      },
+      "name": "Customer name",
+      "phone": "Phone (optional)",
+      "address": "Delivery address",
+      "customerMessage": "Message for the customer (optional)",
+      "internalNote": "Internal note (optional)",
+      "note": "The point-of-sale discount is not saved in the order: it applies when you charge it.",
+      "back": "Back",
+      "save": "Save order",
+      "saved": "Order #{folio} saved. Charge it from Orders when it's paid.",
+      "needName": "Enter the customer's name",
+      "needAddress": "Enter the delivery address",
+      "errors": {
+        "noStock": "Some product is no longer available.",
+        "plan": "Your plan does not include orders.",
+        "readOnly": "Your account is read-only.",
+        "noPermission": "You don't have permission to save orders.",
+        "final": "The order could not be saved.",
+        "yaPagado": "That order is already paid.",
+        "recarga": "Reload the page to continue.",
+        "generic": "The order could not be saved. Try again."
+      }
     }
   },
   "purchases": {
@@ -2474,7 +2504,8 @@
     "filters": {
       "label": "Filter orders",
       "activos": "In progress",
-      "todos": "All"
+      "todos": "All",
+      "porCobrar": "To collect"
     },
     "status": {
       "nuevo": "New",
@@ -2484,7 +2515,8 @@
       "listo": "Ready",
       "en_camino": "On the way",
       "entregado": "Delivered",
-      "cancelado": "Cancelled"
+      "cancelado": "Cancelled",
+      "en_curso": "In progress"
     },
     "delivery": {
       "recoger": "Pickup",
@@ -2545,7 +2577,82 @@
       "readOnly": "Your account is read-only. Reactivate your plan to continue.",
       "noPermission": "You don't have permission for this action.",
       "final": "This order can no longer be changed this way.",
-      "generic": "The action couldn't be completed. Try again."
+      "generic": "The action couldn't be completed. Try again.",
+      "yaPagado": "This order is already paid; it can't be edited.",
+      "recarga": "The orders module was updated: reload the page to continue."
+    },
+    "v2": {
+      "paid": "Paid",
+      "unpaid": "To collect",
+      "fromPos": "Created at the point of sale",
+      "customerMessage": "Message for the customer (shown in their tracking)",
+      "internalNote": "Internal note (team only)",
+      "saveNotes": "Save messages",
+      "stateDesc": "Choose the status of the order. The customer sees it in their tracking.",
+      "noStates": "There are no statuses available for this order type.",
+      "current": "current",
+      "manageStates": "Manage my statuses",
+      "accept": "Accept order",
+      "markPaid": "Mark as paid",
+      "changeStatus": "Change status",
+      "edit": "Edit products",
+      "copyLink": "Copy tracking link",
+      "editHint": "You can change the products while the order is not paid. The customer will see it was updated.",
+      "editVariants": "Products with variants are kept; to change them, cancel and create the order again.",
+      "editEmpty": "The order needs at least one product.",
+      "searchProduct": "Search a product to add…",
+      "less": "Remove one",
+      "more": "Add one",
+      "remove": "Remove from order",
+      "saveEdit": "Save changes",
+      "toast": {
+        "paid": "Payment recorded: the sale already deducted stock",
+        "accepted": "Order accepted",
+        "edited": "Products updated",
+        "notes": "Messages saved",
+        "state": "Status updated",
+        "copied": "Link copied"
+      },
+      "manage": {
+        "title": "My statuses",
+        "desc": "Create the statuses you use in your business (e.g. “Packing”, “Ready for pickup”). System ones can be renamed and recolored, but not change their function.",
+        "saved": "Status saved",
+        "deleted": "Status deleted",
+        "deactivated": "Status deactivated: orders already use it, so it stays in the history",
+        "max": "Maximum {max} statuses per business",
+        "systemLocked": "That status is a system one: you can rename it and recolor it, but not change its function or delete it",
+        "failed": "The status could not be saved",
+        "newTitle": "New status",
+        "editTitle": "Edit status",
+        "name": "Name",
+        "color": "Color",
+        "base": "What it means for the engine",
+        "bases": {
+          "confirmado": "Accepted (confirmed)",
+          "en_curso": "In progress",
+          "entregado": "Delivered (closes the order)"
+        },
+        "appliesTo": "Applies to",
+        "applies": {
+          "ambos": "Pickup and delivery",
+          "recoger": "Pickup only",
+          "domicilio": "Delivery only"
+        },
+        "systemNote": "System status: you can only change its name and color.",
+        "active": "Active",
+        "back": "Back",
+        "save": "Save",
+        "inactive": "inactive",
+        "system": "system",
+        "up": "Move up",
+        "down": "Move down",
+        "delete": "Delete",
+        "add": "New status"
+      },
+      "stateTitle": "Order status",
+      "notifyAsk": "Tell the customer about this change?",
+      "notifySend": "Send on WhatsApp",
+      "notifySkip": "Skip"
     }
   },
   "planes": {
@@ -3574,7 +3681,11 @@
       "shippingPlaceholder": "E.g. 30",
       "shippingHint": "Your customer sees it when choosing \"Home delivery\". Empty: you tell them you will confirm the cost. 0: free shipping. Shipping is not part of the sale: you collect it separately.",
       "shippingInvalid": "Enter a valid shipping amount (0 to 99,999).",
-      "save": "Save changes"
+      "save": "Save changes",
+      "pickupDays": "Pickup deadline (days, optional)",
+      "pickupDaysPlaceholder": "E.g. 2",
+      "pickupDaysHint": "Shown to pickup customers: “Pickup deadline”. Empty = not shown.",
+      "pickupDaysInvalid": "The deadline goes from 1 to 30 days."
     },
     "products": {
       "filters": {

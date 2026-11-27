@@ -1,49 +1,62 @@
 import { describe, expect, it } from "vitest";
-import { ESTADOS_PEDIDO } from "@/features/catalogo/pedido-envio";
 import {
-  accionesDe,
   codigoDeErrorPedido,
   diferenciaDePrecio,
-  siguientePaso,
+  estaCerrado,
+  estadosDisponibles,
+  puedeAceptar,
+  puedeCambiarEstado,
+  puedeCancelar,
+  puedeEditar,
+  puedePagar,
 } from "@/features/pedidos/transiciones";
 import { enlaceWhatsAppCliente, mensajeAlCliente } from "@/features/pedidos/mensaje-estado";
+import type { EstadoPropio } from "@/features/pedidos/types";
 
-describe("acciones según el estado", () => {
-  it("nuevo: confirmar o cancelar", () => {
-    expect(accionesDe("nuevo", "recoger")).toEqual(["confirmar", "cancelar"]);
+const estado = (over: Partial<EstadoPropio>): EstadoPropio => ({
+  id: "x", nombre: "X", color: "#000000", base: "en_curso", aplica_a: "ambos", orden: 10, activo: true, es_sistema: false, ...over,
+});
+
+describe("qué se puede hacer según el estado y el pago", () => {
+  it("nuevo: solo aceptar o cancelar; no se paga ni se edita sin aceptar", () => {
+    const nuevo = { estado: "nuevo" as const, pagado: false, venta_id: null };
+    expect(puedeAceptar(nuevo)).toBe(true);
+    expect(puedePagar(nuevo)).toBe(false);
+    expect(puedeCambiarEstado(nuevo)).toBe(false);
+    expect(puedeCancelar(nuevo)).toBe(true);
   });
-  it("confirmado: avanzar o cancelar; recoger nunca ofrece «en camino»", () => {
-    expect(accionesDe("confirmado", "domicilio")).toContain("en_camino");
-    expect(accionesDe("confirmado", "recoger")).not.toContain("en_camino");
-    expect(accionesDe("confirmado", "recoger")).toContain("cancelar");
-    expect(accionesDe("confirmado", "recoger")).not.toContain("confirmar");
+  it("aceptado y sin pagar: se paga, se edita, se cambia el estado", () => {
+    const p = { estado: "confirmado" as const, pagado: false, venta_id: null };
+    expect(puedePagar(p)).toBe(true);
+    expect(puedeEditar(p)).toBe(true);
+    expect(puedeCambiarEstado(p)).toBe(true);
   });
-  it("no ofrece el estado en el que ya está", () => {
-    expect(accionesDe("listo", "domicilio")).not.toContain("listo");
+  it("pagado: ya no se edita ni se vuelve a cobrar, aunque cambie de estado", () => {
+    const p = { estado: "en_curso" as const, pagado: true, venta_id: "v1" };
+    expect(puedePagar(p)).toBe(false);
+    expect(puedeEditar(p)).toBe(false);
+    expect(puedeCambiarEstado(p)).toBe(true);
   });
-  it("entregado y cancelado son finales", () => {
-    expect(accionesDe("entregado", "recoger")).toEqual([]);
-    expect(accionesDe("cancelado", "domicilio")).toEqual([]);
-  });
-  it("todo estado tiene una respuesta (sin truenos)", () => {
-    for (const e of ESTADOS_PEDIDO) expect(Array.isArray(accionesDe(e, "domicilio"))).toBe(true);
+  it("entregado y cancelado son cerrados: no se editan ni se cancelan de nuevo", () => {
+    expect(estaCerrado("entregado")).toBe(true);
+    expect(estaCerrado("cancelado")).toBe(true);
+    expect(puedeEditar({ estado: "entregado", pagado: false, venta_id: null })).toBe(false);
+    expect(puedeCancelar({ estado: "cancelado" })).toBe(false);
   });
 });
 
-describe("siguiente paso", () => {
-  it("de confirmado se propone el pago y se avanza en orden", () => {
-    expect(siguientePaso("confirmado", "domicilio")).toBe("pago");
-    expect(siguientePaso("pago", "domicilio")).toBe("en_produccion");
-    expect(siguientePaso("listo", "domicilio")).toBe("en_camino");
-    expect(siguientePaso("en_camino", "domicilio")).toBe("entregado");
-  });
-  it("recoger se salta «en camino»", () => {
-    expect(siguientePaso("listo", "recoger")).toBe("entregado");
-  });
-  it("sin paso en nuevo ni en estados finales", () => {
-    expect(siguientePaso("nuevo", "recoger")).toBeNull();
-    expect(siguientePaso("entregado", "recoger")).toBeNull();
-    expect(siguientePaso("cancelado", "recoger")).toBeNull();
+describe("estados propios que se le pueden poner a un pedido", () => {
+  const todos = [
+    estado({ id: "a", nombre: "Preparando", orden: 20 }),
+    estado({ id: "b", nombre: "Listo para retirar", aplica_a: "recoger", orden: 30 }),
+    estado({ id: "c", nombre: "En camino", aplica_a: "domicilio", orden: 40 }),
+    estado({ id: "d", nombre: "Inactivo", activo: false, orden: 50 }),
+    estado({ id: "e", nombre: "Cancelado", base: "cancelado", orden: 60, es_sistema: true }),
+    estado({ id: "f", nombre: "Entregado", base: "entregado", orden: 70, es_sistema: true }),
+  ];
+  it("filtra por tipo de entrega, quita inactivos y los de cancelación, y ordena", () => {
+    expect(estadosDisponibles({ entrega: "recoger" }, todos).map((e) => e.nombre)).toEqual(["Preparando", "Listo para retirar", "Entregado"]);
+    expect(estadosDisponibles({ entrega: "domicilio" }, todos).map((e) => e.nombre)).toEqual(["Preparando", "En camino", "Entregado"]);
   });
 });
 
@@ -58,32 +71,40 @@ describe("errores de la base", () => {
     expect(codigoDeErrorPedido("Tu cuenta esta en solo lectura. Reactiva tu plan")).toBe("readOnly");
     expect(codigoDeErrorPedido("No tienes permiso para gestionar pedidos")).toBe("noPermission");
     expect(codigoDeErrorPedido("Stock insuficiente para Leche")).toBe("noStock");
+    expect(codigoDeErrorPedido("Hay productos que ya no están disponibles")).toBe("noStock");
+    expect(codigoDeErrorPedido("Este pedido ya está pagado: no se puede editar")).toBe("yaPagado");
+    expect(codigoDeErrorPedido("El módulo de pedidos cambió: recarga la página para seguir.")).toBe("recarga");
     expect(codigoDeErrorPedido("Este pedido ya no se puede cancelar")).toBe("final");
     expect(codigoDeErrorPedido("boom")).toBe("generic");
   });
 });
 
 describe("avisar por WhatsApp", () => {
-  const base = { negocio: "Tienda", folio: 7, nombre: "Ana López", entrega: "recoger" as const, urlSeguimiento: "https://x.test/s" };
-  it("cada estado tiene mensaje con el folio y el enlace", () => {
-    for (const e of ESTADOS_PEDIDO) {
-      const m = mensajeAlCliente(e, base);
+  const base = { negocio: "Tienda", folio: 7, nombre: "Ana López", entrega: "recoger" as const, urlSeguimiento: "https://x.test/s", estadoNombre: "Preparando" };
+  it("el estado en curso nombra el estado propio del negocio", () => {
+    const m = mensajeAlCliente("en_curso", base);
+    expect(m).toContain("Preparando");
+    expect(m).toContain("#7");
+    expect(m).toContain("https://x.test/s");
+    expect(m.startsWith("Hola, Ana.")).toBe(true);
+  });
+  it("cada estado base tiene mensaje con el folio y el enlace", () => {
+    for (const b of ["nuevo", "confirmado", "en_curso", "entregado", "cancelado"] as const) {
+      const m = mensajeAlCliente(b, base);
       expect(m).toContain("#7");
       expect(m).toContain("https://x.test/s");
-      expect(m.startsWith("Hola, Ana.")).toBe(true);
     }
   });
-  it("distingue recoger de domicilio y no inventa enlace", () => {
-    expect(mensajeAlCliente("listo", base)).toContain("pasar por él");
-    expect(mensajeAlCliente("listo", { ...base, entrega: "domicilio" })).toContain("domicilio");
-    expect(mensajeAlCliente("listo", { ...base, urlSeguimiento: null })).not.toContain("Sigue tu pedido");
+  it("sin enlace no lo inventa; la nota del negocio sale si existe", () => {
+    expect(mensajeAlCliente("en_curso", { ...base, urlSeguimiento: null })).not.toContain("Sigue tu pedido");
+    expect(mensajeAlCliente("en_curso", { ...base, mensajeCliente: "Pasa después de las 5" })).toContain("Nota: Pasa después de las 5");
   });
-  it("el envío a domicilio aparece mientras el pedido sigue en curso y nunca en recoger", () => {
+  it("el envío a domicilio aparece mientras el pedido sigue abierto y nunca en recoger", () => {
     const dom = { ...base, entrega: "domicilio" as const, envio: "$30.00" };
-    for (const e of ["nuevo", "confirmado", "pago", "en_produccion", "listo", "en_camino"] as const) {
-      expect(mensajeAlCliente(e, dom)).toContain("Envío a domicilio: $30.00.");
+    for (const b of ["nuevo", "confirmado", "en_curso"] as const) {
+      expect(mensajeAlCliente(b, dom)).toContain("Envío a domicilio: $30.00.");
     }
-    for (const e of ["entregado", "cancelado"] as const) expect(mensajeAlCliente(e, dom)).not.toContain("Envío a domicilio");
+    for (const b of ["entregado", "cancelado"] as const) expect(mensajeAlCliente(b, dom)).not.toContain("Envío a domicilio");
     expect(mensajeAlCliente("nuevo", { ...base, envio: "$30.00" })).not.toContain("Envío a domicilio");
     expect(mensajeAlCliente("nuevo", { ...dom, envio: null })).not.toContain("Envío a domicilio");
   });

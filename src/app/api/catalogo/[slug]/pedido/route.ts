@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server.server";
 import { cabecerasRateLimit, consumirRateLimit, obtenerIpCliente } from "@/lib/rate-limit";
 import { verificarTurnstile } from "@/lib/turnstile.server";
+import { construirCorreoPedidoNuevo, sendCorreoNovedad } from "@/lib/email";
 import { aE164 } from "@/lib/telefono";
 import { nombreAltaValido, limpiarNombre } from "@/features/lealtad/lealtad";
 import { slugValido } from "@/features/catalogo/slug";
@@ -108,5 +109,59 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     return NextResponse.json({ error: "No se pudo enviar el pedido. Intenta de nuevo." }, { status: 500 });
   }
   const resultado: ResultadoPedido = { folio: r.folio, codigo: r.codigo_seguimiento, total: Number(r.total ?? 0) };
+  // Aviso al dueño por correo (mejor esfuerzo, fuera de la respuesta; un fallo nunca tumba el pedido).
+  after(() => avisarDuenosDePedido(supabase, slug, resultado, datos.entrega, limpiarNombre(datos.nombre)));
   return NextResponse.json(resultado);
+}
+
+/**
+ * Correo a los dueños y administradores por cada pedido nuevo. Tope de 20 correos por hora y negocio: más allá, el
+ * aviso queda en la campana. No se envía a demos (la base ya no admite pedidos ahí).
+ */
+async function avisarDuenosDePedido(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  slug: string,
+  pedido: ResultadoPedido,
+  entrega: "recoger" | "domicilio",
+  cliente: string
+): Promise<void> {
+  try {
+    const { data: cat } = await supabase
+      .from("catalogos_en_linea")
+      .select("tenant_id")
+      .eq("slug", slug)
+      .maybeSingle();
+    const tenantId = cat?.tenant_id as string | undefined;
+    if (!tenantId) return;
+
+    const limite = await consumirRateLimit(`correo-pedido:${tenantId}`, 20, 60 * 60);
+    if (!limite.permitido) return;
+
+    const [{ data: tenant }, { data: miembros }] = await Promise.all([
+      supabase.from("tenants").select("nombre_comercial, moneda").eq("id", tenantId).maybeSingle(),
+      supabase.from("tenant_memberships").select("user_id").eq("tenant_id", tenantId).in("role", ["SUPER_ADMIN", "ORG_ADMIN"]),
+    ]);
+    const correos = await Promise.all(
+      (miembros ?? []).map(async (m) => {
+        const { data } = await supabase.auth.admin.getUserById(m.user_id as string);
+        return data.user?.email ?? null;
+      })
+    );
+    const destinatarios = [...new Set(correos.filter((c): c is string => Boolean(c)))];
+    if (destinatarios.length === 0) return;
+
+    const { subject, html } = construirCorreoPedidoNuevo({
+      folio: pedido.folio,
+      negocio: (tenant?.nombre_comercial as string | undefined) ?? "tu negocio",
+      cliente,
+      entrega,
+      total: pedido.total,
+      moneda: (tenant?.moneda as "MXN" | "USD" | "EUR" | undefined) ?? "MXN",
+    });
+    for (const to of destinatarios) {
+      await sendCorreoNovedad({ to, nombre: "", negocio: "" }, () => ({ subject, html }));
+    }
+  } catch (error) {
+    console.error("[catalogo/pedido] no se pudo avisar al dueño:", error);
+  }
 }

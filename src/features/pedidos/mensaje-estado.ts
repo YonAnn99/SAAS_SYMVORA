@@ -1,42 +1,42 @@
-import type { EntregaPedido, EstadoPedido } from "@/features/catalogo/pedido-envio";
+import type { EntregaPedido } from "@/features/catalogo/pedido-envio";
+import type { EstadoBase } from "./types";
 
 /**
  * El texto de «Avisar por WhatsApp» (`wa.me`, sin la API de WhatsApp): lo escribe el negocio a su cliente. Es un
- * mensaje al cliente final, así que va siempre en español (como lo impreso y los correos).
+ * mensaje al cliente final, así que va siempre en español (como lo impreso y los correos). El estado que se nombra es
+ * el PROPIO del negocio (`estadoNombre`); el texto fijo solo cambia según el estado base.
  */
 export function mensajeAlCliente(
-  estado: EstadoPedido,
+  base: EstadoBase,
   datos: {
     negocio: string;
     folio: number;
     nombre: string;
     entrega: EntregaPedido;
+    estadoNombre: string;
     urlSeguimiento: string | null;
-    /** Envío ya formateado en la moneda del negocio («$30.00»); solo pedidos a domicilio con costo definido. */
+    /** Envío ya formateado («$30.00»); solo pedidos a domicilio con costo definido. */
     envio?: string | null;
+    /** Mensaje que el negocio dejó para el cliente. */
+    mensajeCliente?: string | null;
   }
 ): string {
   const primer = datos.nombre.trim().split(/\s+/)[0] || "";
   const saludo = primer ? `Hola, ${primer}.` : "Hola.";
   const pedido = `tu pedido #${datos.folio} en ${datos.negocio}`;
-  const cuerpo: Record<EstadoPedido, string> = {
+  const cuerpo: Record<EstadoBase, string> = {
     nuevo: `Recibimos ${pedido}. Lo estamos revisando y te confirmamos pronto.`,
     confirmado: `Confirmamos ${pedido}. Ya lo estamos apartando.`,
-    pago: `Recibimos el pago de ${pedido}. ¡Gracias!`,
-    en_produccion: `Ya estamos preparando ${pedido}.`,
-    listo:
-      datos.entrega === "recoger"
-        ? `${pedido[0].toUpperCase()}${pedido.slice(1)} ya está listo. Puedes pasar por él.`
-        : `${pedido[0].toUpperCase()}${pedido.slice(1)} ya está listo. En breve sale a tu domicilio.`,
-    en_camino: `${pedido[0].toUpperCase()}${pedido.slice(1)} va en camino a tu domicilio.`,
+    en_curso: `Tu pedido #${datos.folio} en ${datos.negocio} está: ${datos.estadoNombre}.`,
     entregado: `Entregamos ${pedido}. ¡Gracias por tu compra!`,
     cancelado: `Cancelamos ${pedido}. Si tienes dudas, escríbenos.`,
   };
+  const abierto = base !== "entregado" && base !== "cancelado";
   const lineaEnvio =
-    datos.entrega === "domicilio" && datos.envio && estado !== "entregado" && estado !== "cancelado"
-      ? [`Envío a domicilio: ${datos.envio}.`]
-      : [];
-  return [saludo, cuerpo[estado], ...lineaEnvio, ...(datos.urlSeguimiento ? ["", `Sigue tu pedido aquí: ${datos.urlSeguimiento}`] : [])].join(
+    datos.entrega === "domicilio" && datos.envio && abierto ? [`Envío a domicilio: ${datos.envio}.`] : [];
+  const lineaMensaje = datos.mensajeCliente ? [`Nota: ${datos.mensajeCliente}`] : [];
+  const lineaSeguimiento = datos.urlSeguimiento ? [`Sigue tu pedido aquí: ${datos.urlSeguimiento}`] : [];
+  return [saludo, cuerpo[base], ...lineaEnvio, ...lineaMensaje, ...(lineaSeguimiento.length ? ["", ...lineaSeguimiento] : [])].join(
     "\n"
   );
 }

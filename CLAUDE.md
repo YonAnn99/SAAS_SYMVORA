@@ -457,6 +457,23 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   (`mensajeAlCliente`, `urlSeguimiento`). **«Mis pedidos»** (`features/catalogo/mis-pedidos.ts`): el navegador del cliente recuerda por negocio (`localStorage`
   `symvora-pedidos:<slug>`, máx. 20) solo código, folio y fecha, nunca datos personales; se guarda al enviar el pedido y al abrir el seguimiento
   (`GuardarPedido`), y el catálogo muestra el botón «Mis pedidos (N)» solo si ese negocio recibe pedidos. Sin cuenta: otro navegador no lo ve.
+- **Modelo al estilo Kyte** (migración 146, 2026-11-26): `pedido_estados` = estados PROPIOS del negocio (máx. 15), cada uno apunta a un
+  ESTADO BASE del motor (`confirmado`|`en_curso`|`entregado`|`cancelado`; `nuevo` es virtual). El motor (stock, caja, cancelar) solo mira la base; lo que se
+  ve es `estado_nombre`/`estado_color` (copia en el pedido, sobrevive a renombrar). Los del sistema (Confirmado, Entregado, Cancelado) se renombran y
+  recolorean, no cambian de función ni se borran. Los que ya usó un pedido solo se desactivan.
+  - **Aceptar** (`aceptar_pedido`) NO cobra: ensaya la venta y la deshace para validar existencias. **Marcar pagado** (`registrar_pago_pedido`) es lo que
+    crea la VENTA (stock + caja, una vez; un reintento devuelve `ya_pagado`). Un pedido pagado ya no se edita.
+  - **Editar productos** (`editar_pedido`) solo sin pagar ni cerrar; el precio sale de `_catalogo_productos` (el mismo del cliente). El panel edita
+    productos SIN variante; los que la tienen se conservan.
+  - **Mensajes**: `mensaje_cliente` sale en el seguimiento; `nota_interna` solo la ve el equipo. **Pedido del POS**: `crear_pedido_interno`
+    (botón «Guardar pedido» en el cobro, `GuardarPedidoPos`): nace confirmado con `origen = 'pos'`, sin stock ni caja hasta pagar; el descuento del POS no viaja.
+  - **Seguimiento** (`/catalogo/<slug>/pedido/<codigo>`, estilo «Progreso del pedido»): estado propio con color, línea de tiempo con fechas
+    (`pedido_eventos.etiqueta`), «Plazo para retirar» + «Cómo llegar» (`catalogos_en_linea.plazo_retiro_dias`, se edita en Personalizar), mensaje del negocio,
+    fotos. Nunca teléfono, dirección del cliente ni nota interna.
+  - **Avisos**: correo INMEDIATO al dueño y admins por cada pedido del catálogo (`construirCorreoPedidoNuevo`, `after()` en la ruta, 20/h por negocio) y
+    toast + sonido en la app al llegar el `pedido_nuevo` por Realtime (`features/notificaciones/pedido-aviso.ts`; sonido apagable en el navegador).
+  - Funciones viejas `confirmar_pedido`/`cambiar_estado_pedido` ahora responden «recarga la página»: pestañas con el código anterior ven ese aviso.
+  - Pendiente: edición de productos con variante, avisos automáticos al cliente, reserva de stock al aceptar, pagos parciales.
 - **Envío a domicilio** (migración 144, 2026-11-25): el admin fija `catalogos_en_linea.costo_envio` en Catálogo en línea → Personalizar (NULL = «el negocio
   lo confirma», 0 = gratis, n = costo, 0–99,999). Un trigger BEFORE INSERT (`_pedido_copiar_costo_envio`) lo COPIA a `pedidos_catalogo.costo_envio` en pedidos a
   domicilio (los hechos conservan el que vio su cliente); recoger lo deja NULL. **El envío NO entra a la venta** (el motor solo conoce productos y la comparación
@@ -840,7 +857,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
 - **Verificación:**
   - `npx tsc --noEmit`, `npx vitest run` (1153 tests al 2026-10-16) y ESLint sobre los archivos tocados.
   - `next build` usa `--webpack`.
-- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 145 —141-142 pedidos, 143 nivel Pro de los 4 clientes que ya pagaban, 144 costo de envío y 145 bono de primera venta, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
+- **Migraciones:** van numeradas en `supabase/migrations/` (hoy hasta la 146 —141-142 pedidos, 146 estados propios del pedido, 143 nivel Pro de los 4 clientes que ya pagaban, 144 costo de envío y 145 bono de primera venta, aplicadas—; la 139 se aplica tras el deploy; ojo: la 010 se aplicó hasta el 2026-10-07) y se aplican con el MCP
   `apply_migration`. Antes de dar algo por aplicado, prueba con transacción revertida.
 - **Turbopack en bucle `FATAL`:** detén el dev server y borra `.next/cache/turbopack`.
 - **Inglés del sistema (por fases, desde el 2026-11-12):**
