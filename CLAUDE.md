@@ -150,6 +150,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     equipo mal o página en caché, `110620` sin interacción a tiempo, `300xxx`/`600xxx` fallo genérico del reto.
   - **El modo sin conexión está RETIRADO.** No reintroducirlo; se hará con una app nativa. La PWA sigue
     siendo instalable: no borres `sw.ts`.
+  - **Tablet en horizontal = escritorio** (2026-11-27, `lib/viewport-tablet.ts` + `components/ajuste-tablet-horizontal.tsx`, solo en el panel y el login): una tablet táctil de lado corto ≥ 600 px y lado largo < 1024 en horizontal cambia el `viewport` a `width=1024` (el navegador escala). `viewportDeseado` y `aplicarViewport` se SERIALIZAN: no pueden usar nada de fuera. La landing y el catálogo público NO lo montan.
   - CSS global: `html, body { overflow-x: clip }`. **No volver a `hidden`**: crea un segundo scroll.
 
 ## Módulos y piezas clave

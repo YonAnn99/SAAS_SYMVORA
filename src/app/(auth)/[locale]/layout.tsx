@@ -5,6 +5,7 @@ import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
 import { SplashEntrada } from "@/components/marketing/splash-entrada";
+import { AjusteTabletHorizontal } from "@/components/ajuste-tablet-horizontal";
 
 export const metadata: Metadata = {
   robots: {
@@ -32,6 +33,8 @@ export default async function AuthLayout({
     <NextIntlClientProvider locale={locale} messages={messages}>
       {/* Splash animado al abrir la app instalada sin sesion (cae en el login); en el navegador no sale. */}
       <SplashEntrada variante="app" />
+      {/* Tablet en horizontal = vista de escritorio (ver lib/viewport-tablet.ts). */}
+      <AjusteTabletHorizontal />
       <IdiomaHtml locale={locale} />
       <div className="auth-page-wrapper">
         {children}

@@ -5,6 +5,7 @@ import { IdiomaHtml } from "@/components/idioma-html";
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { SplashEntrada } from "@/components/marketing/splash-entrada";
+import { AjusteTabletHorizontal } from "@/components/ajuste-tablet-horizontal";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export default async function DashboardLayout({
     <NextIntlClientProvider locale={locale} messages={messages}>
       {/* Splash animado al abrir la app instalada (PWA / APK); en el navegador no sale. */}
       <SplashEntrada variante="app" />
+      {/* Tablet en horizontal = vista de escritorio (ver lib/viewport-tablet.ts). */}
+      <AjusteTabletHorizontal />
       <IdiomaHtml locale={locale} />
       <DashboardShell>{children}</DashboardShell>
     </NextIntlClientProvider>
