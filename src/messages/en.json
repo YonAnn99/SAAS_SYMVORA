@@ -3778,7 +3778,11 @@
     "dismiss": "Dismiss",
     "delete": "Delete",
     "dismissError": "Couldn't remove the notification. Try again.",
-    "open": "Open"
+    "open": "Open",
+    "sound": {
+      "on": "Notification sound: on (click to turn off)",
+      "off": "Notification sound: off (click to turn on)"
+    }
   },
   "news": {
     "new": "New",

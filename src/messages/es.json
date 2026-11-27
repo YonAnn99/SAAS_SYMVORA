@@ -3778,7 +3778,11 @@
     "dismiss": "Descartar",
     "delete": "Eliminar",
     "dismissError": "No se pudo quitar la notificación. Intenta de nuevo.",
-    "open": "Abrir"
+    "open": "Abrir",
+    "sound": {
+      "on": "Sonido de avisos: encendido (clic para apagar)",
+      "off": "Sonido de avisos: apagado (clic para encender)"
+    }
   },
   "news": {
     "new": "Nuevo",

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { avisarPedidoNuevo } from "../pedido-aviso";
+import { tocarSonidoDeTipo } from "../sonidos";
 import { useTenantContext } from "@/contexts/tenant-context";
 import { toast } from "sonner";
 import {
@@ -136,6 +137,8 @@ export function useNotificaciones() {
           setLista((actual) => fusionarNotificacion(actual, fila, LIMITE));
           // Pedido nuevo del catálogo: aviso emergente y sonido (solo al llegar, no al cargar la campana).
           if (payload.eventType === "INSERT" && fila.tipo === "pedido_nuevo") avisarPedidoNuevo(fila);
+          // Tono por tipo (solo avisos nuevos en vivo: no al cargar la campana ni en las agrupadas).
+          if (payload.eventType === "INSERT") tocarSonidoDeTipo(fila.tipo);
         }
       )
       .subscribe();

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { construirCorreoPedidoNuevo } from "@/lib/email";
-import { CLAVE_SONIDO_PEDIDO, cambiarSonidoPedido, sonidoPedidoActivo } from "@/features/notificaciones/pedido-aviso";
+import { cambiarSonido, sonidoActivo } from "@/features/notificaciones/sonidos";
 
 describe("correo de pedido nuevo del catálogo", () => {
   const { subject, html } = construirCorreoPedidoNuevo({
@@ -37,11 +37,10 @@ describe("sonido del aviso de pedido", () => {
     });
   });
   it("viene encendido y se puede apagar y volver a encender", () => {
-    expect(sonidoPedidoActivo()).toBe(true);
-    cambiarSonidoPedido(false);
-    expect(sonidoPedidoActivo()).toBe(false);
-    cambiarSonidoPedido(true);
-    expect(sonidoPedidoActivo()).toBe(true);
-    expect(CLAVE_SONIDO_PEDIDO).toBe("symvora-pedido-sonido");
+    expect(sonidoActivo()).toBe(true);
+    cambiarSonido(false);
+    expect(sonidoActivo()).toBe(false);
+    cambiarSonido(true);
+    expect(sonidoActivo()).toBe(true);
   });
 });

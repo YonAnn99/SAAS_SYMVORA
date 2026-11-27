@@ -760,6 +760,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     «Cuenta cerrada»); los pagos de la suscripción → `interno.bajas`.
 
 ## Notificaciones (migraciones 108-109, 2026-10-05)
+- **Tonos** (2026-11-27, `features/notificaciones/sonidos.ts`, generados con `node scripts/generar-tonos.mjs`): `SONIDO_POR_TIPO` es un `Record` completo. Pedido nuevo = 3 notas ascendentes; agotado = 2 descendentes graves; stock bajo = 2 suaves; novedad = arpegio; caja cerrada, venta cancelada, lote caducado e insumo faltante = «ping» neutro. El resto calla. Solo suena un tono a la vez (gana la prioridad) y no más de uno cada 2 s; el interruptor es la bocina de la campana (`localStorage`). **REGLA:** al cambiar un tono, subir la versión del archivo (`.v2`) por la caché del service worker.
 - **Campana del header** (`features/notificaciones/`): `use-notificaciones.ts` carga las 30 más recientes, se entera
   por **Realtime** (`notificaciones` es la única tabla en `supabase_realtime`) y vuelve a consultar al recuperar el
   foco. Al abrir el panel se llama `marcar_notificaciones_leidas` (`notificaciones_lectura.leido_hasta`). La lógica

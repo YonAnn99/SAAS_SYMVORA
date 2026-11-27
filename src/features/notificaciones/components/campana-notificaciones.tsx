@@ -2,11 +2,13 @@
 
 import { useTranslations } from "next-intl";
 
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   ArrowLeftRight,
   ArrowRight,
   Bell,
+  Volume2,
+  VolumeX,
   Boxes,
   CalendarClock,
   CalendarX2,
@@ -28,6 +30,7 @@ import {
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cambiarSonido, sonidoActivo } from "../sonidos";
 import {
   COLOR_ELIMINAR,
   FilaDeslizable,
@@ -332,11 +335,14 @@ export function CampanaNotificaciones() {
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} className="w-[22rem] max-w-[calc(100vw-2rem)] p-0">
         <div className="border-b border-border/60 px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold">{t("title")}</p>
-            {lista.length > 0 && (
-              <span className="text-xs text-muted-foreground">{t("latest", { n: lista.length })}</span>
-            )}
+            <div className="flex items-center gap-2">
+              {lista.length > 0 && (
+                <span className="text-xs text-muted-foreground">{t("latest", { n: lista.length })}</span>
+              )}
+              <BotonSonido />
+            </div>
           </div>
           {!esEscritorio && verPista && lista.length > 0 && (
             <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -387,5 +393,33 @@ export function CampanaNotificaciones() {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Encender o apagar los tonos de ESTE navegador (ver `sonidos.ts`). */
+function BotonSonido() {
+  const t = useTranslations("notifications");
+  const [activo, setActivo] = useState(true);
+  useEffect(() => {
+    // Lee la preferencia del navegador una vez montado (en el servidor no existe localStorage).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActivo(sonidoActivo());
+  }, []);
+  const alternar = () => {
+    cambiarSonido(!activo);
+    setActivo(!activo);
+  };
+  const etiqueta = activo ? t("sound.on") : t("sound.off");
+  return (
+    <button
+      type="button"
+      onClick={alternar}
+      aria-label={etiqueta}
+      title={etiqueta}
+      aria-pressed={activo}
+      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+    >
+      {activo ? <Volume2 className="h-3.5 w-3.5" aria-hidden="true" /> : <VolumeX className="h-3.5 w-3.5" aria-hidden="true" />}
+    </button>
   );
 }
