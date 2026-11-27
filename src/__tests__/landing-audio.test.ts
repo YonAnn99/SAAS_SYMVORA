@@ -28,27 +28,27 @@ describe("narración de la landing", () => {
       {
         id: "features",
         labelKey: "landing.features.title",
-        src: "/audio/landing/todo-lo-que-tu-negocio-necesita.mp3",
+        src: "/audio/landing/todo-lo-que-tu-negocio-necesita.v2.mp3",
       },
       {
         id: "why-choose-us",
         labelKey: "landing.whyChooseUs.title",
-        src: "/audio/landing/por-que-elegir-symvora.mp3",
+        src: "/audio/landing/por-que-elegir-symvora.v2.mp3",
       },
       {
         id: "security",
         labelKey: "landing.security.title",
-        src: "/audio/landing/tus-datos-estan-protegidos.mp3",
+        src: "/audio/landing/tus-datos-estan-protegidos.v2.mp3",
       },
       {
         id: "benefits",
         labelKey: "landing.benefits.title",
-        src: "/audio/landing/disenado-para-quien-tiene-prisa.mp3",
+        src: "/audio/landing/disenado-para-quien-tiene-prisa.v2.mp3",
       },
       {
         id: "setup",
         labelKey: "landing.setup.title",
-        src: "/audio/landing/en-4-pasos-estas-vendiendo.mp3",
+        src: "/audio/landing/en-4-pasos-estas-vendiendo.v2.mp3",
       },
     ]);
   });

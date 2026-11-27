@@ -318,6 +318,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Webhook de Conekta firmado (fail-closed, idempotente).
   - Cancelación con encuesta.
 - **Landing:**
+  - **Narración (audios):** al cambiar un `.mp3` de `public/audio/landing/`, renombrarlo a otra versión (`.v3`) y actualizar `audio-config.ts`. El service worker guarda los audios con CacheFirst: con el mismo nombre, los navegadores que ya los escucharon siguen con la voz vieja.
   - Header: Precios · Aprende · Nosotros · Contáctanos (`components/ui/app-frame.tsx`).
   - Secciones: Scroll Stack de módulos, guías en `/aprende`, página Nosotros con carrusel.
   - **Aprende** (`features/marketing/aprende.ts`): cada guía lleva `videos` (YouTube; portada ligera
