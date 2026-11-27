@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Check, Sparkles } from "lucide-react";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,18 @@ export function VentanaNovedad() {
   return (
     <Dialog open onOpenChange={(v) => !v && cerrar()}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <IlustracionCatalogo />
+        {abierta.portada ? (
+          <Image
+            src={abierta.portada}
+            alt=""
+            width={960}
+            height={544}
+            sizes="(min-width: 640px) 448px, 100vw"
+            className="h-40 w-full object-cover"
+          />
+        ) : (
+          <IlustracionCatalogo />
+        )}
         <div className="space-y-3 p-5">
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
             <Sparkles className="h-3 w-3" aria-hidden />

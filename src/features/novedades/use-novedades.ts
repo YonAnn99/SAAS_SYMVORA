@@ -5,6 +5,7 @@ import { usePathname } from "@/i18n/navigation";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useIsDemo } from "@/hooks/use-is-demo";
+import { usePlan } from "@/hooks/use-plan";
 import { stripLocale } from "@/lib/navigation";
 import {
   ESTADO_VACIO,
@@ -66,6 +67,7 @@ export function useNovedades() {
   const { userId, loading: tenantLoading } = useCurrentTenant();
   const { can, loading: permisosLoading } = usePermissions();
   const isDemo = useIsDemo();
+  const { permite, listo: planListo } = usePlan();
   const ruta = stripLocale(usePathname());
   const clave = userId ? claveNovedades(userId) : null;
 
@@ -75,8 +77,9 @@ export function useNovedades() {
     () => ESTADO_VACIO
   );
 
-  const listo = !tenantLoading && !permisosLoading && Boolean(clave) && !isDemo;
-  const activas = useMemo(() => (listo ? novedadesPara(new Date(), can) : []), [listo, can]);
+  // Sin el plan confirmado no se muestra una novedad de pago (Básico no debe verla un instante).
+  const listo = !tenantLoading && !permisosLoading && Boolean(clave) && !isDemo && planListo;
+  const activas = useMemo(() => (listo ? novedadesPara(new Date(), can, permite) : []), [listo, can, permite]);
 
   // Entrar al módulo cuenta como visto, llegue por donde llegue. Una función
   // dentro del módulo no: esa se marca al usarla (`usarFuncion`).
@@ -108,5 +111,8 @@ export function useNovedades() {
     descartar,
     funcionNueva,
     usarFuncion,
+    /** Las novedades que esta persona puede ver ahora (para el panel). */
+    activas,
+    estado,
   };
 }

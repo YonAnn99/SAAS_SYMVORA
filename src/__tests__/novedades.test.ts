@@ -20,7 +20,8 @@ const durante = new Date("2026-11-05T18:00:00Z");
 describe("novedades", () => {
   it("cada novedad apunta a un módulo real con su mismo permiso", () => {
     for (const n of NOVEDADES) {
-      const modulo = MODULES.find((m) => m.paths.includes(n.href));
+      // El enlace puede traer `?tab=…` (p. ej. el ticket): el módulo es la ruta sin query.
+      const modulo = MODULES.find((m) => m.paths.includes(n.href.split("?")[0]));
       expect(modulo, n.id).toBeDefined();
       expect(modulo!.permission).toBe(n.permiso);
       expect(n.desde <= n.hasta).toBe(true);

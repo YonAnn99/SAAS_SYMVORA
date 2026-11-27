@@ -15,7 +15,7 @@ import {
 } from "@/lib/notificaciones";
 
 const LIMITE = 30;
-const COLUMNAS = "id, tipo, titulo, mensaje, enlace, creado_en, correo_enviado_en";
+const COLUMNAS = "id, tipo, titulo, mensaje, enlace, creado_en, correo_enviado_en, datos";
 /** Entre dos peticiones del correo de stock desde esta pestaña. */
 const PAUSA_CORREO_MS = 20_000;
 /** Recuperar el foco no vuelve a consultar si la última carga es más reciente. */

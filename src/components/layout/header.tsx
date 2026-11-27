@@ -28,6 +28,7 @@ import { moduleLabelKeyForPath } from "@/lib/navigation";
 import { ProfileDialog } from "@/components/profile/profile-dialog";
 import { useCerrarSesion } from "@/components/layout/cerrar-sesion";
 import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
+import { PanelNovedades } from "@/features/novedades/panel-novedades";
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -149,6 +150,9 @@ export function Header({ onSearchOpen }: HeaderProps) {
         >
           <IconoTema oscuro={oscuro} montado={montado} />
         </Button>
+
+        {/* Novedades del producto, con imagen (estilo Kyte). */}
+        <PanelNovedades />
 
         {/* Stock que se acaba y lo que hace el equipo (migración 108). */}
         <CampanaNotificaciones />

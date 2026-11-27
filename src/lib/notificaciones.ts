@@ -59,6 +59,8 @@ export interface Notificacion {
   creado_en: string;
   /** Solo stock: NULL mientras el correo no ha salido. */
   correo_enviado_en: string | null;
+  /** Datos extra: en las novedades, `{ novedad: id }` (para la imagen en la campana). */
+  datos?: Record<string, unknown> | null;
 }
 
 /** Los avisos que viajan por correo inmediato (el resto solo va a la campana). */

@@ -3798,6 +3798,36 @@
         "2": "It's already included in your plan, at no extra cost."
       },
       "button": "Check it out"
+    },
+    "panel": {
+      "open": "What's new",
+      "title": "What's new",
+      "greeting": "Latest for {nombre}",
+      "back": "Back"
+    },
+    "kind": {
+      "feature": "New feature",
+      "improvement": "Improvement"
+    },
+    "pedidos-v2": {
+      "title": "Orders: your own statuses, separate payment and tracking",
+      "text": "Your catalog orders now follow your flow: create your statuses, accept, charge when paid and let the customer know.",
+      "points": {
+        "0": "Create your own statuses with color, like «In preparation» or «Ready for pickup».",
+        "1": "Save orders from the point of sale and charge them later.",
+        "2": "Customers follow progress online, with dates and the pickup window."
+      },
+      "button": "See orders"
+    },
+    "ticket-personalizable": {
+      "title": "Your receipt, your way",
+      "text": "Add your logo, phone, thank-you message and socials, and see how it looks before printing.",
+      "points": {
+        "0": "Show or hide the logo, address and sale details.",
+        "1": "Write your thank-you message and your social media.",
+        "2": "Pro and Premium can remove «Generated with SYMVORA»."
+      },
+      "button": "Customize it"
     }
   },
   "account": {

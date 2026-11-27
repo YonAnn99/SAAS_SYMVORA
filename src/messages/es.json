@@ -3798,6 +3798,36 @@
         "2": "Ya viene incluido en tu plan, sin costo extra."
       },
       "button": "Conocerlo"
+    },
+    "panel": {
+      "open": "Novedades",
+      "title": "Novedades",
+      "greeting": "Lo último para {nombre}",
+      "back": "Volver"
+    },
+    "kind": {
+      "feature": "Nueva función",
+      "improvement": "Mejora"
+    },
+    "pedidos-v2": {
+      "title": "Pedidos: estados propios, cobro aparte y seguimiento",
+      "text": "Tus pedidos del catálogo ahora siguen tu flujo: crea tus estados, acepta, cobra cuando te paguen y avisa al cliente.",
+      "points": {
+        "0": "Crea tus propios estados con color, como «En preparación» o «Listo para recoger».",
+        "1": "Guarda pedidos desde el punto de venta y cóbralos después.",
+        "2": "El cliente ve su avance en línea, con fechas y el plazo para recoger."
+      },
+      "button": "Ver pedidos"
+    },
+    "ticket-personalizable": {
+      "title": "Tu ticket, a tu medida",
+      "text": "Pon tu logo, teléfono, mensaje de agradecimiento y redes, y mira cómo queda antes de imprimir.",
+      "points": {
+        "0": "Muestra u oculta el logo, la dirección y los datos de la venta.",
+        "1": "Escribe tu mensaje de agradecimiento y tus redes sociales.",
+        "2": "Pro y Premium pueden quitar «Generado con SYMVORA»."
+      },
+      "button": "Personalizarlo"
     }
   },
   "account": {

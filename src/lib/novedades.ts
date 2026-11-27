@@ -1,3 +1,5 @@
+import type { FuncionDePlan } from "@/lib/niveles";
+
 /**
  * Novedades del producto: cómo se entera quien ya usa SYMVORA de un módulo
  * nuevo sin depender de las redes sociales.
@@ -9,8 +11,11 @@
  *   siembra con una migración; ver la 126);
  * - el correo a los dueños (`/api/cron/anuncio-novedad`, se corre a mano).
  *
- * Solo la ve quien tiene el `permiso` del módulo: al cajero no se le anuncia
- * lo que no puede abrir.
+ * Solo la ve quien tiene el `permiso` del módulo (y el `plan`, si lo pide): al cajero
+ * no se le anuncia lo que no puede abrir, ni a Básico lo que su nivel no incluye.
+ *
+ * REGLA (2026-11-27): toda novedad con `desde` a partir de 2026-11-27 trae `portada` (imagen de la tarjeta y de la ventana).
+ * La imagen de detalle es opcional; sin ella, el panel muestra solo la portada.
  *
  * Una novedad con `funcion` es un botón DENTRO de un módulo (p. ej. «Etiquetas»
  * en Productos): la etiqueta «Nuevo» va en ese botón y no en el menú, entrar al
@@ -38,9 +43,54 @@ export interface Novedad {
   texto: string;
   puntos: readonly string[];
   boton: string;
+  /** Imagen de la tarjeta y de la ventana (WebP en `public/novedades/`). */
+  portada?: string;
+  /** Captura real de la función, para el detalle. Opcional. */
+  detalle?: string;
+  /** Etiqueta de la tarjeta: «Nueva función» o «Mejora». */
+  tipo?: "funcion" | "mejora";
+  /** Nivel que la incluye (`lib/niveles.ts`); sin él, todos los niveles. */
+  plan?: FuncionDePlan;
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  {
+    // Más reciente primero: el panel lista en este orden.
+    id: "pedidos-v2",
+    href: "/orders",
+    permiso: "orders.manage",
+    plan: "pedidos",
+    tipo: "mejora",
+    portada: "/novedades/pedidos-v2-portada.webp",
+    desde: "2026-11-27",
+    hasta: "2026-12-18",
+    titulo: "Pedidos: estados propios, cobro aparte y seguimiento",
+    texto: "Tus pedidos del catálogo ahora siguen tu flujo: crea tus estados, acepta, cobra cuando te paguen y avisa al cliente.",
+    puntos: [
+      "Crea tus propios estados con color, como «En preparación» o «Listo para recoger».",
+      "Guarda pedidos desde el punto de venta y cóbralos después.",
+      "El cliente ve su avance en línea, con fechas y el plazo para recoger.",
+    ],
+    boton: "Ver pedidos",
+  },
+  {
+    id: "ticket-personalizable",
+    href: "/settings?tab=ticket",
+    funcion: "ticket",
+    permiso: "org.manage_settings",
+    tipo: "funcion",
+    portada: "/novedades/ticket-personalizable-portada.webp",
+    desde: "2026-11-27",
+    hasta: "2026-12-18",
+    titulo: "Tu ticket, a tu medida",
+    texto: "Pon tu logo, teléfono, mensaje de agradecimiento y redes, y mira cómo queda antes de imprimir.",
+    puntos: [
+      "Muestra u oculta el logo, la dirección y los datos de la venta.",
+      "Escribe tu mensaje de agradecimiento y tus redes sociales.",
+      "Pro y Premium pueden quitar «Generado con SYMVORA».",
+    ],
+    boton: "Personalizarlo",
+  },
   {
     id: "catalogo-en-linea",
     href: "/online-catalog",
@@ -101,8 +151,22 @@ export interface EstadoNovedades {
 export const ESTADO_VACIO: EstadoNovedades = { vistas: [], descartadas: [] };
 
 /** Las novedades vigentes que esta persona puede abrir. */
-export function novedadesPara(ahora: Date, can: (permiso: string) => boolean): Novedad[] {
-  return NOVEDADES.filter((n) => novedadVigente(n, ahora) && (n.permiso === null || can(n.permiso)));
+export function novedadesPara(
+  ahora: Date,
+  can: (permiso: string) => boolean,
+  permite: (funcion: FuncionDePlan) => boolean = () => true
+): Novedad[] {
+  return NOVEDADES.filter(
+    (n) =>
+      novedadVigente(n, ahora) &&
+      (n.permiso === null || can(n.permiso)) &&
+      (n.plan === undefined || permite(n.plan))
+  );
+}
+
+/** La imagen de una novedad por su id (para la campana, que solo guarda el id). */
+export function portadaDeNovedad(id: string): string | null {
+  return NOVEDADES.find((n) => n.id === id)?.portada ?? null;
 }
 
 /** La novedad que lleva la etiqueta «Nuevo» en esta opción del menú, si hay. */

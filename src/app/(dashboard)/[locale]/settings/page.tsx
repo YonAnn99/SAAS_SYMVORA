@@ -2,6 +2,8 @@
 
 import { CLAVES_MODULO, normalizarModulos, type ClaveModulo } from "@/lib/modulos";
 import { useModulos } from "@/hooks/use-modulos";
+import { useNovedades } from "@/features/novedades/use-novedades";
+import { EtiquetaNuevo } from "@/features/novedades/etiqueta-nuevo";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
@@ -49,6 +51,11 @@ export default function SettingsPage() {
     const pedida = searchParams.get("tab");
     return pedida && PESTANAS.includes(pedida) ? pedida : "general";
   });
+  // Novedad «Ticket personalizable»: la etiqueta «Nuevo» va en su pestaña y se quita al abrirla.
+  const { funcionNueva, usarFuncion } = useNovedades();
+  useEffect(() => {
+    if (pestana === "ticket") usarFuncion("ticket");
+  }, [pestana, usarFuncion]);
   const cambiarPestana = (valor: unknown) => {
     const siguiente = typeof valor === "string" ? valor : "general";
     setPestana(siguiente);
@@ -356,6 +363,7 @@ export default function SettingsPage() {
           <TabsTrigger value="ticket" className={CLASE_PESTANA}>
             <Receipt className="h-3.5 w-3.5 max-sm:hidden" />
             {t("settings.ticket.tab")}
+            {funcionNueva("ticket") && <EtiquetaNuevo />}
           </TabsTrigger>
         </TabsList>
 

@@ -31,6 +31,8 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cambiarSonido, sonidoActivo } from "../sonidos";
+import { portadaDeNovedad } from "@/lib/novedades";
+import Image from "next/image";
 import {
   COLOR_ELIMINAR,
   FilaDeslizable,
@@ -60,11 +62,26 @@ const ESTILO: Record<TipoNotificacion, { icono: LucideIcon; clase: string }> = {
   pedido_nuevo: { icono: ClipboardList, clase: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
 };
 
-/** Icono del tipo, con el punto de "nueva" en su esquina. */
+/** Icono del tipo, con el punto de "nueva" en su esquina. Las novedades muestran su imagen. */
 function IconoNotificacion({ n, nueva }: { n: Notificacion; nueva: boolean }) {
   const t = useTranslations("notifications");
   const estilo = ESTILO[n.tipo] ?? ESTILO.producto;
   const Icono = estilo.icono;
+  const idNovedad = typeof n.datos?.novedad === "string" ? n.datos.novedad : null;
+  const portada = n.tipo === "novedad" && idNovedad ? portadaDeNovedad(idNovedad) : null;
+  if (portada) {
+    return (
+      <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-muted">
+        <Image src={portada} alt="" width={64} height={64} className="h-full w-full object-cover" />
+        {nueva && (
+          <span
+            className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-popover"
+            aria-label={t("new")}
+          />
+        )}
+      </span>
+    );
+  }
   return (
     <span
       className={cn(

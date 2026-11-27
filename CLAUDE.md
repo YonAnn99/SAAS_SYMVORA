@@ -685,6 +685,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - El sitemap incluye los catálogos activos (`revalidate` diario).
 
 ## Novedades del producto (2026-10-30)
+- **Panel «Novedades» con imágenes** (2026-11-27, `features/novedades/panel-novedades.tsx`, botón de megáfono en el encabezado): tarjetas con portada (`public/novedades/<id>-portada.webp`), etiquetas «Nueva función» / «Mejora» y detalle al tocar. La ventana y la miniatura de la campana usan la misma imagen. `plan` oculta una novedad a los niveles que no la incluyen. **REGLA:** toda novedad con `desde` desde 2026-11-27 trae `portada` (la prueba `novedades-imagenes.test.ts` la vigila). Portadas con HeyGen (`create_image`, sin texto legible) y conversión con `node scripts/novedades-imagenes.mjs <carpeta>`.
 - **Fuente única** `lib/novedades.ts` (`NOVEDADES`: id, ruta, permiso, `desde`/`hasta` en días CDMX). Hoy: el Catálogo en
   línea y las Etiquetas con código de barras. Solo la ve quien tiene el permiso del módulo (`null` = todo el equipo);
   nunca en demo.
