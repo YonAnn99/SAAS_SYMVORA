@@ -10,6 +10,11 @@ import {
   type ClaveModulo,
   type Modulos,
 } from "@/lib/modulos";
+import {
+  TICKET_CONFIG_DEFAULT,
+  normalizarTicketConfig,
+} from "@/features/pos/ticket-config";
+import type { TicketConfig } from "@/lib/types/database";
 
 /**
  * Modulos activos del negocio (ver `@/lib/modulos`).
@@ -35,12 +40,16 @@ interface ModulosStore {
   cargar: (tenantId: string) => Promise<void>;
   setModulo: (clave: ClaveModulo, valor: boolean) => void;
   setTerminalExterna: (valor: boolean) => void;
+  /** `configuracion_json.ticket_config` normalizado. Por defecto, el ticket de siempre. */
+  ticketConfig: TicketConfig;
+  setTicketConfig: (valor: TicketConfig) => void;
 }
 
 const useModulosStore = create<ModulosStore>((set, get) => ({
   tenantId: null,
   modulos: TODOS_ENCENDIDOS,
   terminalExterna: null,
+  ticketConfig: TICKET_CONFIG_DEFAULT,
   cargando: false,
   cargar: async (tenantId) => {
     if (get().tenantId === tenantId || get().cargando) return;
@@ -55,30 +64,41 @@ const useModulosStore = create<ModulosStore>((set, get) => ({
       const json = (data?.configuracion_json ?? null) as {
         modulos_activos?: unknown;
         pos_config?: { terminal_externa?: unknown } | null;
+        ticket_config?: unknown;
       } | null;
       set({
         tenantId,
         modulos: normalizarModulos(json?.modulos_activos),
         terminalExterna: json?.pos_config?.terminal_externa === true,
+        ticketConfig: normalizarTicketConfig(json?.ticket_config),
       });
     } catch {
       // Ante un fallo de red no se bloquea "Tarjeta": misma regla que los modulos.
-      set({ tenantId, modulos: TODOS_ENCENDIDOS, terminalExterna: true });
+      set({ tenantId, modulos: TODOS_ENCENDIDOS, terminalExterna: true, ticketConfig: TICKET_CONFIG_DEFAULT });
     } finally {
       set({ cargando: false });
     }
   },
   setModulo: (clave, valor) => set((s) => ({ modulos: { ...s.modulos, [clave]: valor } })),
   setTerminalExterna: (valor) => set({ terminalExterna: valor }),
+  setTicketConfig: (valor) => set({ ticketConfig: valor }),
 }));
 
 export function useModulos() {
   const { tenantId } = useCurrentTenant();
-  const { modulos, terminalExterna, cargar, setModulo, setTerminalExterna } = useModulosStore();
+  const {
+    modulos,
+    terminalExterna,
+    ticketConfig,
+    cargar,
+    setModulo,
+    setTerminalExterna,
+    setTicketConfig,
+  } = useModulosStore();
 
   useEffect(() => {
     if (tenantId) void cargar(tenantId);
   }, [tenantId, cargar]);
 
-  return { modulos, setModulo, terminalExterna, setTerminalExterna };
+  return { modulos, setModulo, terminalExterna, setTerminalExterna, ticketConfig, setTicketConfig };
 }

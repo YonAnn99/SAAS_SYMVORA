@@ -212,6 +212,11 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     si falta stock, `requiere_revision`). Antes la terminal no conocía variantes y cobraba SIEMPRE el 16 % de IVA.
     El webhook traduce el status con `estadoTerminal` (solo estados finales). Cancelar: si Mercado Pago no deja (ya está
     en la terminal), la ruta responde 409 `en_terminal` y el POS sigue esperando; nunca se marca pagada por error.
+  - **Ticket personalizable** (pestaña «Ticket» en Configuración, 2026-11-27): `configuracion_json.ticket_config`, lógica pura en
+    `features/pos/ticket-config.ts` (defaults = el ticket de siempre; topes de largo; `ticketConfigEfectiva` fuerza «Generado con
+    SYMVORA» en Básico). Un solo cuerpo de ticket (`features/pos/components/ticket-cuerpo.tsx`) para pantalla, impresión y vista
+    previa; el ESC/POS lo recibe en `ticket-escpos.ts`. **REGLA:** nada de lo que sigue es configurable: nombre del negocio, totales,
+    método de pago, «SIN VALIDEZ FISCAL» ni los distintivos de reimpresión y venta cancelada.
 - **Variantes:**
   - Atributos libres en `variantes_producto.atributos` jsonb (migración 097). `talla`/`color` se siguen
     llenando como resumen compatible.

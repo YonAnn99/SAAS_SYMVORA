@@ -18,6 +18,7 @@ import {
   totalArticulos,
 } from "../ticket-format";
 import type { SaleReceipt } from "../types/pos.types";
+import { TICKET_CONFIG_DEFAULT, type TicketConfig } from "../ticket-config";
 import { TicketEscPos, columnas, izquierdaDerecha, type AnchoPapel } from "./escpos";
 
 export interface DatosNegocioTicket {
@@ -39,6 +40,7 @@ export function ticketVentaEscPos({
   ancho,
   metodoPagoTexto,
   logo,
+  ticketConfig = TICKET_CONFIG_DEFAULT,
 }: {
   receipt: SaleReceipt;
   negocio: DatosNegocioTicket;
@@ -46,7 +48,10 @@ export function ticketVentaEscPos({
   /** Nombre del metodo de pago ya traducido ("Tarjeta"...). */
   metodoPagoTexto: string;
   logo?: LogoTicket | null;
+  /** Ya efectiva (ver `ticketConfigEfectiva`). Sin ella, el ticket de siempre. */
+  ticketConfig?: TicketConfig;
 }): Uint8Array {
+  const cfg = ticketConfig;
   const t = new TicketEscPos(ancho);
   const cols = t.columnas;
   const moneda = negocio.moneda ?? "MXN";
@@ -58,16 +63,18 @@ export function ticketVentaEscPos({
 
   // Cabecera
   t.alinear("centro");
-  if (logo) t.imagen(logo.datos, logo.anchoBytes, logo.alto).salto();
+  if (logo && cfg.mostrarLogo) t.imagen(logo.datos, logo.anchoBytes, logo.alto).salto();
   t.negritas(true).parrafo(negocio.nombre).negritas(false);
+  if (cfg.lineaExtra) t.parrafo(cfg.lineaExtra);
+  if (cfg.telefono) t.linea(`Tel. ${cfg.telefono}`);
   t.salto();
 
   t.alinear("izquierda");
   t.negritas(true).linea("DETALLE DE PRODUCTOS").negritas(false);
   const operacion = numeroOperacion(receipt.reference);
-  if (operacion) t.linea(`Operación #${operacion}`);
+  if (cfg.mostrarOperacion && operacion) t.linea(`Operación #${operacion}`);
   t.linea(fechaTicket(receipt.fecha ?? undefined));
-  if (receipt.cajero) t.parrafo(`Atendió: ${receipt.cajero}`);
+  if (cfg.mostrarCajero && receipt.cajero) t.parrafo(`Atendió: ${receipt.cajero}`);
 
   if (receipt.esReimpresion) {
     t.alinear("centro").negritas(true).linea("*** REIMPRESIÓN ***").negritas(false).alinear("izquierda");
@@ -99,7 +106,9 @@ export function ticketVentaEscPos({
   }
 
   t.separador();
-  t.linea(izquierdaDerecha("Cant. total de items", String(totalArticulos(receipt.items)), cols));
+  if (cfg.mostrarCantidadItems) {
+    t.linea(izquierdaDerecha("Cant. total de items", String(totalArticulos(receipt.items)), cols));
+  }
 
   // Mismo desglose que el ticket en pantalla: solo con descuento o IVA.
   const desglose = desgloseTicket(receipt.items, receipt.total);
@@ -130,7 +139,7 @@ export function ticketVentaEscPos({
   } else {
     t.linea(izquierdaDerecha("Método de pago", metodoPagoTexto, cols));
   }
-  if (receipt.customerName) {
+  if (cfg.mostrarCliente && receipt.customerName) {
     t.linea(izquierdaDerecha("Cliente", receipt.customerName, cols));
   }
   if (receipt.lealtad) {
@@ -141,10 +150,12 @@ export function ticketVentaEscPos({
   t.separador();
   t.alinear("centro");
   t.negritas(true).parrafo(negocio.nombre).negritas(false);
-  if (negocio.direccion) t.parrafo(negocio.direccion);
+  if (cfg.mostrarDireccion && negocio.direccion) t.parrafo(negocio.direccion);
+  if (cfg.mensajePie) for (const renglon of cfg.mensajePie.split("\n")) t.parrafo(renglon);
+  if (cfg.redes) t.parrafo(cfg.redes);
   // No es decorativo: el modulo CFDI esta apagado, esto NO es comprobante fiscal.
   t.negritas(true).linea("SIN VALIDEZ FISCAL").negritas(false);
-  t.linea("Generado con SYMVORA");
+  if (!cfg.ocultarMarca) t.linea("Generado con SYMVORA");
   t.alinear("izquierda");
 
   return t.cortar().resultado();

@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Printer, Puzzle, Smartphone } from "lucide-react";
+import { Building2, Printer, Puzzle, Receipt, Smartphone } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { MercadoPagoPointSettings } from "@/features/payments/components/mercado-pago-point-settings";
 import { ImpresoraConfig } from "@/features/pos/components/impresora-config";
+import { TicketConfigForm } from "@/features/pos/components/ticket-config-form";
+import { normalizarTicketConfig } from "@/features/pos/ticket-config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { useTenantContext } from "@/contexts/tenant-context";
@@ -27,13 +29,13 @@ import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
 import { AvisoDerechosLogo } from "@/components/compliance/aviso-derechos-logo";
 import { subirLogoNegocio } from "@/lib/logo-negocio";
-import type { Tenant, TenantSettingsJSON } from "@/lib/types/database";
+import type { Tenant, TenantSettingsJSON, TicketConfig } from "@/lib/types/database";
 import { EncabezadoModulo } from "@/components/dashboard/encabezado-modulo";
 import { SelectSimple } from "@/components/ui/select-simple";
 import { useConfirmar } from "@/components/ui/confirmar";
 import { MONEDAS, formatMoneda, monedaDe, type Moneda } from "@/lib/money";
 
-const PESTANAS = ["general", "modules", "payments", "printer"];
+const PESTANAS = ["general", "modules", "payments", "printer", "ticket"];
 
 /** Pestaña de Configuración: en celular, menos relleno para que las cuatro quepan. */
 const CLASE_PESTANA = "gap-1.5 text-xs max-sm:group-data-[variant=default]/tabs-list:px-1.5";
@@ -58,7 +60,7 @@ export default function SettingsPage() {
   };
   const t = useTranslations();
   const { tenantId, loading: tenantLoading } = useCurrentTenant();
-  const { setModulo, setTerminalExterna } = useModulos();
+  const { setModulo, setTerminalExterna, setTicketConfig } = useModulos();
   const { refetch: refetchTenantContext } = useTenantContext();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [settings, setSettings] = useState<TenantSettingsJSON | null>(null);
@@ -277,6 +279,25 @@ export default function SettingsPage() {
     }
   };
 
+  // Personalización del ticket. Mismo escritor que los demás ajustes; el POS toma el cambio al instante.
+  // Solo cambia lo local si Supabase lo guardó, así que un error no deja la pantalla con datos falsos.
+  const handleGuardarTicket = async (cfg: TicketConfig) => {
+    if (!tenant || !settings) return;
+    const newSettings: TenantSettingsJSON = { ...settings, ticket_config: cfg };
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase
+      .from("tenant_settings")
+      .update({ configuracion_json: newSettings })
+      .eq("tenant_id", tenant.id);
+    if (error) {
+      toast.error(t("settings.ticket.saveError", { error: error.message }));
+      return;
+    }
+    setSettings(newSettings);
+    setTicketConfig(cfg);
+    toast.success(t("settings.ticket.saved"));
+  };
+
   if (!tenantLoading && !tenantId) {
     return (
       <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
@@ -331,6 +352,10 @@ export default function SettingsPage() {
           <TabsTrigger value="printer" className={CLASE_PESTANA}>
             <Printer className="h-3.5 w-3.5 max-sm:hidden" />
             {t("settings.printer")}
+          </TabsTrigger>
+          <TabsTrigger value="ticket" className={CLASE_PESTANA}>
+            <Receipt className="h-3.5 w-3.5 max-sm:hidden" />
+            {t("settings.ticket.tab")}
           </TabsTrigger>
         </TabsList>
 
@@ -485,6 +510,15 @@ export default function SettingsPage() {
 
         <TabsContent value="printer">
           {pestana === "printer" && <ImpresoraConfig />}
+        </TabsContent>
+
+        <TabsContent value="ticket">
+          {pestana === "ticket" && settings && (
+            <TicketConfigForm
+              valor={normalizarTicketConfig(settings.ticket_config)}
+              onGuardar={handleGuardarTicket}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

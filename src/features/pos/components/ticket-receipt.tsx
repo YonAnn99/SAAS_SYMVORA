@@ -1,12 +1,10 @@
 "use client";
 
-import { abreviatura, formatearCantidad } from "@/lib/unidades";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Check, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { SpecularActionButton } from "@/components/ui/specular-action-button";
 import {
@@ -19,17 +17,9 @@ import {
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Link } from "@/i18n/navigation";
-import {
-  clavePagoI18n,
-  desgloseTicket,
-  fechaTicket,
-  formatearImporte,
-  marcaMonedaTicket,
-  importeLinea,
-  muestraEfectivo,
-  numeroOperacion,
-  totalArticulos,
-} from "../ticket-format";
+import { clavePagoI18n } from "../ticket-format";
+import { TicketCuerpo } from "./ticket-cuerpo";
+import { useTicketConfigEfectiva } from "../use-ticket-config";
 import type { SaleReceipt } from "../types/pos.types";
 import { useImpresora } from "../impresora/use-impresora";
 import { imprimirTicketVenta } from "../impresora/imprimir-ticket";
@@ -54,8 +44,7 @@ export function TicketReceipt({
 }: TicketReceiptProps) {
   const t = useTranslations();
   const { tenantName, tenantLogo, tenantAddress, moneda } = useCurrentTenant();
-  const marca = marcaMonedaTicket(moneda);
-  const importe = (n: number) => formatearImporte(n, moneda);
+  const ticketConfig = useTicketConfigEfectiva();
   const impresora = useImpresora();
   const { can } = usePermissions();
   // Directo solo si hay impresora guardada y ESTE navegador tiene su conexion
@@ -76,6 +65,7 @@ export function TicketReceipt({
         negocio: { nombre: tenantName ?? "", direccion: tenantAddress, moneda },
         metodoPagoTexto: t(clavePagoI18n(receipt.paymentMethod)),
         logoUrl: tenantLogo,
+        ticketConfig,
       });
       setImpreso(receipt.reference ?? "impreso");
     } catch {
@@ -114,165 +104,14 @@ export function TicketReceipt({
 
   if (!receipt) return null;
 
-  // Una REIMPRESION trae la fecha de la venta; el cobro normal la omite y
-  // usa la de ahora, que es la correcta. Sin esto, el ticket de una venta
-  // de la semana pasada saldria fechado hoy.
-  const fecha = fechaTicket(receipt.fecha ?? undefined);
-  const operacion = numeroOperacion(receipt.reference);
-  const articulos = totalArticulos(receipt.items);
-  const desglose = desgloseTicket(receipt.items, receipt.total);
-  // Sin descuento ni IVA el total ES el subtotal: repetirlo solo alarga el papel.
-  const conDesglose = desglose.descuento > 0 || desglose.impuesto > 0;
-  const conEfectivo = muestraEfectivo(
-    receipt.paymentMethod,
-    receipt.montoRecibido
-  );
-  const paymentLabel = t(
-    clavePagoI18n(receipt.paymentMethod)
-  );
-
-  // El contenido del ticket se usa DOS veces: dentro del diálogo como vista
-  // previa, y en el contenedor de impresión de más abajo. Es la misma función
-  // para que lo que se ve en pantalla y lo que sale por la impresora no puedan
-  // divergir.
+  // El contenido del ticket se usa DOS veces: como vista previa en el diálogo y en el contenedor de
+  // impresión. Es el mismo componente para que lo que se ve y lo que sale no puedan divergir.
   const cuerpoTicket = (
-    <div className="ticket-cuerpo">
-      <header className="ticket-cabecera">
-        {tenantLogo && (
-          // El logo del NEGOCIO, no el de SYMVORA: el ticket lo recibe el
-          // comprador, que le compró a la tienda.
-          <Image
-            src={tenantLogo}
-            alt={tenantName}
-            width={160}
-            height={80}
-            className="ticket-logo"
-            unoptimized
-          />
-        )}
-        <p className="ticket-negocio">{tenantName}</p>
-      </header>
-
-      <p className="ticket-seccion">DETALLE DE PRODUCTOS</p>
-      <div className="ticket-meta">
-        {operacion && <span>Operación #{operacion}</span>}
-        <span>{fecha}</span>
-        {receipt.cajero && <span>Atendió: {receipt.cajero}</span>}
-      </div>
-
-      {/* Distintivo de copia. Un ticket reimpreso sin marcar sirve para
-          justificar una devolución falsa, así que se separa del original de un
-          vistazo. */}
-      {receipt.esReimpresion && (
-        <p className="ticket-reimpresion">*** REIMPRESIÓN ***</p>
-      )}
-      {receipt.cancelada && (
-        <p className="ticket-reimpresion">*** VENTA CANCELADA ***</p>
-      )}
-
-      <table className="ticket-tabla">
-        <thead>
-          <tr>
-            <th className="ticket-col-izq">Prod. y Cant.</th>
-            <th className="ticket-col-der">Monto</th>
-            <th className="ticket-col-der">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {receipt.items.map((item) => (
-            <tr key={`${item.productId}-${item.varianteId ?? "base"}`}>
-              <td colSpan={3} className="ticket-producto">
-                <span className="ticket-producto-nombre">
-                  {item.nombre}
-                  {item.varianteLabel ? ` · ${item.varianteLabel}` : ""}
-                </span>
-                <span className="ticket-producto-linea">
-                  <span className="ticket-col-izq">x{formatearCantidad(item.cantidad, item.unidad_medida)}</span>
-                  <span className="ticket-col-der">
-                    {importe(item.precioUnitario)}/{abreviatura(item.unidad_medida, 1)}
-                  </span>
-                  <span className="ticket-col-der">
-                    {importe(importeLinea(item))}
-                  </span>
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="ticket-fila">
-        <span>Cant. total de items</span>
-        <span>{articulos}</span>
-      </div>
-
-      {conDesglose && (
-        <>
-          <div className="ticket-fila">
-            <span>Subtotal {marca}</span>
-            <span>{importe(desglose.subtotal)}</span>
-          </div>
-          {desglose.descuento > 0 && (
-            <div className="ticket-fila">
-              <span>{receipt.descuentoEtiqueta ?? "Descuento"} {marca}</span>
-              <span>-{importe(desglose.descuento)}</span>
-            </div>
-          )}
-          {desglose.impuesto > 0 && (
-            <div className="ticket-fila">
-              <span>IVA {marca}</span>
-              <span>{importe(desglose.impuesto)}</span>
-            </div>
-          )}
-        </>
-      )}
-
-      <div className="ticket-total">
-        <span>Total {marca}</span>
-        <span>{importe(receipt.total)}</span>
-      </div>
-
-      {conEfectivo ? (
-        <>
-          <div className="ticket-fila">
-            <span>Efectivo {marca}</span>
-            <span>{importe(receipt.montoRecibido ?? 0)}</span>
-          </div>
-          <div className="ticket-fila">
-            <span>Cambio {marca}</span>
-            <span>{importe(receipt.cambio ?? 0)}</span>
-          </div>
-        </>
-      ) : (
-        <div className="ticket-fila">
-          <span>Método de pago</span>
-          <span>{paymentLabel}</span>
-        </div>
-      )}
-
-      {receipt.customerName && (
-        <div className="ticket-fila">
-          <span>Cliente</span>
-          <span>{receipt.customerName}</span>
-        </div>
-      )}
-      {receipt.lealtad && (
-        <div className="ticket-fila">
-          <span>{receipt.lealtad}</span>
-        </div>
-      )}
-
-      <footer className="ticket-pie">
-        <p className="ticket-negocio-pie">{tenantName}</p>
-        {tenantAddress && <p className="ticket-direccion">{tenantAddress}</p>}
-        {/*
-          No es decorativo: el módulo CFDI está apagado, así que esto NO es un
-          comprobante fiscal y el papel tiene que decirlo.
-        */}
-        <p className="ticket-aviso">SIN VALIDEZ FISCAL</p>
-        <p className="ticket-marca">Generado con SYMVORA</p>
-      </footer>
-    </div>
+    <TicketCuerpo
+      receipt={receipt}
+      negocio={{ nombre: tenantName ?? "", logo: tenantLogo, direccion: tenantAddress, moneda }}
+      config={ticketConfig}
+    />
   );
 
   return (

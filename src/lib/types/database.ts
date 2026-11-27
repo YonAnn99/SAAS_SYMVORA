@@ -1517,6 +1517,29 @@ export interface POSConfig {
   terminal_externa?: boolean;
 }
 
+/**
+ * Personalización del ticket de venta (`configuracion_json.ticket_config`). Todo es opcional: sin la clave
+ * el ticket sale igual que antes. Los topes de largo viven en `features/pos/ticket-config.ts`.
+ */
+export interface TicketConfig {
+  mostrarLogo: boolean;
+  /** Teléfono o WhatsApp del negocio, bajo el nombre. */
+  telefono: string;
+  /** Línea libre bajo el nombre (RFC, giro, sucursal...). */
+  lineaExtra: string;
+  mostrarDireccion: boolean;
+  /** Mensaje de agradecimiento al pie (hasta 3 renglones). */
+  mensajePie: string;
+  /** Redes o sitio web, al pie. */
+  redes: string;
+  mostrarOperacion: boolean;
+  mostrarCajero: boolean;
+  mostrarCliente: boolean;
+  mostrarCantidadItems: boolean;
+  /** Quita «Generado con SYMVORA». Solo Pro y Premium; en Básico se fuerza a `false`. */
+  ocultarMarca: boolean;
+}
+
 export interface MercadoPagoPointSettings {
   habilitado: boolean;
   terminal_id: string;
@@ -1530,6 +1553,7 @@ export interface TenantSettingsJSON {
   modulos_activos: TenantConfiguracion;
   pos_config: POSConfig;
   mercado_pago_point?: MercadoPagoPointSettings;
+  ticket_config?: Partial<TicketConfig>;
 }
 
 export interface TenantConfiguracionFiscal {
