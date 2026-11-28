@@ -22,6 +22,7 @@ import { useIsDemo } from "@/hooks/use-is-demo";
 import { useCurrentTenant } from "@/hooks/use-current-tenant";
 import { DIAS_PLAZO_BAJA, fechaLegible } from "./baja";
 import { avisarCambioDeBaja } from "./use-solicitud-baja";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
  * «Eliminar mi cuenta» en Mi perfil. Lo exige Google Play (migracion 128).
@@ -41,6 +42,7 @@ export function EliminarCuenta() {
   const [confirmacion, setConfirmacion] = useState("");
   const [noConservar, setNoConservar] = useState(false);
   const [motivo, setMotivo] = useState("");
+  const [correo, setCorreo] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const t = useTranslations("account.delete");
   const li = localeIntl(useLocale());
@@ -86,9 +88,12 @@ export function EliminarCuenta() {
           variant="outline"
           size="sm"
           className="h-8 border-red-500/40 text-xs text-red-600 hover:bg-red-500/10 dark:text-red-400"
-          onClick={() => {
+          onClick={async () => {
             setConfirmacion("");
             setAbierto(true);
+            // Para mostrar la cuenta que se va a eliminar (sesión local, sin red).
+            const { data } = await createSupabaseBrowserClient().auth.getSession();
+            setCorreo(data.session?.user.email ?? null);
           }}
         >
           {t("title")}
@@ -107,6 +112,17 @@ export function EliminarCuenta() {
               {esDueno ? ` ${t("canDownload")}` : ""}
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-3 text-xs">
+            <p className="font-semibold">{t("accountLabel")}</p>
+            <p className="break-all">
+              {correo ?? "—"}
+              {tenantName ? ` · ${tenantName}` : ""}
+            </p>
+            <p className="pt-1 font-semibold">{t("whatHappens")}</p>
+            <p className="text-muted-foreground">{esDueno ? t("ownerEffect") : t("memberEffect")}</p>
+            <p className="text-muted-foreground">{t("cancelHint", { dias: DIAS_PLAZO_BAJA })}</p>
+          </div>
 
           <div className="space-y-3">
             <div className="space-y-1">

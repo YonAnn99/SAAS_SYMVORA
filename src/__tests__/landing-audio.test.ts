@@ -40,16 +40,6 @@ describe("narración de la landing", () => {
         labelKey: "landing.security.title",
         src: "/audio/landing/tus-datos-estan-protegidos.v2.mp3",
       },
-      {
-        id: "benefits",
-        labelKey: "landing.benefits.title",
-        src: "/audio/landing/disenado-para-quien-tiene-prisa.v2.mp3",
-      },
-      {
-        id: "setup",
-        labelKey: "landing.setup.title",
-        src: "/audio/landing/en-4-pasos-estas-vendiendo.v2.mp3",
-      },
     ]);
   });
 

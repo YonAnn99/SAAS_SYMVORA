@@ -12,12 +12,12 @@ import { Hero } from "@/components/marketing/hero";
 import { CompatibilityBar } from "@/components/marketing/compatibility-bar";
 import LogoCarousel from "@/components/ui/logo-carousel";
 import { Features } from "@/components/marketing/features";
+import { EscenaPos } from "@/components/marketing/escena-pos/escena-pos";
+import { FondoSeccion } from "@/components/marketing/fondo-seccion";
 import { GirosStrip } from "@/components/marketing/giros-strip";
 import { SinLimites } from "@/components/marketing/sin-limites";
 import { WhyChooseUs } from "@/components/marketing/why-choose-us";
 import { SecuritySection } from "@/components/marketing/security-section";
-import { Benefits } from "@/components/marketing/benefits";
-import { Setup } from "@/components/marketing/setup";
 import { FAQ } from "@/components/marketing/faq";
 import { CTA } from "@/components/marketing/cta";
 import { InstalarComputadora } from "@/components/marketing/instalar-computadora";
@@ -137,17 +137,17 @@ export default async function LocalePage({
       <div className="lg:hidden px-4 sm:px-6 pb-2">
         <SinLimites alineacion="centro" compactoMovil visibleDesdeInicio />
       </div>
-      <LogoCarousel />
-      <Features />
+      <FondoSeccion fondo="gris"><LogoCarousel /></FondoSeccion>
+      <FondoSeccion fondo="blanco"><Features /></FondoSeccion>
+      {/* Escena fija (piloto, estilo VS Code): el scroll avanza la maqueta del POS. */}
+      <FondoSeccion fondo="gris"><EscenaPos /></FondoSeccion>
       {/* Los precios van justo tras las funciones (antes estaban al final, tras
           ~10 secciones): quien ya vio que sirve quiere saber cuanto cuesta. */}
-      <CTA />
-      <CompatibilityBar />
-      <WhyChooseUs />
-      <SecuritySection />
-      <Benefits />
-      <Setup />
-      <FAQ />
+      <FondoSeccion fondo="blanco"><CTA /></FondoSeccion>
+      <FondoSeccion fondo="gris"><CompatibilityBar /></FondoSeccion>
+      <FondoSeccion fondo="blanco"><WhyChooseUs /></FondoSeccion>
+      <FondoSeccion fondo="gris"><SecuritySection /></FondoSeccion>
+      <FondoSeccion fondo="blanco"><FAQ /></FondoSeccion>
       {/* Instalar en la computadora no aplica a quien llega por celular. */}
       <div className="hidden lg:block">
         <InstalarComputadora />

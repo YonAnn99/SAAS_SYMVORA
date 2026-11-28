@@ -8,6 +8,8 @@ import { requireTenantAccess } from "@/lib/supabase/auth";
 import { assertNotDemo } from "@/lib/supabase/demo-guard";
 import { consumirRateLimit } from "@/lib/rate-limit";
 import { sendCorreoInterno } from "@/lib/email";
+import { nombreCompleto } from "@/lib/nombre-usuario";
+import { construirAvisoBaja } from "@/lib/aviso-baja";
 
 /**
  * Pedir (POST) o cancelar (DELETE) la eliminacion de la propia cuenta. Lo exige
@@ -77,27 +79,16 @@ export async function POST(request: Request) {
 
   after(async () => {
     try {
-      const { data: tenant } = solicitud.tenant_id
-        ? await servicio.from("tenants").select("nombre_comercial").eq("id", solicitud.tenant_id).maybeSingle()
-        : { data: null };
-      const negocio = tenant?.nombre_comercial ?? "(sin negocio)";
-      const fecha = new Date(solicitud.ejecutar_en).toLocaleDateString("es-MX", {
-        timeZone: "America/Mexico_City",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-      const quien = solicitud.es_dueno ? "El DUEÑO" : "Un colaborador";
-      const texto = `${quien} de «${negocio}» pidió eliminar su cuenta. Se ejecuta el ${fecha}.${
-        solicitud.es_dueno ? " Se borrará el negocio completo." : ""
-      } Conservar contacto: ${cuerpo.conservar_contacto !== false ? "sí" : "no"}. Motivo: ${
-        cuerpo.motivo?.trim() || "(sin motivo)"
-      }`;
-      await sendCorreoInterno({
-        subject: `Solicitud de eliminación de cuenta: ${negocio}`,
-        text: texto,
-        html: `<p>${texto.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c] as string)}</p>`,
-      });
+      const datos = await datosDeBaja(servicio, auth.userId, solicitud.tenant_id);
+      await sendCorreoInterno(
+        construirAvisoBaja({
+          tipo: "solicitud",
+          ...datos,
+          conservarContacto: cuerpo.conservar_contacto !== false,
+          motivo: typeof cuerpo.motivo === "string" ? cuerpo.motivo : null,
+          ejecutarEn: solicitud.ejecutar_en,
+        })
+      );
     } catch (e) {
       console.error("[eliminar-cuenta] no se pudo avisar a hola@:", e);
     }
@@ -115,12 +106,80 @@ export async function DELETE(request: Request) {
   const auth = await requireTenantAccess(request);
   if (!auth.ok) return auth.response;
 
+  // Antes de cancelar: la solicitud viva de esta persona, para poder avisar qué se canceló.
+  const servicio = createSupabaseServiceRoleClient();
+  const { data: viva } = await servicio
+    .from("solicitudes_baja")
+    .select("tenant_id, motivo, conservar_contacto, solicitada_en")
+    .eq("user_id", auth.userId)
+    .is("cancelada_en", null)
+    .is("ejecutada_en", null)
+    .order("solicitada_en", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("cancelar_baja");
   if (error) {
     return NextResponse.json({ error: "No se pudo cancelar la solicitud" }, { status: 500 });
   }
-  return NextResponse.json({ success: true, cancelada: Boolean(data) });
+  const cancelada = Boolean(data);
+
+  if (cancelada && viva) {
+    const canceladaEn = new Date().toISOString();
+    after(async () => {
+      try {
+        const datos = await datosDeBaja(servicio, auth.userId, viva.tenant_id);
+        await sendCorreoInterno(
+          construirAvisoBaja({
+            tipo: "cancelacion",
+            ...datos,
+            conservarContacto: viva.conservar_contacto !== false,
+            motivo: viva.motivo,
+            solicitadaEn: viva.solicitada_en,
+            canceladaEn,
+          })
+        );
+      } catch (e) {
+        console.error("[eliminar-cuenta] no se pudo avisar la cancelación:", e);
+      }
+    });
+  }
+
+  return NextResponse.json({ success: true, cancelada });
+}
+
+/**
+ * Quién pide la baja, en qué negocio y cuántas personas tiene con acceso. Solo con service role: los datos
+ * salen de la base, no de la petición.
+ */
+async function datosDeBaja(
+  servicio: ReturnType<typeof createSupabaseServiceRoleClient>,
+  userId: string,
+  tenantId: string | null
+) {
+  const [usuario, tenant, membresia, miembros] = await Promise.all([
+    servicio.auth.admin.getUserById(userId),
+    tenantId
+      ? servicio.from("tenants").select("nombre_comercial").eq("id", tenantId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    tenantId
+      ? servicio.from("tenant_memberships").select("role").eq("user_id", userId).eq("tenant_id", tenantId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    tenantId
+      ? servicio.from("tenant_memberships").select("user_id", { count: "exact", head: true }).eq("tenant_id", tenantId)
+      : Promise.resolve({ count: 0 }),
+  ]);
+  const cuenta = usuario.data?.user;
+  return {
+    persona: {
+      nombre: nombreCompleto((cuenta?.user_metadata ?? {}) as Parameters<typeof nombreCompleto>[0]) || null,
+      correo: cuenta?.email ?? null,
+      rol: (membresia.data?.role as string | undefined) ?? null,
+    },
+    negocio: tenant.data?.nombre_comercial ?? "(sin negocio)",
+    miembros: miembros.count ?? 0,
+  };
 }
 
 /**

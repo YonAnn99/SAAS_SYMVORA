@@ -319,6 +319,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
   - Webhook de Conekta firmado (fail-closed, idempotente).
   - Cancelación con encuesta.
 - **Landing:**
+  - **Escena fija tipo VS Code** (piloto, `components/marketing/escena-pos/`): contenedor de 300vh con un panel `sticky`; el scroll solo escribe `--p` (0→1) en el contenedor y cada acto usa `calc()` sobre esa variable. **REGLA:** nunca `setState` por cuadro de scroll (solo al cambiar de acto). Sin pin (celular, tablet o `prefers-reduced-motion`) los actos quedan apilados y visibles. Se decide por `lg:motion-safe:`.
   - **Splash y `<script>`** (2026-11-27): el script que decide el splash va al final del `<body>` del layout raíz (`components/marketing/splash-script.ts`). Un `<script>` dentro de un componente que se re-renderiza al navegar no se ejecuta y React avisa en consola: **no poner `<script>` en layouts ni en componentes; si hace falta pre-pintado, va en el layout raíz.**
   - **Narración (audios):** al cambiar un `.mp3` de `public/audio/landing/`, renombrarlo a otra versión (`.v3`) y actualizar `audio-config.ts`. El service worker guarda los audios con CacheFirst: con el mismo nombre, los navegadores que ya los escucharon siguen con la voz vieja.
   - Header: Precios · Aprende · Nosotros · Contáctanos (`components/ui/app-frame.tsx`).
@@ -746,6 +747,7 @@ se cobra, un corte de caja mal cuadrado o datos de un cliente perdidos. Todo cam
     intent-filter App Link (`autoVerify`) del manifest, para que los enlaces (correos de pago, WhatsApp) abran Chrome
     y no la app. En la app NO hay botón para pagar en el navegador: la política de pagos de Play
     lo prohíbe en México (solo programas de EE. UU., UE, Japón, Brasil…).
+- **Correos de baja** (2026-11-27, `lib/aviso-baja.ts`): el aviso a hola@ dice QUIÉN lo pidió (nombre, correo, rol, negocio, cuántas personas tiene y si es el último usuario), y la CANCELACIÓN (`DELETE`) manda su propio correo. Los datos salen del servidor, nunca del cuerpo de la petición.
 - **Eliminar cuenta** (lo exige Play): «Eliminar mi cuenta» en Mi perfil (`features/cuenta/eliminar-cuenta.tsx`) y
   página pública `/es/eliminar-cuenta` (en `MARKETING_SEGMENTS`).
   - `POST /api/cuenta/eliminar` → `solicitar_baja` (30 días para arrepentirse; si es el dueño, cancela hoy la

@@ -2912,6 +2912,18 @@
         "captura": "Ventana para importar el catálogo desde CSV o Excel",
         "description": "Sube tu catálogo en CSV o Excel y mapea las columnas tú mismo. Detecta duplicados por código de barras y te deja decidir: omitir, actualizar o generar uno nuevo.",
         "stats": "CSV y Excel · Detección de duplicados · Importación por lotes"
+      },
+      "controles": {
+        "anterior": "Capítulo anterior",
+        "pausar": "Pausar recorrido",
+        "reproducir": "Reproducir recorrido",
+        "siguiente": "Capítulo siguiente"
+      },
+      "movil": {
+        "ver": "Ver animación",
+        "repetir": "Repetir animación",
+        "caso": "Vista previa",
+        "toca": "Toca para ver más"
       }
     },
     "security": {
@@ -3027,6 +3039,14 @@
           "question": "¿Hay límite de usuarios o de productos?",
           "answer": "No. Puedes agregar a todo tu equipo y todo tu catálogo sin costo extra: el precio de la suscripción es el mismo tengas 1 o 20 usuarios, y 50 o 5,000 productos. Tampoco cobramos comisión por venta."
         },
+        "10": {
+          "question": "¿Puedo cambiar de plan más adelante?",
+          "answer": "Sí. Escríbenos por WhatsApp o a soporte@symvora.com.mx y cambiamos tu plan por ti. Si bajas de plan nunca borramos tus datos: tus productos, clientes y ventas se conservan."
+        },
+        "11": {
+          "question": "¿Qué plan me conviene?",
+          "answer": "Básico si tienes un solo local y quieres vender y controlar tu inventario. Pro si tienes hasta 3 sucursales o quieres tarjetas de lealtad, catálogo en línea y pedidos. Premium si necesitas sucursales ilimitadas, soporte prioritario y ayuda para migrar tu catálogo. Todos incluyen usuarios y productos ilimitados."
+        },
         "3n": {
           "question": "¿Qué pasa cuando termina mi prueba gratuita de {dias} días?",
           "answer": "Al finalizar los {dias} días eliges tu plan (Básico $249, Pro $449 o Premium $599 MXN/mes) y lo pagas para seguir vendiendo. Si no contratas, tu cuenta pasa a solo lectura: puedes ver y exportar tus datos, y nada se borra."
@@ -3038,14 +3058,6 @@
         "9n": {
           "question": "¿Hay límite de usuarios o de productos?",
           "answer": "No. En ningún plan hay límite de usuarios ni de productos: el precio es el mismo tengas 1 o 20 usuarios, y 50 o 5,000 productos. Lo que cambia entre planes son las sucursales (1, hasta 3 o ilimitadas) y los módulos de tarjetas de lealtad, catálogo en línea y pedidos, que van de Pro en adelante. Tampoco cobramos comisión por venta."
-        },
-        "10": {
-          "question": "¿Puedo cambiar de plan más adelante?",
-          "answer": "Sí. Escríbenos por WhatsApp o a soporte@symvora.com.mx y cambiamos tu plan por ti. Si bajas de plan nunca borramos tus datos: tus productos, clientes y ventas se conservan."
-        },
-        "11": {
-          "question": "¿Qué plan me conviene?",
-          "answer": "Básico si tienes un solo local y quieres vender y controlar tu inventario. Pro si tienes hasta 3 sucursales o quieres tarjetas de lealtad, catálogo en línea y pedidos. Premium si necesitas sucursales ilimitadas, soporte prioritario y ayuda para migrar tu catálogo. Todos incluyen usuarios y productos ilimitados."
         }
       },
       "cta": {
@@ -3145,6 +3157,37 @@
       "terms": "Términos",
       "cookiesPolicy": "Política de cookies",
       "copyright": "© 2026 SYMVORA. Todos los derechos reservados."
+    },
+    "escena": {
+      "eyebrow": "Así se ve en tu día a día",
+      "titulo": "Vende, cobra y cuadra sin salir de la pantalla",
+      "actos": {
+        "vende": {
+          "nombre": "Vende",
+          "titulo": "Toca, agrega y listo",
+          "texto": "Productos con foto, variantes y carrito en la misma pantalla. Lo que vendes se descuenta del inventario al instante."
+        },
+        "cobra": {
+          "nombre": "Cobra",
+          "titulo": "Efectivo, tarjeta o transferencia",
+          "texto": "Un deslizamiento confirma el cobro y sale el ticket. Si tienes impresora, imprime solo."
+        },
+        "cuadra": {
+          "nombre": "Cuadra",
+          "titulo": "Tu caja cuadra al centavo",
+          "texto": "Al cerrar, el sistema compara lo esperado contra lo contado y te dice la diferencia antes de irte."
+        },
+        "controla": {
+          "nombre": "Controla",
+          "titulo": "Sabes qué se acaba antes de que se acabe",
+          "texto": "Alertas de stock bajo, caducidades y tus ventas del día, sin hojas de cálculo."
+        },
+        "pedidos": {
+          "nombre": "Pedidos",
+          "titulo": "Tus pedidos, por etapa",
+          "texto": "Los pedidos del catálogo en línea y del punto de venta avanzan por columnas: nuevo, confirmado, en preparación y listo. Cada cambio se avisa al cliente."
+        }
+      }
     }
   },
   "cookies": {
@@ -3847,7 +3890,12 @@
       "keepContact": "SYMVORA conserva tu nombre y tu celular para avisarte de novedades y ofertas, como dice el aviso de privacidad. Marca esta casilla si<b> no </b>quieres que los conservemos.",
       "typeToConfirm": "Escribe <b>{palabra}</b> para confirmar",
       "cancel": "Cancelar",
-      "sending": "Enviando…"
+      "sending": "Enviando…",
+      "accountLabel": "Cuenta que se va a eliminar",
+      "whatHappens": "Qué pasa",
+      "ownerEffect": "Se cierra el negocio completo: todos sus usuarios pierden acceso. Sus datos se conservan 30 días y luego se borran.",
+      "memberEffect": "Solo se cierra tu acceso a este negocio. El negocio sigue con sus demás usuarios.",
+      "cancelHint": "Puedes cancelarla en los próximos {dias} días desde el aviso que sale en el panel."
     },
     "pending": {
       "canceledOwner": "Cancelaste la eliminación. Reactiva tu plan en Suscripción para seguir vendiendo.",
@@ -3895,34 +3943,34 @@
   "install": {
     "steps": {
       "chromium-escritorio": {
-        "title": "En Chrome o Edge",
         "0": "Busca el ícono «Instalar» (una pantalla con una flecha) a la derecha de la barra de direcciones.",
         "1": "Si no aparece, abre el menú ⋮ → «Transmitir, guardar y compartir» → «Instalar página como app».",
-        "2": "Confirma con «Instalar». SYMVORA queda en tu escritorio y en el menú Inicio."
+        "2": "Confirma con «Instalar». SYMVORA queda en tu escritorio y en el menú Inicio.",
+        "title": "En Chrome o Edge"
       },
       "safari-mac": {
-        "title": "En Safari (Mac)",
         "0": "En la barra de menú, abre «Archivo» → «Agregar al Dock».",
-        "1": "Confirma con «Agregar». SYMVORA queda en tu Dock y en Aplicaciones."
+        "1": "Confirma con «Agregar». SYMVORA queda en tu Dock y en Aplicaciones.",
+        "title": "En Safari (Mac)"
       },
       "firefox": {
-        "title": "Firefox no instala aplicaciones web",
         "0": "Abre esta misma página en Google Chrome o Microsoft Edge.",
-        "1": "Ahí aparece el botón «Instalar SYMVORA»."
+        "1": "Ahí aparece el botón «Instalar SYMVORA».",
+        "title": "Firefox no instala aplicaciones web"
       },
       "ios": {
-        "title": "En iPhone o iPad (Safari)",
         "0": "Toca el botón Compartir (el cuadro con la flecha hacia arriba).",
-        "1": "Elige «Agregar a pantalla de inicio» y confirma con «Agregar»."
+        "1": "Elige «Agregar a pantalla de inicio» y confirma con «Agregar».",
+        "title": "En iPhone o iPad (Safari)"
       },
       "android": {
-        "title": "En Android (Chrome)",
         "0": "Abre el menú ⋮ de Chrome.",
-        "1": "Elige «Instalar app» o «Agregar a la pantalla principal»."
+        "1": "Elige «Instalar app» o «Agregar a la pantalla principal».",
+        "title": "En Android (Chrome)"
       },
       "otro": {
-        "title": "En tu navegador",
-        "0": "Abre esta página en Google Chrome o Microsoft Edge para instalar SYMVORA."
+        "0": "Abre esta página en Google Chrome o Microsoft Edge para instalar SYMVORA.",
+        "title": "En tu navegador"
       }
     },
     "benefits": {

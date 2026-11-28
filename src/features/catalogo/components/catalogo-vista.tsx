@@ -29,6 +29,9 @@ import type { CatalogoEncabezado, CatalogoPagina, CatalogoProducto, CatalogoVari
 import { FormularioPedido } from "./formulario-pedido";
 import { almacenDelNavegador, leerPedidosGuardados, type PedidoGuardado } from "../mis-pedidos";
 
+/** Categorías visibles antes de «Ver más categorías». */
+const LIMITE_CATEGORIAS = 8;
+
 /** Moneda del negocio para todas las partes del catálogo (la pone `CatalogoVista`). */
 const MonedaCatalogo = createContext<Moneda>("MXN");
 
@@ -125,6 +128,7 @@ export function CatalogoVista({
   const [total, setTotal] = useState(paginaInicial.total);
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string | null>(null);
+  const [verTodasCategorias, setVerTodasCategorias] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [elegido, setElegido] = useState<CatalogoProducto | null>(null);
@@ -297,21 +301,37 @@ export function CatalogoVista({
             )}
           </label>
           {encabezado.categorias.length > 0 && (
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-              <Chip activo={categoria === null} color={color} tinta={tinta} onClick={() => cambiarCategoria(null)}>
-                Todo
-              </Chip>
-              {encabezado.categorias.map((c) => (
-                <Chip
-                  key={c.nombre}
-                  activo={categoria === c.nombre}
-                  color={color}
-                  tinta={tinta}
-                  onClick={() => cambiarCategoria(categoria === c.nombre ? null : c.nombre)}
-                >
-                  {c.nombre}
+            <div className="flex flex-col items-start gap-2">
+              {/* Varias líneas en vez de una franja deslizable: todas las categorías se ven y se tocan. */}
+              <div className="flex flex-wrap gap-2">
+                <Chip activo={categoria === null} color={color} tinta={tinta} onClick={() => cambiarCategoria(null)}>
+                  Todo
                 </Chip>
-              ))}
+                {(verTodasCategorias ? encabezado.categorias : encabezado.categorias.slice(0, LIMITE_CATEGORIAS)).map((c) => (
+                  <Chip
+                    key={c.nombre}
+                    activo={categoria === c.nombre}
+                    color={color}
+                    tinta={tinta}
+                    onClick={() => cambiarCategoria(categoria === c.nombre ? null : c.nombre)}
+                  >
+                    {c.nombre}
+                  </Chip>
+                ))}
+              </div>
+              {encabezado.categorias.length > LIMITE_CATEGORIAS && (
+                <button
+                  type="button"
+                  onClick={() => setVerTodasCategorias((v) => !v)}
+                  aria-expanded={verTodasCategorias}
+                  className="text-sm font-medium underline underline-offset-4 hover:opacity-80"
+                  style={{ color }}
+                >
+                  {verTodasCategorias
+                    ? "Ver menos categorías"
+                    : `Ver más categorías (${encabezado.categorias.length - LIMITE_CATEGORIAS})`}
+                </button>
+              )}
             </div>
           )}
         </div>

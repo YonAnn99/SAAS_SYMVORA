@@ -2912,6 +2912,18 @@
         "captura": "Window to import the catalog from CSV or Excel",
         "description": "Upload your catalog as CSV or Excel and map the columns yourself. Detects barcode duplicates and lets you decide: skip, update or generate a new one.",
         "stats": "CSV & Excel · Duplicate detection · Batch import"
+      },
+      "controles": {
+        "anterior": "Previous chapter",
+        "pausar": "Pause tour",
+        "reproducir": "Play tour",
+        "siguiente": "Next chapter"
+      },
+      "movil": {
+        "ver": "Watch animation",
+        "repetir": "Replay animation",
+        "caso": "Preview",
+        "toca": "Tap to see more"
       }
     },
     "security": {
@@ -3027,6 +3039,14 @@
           "question": "Is there a limit on users or products?",
           "answer": "No. You can add your whole team and your whole catalog at no extra cost: the subscription price is the same whether you have 1 or 20 users, and 50 or 5,000 products. We don't charge sales commissions either."
         },
+        "10": {
+          "question": "Can I change plans later?",
+          "answer": "Yes. Write to us on WhatsApp or at soporte@symvora.com.mx and we'll change your plan for you. If you move to a lower plan we never delete your data: your products, customers and sales are kept."
+        },
+        "11": {
+          "question": "Which plan is right for me?",
+          "answer": "Basic if you have a single location and want to sell and control your inventory. Pro if you have up to 3 branches or want loyalty cards, an online catalog and orders. Premium if you need unlimited branches, priority support and help migrating your catalog. All plans include unlimited users and products."
+        },
         "3n": {
           "question": "What happens when my {dias}-day free trial ends?",
           "answer": "When the {dias} days are over you pick your plan (Basic $249, Pro $449 or Premium $599 MXN/month) and pay to keep selling. If you don't subscribe, your account becomes read-only: you can view and export your data, and nothing is deleted."
@@ -3038,14 +3058,6 @@
         "9n": {
           "question": "Is there a limit on users or products?",
           "answer": "No. No plan limits users or products: the price is the same whether you have 1 or 20 users, and 50 or 5,000 products. What changes between plans is the number of branches (1, up to 3 or unlimited) and the loyalty cards, online catalog and orders modules, which start at Pro. We don't charge sales commissions either."
-        },
-        "10": {
-          "question": "Can I change plans later?",
-          "answer": "Yes. Write to us on WhatsApp or at soporte@symvora.com.mx and we'll change your plan for you. If you move to a lower plan we never delete your data: your products, customers and sales are kept."
-        },
-        "11": {
-          "question": "Which plan is right for me?",
-          "answer": "Basic if you have a single location and want to sell and control your inventory. Pro if you have up to 3 branches or want loyalty cards, an online catalog and orders. Premium if you need unlimited branches, priority support and help migrating your catalog. All plans include unlimited users and products."
         }
       },
       "cta": {
@@ -3145,6 +3157,37 @@
       "terms": "Terms",
       "cookiesPolicy": "Cookie policy",
       "copyright": "© 2026 SYMVORA. All rights reserved."
+    },
+    "escena": {
+      "eyebrow": "How it looks in your day to day",
+      "titulo": "Sell, charge and balance without leaving the screen",
+      "actos": {
+        "vende": {
+          "nombre": "Sell",
+          "titulo": "Tap, add and done",
+          "texto": "Products with photos, variants and the cart on the same screen. What you sell leaves inventory right away."
+        },
+        "cobra": {
+          "nombre": "Charge",
+          "titulo": "Cash, card or transfer",
+          "texto": "One swipe confirms the charge and the receipt comes out. With a printer, it prints by itself."
+        },
+        "cuadra": {
+          "nombre": "Balance",
+          "titulo": "Your register balances to the cent",
+          "texto": "At close, the system compares expected against counted and shows the difference before you leave."
+        },
+        "controla": {
+          "nombre": "Track",
+          "titulo": "Know what runs low before it runs out",
+          "texto": "Low stock alerts, expiry dates and today’s sales, without spreadsheets."
+        },
+        "pedidos": {
+          "nombre": "Orders",
+          "titulo": "Your orders, stage by stage",
+          "texto": "Orders from the online catalog and the point of sale move through columns: new, confirmed, in preparation and ready. Each change is sent to the customer."
+        }
+      }
     }
   },
   "cookies": {
@@ -3847,7 +3890,12 @@
       "keepContact": "SYMVORA keeps your name and phone number to tell you about news and offers, as the privacy notice says. Check this box if you do<b> not </b>want us to keep them.",
       "typeToConfirm": "Type <b>{palabra}</b> to confirm",
       "cancel": "Cancel",
-      "sending": "Sending…"
+      "sending": "Sending…",
+      "accountLabel": "Account to be deleted",
+      "whatHappens": "What happens",
+      "ownerEffect": "The whole business is closed: all its users lose access. Its data is kept for 30 days and then deleted.",
+      "memberEffect": "Only your access to this business is closed. The business keeps its other users.",
+      "cancelHint": "You can cancel it within the next {dias} days from the notice in the panel."
     },
     "pending": {
       "canceledOwner": "You canceled the deletion. Reactivate your plan in Subscription to keep selling.",
@@ -3895,34 +3943,34 @@
   "install": {
     "steps": {
       "chromium-escritorio": {
-        "title": "In Chrome or Edge",
         "0": "Look for the \"Install\" icon (a screen with an arrow) on the right of the address bar.",
         "1": "If it doesn't show, open the ⋮ menu → \"Cast, save and share\" → \"Install page as app\".",
-        "2": "Confirm with \"Install\". SYMVORA appears on your desktop and in the Start menu."
+        "2": "Confirm with \"Install\". SYMVORA appears on your desktop and in the Start menu.",
+        "title": "In Chrome or Edge"
       },
       "safari-mac": {
-        "title": "In Safari (Mac)",
         "0": "In the menu bar, open \"File\" → \"Add to Dock\".",
-        "1": "Confirm with \"Add\". SYMVORA appears in your Dock and in Applications."
+        "1": "Confirm with \"Add\". SYMVORA appears in your Dock and in Applications.",
+        "title": "In Safari (Mac)"
       },
       "firefox": {
-        "title": "Firefox doesn't install web apps",
         "0": "Open this same page in Google Chrome or Microsoft Edge.",
-        "1": "The \"Install SYMVORA\" button appears there."
+        "1": "The \"Install SYMVORA\" button appears there.",
+        "title": "Firefox doesn't install web apps"
       },
       "ios": {
-        "title": "On iPhone or iPad (Safari)",
         "0": "Tap the Share button (the square with the up arrow).",
-        "1": "Choose \"Add to Home Screen\" and confirm with \"Add\"."
+        "1": "Choose \"Add to Home Screen\" and confirm with \"Add\".",
+        "title": "On iPhone or iPad (Safari)"
       },
       "android": {
-        "title": "On Android (Chrome)",
         "0": "Open Chrome's ⋮ menu.",
-        "1": "Choose \"Install app\" or \"Add to Home screen\"."
+        "1": "Choose \"Install app\" or \"Add to Home screen\".",
+        "title": "On Android (Chrome)"
       },
       "otro": {
-        "title": "In your browser",
-        "0": "Open this page in Google Chrome or Microsoft Edge to install SYMVORA."
+        "0": "Open this page in Google Chrome or Microsoft Edge to install SYMVORA.",
+        "title": "In your browser"
       }
     },
     "benefits": {
