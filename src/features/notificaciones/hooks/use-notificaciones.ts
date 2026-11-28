@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { avisarPedidoNuevo } from "../pedido-aviso";
-import { tocarSonidoDeTipo } from "../sonidos";
+import { prepararSonidoConGesto, tocarSonidoDeTipo } from "../sonidos";
 import { useTenantContext } from "@/contexts/tenant-context";
 import { toast } from "sonner";
 import {
@@ -115,6 +115,7 @@ export function useNotificaciones() {
   // Carga inicial y Realtime.
   useEffect(() => {
     if (!tenantId || !userId) return;
+    prepararSonidoConGesto();
     // Diferido, convención del repo (`react-hooks/set-state-in-effect`).
     const inicial = window.setTimeout(() => void cargar(), 0);
 

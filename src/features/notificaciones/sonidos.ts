@@ -88,15 +88,42 @@ let pendientes: ClaveSonido[] = [];
 let temporizador: ReturnType<typeof setTimeout> | null = null;
 let ultimoTono = 0;
 
+/**
+ * Tono que el navegador bloqueó (sin ninguna interacción previa del usuario con la página).
+ * Se toca en cuanto haya un toque o una tecla, si el aviso no tiene más de un minuto.
+ */
+let bloqueado: { clave: ClaveSonido; cuando: number } | null = null;
+const VIGENCIA_BLOQUEADO_MS = 60_000;
+
 function reproducir(clave: ClaveSonido): void {
   try {
     const audio = new Audio(RUTA_SONIDO[clave]);
     audio.volume = 0.6;
-    // Sin interacción previa del usuario el navegador bloquea el audio: se omite en silencio.
-    void audio.play().catch(() => {});
+    audio.play().catch(() => {
+      // El navegador exige un gesto del usuario: se guarda para el siguiente toque.
+      bloqueado = { clave, cuando: Date.now() };
+    });
   } catch {
     // Sin audio: el aviso visual basta.
   }
+}
+
+let escuchandoGestos = false;
+
+/**
+ * Llamarla una vez desde la app. Los navegadores solo dejan sonar audio tras un toque o una
+ * tecla: si un aviso llegó antes, suena en ese primer gesto.
+ */
+export function prepararSonidoConGesto(): void {
+  if (escuchandoGestos || typeof window === "undefined") return;
+  escuchandoGestos = true;
+  const alGesto = () => {
+    const pendiente = bloqueado;
+    bloqueado = null;
+    if (pendiente && Date.now() - pendiente.cuando < VIGENCIA_BLOQUEADO_MS) reproducir(pendiente.clave);
+  };
+  window.addEventListener("pointerdown", alGesto, { passive: true });
+  window.addEventListener("keydown", alGesto);
 }
 
 function vaciar(): void {
